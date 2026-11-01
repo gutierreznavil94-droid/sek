@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Progreso 90</string>
+    <string name="title_activity_main">Progreso 90</string>
+    <string name="package_name">ar.progreso90.app</string>
+    <string name="custom_url_scheme">ar.progreso90.app</string>
+</resources>
