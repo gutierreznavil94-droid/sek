@@ -16,6 +16,21 @@ export type ModoFondo = 'intercalado' | 'clima' | IdVideo
 export interface VideoFondo { id: IdVideo; nombre: string; archivo: string; cuadroFijo: string; tipo: 'claro' | 'oscuro'; vidrio: number; destellos?: number[][] }
 
 export const VIDEOS = config.videos as VideoFondo[]
+/** Video horizontal para pantallas anchas (computadora): siempre el mismo, sin importar el día. */
+export const VIDEO_PC = config.pc as unknown as VideoFondo
+const CONSULTA_HORIZONTAL = '(min-aspect-ratio: 1/1) and (min-width: 900px)'
+function esHorizontal(): boolean {
+  return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(CONSULTA_HORIZONTAL).matches
+}
+/** true en pantallas horizontales y anchas; se actualiza si cambia el tamaño de la ventana. */
+export function usePantallaHorizontal(): boolean {
+  return useSyncExternalStore((o) => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return () => {}
+    const m = window.matchMedia(CONSULTA_HORIZONTAL)
+    m.addEventListener('change', o)
+    return () => m.removeEventListener('change', o)
+  }, esHorizontal, () => false)
+}
 export const CICLO = config.cicloPorDia as IdVideo[]
 export const CLIMA_ACTIVO: boolean = config.clima.activo
 export const CON_MARCA_DE_AGUA: boolean = config.marcaDeAgua

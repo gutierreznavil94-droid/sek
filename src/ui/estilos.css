@@ -1153,3 +1153,10 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 .motas-tinta { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; z-index: 25; pointer-events: none; }
 .dia-mini { position: fixed; top: 0; left: 0; right: 0; z-index: 26; opacity: 0; pointer-events: none; padding: calc(6px + env(safe-area-inset-top)) 16px 16px; text-align: center; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.04em; color: var(--texto); background: linear-gradient(to bottom, rgba(18, 17, 16, 0.94) 0, rgba(18, 17, 16, 0.94) 60%, rgba(18, 17, 16, 0)); }
 .app:has(.progreso-tinta) ~ .dia-mini, .app:has(.progreso-tinta) .dia-mini { background: linear-gradient(to bottom, rgba(18, 17, 16, 0.7) 0, rgba(18, 17, 16, 0.55) 55%, rgba(18, 17, 16, 0)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }
+
+/* Computadora: video horizontal a pantalla completa (sin el corte del video vertical) y barra de abajo centrada. */
+.av-fondo[data-orientacion='horizontal'] .av-video { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; object-fit: cover; object-position: 50% 50%; }
+.av-fondo[data-orientacion='horizontal']::after { display: none; }
+@media (min-width: 900px) {
+  .nav { left: 50%; right: auto; width: min(680px, 100%); transform: translateX(-50%); border: 1px solid var(--borde); border-bottom: 0; border-radius: 16px 16px 0 0; }
+}

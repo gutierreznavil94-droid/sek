@@ -13,7 +13,7 @@ import { useDatos } from '../estado'
 import { graficoMetas } from '../../services/metas'
 import { FilaMeta } from '../metas'
 import { VERSION_APP } from '../../version'
-import { VIDEOS, VIDRIO_EN_DESTELLO, intensidadDestello, type VideoFondo, elegirVideo, useModoFondo, video as datosVideo } from '../../fondos/elegir'
+import { VIDEOS, VIDRIO_EN_DESTELLO, intensidadDestello, type VideoFondo, elegirVideo, useModoFondo, usePantallaHorizontal, VIDEO_PC, video as datosVideo } from '../../fondos/elegir'
 
 const BASE = import.meta.env.BASE_URL
 
@@ -97,13 +97,15 @@ export function Progreso({ hoy }: { hoy: string }) {
   const sel = d?.atributos.find((a) => a.atributoId === atributoSel)
   const fechaNivel = (n: number) => d?.niveles.find((x) => x.nivel === n)
   // Video del día: se decide con la fecha de Córdoba y el Día 1 del ciclo.
-  const fondo = d ? datosVideo(elegirVideo(modo, hoy, d.estado?.ciclo.inicio)) : null
+  // En la computadora (pantalla horizontal) va el video horizontal; en el celu, el vertical del día.
+  const horizontal = usePantallaHorizontal()
+  const fondo = d ? (horizontal ? VIDEO_PC : datosVideo(elegirVideo(modo, hoy, d.estado?.ciclo.inicio))) : null
 
   return (
     <div className="progreso-tinta" data-fondo={fondo?.tipo ?? 'oscuro'} data-vidrio={vidrioClaro() && fondo?.tipo === 'claro' ? 'claro' : undefined} style={{ '--av-arriba': `${arriba}px` } as React.CSSProperties}>
       {/* Fondo fijo: el video vertical cubre toda la pantalla y no se mueve al desplazar */}
       {createPortal(
-        <div className="av-fondo" aria-hidden="true">
+        <div className="av-fondo" aria-hidden="true" data-orientacion={horizontal ? 'horizontal' : undefined}>
           {fondo && <VideoDeFondo key={fondo.id} fondo={fondo} quieto={reducido} pausado={verNiveles || !!sel} />}
         </div>,
         document.body,
@@ -453,7 +455,7 @@ function VideoDeFondo({ fondo, quieto, pausado }: { fondo: VideoFondo; quieto: b
   }, [fondo, fijo])
   // Guardar los otros videos enteros para usarlos sin conexión (una sola vez, sin apuro).
   useEffect(() => {
-    const t = setTimeout(() => { for (const v of VIDEOS) guardarVideo(BASE + v.archivo).catch(() => {}) }, 6000)
+    const t = setTimeout(() => { for (const v of [...VIDEOS, VIDEO_PC]) guardarVideo(BASE + v.archivo).catch(() => {}) }, 6000)
     return () => clearTimeout(t)
   }, [])
   const mover = () => {

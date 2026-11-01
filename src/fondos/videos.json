@@ -1,5 +1,5 @@
 {
-  "comentario": "Videos de fondo de Progreso: lluvia y rayos, intercalados por día. Van enteros, a la calidad de los originales (todavía con la marca de agua de Luma AI). Para cambiar uno, reemplazá el archivo en public/fondos/ con el mismo nombre. Ver LEEME.md al lado.",
+  "comentario": "Videos de fondo de Progreso: lluvia y rayos, intercalados por día. Van enteros, a la calidad de los originales (todavía con la marca de agua de Luma AI). Para cambiar uno, reemplazá el archivo en public/fondos/ con el mismo nombre. Ver LEEME.md al lado. En pantallas horizontales (computadora) se usa siempre «pc» (fondos/pc.mp4, video horizontal).",
   "marcaDeAgua": true,
   "videos": [
     {
@@ -41,5 +41,13 @@
   },
   "vidrioEnDestello": 0.66,
   "comentarioVidrio": "vidrio: opacidad del tinte de tinta de tarjetas, cabecera y barra (medida para contraste 4,5:1 en el cuadro más claro). destellos: segundos del video con relámpago; ahí el vidrio sube a vidrioEnDestello.",
-  "disimuloMarca": false
+  "disimuloMarca": false,
+  "pc": {
+    "id": "pc",
+    "nombre": "Shinobi (computadora)",
+    "archivo": "fondos/pc.mp4",
+    "cuadroFijo": "fondos/pc.jpg",
+    "tipo": "oscuro",
+    "vidrio": 0.55
+  }
 }

@@ -166,7 +166,7 @@ export function Cargando() {
 /** «siempre»: animaciones y video aunque el teléfono pida reducir movimiento (o lo active el ahorro de batería). */
 export type PreferenciaMovimiento = 'sistema' | 'siempre'
 export function preferenciaMovimiento(): PreferenciaMovimiento {
-  try { return localStorage.getItem('movimiento') === 'siempre' ? 'siempre' : 'sistema' } catch { return 'sistema' }
+  try { return localStorage.getItem('movimiento') === 'sistema' ? 'sistema' : 'siempre' } catch { return 'siempre' }
 }
 export function aplicarMovimiento(): void {
   if (typeof document !== 'undefined') document.documentElement.classList.toggle('movimiento-siempre', preferenciaMovimiento() === 'siempre')
