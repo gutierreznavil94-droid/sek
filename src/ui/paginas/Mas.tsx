@@ -5,6 +5,7 @@ import { FECHA_VERSION, VERSION_APP } from '../../version'
 import { enModoPrueba, entrarModoPrueba, salirModoPrueba } from '../../data/modoPrueba'
 import { obtenerAjustes } from '../../services/base'
 import { ahora } from '../../services/reloj'
+import { SINCRONIZACION_CONFIGURADA } from '../../sync/config'
 import { Tarjeta } from '../componentes'
 import { avisar, useDatos } from '../estado'
 
@@ -64,7 +65,7 @@ export function Mas() {
       )}
       <Tarjeta>
         <div className="lista-nav">
-          {SECCIONES.map((s) => (
+          {SECCIONES.filter((s) => SINCRONIZACION_CONFIGURADA || s.a !== '/mas/sincronizar').map((s) => (
             <Link key={s.a} to={s.a}>
               <span>{s.t}<span className="desc">{s.d}</span></span>
               <span className="flecha">›</span>
