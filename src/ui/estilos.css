@@ -1160,3 +1160,19 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 @media (min-width: 900px) {
   .nav { left: 50%; right: auto; width: min(680px, 100%); transform: translateX(-50%); border: 1px solid var(--borde); border-bottom: 0; border-radius: 16px 16px 0 0; }
 }
+
+/* ===== cambios 23: series con cuota y extra ===== */
+.contador-boton .barrita.dos-topes { position: relative; overflow: visible; height: 5px; }
+.contador-boton .barrita.dos-topes i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; transition: width 0.4s ease; }
+.contador-boton .barrita.dos-topes i.capa-extra { border-radius: 0 999px 999px 0; background: #A6E6C1; box-shadow: 0 0 8px rgba(var(--verde-rgb), 0.75); }
+.contador-boton .barrita .marca-cuota { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 1px; background: rgba(var(--papel-rgb), 0.75); }
+.contador-boton.logrado .barrita.dos-topes i:first-child { border-radius: 999px 0 0 999px; }
+.contador-boton.extra { border-color: #A6E6C1; box-shadow: 0 0 18px rgba(var(--verde-rgb), 0.4); }
+.contador-boton.extra .mas-n, .contador-boton.extra .detalle { color: #A6E6C1; }
+.contador-boton .detalle.texto-extra { font-weight: 800; color: #A6E6C1; text-shadow: 0 0 8px rgba(var(--verde-rgb), 0.8); animation: extra-sube 1.6s ease; }
+.contador-boton.destello-extra { animation: extra-destello 0.9s ease; }
+@keyframes extra-sube { 0% { opacity: 0; transform: translateY(4px); } 20% { opacity: 1; transform: none; } 100% { opacity: 1; } }
+@keyframes extra-destello { 0% { box-shadow: 0 0 0 rgba(var(--verde-rgb), 0); } 30% { box-shadow: 0 0 28px rgba(var(--verde-rgb), 0.9); } 100% { box-shadow: 0 0 18px rgba(var(--verde-rgb), 0.4); } }
+.propuesta-cuota { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 10px 12px; border-radius: 12px 15px 11px 16px / 15px 11px 16px 12px; border: 1px solid rgba(var(--verde-rgb), 0.6); background: rgba(var(--verde-rgb), 0.08); font-size: 0.9rem; }
+.linea-cuota { font-size: 0.75rem; color: var(--texto-3); }
+@media (prefers-reduced-motion: reduce) { :root:not(.movimiento-siempre) .contador-boton .texto-extra, :root:not(.movimiento-siempre) .contador-boton.destello-extra { animation: none; } }

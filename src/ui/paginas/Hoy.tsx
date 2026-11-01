@@ -30,7 +30,7 @@ import { duracionSuenio, entrarModoSuenio, horaDeMinutos, resumenSuenio } from '
 import { celebrarFase, celebrarNivel, celebrarPilar, celebrarRacha } from '../animaciones/logros'
 import { animar, configuracionAnimaciones } from '../animaciones/motor'
 import { finalizarJuego, iniciarJuego, resumenJuego } from '../../services/juego'
-import { deshacerUltimoToque, resumenContadores, sumarToque, type ResumenContador } from '../../services/contadores'
+import { deshacerUltimoToque, propuestasDeSubida, responderPropuesta, resumenContadores, sumarToque, type ResumenContador } from '../../services/contadores'
 import { estadoVisible, metasPorDia } from '../../services/metas'
 import { FilaMeta } from '../metas'
 import { ahora } from '../../services/reloj'
@@ -45,7 +45,7 @@ async function cargarPanel(hoy: string) {
   if (!estado || estado.noEmpezado) {
     return { antes: true as const, ajustes, estado }
   }
-  const [compromisos, total, atributos, racha, juego, xpHoy, revision, pilares, metasVencen, contadores, ventana, revisionAyer] = await Promise.all([
+  const [compromisos, total, atributos, racha, juego, xpHoy, revision, pilares, propuestas, contadores, ventana, revisionAyer] = await Promise.all([
     compromisosDelDia(hoy),
     xpTotal(),
     atributosHoy(hoy),
@@ -54,7 +54,7 @@ async function cargarPanel(hoy: string) {
     xpDelDia(hoy),
     obtenerRevision('diaria', hoy),
     pilaresDelDia(hoy),
-    Promise.resolve(null),
+    propuestasDeSubida(hoy),
     resumenContadores(hoy),
     ventanaNoche(hoy),
     obtenerRevision('diaria', sumarDias(hoy, -1)),
@@ -72,7 +72,7 @@ async function cargarPanel(hoy: string) {
   try { buenosDias = localStorage.getItem('buenos-dias') } catch { /* sin almacenamiento */ }
   const anoche = buenosDias ? (await resumenSuenio(hoy, 2)).anoche : null
   const ajusteDeAyer = revisionAyer?.respuestas.ajuste?.trim() || null
-  return { antes: false as const, metasSemana, ajustes, estado, compromisos, nivel, atributos, racha, juego, semana, xpHoy, revision, nocheAbierta, suenio, proximoEntreno, pilares, metasVencen, contadores, ventana, ajusteDeAyer, buenosDias, anoche }
+  return { antes: false as const, metasSemana, ajustes, estado, compromisos, nivel, atributos, racha, juego, semana, xpHoy, revision, nocheAbierta, suenio, proximoEntreno, pilares, propuestas, contadores, ventana, ajusteDeAyer, buenosDias, anoche }
 }
 
 async function proximoEntrenamiento(hoy: string, zona: string) {
@@ -102,6 +102,7 @@ export function Hoy({ hoy }: { hoy: string }) {
   const tic = useTic(30_000)
   const [seleccion, setSeleccion] = useState<CompromisoConAccion | null>(null)
   const [pilarSel, setPilarSel] = useState<Pilar | null>(null)
+  const [destello, setDestello] = useState<string | null>(null)
   const [flash, setFlash] = useState<Record<string, number>>({})
   const [marcado, setMarcado] = useState<string | null>(null)
   const [nivelNuevo, setNivelNuevo] = useState<number | null>(null)
@@ -352,13 +353,26 @@ export function Hoy({ hoy }: { hoy: string }) {
             <span className="seccion-titulo">Series rápidas</span>
             <Link to="/mas/contadores" className="chico texto-3">ajustar ›</Link>
           </div>
+          {d.propuestas.map((p) => (
+            <div key={p.contadorId} className="propuesta-cuota" role="group" aria-label={`Subir la cuota de ${p.nombre}`}>
+              <span><b>¿Subimos la cuota?</b> {p.nombre} <span className="mono" style={{ whiteSpace: 'nowrap' }}>{p.de} → {p.a}</span><span className="texto-3 chico" style={{ whiteSpace: "nowrap" }}> · extra {p.extra}</span></span>
+              <span className="fila" style={{ gap: 6 }}>
+                <button className="boton chico primario" onClick={() => mutar(() => responderPropuesta(p.contadorId, true)).then(() => avisar(`${p.nombre}: cuota ${p.a} desde hoy`, { tipo: 'ok' }))}>Sí</button>
+                <button className="boton chico suave" onClick={() => mutar(() => responderPropuesta(p.contadorId, false)).then(() => avisar('Te lo vuelvo a proponer en 3 días'))}>Todavía no</button>
+              </span>
+            </div>
+          ))}
           <div className="rejilla-2">
             {d.contadores.map((c) => (
-              <BotonContador key={c.contador.id} r={c} onToque={async () => {
+              <BotonContador key={c.contador.id} r={c} destello={destello === c.contador.id} onToque={async () => {
                 const res = await mutar(() => sumarToque(c.contador.id))
                 animar({ tipo: 'parry' })
                 subioNivel(res.nuevoNivel)
-                if (res.xp > 0) avisar(`${c.contador.nombre}: llegaste a la meta diaria. +${res.xp} XP`, { tipo: 'ok' })
+                if (res.xpExtra > 0) {
+                  setDestello(c.contador.id)
+                  setTimeout(() => setDestello((x) => (x === c.contador.id ? null : x)), 1600)
+                  avisar(`${c.contador.nombre}: Extra +${res.xpExtra} XP`, { tipo: 'ok' })
+                } else if (res.xp > 0) avisar(`${c.contador.nombre}: llegaste a la cuota. +${res.xp} XP`, { tipo: 'ok' })
               }} onDeshacer={() => mutar(() => deshacerUltimoToque(c.contador.id)).then((t) => avisar(`${c.contador.nombre}: ${t} hoy`))} />
             ))}
           </div>
@@ -407,15 +421,25 @@ export function Hoy({ hoy }: { hoy: string }) {
   )
 }
 
-function BotonContador({ r, onToque, onDeshacer }: { r: ResumenContador; onToque: () => void; onDeshacer: () => void }) {
+function BotonContador({ r, destello, onToque, onDeshacer }: { r: ResumenContador; destello: boolean; onToque: () => void; onDeshacer: () => void }) {
   const c = r.contador
-  const p = Math.min(100, (100 * r.hoy) / Math.max(1, c.metaDiaria))
+  // La barra llega hasta el extra: primera capa hasta la cuota, segunda capa (más brillante) de la cuota al extra.
+  const tope = Math.max(1, r.extraHoy)
+  const marca = (100 * r.cuotaHoy) / tope
+  const capa1 = (100 * Math.min(r.hoy, r.cuotaHoy)) / tope
+  const capa2 = (100 * Math.max(0, Math.min(r.hoy, r.extraHoy) - r.cuotaHoy)) / tope
+  const falta = r.extraHoy - r.hoy
+  const detalle = r.extraLogradoHoy ? `${r.hoy} · extra ✓` : r.metaLogradaHoy ? `${r.hoy} · faltan ${falta} al extra` : `${r.hoy} / ${r.cuotaHoy} hoy`
   return (
-    <button type="button" className={`contador-boton ${r.metaLogradaHoy ? 'logrado' : ''}`} onClick={onToque} aria-label={`Sumar ${c.cantidadPorToque} ${c.nombre.toLowerCase()}. Hoy ${r.hoy} de ${c.metaDiaria}`}>
+    <button type="button" className={`contador-boton ${r.metaLogradaHoy ? 'logrado' : ''} ${r.extraLogradoHoy ? 'extra' : ''} ${destello ? 'destello-extra' : ''}`} onClick={onToque} aria-label={`Sumar ${c.cantidadPorToque} ${c.nombre.toLowerCase()}. Hoy ${r.hoy}, cuota ${r.cuotaHoy}, extra ${r.extraHoy}`}>
       <span className="mas-n">+{c.cantidadPorToque}</span>
       <span className="nombre">{c.nombre}</span>
-      <span className="detalle mono">{r.hoy} / {c.metaDiaria} hoy{r.metaLogradaHoy ? ' ✓' : ''}</span>
-      <span className="barrita"><i style={{ width: `${p}%` }} /></span>
+      {destello ? <span className="detalle mono texto-extra">Extra +{c.xpExtra ?? 10} XP</span> : <span className="detalle mono">{detalle}</span>}
+      <span className="barrita dos-topes">
+        <i style={{ width: `${capa1}%` }} />
+        <i className="capa-extra" style={{ left: `${marca}%`, width: `${capa2}%` }} />
+        <b className="marca-cuota" style={{ left: `${marca}%` }} />
+      </span>
       {r.toquesHoy > 0 && <span className="deshacer" role="button" aria-label="Deshacer último toque" onClick={(e) => { e.stopPropagation(); onDeshacer() }}>↶</span>}
     </button>
   )

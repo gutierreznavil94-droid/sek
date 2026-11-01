@@ -13,7 +13,7 @@ const SECCIONES = [
   { a: '/mas/identidad', t: 'Identidad', d: 'Visión y obstáculos' },
   { a: '/mas/atributos', t: 'Atributos', d: 'Las cinco áreas y su ventana de cálculo' },
   { a: '/mas/metas', t: 'Metas con fecha', d: 'Qué querés lograr y para cuándo; verde o rojo al llegar el día' },
-  { a: '/mas/contadores', t: 'Contadores', d: 'Flexiones y dominadas: cantidad por toque, meta diaria y XP' },
+  { a: '/mas/contadores', t: 'Contadores', d: 'Flexiones y dominadas: cuota, extra, cuánto suma cada toque y XP' },
   { a: '/mas/objetivos', t: 'Objetivos y fases', d: 'Qué buscás en cada etapa de 30 días' },
   { a: '/mas/acciones', t: 'Pilares y acciones', d: 'Nombre, hora límite, mínimo, atributo y XP de cada pilar y compromiso' },
   { a: '/mas/entrenamiento', t: 'Entrenamiento y descanso', d: 'Días y horas, hora de acostarse, objetivo de sueño' },

@@ -21,6 +21,7 @@ import { obtenerAjustes, registrarEvento } from './base'
 import { cicloActivo } from './ciclo'
 import { limiteJuegoDelDia } from './feriados'
 import { ahora } from './reloj'
+import { cuotaDelDia } from '../domain/cuotas'
 import { anularXp, concederXp, reglaDeAccion, xpDelDia } from './xp'
 
 export function idCompromiso(accionId: string, fecha: FechaDia): string {
@@ -493,7 +494,7 @@ export async function resumenDeCompromisos(desde: FechaDia, hasta: FechaDia): Pr
       for (let f = desde < ciclo.inicio ? ciclo.inicio : desde; f <= hasta && f <= hoy; f = sumarDias(f, 1)) {
         if (f < creadoEl) continue
         const total = totales.get(f) ?? 0
-        const estado: EstadoCompromiso = total >= c.metaDiaria ? 'completado' : f === hoy ? 'pendiente' : 'omitido'
+        const estado: EstadoCompromiso = total >= cuotaDelDia(c, f).cuota ? 'completado' : f === hoy ? 'pendiente' : 'omitido'
         base.push({ accionId: `contador:${c.id}`, fecha: f, estado, peso: 1, atributoIds: c.atributoIds, excepcion: excepciones.has(f), pilar: false })
       }
     }

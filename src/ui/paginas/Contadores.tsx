@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { db } from '../../data/db'
 import type { Contador } from '../../data/tipos'
-import { formatoHora } from '../../domain/fechas'
+import { fechaLegible, formatoHora } from '../../domain/fechas'
 import { listarAtributos } from '../../services/acciones'
 import { obtenerAjustes } from '../../services/base'
-import { borrarRegistroContador, guardarContador, listarContadores, nuevoIdContador, resumenContadores, sumarToque, validarContador } from '../../services/contadores'
+import { borrarRegistroContador, extraPorDefecto, guardarContador, subidasDeCuota, listarContadores, nuevoIdContador, resumenContadores, sumarToque, validarContador } from '../../services/contadores'
 import { Atras, Chips, Hoja, Tarjeta } from '../componentes'
 import { avisar, mutar, useDatos } from '../estado'
 
@@ -28,7 +28,7 @@ export function Contadores({ hoy }: { hoy: string }) {
         <h1>Contadores</h1>
         <button className="boton chico primario" onClick={() => setEditar('nuevo')}>+ Nuevo</button>
       </div>
-      <p className="texto-2 chico">Series rápidas durante el día: cada toque en Hoy suma la cantidad configurada. Llegar a la meta diaria da XP una vez por día y suma al atributo elegido. No son pilares: no afectan la racha.</p>
+      <p className="texto-2 chico">Series rápidas durante el día: cada toque en Hoy suma la cantidad configurada. Cada serie tiene dos topes por día: la cuota (lo ideal) y el extra (para los días buenos). Cada uno da su XP una vez por día. Los cambios valen desde hoy; los días pasados conservan su cuota. No son pilares: no afectan la racha.</p>
 
       {d.contadores.map((c) => {
         const r = d.resumen.find((x) => x.contador.id === c.id)
@@ -37,7 +37,8 @@ export function Contadores({ hoy }: { hoy: string }) {
             <div className="fila entre">
               <div className="col" style={{ gap: 0 }}>
                 <b>{c.nombre}{!c.activo && <span className="etiqueta" style={{ marginLeft: 6 }}>inactivo</span>}</b>
-                <span className="chico texto-3">+{c.cantidadPorToque} por toque · meta diaria {c.metaDiaria}{c.metaSemanal ? ` · semanal ${c.metaSemanal}` : ''} · +{c.xpMetaDiaria} XP</span>
+                <span className="chico texto-3">+{c.cantidadPorToque} por toque · cuota {c.metaDiaria} (+{c.xpMetaDiaria} XP) · extra {c.metaExtra ?? extraPorDefecto(c.metaDiaria)} (+{c.xpExtra ?? 10} XP){c.metaSemanal ? ` · semanal ${c.metaSemanal}` : ''}</span>
+                {subidasDeCuota(c).length > 1 && <span className="linea-cuota">Cuota: {subidasDeCuota(c).map((x, i) => (i === 0 ? `${x.cuota}` : `${x.cuota} (${fechaLegible(x.desde)})`)).join(' → ')}</span>}
                 {r && <span className="chico texto-2">Hoy {r.hoy} · semana {r.semana} · ciclo {r.ciclo}{r.record ? ` · récord ${r.record.total}` : ''}</span>}
               </div>
               <div className="col" style={{ gap: 4 }}>
@@ -72,13 +73,16 @@ function EditarContador({ contador, atributos, onCerrar }: { contador: Contador 
   const [nombre, setNombre] = useState(contador?.nombre ?? '')
   const [porToque, setPorToque] = useState(contador?.cantidadPorToque ?? 10)
   const [metaDiaria, setMetaDiaria] = useState(contador?.metaDiaria ?? 50)
+  const [extraManual, setExtraManual] = useState<number | null>(contador?.metaExtra !== undefined && contador.metaExtra !== extraPorDefecto(contador.metaDiaria) ? contador.metaExtra : null)
+  const extra = extraManual ?? extraPorDefecto(metaDiaria)
+  const [xpExtra, setXpExtra] = useState(contador?.xpExtra ?? 10)
   const [metaSemanal, setMetaSemanal] = useState(contador?.metaSemanal ?? 0)
   const [xp, setXp] = useState(contador?.xpMetaDiaria ?? 10)
   const [atributoIds, setAtributoIds] = useState<string[]>(contador?.atributoIds ?? ['fisico'])
   const [activo, setActivo] = useState(contador?.activo ?? true)
   const [errores, setErrores] = useState<string[]>([])
   const guardar = async () => {
-    const base = { id: contador?.id ?? nuevoIdContador(), nombre, cantidadPorToque: porToque, metaDiaria, metaSemanal: metaSemanal > 0 ? metaSemanal : undefined, xpMetaDiaria: xp, atributoIds, activo }
+    const base = { id: contador?.id ?? nuevoIdContador(), nombre, cantidadPorToque: porToque, metaDiaria, metaSemanal: metaSemanal > 0 ? metaSemanal : undefined, xpMetaDiaria: xp, metaExtra: extra, xpExtra, atributoIds, activo, ...(contador ? { pasoSubida: contador.pasoSubida, historialCuota: contador.historialCuota, proximaPropuesta: contador.proximaPropuesta } : {}) }
     const errs = validarContador(base)
     if (errs.length) return setErrores(errs)
     await mutar(() => guardarContador(base))
@@ -90,9 +94,11 @@ function EditarContador({ contador, atributos, onCerrar }: { contador: Contador 
       <div className="campo"><label>Nombre</label><input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej.: Sentadillas" /></div>
       <div className="rejilla-2">
         <div className="campo"><label>Cuánto suma cada toque</label><input type="number" inputMode="numeric" min={1} value={porToque} onChange={(e) => setPorToque(Number(e.target.value))} /><span className="ayuda">Subilo cuando aumentes las series.</span></div>
-        <div className="campo"><label>Meta diaria</label><input type="number" inputMode="numeric" min={1} value={metaDiaria} onChange={(e) => setMetaDiaria(Number(e.target.value))} /><span className="ayuda">{porToque > 0 ? `${Math.ceil(metaDiaria / porToque)} toques` : ''}</span></div>
+        <div className="campo"><label>Cuota diaria</label><input type="number" inputMode="numeric" min={1} value={metaDiaria} onChange={(e) => setMetaDiaria(Number(e.target.value))} /><span className="ayuda">{porToque > 0 ? `${Math.ceil(metaDiaria / porToque)} toques` : ''}</span></div>
+        <div className="campo"><label>Extra</label><input type="number" inputMode="numeric" min={1} value={extra} onChange={(e) => setExtraManual(Number(e.target.value))} /><span className="ayuda">{extraManual === null ? '1,5 × la cuota' : <button type="button" className="enlace" onClick={() => setExtraManual(null)}>volver a 1,5 × cuota</button>}</span></div>
+        <div className="campo"><label>XP de la cuota</label><input type="number" inputMode="numeric" min={0} max={100} value={xp} onChange={(e) => setXp(Number(e.target.value))} /></div>
+        <div className="campo"><label>XP del extra</label><input type="number" inputMode="numeric" min={0} max={100} value={xpExtra} onChange={(e) => setXpExtra(Number(e.target.value))} /></div>
         <div className="campo"><label>Meta semanal (opcional)</label><input type="number" inputMode="numeric" min={0} value={metaSemanal} onChange={(e) => setMetaSemanal(Number(e.target.value))} /></div>
-        <div className="campo"><label>XP al llegar a la meta</label><input type="number" inputMode="numeric" min={0} max={100} value={xp} onChange={(e) => setXp(Number(e.target.value))} /></div>
       </div>
       <div className="campo"><label>Atributo que alimenta</label><Chips opciones={atributos} valor={atributoIds} onChange={setAtributoIds} multiple /></div>
       {contador && <label className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={activo} onChange={(e) => setActivo(e.target.checked)} /> Activo (aparece en Hoy)</label>}

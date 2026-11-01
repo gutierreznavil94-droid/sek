@@ -138,10 +138,28 @@ export type Contador = {
   metaSemanal?: number
   /** XP al llegar a la meta diaria (una vez por día). */
   xpMetaDiaria: number
+  /** Segundo tope del día (por defecto 1,5 × la cuota). */
+  metaExtra?: number
+  /** XP adicional al llegar al extra (una vez por día). Por defecto 10. */
+  xpExtra?: number
+  /** Cuánto sube la cuota cuando la app propone subirla (por defecto ~7 % de la cuota). */
+  pasoSubida?: number
+  /** Cambios de cuota: cada uno vale desde su fecha. Los días anteriores conservan la que tenían. */
+  historialCuota?: CambioCuota[]
+  /** No proponer subir la cuota antes de esta fecha. */
+  proximaPropuesta?: FechaDia
   atributoIds: string[]
   orden: number
   activo: boolean
   creado: number
+}
+
+export type CambioCuota = {
+  desde: FechaDia
+  cuota: number
+  extra: number
+  porToque: number
+  motivo: 'inicio' | 'sugerida' | 'manual'
 }
 
 export type RegistroContador = {

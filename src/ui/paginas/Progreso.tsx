@@ -162,8 +162,10 @@ export function Progreso({ hoy }: { hoy: string }) {
                 <div className="av-tarjeta-titulo"><span>Series rápidas</span><span className="av-nota">hoy · semana · récord</span></div>
                 {d.contadores.map((c) => (
                   <div key={c.contador.id} className="av-atributo">
-                    <div className="av-atributo-fila"><span>{c.contador.nombre}</span><span className="av-mono"><b className={c.metaLogradaHoy ? 'av-rojo' : ''}>{c.hoy}</b><span className="av-nota">/{c.contador.metaDiaria}</span> · {c.semana} · {c.record ? c.record.total : '—'}</span></div>
-                    <div className="av-barra fina" aria-hidden="true"><div style={{ width: `${Math.min(100, (100 * c.hoy) / Math.max(1, c.contador.metaDiaria))}%` }} /></div>
+                    <div className="av-atributo-fila"><span>{c.contador.nombre}</span><span className="av-mono"><b className={c.metaLogradaHoy ? 'av-rojo' : ''}>{c.hoy}</b><span className="av-nota">/{c.cuotaHoy}</span> · {c.semana} · {c.record ? c.record.total : '—'}</span></div>
+                    <div className="av-barra fina" aria-hidden="true"><div style={{ width: `${Math.min(100, (100 * c.hoy) / Math.max(1, c.cuotaHoy))}%` }} /></div>
+                    <div className="av-nota">{c.diasConMeta} {c.diasConMeta === 1 ? 'día' : 'días'} en cuota · {c.diasConExtra} en extra</div>
+                    {c.subidas.length > 1 && <div className="av-nota">Cuota: {c.subidas.map((x, i) => (i === 0 ? `${x.cuota}` : `${x.cuota} (${fechaLegible(x.desde)})`)).join(' → ')}</div>}
                   </div>
                 ))}
               </section>
