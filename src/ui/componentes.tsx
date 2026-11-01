@@ -1,5 +1,6 @@
 import { Divisor } from './Divisor'
 import { useEffect, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { nivelCumplimiento } from '../domain/cumplimiento'
 import { useAvisos, quitarAviso } from './estado'
@@ -45,7 +46,9 @@ export function Hoja({ abierta, onCerrar, children, titulo }: { abierta: boolean
     return () => window.removeEventListener('keydown', onKey)
   }, [abierta, onCerrar])
   if (!abierta) return null
-  return (
+  // Se dibuja al nivel de la app (no dentro del contenido) para quedar por encima de la barra de abajo.
+  const destino = (typeof document !== 'undefined' && (document.querySelector('.app') ?? document.body)) || null
+  const hoja = (
     <div className="fondo-modal" onClick={onCerrar}>
       <div className="hoja" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         {titulo ? (
@@ -66,6 +69,7 @@ export function Hoja({ abierta, onCerrar, children, titulo }: { abierta: boolean
       </div>
     </div>
   )
+  return destino ? createPortal(hoja, destino) : hoja
 }
 
 /** Botón (i) que abre una explicación de de dónde sale un número. */
