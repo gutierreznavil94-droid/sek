@@ -18,6 +18,7 @@ const SECCIONES = [
   { a: '/mas/entrenamiento', t: 'Entrenamiento y descanso', d: 'Días y horas, hora de acostarse, objetivo de sueño' },
   { a: '/mas/suenio', t: 'Sueño y ritmo', d: 'Cuánto dormís, a qué hora te dormís y te levantás; la app lo aprende sola' },
   { a: '/mas/alarmas', t: 'Alarmas del teléfono', d: 'Qué cargar en el reloj de Android' },
+  { a: '/mas/sincronizar', t: 'Sincronizar', d: 'Los mismos datos en el celu y en la compu' },
   { a: '/mas/copia', t: 'Copia de seguridad', d: 'Exportar e importar (JSON, CSV)' },
   { a: '/mas/historial', t: 'Historial de cambios', d: 'Todo lo que se registró o corrigió' },
   { a: '/mas/animaciones', t: 'Ver animaciones', d: 'El shinobi: vista previa, cuándo se muestran, sonido y nombre' },

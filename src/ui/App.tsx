@@ -22,6 +22,7 @@ import { Atributos } from './paginas/Atributos'
 import { Calendario } from './paginas/Calendario'
 import { CierreFase } from './paginas/CierreFase'
 import { Copia } from './paginas/Copia'
+import { Sincronizar } from './paginas/Sincronizar'
 import { Entrenamiento } from './paginas/Entrenamiento'
 import { Historial } from './paginas/Historial'
 import { Hoy } from './paginas/Hoy'
@@ -192,6 +193,7 @@ function Rutas() {
         <Route path="/mas/entrenamiento" element={<Entrenamiento hoy={hoy} />} />
         <Route path="/mas/alarmas" element={<AlarmasTelefono />} />
         <Route path="/mas/copia" element={<Copia />} />
+        <Route path="/mas/sincronizar" element={<Sincronizar />} />
         <Route path="/mas/ajustes" element={<Ajustes />} />
         <Route path="/mas/suenio" element={<Suenio hoy={hoy} />} />
         <Route path="/mas/animaciones" element={<Suspense fallback={<Cargando />}><VerAnimaciones /></Suspense>} />

@@ -4,8 +4,10 @@ import { registerSW } from 'virtual:pwa-register'
 import { App } from './ui/App'
 import './ui/estilos.css'
 import { aplicarMovimiento } from './ui/componentes'
+import { iniciarSincronizacion } from './sync/sincronizar'
 
 aplicarMovimiento()
+void iniciarSincronizacion()
 
 // Busca una versión nueva al abrir, al volver a primer plano y cada hora.
 // Con «autoUpdate», cuando la hay se instala y la página se recarga sola.
