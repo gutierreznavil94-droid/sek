@@ -1341,3 +1341,4 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 .entreno-fase.ok { color: var(--verde, #6FAF8E); }
 .entreno-barra.cronometro > div { background: var(--verde, #6FAF8E); }
 .entreno-tiempo { padding: 10px 12px; border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo-2); }
+.entreno-reloj.verde { color: var(--verde, #6FAF8E); }
