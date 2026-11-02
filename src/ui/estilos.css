@@ -1396,3 +1396,32 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 .sh-kanji.sh-pv-kanji { animation-name: sh-pv-kanji; }
 @keyframes sh-pv-revela { from { -webkit-mask-position: 100% 0; mask-position: 100% 0 } to { -webkit-mask-position: 0 0; mask-position: 0 0 } }
 @keyframes sh-pv-sale { to { opacity: 0 } }
+
+/* ===== v0.36: reps por serie ===== */
+.campo .campo-calculado { display: flex; align-items: center; min-height: 44px; padding: 10px 12px; border-radius: 10px; border: 1px dashed var(--borde); color: var(--texto-2); font-weight: 700; }
+/* Series rápidas en Progreso: escalones de reps por serie y días del ciclo (tinta) */
+.sr-bloque { display: flex; flex-direction: column; gap: 6px; }
+.sr-sub { margin-top: 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; opacity: .8; }
+.sr-escalones { width: 100%; height: auto; display: block; overflow: visible; }
+.sr-escalones .sr-base { stroke: rgba(var(--papel-rgb), .18); stroke-width: 1; }
+.sr-escalones .sr-linea { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 1.5px rgba(var(--papel-rgb), .35)); }
+.sr-escalones .sr-punto { fill: currentColor; }
+.sr-escalones .sr-punto.subida { fill: var(--verde); stroke: var(--av-tinta, #121110); stroke-width: 2; }
+.sr-escalones .sr-paso { cursor: pointer; }
+.sr-escalones .sr-paso.sel .sr-punto { fill: #A6E6C1; filter: drop-shadow(0 0 5px rgba(var(--verde-rgb), .9)); }
+.sr-escalones .sr-valor { fill: currentColor; font: 700 12px var(--mono, ui-monospace, monospace); }
+.sr-escalones .sr-valor.fin { opacity: .8; font-weight: 600; }
+.sr-escalones .sr-fecha { fill: currentColor; opacity: .7; font-size: 10px; }
+.sr-dias { display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 3px; }
+.sr-dia { aspect-ratio: 1; min-height: 0; padding: 0; border: 0; border-radius: 4px; cursor: pointer; display: inline-block; }
+.sr-dia.no { background: rgba(var(--papel-rgb), .16); }
+.sr-dia.cuota { background: var(--verde); }
+.sr-dia.extra { background: #A6E6C1; box-shadow: 0 0 8px rgba(var(--verde-rgb), .75); }
+.sr-dia.hoy { outline: 1.5px solid rgba(var(--papel-rgb), .85); outline-offset: 1px; }
+.sr-dia.sel { outline: 2px solid #A6E6C1; outline-offset: 1px; }
+.sr-leyenda { display: flex; gap: 12px; font-size: 11px; opacity: .85; }
+.sr-leyenda span { display: inline-flex; align-items: center; gap: 5px; }
+.sr-leyenda .sr-dia { width: 10px; height: 10px; cursor: default; }
+.sr-detalle b { font-weight: 700; }
+.progreso-tinta[data-vidrio="claro"] .sr-dia.no { background: rgba(18, 17, 16, .12); }
+.progreso-tinta[data-vidrio="claro"] .sr-escalones .sr-base { stroke: rgba(18, 17, 16, .2); }

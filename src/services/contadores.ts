@@ -9,8 +9,8 @@ import { CONTADORES_INICIALES } from '../data/semilla'
 import type { CambioCuota, Contador, RegistroContador } from '../data/tipos'
 import { lunesDe, sumarDias, type FechaDia } from '../domain/fechas'
 import { claveXp } from '../domain/xp'
-import { cuotaDelDia, extraPorDefecto, pasoDeSubida, subidasDeCuota } from '../domain/cuotas'
-export { cuotaDelDia, extraPorDefecto, pasoDeSubida, subidasDeCuota }
+import { cuotaDelDia, cuotaDeSeries, extraPorDefecto, pasoDeSubida, repsDelDia, seriesDe, subidasDeCuota, subidasDeReps } from '../domain/cuotas'
+export { cuotaDelDia, cuotaDeSeries, extraPorDefecto, pasoDeSubida, repsDelDia, seriesDe, subidasDeCuota, subidasDeReps }
 import { fechaHoy, registrarEvento } from './base'
 import { cicloActivo } from './ciclo'
 import { ahora, nuevoId } from './reloj'
@@ -28,11 +28,12 @@ export async function listarContadores(incluirInactivos = false): Promise<Contad
   return incluirInactivos ? todos : todos.filter((c) => c.activo)
 }
 
-export function validarContador(c: Pick<Contador, 'nombre' | 'cantidadPorToque' | 'metaDiaria' | 'xpMetaDiaria'> & { metaExtra?: number }): string[] {
+export function validarContador(c: Pick<Contador, 'nombre' | 'cantidadPorToque' | 'metaDiaria' | 'xpMetaDiaria'> & { metaExtra?: number; seriesPorDia?: number }): string[] {
   const e: string[] = []
+  if (c.seriesPorDia !== undefined && !(c.seriesPorDia >= 1 && Number.isInteger(c.seriesPorDia))) e.push('Las series por día tienen que ser 1 o más')
   if (c.metaExtra !== undefined && !(c.metaExtra > c.metaDiaria)) e.push('El extra tiene que ser mayor que la cuota')
   if (!c.nombre.trim()) e.push('Ponele un nombre')
-  if (!(c.cantidadPorToque > 0)) e.push('La cantidad por toque tiene que ser mayor que 0')
+  if (!(c.cantidadPorToque > 0)) e.push('Las reps por serie tienen que ser más que 0')
   if (!(c.metaDiaria > 0)) e.push('La meta diaria tiene que ser mayor que 0')
   if (c.xpMetaDiaria < 0) e.push('El XP no puede ser negativo')
   return e
@@ -54,6 +55,7 @@ export async function guardarContador(c: Omit<Contador, 'creado' | 'orden'> & { 
     const orden = c.orden ?? antes?.orden ?? (await d.contadores.count()) + 1
     const despues: Contador = { ...c, nombre: c.nombre.trim(), orden, creado: antes?.creado ?? ahora() }
     if (despues.metaExtra === undefined) despues.metaExtra = extraPorDefecto(despues.metaDiaria)
+    if (!despues.seriesPorDia) despues.seriesPorDia = seriesDe(despues)
     // Si cambió la cuota, el extra o el toque, queda anotado desde hoy; los días pasados conservan lo que tenían.
     const previo = antes ? vigenteActual(antes, DESDE_SIEMPRE, 'inicio') : null
     const nuevo = vigenteActual(despues, hoy, motivo)
@@ -61,7 +63,7 @@ export async function guardarContador(c: Omit<Contador, 'creado' | 'orden'> & { 
     if (previo && (previo.cuota !== nuevo.cuota || previo.extra !== nuevo.extra || previo.porToque !== nuevo.porToque)) {
       historial = historial.filter((x) => x.desde < hoy)
       historial.push(nuevo)
-      if (previo.cuota !== nuevo.cuota) despues.proximaPropuesta = sumarDias(hoy, 3)
+      if (previo.cuota !== nuevo.cuota || previo.porToque !== nuevo.porToque) despues.proximaPropuesta = sumarDias(hoy, 3)
     }
     despues.historialCuota = historial
     await d.contadores.put(despues)
@@ -73,10 +75,17 @@ export async function guardarContador(c: Omit<Contador, 'creado' | 'orden'> & { 
   return guardado
 }
 
-export type PropuestaSubida = { contadorId: string; nombre: string; de: number; a: number; extra: number }
+/** Propuesta: subir las reps por serie (de → a). La cuota pasa a a × series y el extra a 1,5 × la cuota. */
+export type PropuestaSubida = { contadorId: string; nombre: string; de: number; a: number; series: number; cuota: number; extra: number }
+
+function propuestaPara(c: Contador): PropuestaSubida {
+  const series = seriesDe(c)
+  const a = c.cantidadPorToque + pasoDeSubida(c)
+  return { contadorId: c.id, nombre: c.nombre, de: c.cantidadPorToque, a, series, ...cuotaDeSeries(a, series) }
+}
 
 /**
- * Si cumplió la cuota los últimos 3 días (ayer, anteayer y el anterior), propone subirla.
+ * Si cumplió la cuota los últimos 3 días (ayer, anteayer y el anterior), propone subir las reps por serie.
  * Nunca sube sola. Después de responder (sí o todavía no), no vuelve a proponer hasta 3 días después.
  */
 export async function propuestaDeSubida(c: Contador, hoy: FechaDia): Promise<PropuestaSubida | null> {
@@ -89,8 +98,7 @@ export async function propuestaDeSubida(c: Contador, hoy: FechaDia): Promise<Pro
     const f = sumarDias(hoy, -i)
     if ((totales.get(f) ?? 0) < cuotaDelDia(c, f).cuota) return null
   }
-  const a = c.metaDiaria + pasoDeSubida(c)
-  return { contadorId: c.id, nombre: c.nombre, de: c.metaDiaria, a, extra: extraPorDefecto(a) }
+  return propuestaPara(c)
 }
 
 export async function propuestasDeSubida(hoy: FechaDia): Promise<PropuestaSubida[]> {
@@ -102,21 +110,21 @@ export async function propuestasDeSubida(hoy: FechaDia): Promise<PropuestaSubida
   return r
 }
 
-/** «Sí»: sube la cuota desde hoy y recalcula el extra. «Todavía no»: vuelve a proponer en 3 días. */
+/** «Sí»: sube las reps por serie desde hoy; la cuota y el extra se recalculan. «Todavía no»: vuelve a proponer en 3 días. */
 export async function responderPropuesta(contadorId: string, acepta: boolean): Promise<Contador> {
   const d = db()
   const c = await d.contadores.get(contadorId)
   if (!c) throw new Error(`Contador ${contadorId} no existe`)
   const hoy = await fechaHoy()
   if (acepta) {
-    const a = c.metaDiaria + pasoDeSubida(c)
+    const p = propuestaPara(c)
     const { creado: _c, ...resto } = c
     void _c
-    return guardarContador({ ...resto, metaDiaria: a, metaExtra: extraPorDefecto(a) }, 'sugerida')
+    return guardarContador({ ...resto, cantidadPorToque: p.a, seriesPorDia: p.series, metaDiaria: p.cuota, metaExtra: p.extra }, 'sugerida')
   }
   const despues = { ...c, proximaPropuesta: sumarDias(hoy, 3) }
   await d.contadores.put(despues)
-  await registrarEvento({ tipo: 'editar', entidad: 'contador', entidadId: c.id, antes: c, despues, motivo: 'Todavía no subir la cuota' })
+  await registrarEvento({ tipo: 'editar', entidad: 'contador', entidadId: c.id, antes: c, despues, motivo: 'Todavía no subir las reps por serie' })
   return despues
 }
 
@@ -226,6 +234,13 @@ export type ResumenContador = {
   subidas: { desde: FechaDia; cuota: number }[]
   /** Últimos 14 días, de más viejo a hoy. */
   porDia: { fecha: FechaDia; total: number }[]
+  /** Reps por serie y series por día de hoy. */
+  repsHoy: number
+  series: number
+  /** Escalones de reps por serie (el primero es el valor inicial). */
+  escalonesReps: { desde: FechaDia; reps: number }[]
+  /** Cada día del ciclo hasta hoy, con lo que valía la cuota y el extra ese día. */
+  diasCiclo: { fecha: FechaDia; total: number; cuota: number; extra: number; reps: number }[]
 }
 
 export async function resumenContadores(hoy: FechaDia): Promise<ResumenContador[]> {
@@ -255,9 +270,13 @@ export async function resumenContadores(hoy: FechaDia): Promise<ResumenContador[
       const f = sumarDias(hoy, i - 13)
       return { fecha: f, total: totales.get(f) ?? 0 }
     })
+    const diasCiclo: ResumenContador['diasCiclo'] = []
+    if (ciclo && ciclo.inicio <= hoy) {
+      for (let f = ciclo.inicio; f <= hoy; f = sumarDias(f, 1)) diasCiclo.push({ fecha: f, total: totales.get(f) ?? 0, ...cuotaDelDia(c, f), reps: repsDelDia(c, f) })
+    }
     const deHoy = totales.get(hoy) ?? 0
     const q = cuotaDelDia(c, hoy)
-    resultado.push({ contador: c, hoy: deHoy, toquesHoy: regsHoy, semana, ciclo: total, record, diasConMeta, diasConExtra, metaLogradaHoy: deHoy >= q.cuota, extraLogradoHoy: deHoy >= q.extra, cuotaHoy: q.cuota, extraHoy: q.extra, subidas: subidasDeCuota(c), porDia })
+    resultado.push({ repsHoy: repsDelDia(c, hoy), series: seriesDe(c), escalonesReps: subidasDeReps(c), diasCiclo, contador: c, hoy: deHoy, toquesHoy: regsHoy, semana, ciclo: total, record, diasConMeta, diasConExtra, metaLogradaHoy: deHoy >= q.cuota, extraLogradoHoy: deHoy >= q.extra, cuotaHoy: q.cuota, extraHoy: q.extra, subidas: subidasDeCuota(c), porDia })
   }
   return resultado
 }

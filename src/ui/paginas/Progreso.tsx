@@ -8,7 +8,7 @@ import { obtenerAjustes } from '../../services/base'
 import { estadoDelCiclo } from '../../services/ciclo'
 import { atributosHoy, cumplimientoPorDia, pilaresPorDia, rachaActual, type EstadoPilar } from '../../services/dia'
 import { xpAntesDe, xpPorDia, xpTotal } from '../../services/xp'
-import { resumenContadores } from '../../services/contadores'
+import { resumenContadores, type ResumenContador } from '../../services/contadores'
 import { duracionSuenio, resumenSuenio, type ResumenSuenio } from '../../services/suenio'
 import { kg, resumenFuerza, type ResumenFuerza } from '../../services/entreno'
 import { Hoja, clasePorcentaje, elegirMovimiento, movimientoReducido } from '../componentes'
@@ -169,18 +169,11 @@ export function Progreso({ hoy }: { hoy: string }) {
               </section>
             )}
 
-            {/* Series rápidas (flexiones, dominadas…) */}
+            {/* Series rápidas: reps por serie (escalones) y cumplimiento por día */}
             {d.contadores.length > 0 && (
               <section className="av-tarjeta">
                 <div className="av-tarjeta-titulo"><span>Series rápidas</span><span className="av-nota">hoy · semana · récord</span></div>
-                {d.contadores.map((c) => (
-                  <div key={c.contador.id} className="av-atributo">
-                    <div className="av-atributo-fila"><span>{c.contador.nombre}</span><span className="av-mono"><b className={c.metaLogradaHoy ? 'av-rojo' : ''}>{c.hoy}</b><span className="av-nota">/{c.cuotaHoy}</span> · {c.semana} · {c.record ? c.record.total : '—'}</span></div>
-                    <div className="av-barra fina" aria-hidden="true"><div style={{ width: `${Math.min(100, (100 * c.hoy) / Math.max(1, c.cuotaHoy))}%` }} /></div>
-                    <div className="av-nota">{c.diasConMeta} {c.diasConMeta === 1 ? 'día' : 'días'} en cuota · {c.diasConExtra} en extra</div>
-                    {c.subidas.length > 1 && <div className="av-nota">Cuota: {c.subidas.map((x, i) => (i === 0 ? `${x.cuota}` : `${x.cuota} (${fechaLegible(x.desde)})`)).join(' → ')}</div>}
-                  </div>
-                ))}
+                {d.contadores.map((c) => <SerieRapida key={c.contador.id} c={c} hoy={hoy} />)}
               </section>
             )}
 
@@ -683,5 +676,101 @@ function TarjetaFuerza({ f }: { f: ResumenFuerza }) {
         <div className="av-nota">Con tu primer entreno en modo juego aparecen acá tus récords y tu volumen.</div>
       )}
     </section>
+  )
+}
+
+/** Fecha corta para etiquetas: "8 nov". */
+function diaMes(f: string): string {
+  return fechaLegible(f).split(' ').slice(1).join(' ')
+}
+
+/**
+ * Una serie rápida en Progreso: el resumen de hoy, los escalones de reps por
+ * serie (cada subida con su fecha) y una tira de días del ciclo: gris papel si
+ * no llegó, verde en la cuota, verde brillante con brillo en el extra.
+ */
+function SerieRapida({ c, hoy }: { c: ResumenContador; hoy: string }) {
+  const [diaSel, setDiaSel] = useState<string | null>(null)
+  const [escSel, setEscSel] = useState<number | null>(null)
+  const dias = c.diasCiclo
+  const cuotaDias = dias.filter((x) => x.total >= x.cuota).length
+  const extraDias = dias.filter((x) => x.total >= x.extra).length
+  const elegido = diaSel ? dias.find((x) => x.fecha === diaSel) : undefined
+  const nombre = c.contador.nombre.toLowerCase()
+
+  // Escalones: del primer día del ciclo (o de la primera subida) a hoy
+  const W = 320
+  const H = 92
+  const mi = { arriba: 22, abajo: 18, izq: 8, der: 30 }
+  const inicio = dias[0]?.fecha ?? hoy
+  const pasos = c.escalonesReps.map((e) => ({ ...e, desde: e.desde < inicio ? inicio : e.desde }))
+  const total = Math.max(1, diferenciaDias(inicio, hoy))
+  const repsMin = Math.min(...pasos.map((p) => p.reps))
+  const repsMax = Math.max(...pasos.map((p) => p.reps))
+  const yMin = repsMin - 1
+  const yMax = Math.max(repsMax + 1, yMin + 3)
+  const x = (f: string) => mi.izq + (Math.min(total, Math.max(0, diferenciaDias(inicio, f))) / total) * (W - mi.izq - mi.der)
+  const y = (r: number) => mi.arriba + (1 - (r - yMin) / (yMax - yMin)) * (H - mi.arriba - mi.abajo)
+  let ruta = ''
+  pasos.forEach((p, i) => {
+    const x0 = x(p.desde)
+    const x1 = i + 1 < pasos.length ? x(pasos[i + 1].desde) : x(hoy)
+    ruta += i === 0 ? `M${x0.toFixed(1)},${y(p.reps).toFixed(1)}` : ` L${x0.toFixed(1)},${y(p.reps).toFixed(1)}`
+    ruta += ` L${x1.toFixed(1)},${y(p.reps).toFixed(1)}`
+  })
+  const pasoElegido = escSel !== null ? pasos[escSel] : undefined
+
+  return (
+    <div className="av-atributo sr-bloque">
+      <div className="av-atributo-fila"><span>{c.contador.nombre} <span className="av-nota">· {c.repsHoy} por serie × {c.series}</span></span><span className="av-mono"><b className={c.metaLogradaHoy ? 'av-rojo' : ''}>{c.hoy}</b><span className="av-nota">/{c.cuotaHoy}</span> · {c.semana} · {c.record ? c.record.total : '—'}</span></div>
+      <div className="av-barra fina" aria-hidden="true"><div style={{ width: `${Math.min(100, (100 * c.hoy) / Math.max(1, c.cuotaHoy))}%` }} /></div>
+
+      <div className="sr-sub">Reps por serie</div>
+      <svg className="sr-escalones" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Reps por serie de ${nombre}: ${pasos.map((p, i) => (i === 0 ? `${p.reps}` : `${p.reps} desde el ${fechaLegible(p.desde, false)}`)).join(', ')}`}>
+        <line className="sr-base" x1={mi.izq} x2={W - mi.der} y1={H - mi.abajo} y2={H - mi.abajo} />
+        <path className="sr-linea" d={ruta} />
+        {pasos.map((p, i) => {
+          const px = x(p.desde)
+          const py = y(p.reps)
+          const subida = i > 0
+          return (
+            <g key={p.desde + i} className={`sr-paso ${escSel === i ? 'sel' : ''}`} onClick={() => setEscSel(escSel === i ? null : i)}>
+              <rect x={px - 16} y={py - 22} width={32} height={40} fill="transparent" />
+              <circle cx={px} cy={py} r={subida ? 4.5 : 3.5} className={subida ? 'sr-punto subida' : 'sr-punto'} />
+              <text x={px} y={py - 9} textAnchor={i === 0 ? 'start' : 'middle'} className="sr-valor">{p.reps}</text>
+              {subida && <text x={px} y={H - 4} textAnchor="middle" className="sr-fecha">{diaMes(p.desde)}</text>}
+            </g>
+          )
+        })}
+        <text x={W - mi.der + 4} y={y(pasos[pasos.length - 1].reps) + 4} className="sr-valor fin">{pasos[pasos.length - 1].reps}</text>
+      </svg>
+      <div className="av-nota">
+        {pasoElegido
+          ? (escSel === 0 ? `${pasoElegido.reps} por serie desde el inicio` : `Subiste a ${pasoElegido.reps} por serie el ${fechaLegible(pasoElegido.desde, false)}`)
+          : pasos.length > 1 ? `${pasos.length - 1} ${pasos.length === 2 ? 'subida' : 'subidas'} en el ciclo · tocá un punto` : 'Todavía sin subidas: la propuesta llega tras 3 días seguidos en cuota.'}
+      </div>
+
+      <div className="sr-sub">Cumplimiento por día</div>
+      {dias.length ? (
+        <>
+          <div className="sr-dias" role="list" aria-label={`Cumplimiento por día de ${nombre}`}>
+            {dias.map((x) => {
+              const estado = x.total >= x.extra ? 'extra' : x.total >= x.cuota ? 'cuota' : 'no'
+              return (
+                <button key={x.fecha} type="button" role="listitem" className={`sr-dia ${estado} ${x.fecha === hoy ? 'hoy' : ''} ${diaSel === x.fecha ? 'sel' : ''}`} onClick={() => setDiaSel(diaSel === x.fecha ? null : x.fecha)} aria-label={`${fechaLegible(x.fecha, false)}: ${x.total} de ${x.cuota}${estado === 'extra' ? ', extra' : estado === 'cuota' ? ', cuota' : ''}`} />
+              )
+            })}
+          </div>
+          <div className="sr-leyenda" aria-hidden="true"><span><i className="sr-dia no" />no llegó</span><span><i className="sr-dia cuota" />cuota</span><span><i className="sr-dia extra" />extra</span></div>
+          <div className="av-nota sr-detalle">
+            {elegido
+              ? <><b>{fechaLegible(elegido.fecha)}</b> · {elegido.total} {nombre} · cuota {elegido.cuota} · extra {elegido.extra}{elegido.total >= elegido.extra ? ' · extra ✓' : elegido.total >= elegido.cuota ? ' · cuota ✓' : ''}</>
+              : <>Cuota cumplida <b>{cuotaDias}</b> {cuotaDias === 1 ? 'día' : 'días'} · Extra <b>{extraDias}</b> {extraDias === 1 ? 'día' : 'días'} · tocá un día</>}
+          </div>
+        </>
+      ) : (
+        <div className="av-nota">Empieza el Día 1.</div>
+      )}
+    </div>
   )
 }

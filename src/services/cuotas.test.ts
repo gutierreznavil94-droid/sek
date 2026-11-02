@@ -3,7 +3,8 @@ import { db, usarBaseDePruebas } from '../data/db'
 import { instanteDe } from '../domain/fechas'
 import { inicializarSiHaceFalta } from './base'
 import { iniciarCiclo } from './ciclo'
-import { cuotaDelDia, deshacerUltimoToque, guardarContador, propuestaDeSubida, responderPropuesta, resumenContadores, sumarToque } from './contadores'
+import { cuotaDelDia, extraPorDefecto, repsDelDia, seriesDe, deshacerUltimoToque, guardarContador, propuestaDeSubida, responderPropuesta, resumenContadores, sumarToque } from './contadores'
+import { exportarTodo, importarTodo } from './exportar'
 import { fijarAhora, reiniciarReloj } from './reloj'
 import { xpTotal } from './xp'
 
@@ -76,13 +77,13 @@ describe('series con cuota y extra', () => {
     expect(r.metaLograda).toBe(false)
   })
 
-  it('propone subir la cuota tras 3 días cumplidos; «todavía no» espera 3 días; «sí» sube y recalcula el extra', async () => {
+  it('propone subir las reps por serie tras 3 días cumplidos; «todavía no» espera 3 días; «sí» sube reps, cuota y extra', async () => {
     for (const f of ['2026-11-02', '2026-11-03', '2026-11-04']) { dia(f); await tocar(5) }
     dia('2026-11-04')
     expect(await propuestaDeSubida(await flex(), '2026-11-04')).toBeNull() // hoy todavía no terminó
     dia('2026-11-05')
     const p = await propuestaDeSubida(await flex(), '2026-11-05')
-    expect(p).toMatchObject({ de: 70, a: 75, extra: 113 })
+    expect(p).toMatchObject({ de: 14, a: 15, series: 5, cuota: 75, extra: 113 })
     await responderPropuesta('flexiones', false)
     expect((await flex()).metaDiaria).toBe(70) // nunca sube sola
     for (const f of ['2026-11-05', '2026-11-06', '2026-11-07']) { dia(f); await tocar(5) }
@@ -92,10 +93,58 @@ describe('series con cuota y extra', () => {
     expect(await propuestaDeSubida(await flex(), '2026-11-08')).not.toBeNull()
     await responderPropuesta('flexiones', true)
     const c = await flex()
+    expect(c.cantidadPorToque).toBe(15)
+    expect(c.seriesPorDia).toBe(5)
     expect(c.metaDiaria).toBe(75)
     expect(c.metaExtra).toBe(113)
     expect(cuotaDelDia(c, '2026-11-07').cuota).toBe(70)
+    expect(repsDelDia(c, '2026-11-07')).toBe(14)
+    expect(repsDelDia(c, '2026-11-08')).toBe(15)
     expect(await propuestaDeSubida(c, '2026-11-08')).toBeNull()
+    // Cada toque suma la serie nueva: 5 toques = 75 = cuota
+    const r = await tocar(5)
+    expect(r.registro.cantidad).toBe(15)
+    expect(r.total).toBe(75)
+    expect(r.metaLograda).toBe(true)
+    const res = (await resumenContadores('2026-11-08')).find((x) => x.contador.id === 'flexiones')!
+    expect(res.escalonesReps.map((x) => x.reps)).toEqual([14, 15])
+    expect(res.escalonesReps[1].desde).toBe('2026-11-08')
+    expect(res.diasCiclo).toHaveLength(7)
+    expect(res.diasCiclo[0]).toMatchObject({ fecha: '2026-11-02', total: 70, cuota: 70, extra: 105, reps: 14 })
+    expect(res.diasCiclo[6]).toMatchObject({ fecha: '2026-11-08', total: 75, cuota: 75, reps: 15 })
+  })
+
+  it('dominadas también suben de a 1 rep por serie', async () => {
+    for (const f of ['2026-11-02', '2026-11-03', '2026-11-04']) { dia(f); for (let i = 0; i < 5; i++) await sumarToque('dominadas') }
+    dia('2026-11-05')
+    const dom = (await db().contadores.get('dominadas'))!
+    expect(await propuestaDeSubida(dom, '2026-11-05')).toMatchObject({ de: 7, a: 8, cuota: 40, extra: 60 })
+  })
+
+  it('editar a mano reps y series recalcula la cuota y el extra; datos viejos sin series migran a 5', async () => {
+    const viejo = await flex()
+    const { creado: _c, seriesPorDia: _s, ...resto } = viejo
+    void _c; void _s
+    await db().contadores.put({ ...viejo, seriesPorDia: undefined })
+    expect(seriesDe(await flex())).toBe(5)
+    dia('2026-11-03')
+    await guardarContador({ ...resto, cantidadPorToque: 16, seriesPorDia: 6, metaDiaria: 96, metaExtra: extraPorDefecto(96) })
+    const c = await flex()
+    expect(c.metaDiaria).toBe(96)
+    expect(c.metaExtra).toBe(144)
+    expect(cuotaDelDia(c, '2026-11-02')).toEqual({ cuota: 70, extra: 105 })
+    expect(c.proximaPropuesta).toBe('2026-11-06')
+  })
+
+  it('exportar e importar conserva reps por serie, series y su historial', async () => {
+    await responderPropuesta('flexiones', true)
+    const copia = await exportarTodo()
+    await usarBaseDePruebas(`cuotas-imp-${n}`)
+    await importarTodo(JSON.parse(JSON.stringify(copia)))
+    const c = await flex()
+    expect(c.cantidadPorToque).toBe(15)
+    expect(c.seriesPorDia).toBe(5)
+    expect(c.historialCuota?.map((x) => x.porToque)).toEqual([14, 15])
   })
 
   it('no propone si algún día de los últimos 3 no llegó a la cuota', async () => {

@@ -142,8 +142,12 @@ export type Contador = {
   metaExtra?: number
   /** XP adicional al llegar al extra (una vez por día). Por defecto 10. */
   xpExtra?: number
-  /** Cuánto sube la cuota cuando la app propone subirla (por defecto ~7 % de la cuota). */
+  /** (Viejo) paso de la cuota. Ya no se usa: ahora se suben las reps por serie. */
   pasoSubida?: number
+  /** Series por día (por defecto 5). La cuota es reps por serie × series. */
+  seriesPorDia?: number
+  /** Cuántas reps por serie sube cuando la app lo propone (por defecto 1). */
+  pasoReps?: number
   /** Cambios de cuota: cada uno vale desde su fecha. Los días anteriores conservan la que tenían. */
   historialCuota?: CambioCuota[]
   /** No proponer subir la cuota antes de esta fecha. */

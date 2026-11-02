@@ -362,10 +362,10 @@ export function Hoy({ hoy }: { hoy: string }) {
             <Link to="/mas/contadores" className="chico texto-3">ajustar ›</Link>
           </div>
           {d.propuestas.map((p) => (
-            <div key={p.contadorId} className="propuesta-cuota" role="group" aria-label={`Subir la cuota de ${p.nombre}`}>
-              <span><b>¿Subimos la cuota?</b> {p.nombre} <span className="mono" style={{ whiteSpace: 'nowrap' }}>{p.de} → {p.a}</span><span className="texto-3 chico" style={{ whiteSpace: "nowrap" }}> · extra {p.extra}</span></span>
+            <div key={p.contadorId} className="propuesta-cuota" role="group" aria-label={`Subir las reps por serie de ${p.nombre}`}>
+              <span><b>¿Subimos a {p.a} {p.nombre.toLowerCase()} por serie?</b> <span className="texto-3 chico" style={{ whiteSpace: 'nowrap' }}>{p.de} → {p.a} · cuota {p.cuota} · extra {p.extra}</span></span>
               <span className="fila" style={{ gap: 6 }}>
-                <button className="boton chico primario" onClick={() => mutar(() => responderPropuesta(p.contadorId, true)).then(() => avisar(`${p.nombre}: cuota ${p.a} desde hoy`, { tipo: 'ok' }))}>Sí</button>
+                <button className="boton chico primario" onClick={() => mutar(() => responderPropuesta(p.contadorId, true)).then(() => avisar(`${p.nombre}: ${p.a} por serie desde hoy · cuota ${p.cuota}`, { tipo: 'ok' }))}>Sí</button>
                 <button className="boton chico suave" onClick={() => mutar(() => responderPropuesta(p.contadorId, false)).then(() => avisar('Te lo vuelvo a proponer en 3 días'))}>Todavía no</button>
               </span>
             </div>

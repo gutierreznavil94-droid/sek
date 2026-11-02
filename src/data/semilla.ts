@@ -193,8 +193,8 @@ export const FERIADOS_INICIALES: Omit<Feriado, 'creado'>[] = [
 
 /** Contadores de series rápidas iniciales. Cantidad por toque y meta diaria se editan en «Más → Contadores». */
 export const CONTADORES_INICIALES: Omit<Contador, 'creado'>[] = [
-  { id: 'flexiones', nombre: 'Flexiones', cantidadPorToque: 14, metaDiaria: 70, xpMetaDiaria: 10, metaExtra: 105, xpExtra: 10, pasoSubida: 5, atributoIds: ['fisico'], orden: 1, activo: true },
-  { id: 'dominadas', nombre: 'Dominadas', cantidadPorToque: 7, metaDiaria: 35, xpMetaDiaria: 10, metaExtra: 53, xpExtra: 10, pasoSubida: 2, atributoIds: ['fisico'], orden: 2, activo: true },
+  { id: 'flexiones', nombre: 'Flexiones', cantidadPorToque: 14, metaDiaria: 70, xpMetaDiaria: 10, metaExtra: 105, xpExtra: 10, seriesPorDia: 5, atributoIds: ['fisico'], orden: 1, activo: true },
+  { id: 'dominadas', nombre: 'Dominadas', cantidadPorToque: 7, metaDiaria: 35, xpMetaDiaria: 10, metaExtra: 53, xpExtra: 10, seriesPorDia: 5, atributoIds: ['fisico'], orden: 2, activo: true },
 ]
 
 // ---------- Rutinas de entrenamiento (planilla «HORARIO FINAL 2026» de Navil) ----------
