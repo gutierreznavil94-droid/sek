@@ -181,7 +181,7 @@ p { margin: 0; }
 .leyenda i.bajo { background: var(--bajo-suave); border: 1px solid var(--bajo); }
 
 /* Modal / hoja inferior */
-.fondo-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55); z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
+.fondo-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55); z-index: 110; display: flex; align-items: flex-end; justify-content: center; }
 .hoja { background: var(--fondo-2); border-radius: 20px 20px 0 0; border-top: 1px solid var(--borde); width: 100%; max-width: 640px; max-height: 88dvh; overflow-y: auto; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; }
 .hoja .asa { width: 40px; height: 4px; border-radius: 2px; background: var(--borde); margin: -4px auto 4px; }
 
