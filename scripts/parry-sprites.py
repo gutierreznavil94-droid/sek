@@ -2,21 +2,20 @@
 
 Uso: python3 -I scripts/parry-sprites.py <dir_cuadros_png> <dir_salida>
 Los cuadros son los PNG del video a 24 fps (0001.png = primer cuadro).
-Tira: el rival se prepara (7–11), salta y ataca (13–24), choque (29, el más limpio; la app dibuja
-destello y chispas), se saltea el forcejeo y sigue el rebote: se separan, el rival sale despedido y
-vuelven a guardia (55–88). Los cuadros con hojas borrosas, dobles o dobladas (25–28, 30–54) quedan afuera.
+Tira: todos los cuadros seguidos del 13 al 100: el rival salta y ataca, choque (29; la app dibuja
+destello y chispas), forcejeo, se separan (55), el rival sale despedido y vuelven a guardia.
+No se saltea ni se pausa nada: Navil prefiere que sea súper fluido.
 """
 import sys, json
 import numpy as np
 from PIL import Image
 
-# (cuadro del video, cuántos cuadros de 24 fps se muestra). Todos los cuadros seguidos de cada tramo.
-# 1001–1003: cuadros intermedios del choque (29) al rebote (55), generados con
-#   ffmpeg minterpolate (mci, aobmc, bidir) sobre 28, 29, 55, 56, 57 -> o06, o07, o08.
-TIRA = [(n, 1) for n in range(13, 29)] + [(29, 3)] + [(1001, 1), (1002, 1), (1003, 1)] + [(n, 1) for n in range(55, 100)] + [(100, 2)]
+# (cuadro del video, cuántos cuadros de 24 fps se muestra). Todo seguido del 13 al 100, sin saltear
+# ni pausar nada (Navil prefiere que sea súper fluido aunque alguna hoja se vea rara en el forcejeo).
+TIRA = [(n, 1) for n in range(13, 101)]
 CUADROS = [n for n, _ in TIRA]
 CAJA = (40, 30, 945, 445)                           # x0, y0, x1, y1 en el video (sin la marca de Luma)
-ESCALA = 0.5                                         # 905 px de ancho -> 452 (escena grande)
+ESCALA = 0.45                                        # 905 px de ancho -> 407 (escena grande)
 CONTACTO = (462, 217)                                # donde se cruzan las hojas en el cuadro 29 (px del video)
 TEMAS = {
     'claro':  {'shinobi': (20, 20, 20), 'rival': (75, 75, 75)},
@@ -78,11 +77,11 @@ def cuadro(n, tema):
 for tema in TEMAS:
     celdas = [cuadro(n, tema) for n in CUADROS]
     w, h = celdas[0].size
-    cols = 8
+    cols = 10
     filas = (len(celdas) + cols - 1) // cols
     hoja = Image.new('RGBA', (w * cols, h * filas), (0, 0, 0, 0))
     for i, c in enumerate(celdas):
         hoja.paste(c, ((i % cols) * w, (i // cols) * h))
-    hoja.save(f'{salida}/parry-{tema}.webp', 'WEBP', quality=70, method=6, alpha_quality=78)
+    hoja.save(f'{salida}/parry-{tema}.webp', 'WEBP', quality=68, method=6, alpha_quality=75)
 
 print(json.dumps({'celda': [w, h], 'columnas': cols, 'filas': filas, 'cuadros': len(CUADROS), 'pies': round((432 - CAJA[1]) * ESCALA), 'tiempos': [t for _, t in TIRA], 'choque': CUADROS.index(29), 'contacto': [round((CONTACTO[0] - CAJA[0]) * ESCALA), round((CONTACTO[1] - CAJA[1]) * ESCALA)]}))

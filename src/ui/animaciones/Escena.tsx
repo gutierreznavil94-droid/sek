@@ -454,24 +454,23 @@ function Parry({ dur }: { dur: number }) {
 }
 
 /**
- * Parry hecho con el video de Luma de Navil (scripts/parry-sprites.py), todos los cuadros seguidos a 24 fps:
- * el rival salta y ataca, choque (pausa de impacto, destello, chispas y el kanji 忍 con su aura), tres cuadros
- * intermedios generados (minterpolate) hacia el rebote, se separan, el rival sale despedido y vuelven a guardia
- * hasta que la tela se asienta (sin cortar el movimiento: así no se traba al final).
+ * Parry hecho con el video de Luma de Navil (scripts/parry-sprites.py): los cuadros 13 a 100 seguidos a
+ * 24 fps, sin saltos ni pausas: el rival salta y ataca, choque (destello, chispas y el kanji 忍 con su aura),
+ * forcejeo, se separan, el rival sale despedido y vuelven a guardia hasta que la tela se asienta.
  */
-const PARRY_HOJA = { w: 452, h: 208, cols: 8, filas: 9 }
+const PARRY_HOJA = { w: 407, h: 187, cols: 10, filas: 9 }
 /** Cuántos cuadros de 24 fps se muestra cada celda de la hoja, en orden (velocidad natural del video). */
-const PARRY_TIEMPOS = [...Array(16).fill(1), 3, ...Array(48).fill(1), 2]
+const PARRY_TIEMPOS: number[] = Array(88).fill(1)
 const PARRY_CELDA_CHOQUE = 16
 const PARRY_TICKS = PARRY_TIEMPOS.reduce((a, b) => a + b, 0)
 const PARRY_INICIOS = PARRY_TIEMPOS.map((_, i) => PARRY_TIEMPOS.slice(0, i).reduce((a, b) => a + b, 0) / PARRY_TICKS)
 /** Momento del choque y del rebote (fracción de la duración). */
 const PARRY_CHOQUE = PARRY_INICIOS[PARRY_CELDA_CHOQUE]
-const PARRY_REBOTE = PARRY_INICIOS[PARRY_CELDA_CHOQUE + 1]
+const PARRY_REBOTE = PARRY_INICIOS[42] // cuadro 55: se separan
 const PARRY_CAJA = { x: 30, ancho: 300 }
 const PARRY_ALTO = (PARRY_CAJA.ancho * PARRY_HOJA.h) / PARRY_HOJA.w
-const PARRY_Y = SUELO_Y - (201 / PARRY_HOJA.h) * PARRY_ALTO
-const PARRY_CONTACTO = { x: PARRY_CAJA.x + (211 / PARRY_HOJA.w) * PARRY_CAJA.ancho, y: PARRY_Y + (94 / PARRY_HOJA.h) * PARRY_ALTO }
+const PARRY_Y = SUELO_Y - (181 / PARRY_HOJA.h) * PARRY_ALTO
+const PARRY_CONTACTO = { x: PARRY_CAJA.x + (190 / PARRY_HOJA.w) * PARRY_CAJA.ancho, y: PARRY_Y + (84 / PARRY_HOJA.h) * PARRY_ALTO }
 // Las hojas se cargan de antemano para que el primer parry no salga vacío.
 if (typeof Image !== 'undefined') for (const t of ['claro', 'oscuro']) { const im = new Image(); im.src = `${import.meta.env.BASE_URL}animaciones/parry/parry-${t}.webp`; im.decode?.().catch(() => undefined) }
 
