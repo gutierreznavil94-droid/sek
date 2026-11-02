@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { recordatorios } from '../../reminders/recordatorios'
+import { programarAlarmas } from '../../services/alarmas'
 import { Link } from 'react-router-dom'
 import { db } from '../../data/db'
 import { esHoraValida, fechaLegible, formatoHora, minutosDe, nombreDiaSemana, sumarDias } from '../../domain/fechas'
@@ -20,6 +22,10 @@ export function Entrenamiento({ hoy }: { hoy: string }) {
   const [horaEntreno, setHoraEntreno] = useState('07:00')
   const [minimo, setMinimo] = useState(30)
   const [horasPorDia, setHorasPorDia] = useState<Record<number, string>>({})
+  const [limiteInicio, setLimiteInicio] = useState('19:35')
+  const [avisoActivo, setAvisoActivo] = useState(true)
+  const [horaAviso, setHoraAviso] = useState('19:00')
+  const [permiso, setPermiso] = useState('')
   const [horaAlistarse, setHoraAlistarse] = useState('20:50')
   const [horaDejarCelu, setHoraDejarCelu] = useState('21:15')
   const [horaDormido, setHoraDormido] = useState('21:20')
@@ -34,6 +40,10 @@ export function Entrenamiento({ hoy }: { hoy: string }) {
     setHoraEntreno(d.entreno?.hora ?? '07:00')
     setMinimo(d.entreno?.minutosMinimos ?? 30)
     setHorasPorDia(d.entreno?.horasPorDia ?? {})
+    setLimiteInicio(d.entreno?.horaLimiteInicio ?? '19:35')
+    setAvisoActivo(d.entreno?.avisoInicio?.activo ?? true)
+    setHoraAviso(d.entreno?.avisoInicio?.hora ?? '19:00')
+    recordatorios.estadoPermiso().then(setPermiso).catch(() => {})
     setHoraAlistarse(d.ajustes.horaAlistarse)
     setHoraDejarCelu(d.ajustes.horaDejarCelu)
     setHoraDormido(d.ajustes.horaDormido)
@@ -49,7 +59,10 @@ export function Entrenamiento({ hoy }: { hoy: string }) {
     if (!esHoraValida(horaEntreno)) return avisar('Hora de entrenamiento inválida', { tipo: 'bajo' })
     const extras: Record<number, string> = {}
     for (const [k, v] of Object.entries(horasPorDia)) if (dias.includes(Number(k)) && v && v !== horaEntreno) { if (!esHoraValida(v)) return avisar('Hora inválida en un día', { tipo: 'bajo' }); extras[Number(k)] = v }
-    await mutar(() => guardarAccion({ ...d.entreno!, dias, hora: horaEntreno, minutosMinimos: minimo, horasPorDia: Object.keys(extras).length ? extras : undefined }))
+    if (!esHoraValida(limiteInicio) || !esHoraValida(horaAviso)) return avisar('Revisá la hora límite y la del aviso (HH:MM)', { tipo: 'bajo' })
+    if (avisoActivo && minutosDe(horaAviso) >= minutosDe(limiteInicio)) return avisar('El aviso tiene que ser antes de la hora límite para empezar', { tipo: 'bajo' })
+    await mutar(() => guardarAccion({ ...d.entreno!, dias, hora: horaEntreno, minutosMinimos: minimo, horasPorDia: Object.keys(extras).length ? extras : undefined, horaLimiteInicio: limiteInicio, avisoInicio: { activo: avisoActivo, hora: horaAviso } }))
+    programarAlarmas().catch(() => {})
     avisar('Entrenamiento guardado. Vale de hoy en adelante; los días pasados no cambian.', { tipo: 'ok' })
   }
   const guardarDescanso = async () => {
@@ -89,6 +102,14 @@ export function Entrenamiento({ hoy }: { hoy: string }) {
             </div>
           </details>
         )}
+        <div className="rejilla-2">
+          <div className="campo"><label>Empezar hasta</label><input type="time" value={limiteInicio} onChange={(e) => setLimiteInicio(e.target.value)} /><span className="ayuda">Si empieza después, el entreno cuenta pero el pilar queda tarde, sin XP. La hora de fin no importa.</span></div>
+          <div className="campo"><label>Aviso si no empezó</label><input type="time" value={horaAviso} disabled={!avisoActivo} onChange={(e) => setHoraAviso(e.target.value)} /><label className="fila chico" style={{ gap: 6 }}><input type="checkbox" checked={avisoActivo} onChange={(e) => setAvisoActivo(e.target.checked)} /> Aviso activo</label></div>
+        </div>
+        {avisoActivo && permiso !== 'granted' && permiso !== 'no disponible' && (
+          <button className="boton chico" onClick={() => recordatorios.pedirPermiso().then((ok) => { setPermiso(ok ? 'granted' : 'denied'); avisar(ok ? 'Notificaciones activadas' : 'El teléfono no dio permiso para notificaciones', { tipo: ok ? 'ok' : 'bajo' }) })}>Permitir notificaciones</button>
+        )}
+        <span className="ayuda">{recordatorios.capacidades().conAppCerrada ? 'El aviso suena aunque la app esté cerrada.' : 'En la versión web el aviso sale con la app abierta o recién minimizada (y como cartel en Hoy). Con la app de Android suena aunque esté cerrada.'}</span>
         <span className="ayuda">El cambio vale de hoy en adelante y no altera días pasados. El calendario y «próximo entrenamiento» lo reflejan.</span>
         <button className="boton primario ancho" onClick={guardarEntreno}>Guardar entrenamiento</button>
         {d.proximos.length > 0 && (

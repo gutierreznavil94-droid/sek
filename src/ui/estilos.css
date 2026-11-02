@@ -1521,3 +1521,6 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 /* Debajo de la cabecera el video es más claro (cielo y relámpagos): un degradado suave solo en esa franja */
 body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: calc(var(--av-arriba, 120px) + 90px); background: linear-gradient(to bottom, rgba(0, 0, 0, .28), rgba(0, 0, 0, 0)); pointer-events: none; z-index: 1; }
 .av-tarjeta.av-codigo-boton { flex-direction: row; align-items: center; text-align: left; }
+.entreno-tarde { margin: 4px 0 0; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(200, 16, 46, .6); background: rgba(200, 16, 46, .1); font-size: 14px; line-height: 1.4; }
+.aviso-entreno { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 10px 12px 9px 13px; border: 1px solid rgba(200, 16, 46, .7); background: linear-gradient(160deg, rgba(200, 16, 46, .16), rgba(18, 17, 16, .6)); box-shadow: 0 0 16px rgba(200, 16, 46, .2); margin-bottom: 4px; }
+.aviso-entreno .boton { flex: none; }

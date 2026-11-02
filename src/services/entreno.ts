@@ -14,9 +14,9 @@
 import { db } from '../data/db'
 import { RUTINAS_INICIALES } from '../data/semilla'
 import type { BloqueEjercicio, BloqueRutina, FaseDescanso, Rutina, SerieHecha, SesionEntreno, TiempoHecho } from '../data/tipos'
-import { diaSemanaDe, lunesDe, sumarDias, type FechaDia } from '../domain/fechas'
+import { diaSemanaDe, instanteDe, lunesDe, sumarDias, type FechaDia } from '../domain/fechas'
 import { claveXp } from '../domain/xp'
-import { fechaHoy, registrarEvento } from './base'
+import { fechaHoy, obtenerAjustes, registrarEvento } from './base'
 import { completarCompromiso, deshacerCompromiso, generarCompromisosDelDia, idCompromiso } from './dia'
 import { ahora } from './reloj'
 import { anularXp, concederXp } from './xp'
@@ -147,13 +147,23 @@ export async function sesionEnCurso(): Promise<SesionEntreno | undefined> {
   return lista.sort((a, b) => b.inicio - a.inicio)[0]
 }
 
+/** Si empezar a esta hora es tarde para el pilar (después de la hora límite de inicio, 19:35 por defecto). */
+export async function inicioTarde(fecha: FechaDia, instante: number): Promise<{ minutos: number; limite: string } | null> {
+  const accion = await db().acciones.get('entrenamiento')
+  const limite = accion?.horaLimiteInicio
+  if (!limite) return null
+  const t = instanteDe(fecha, limite, (await obtenerAjustes()).zonaHoraria)
+  return instante > t ? { minutos: Math.ceil((instante - t) / 60_000), limite } : null
+}
+
 export async function iniciarEntreno(rutinaId: string, fecha?: FechaDia): Promise<SesionEntreno> {
   const enCurso = await sesionEnCurso()
   if (enCurso) return enCurso
   const r = await obtenerRutina(rutinaId)
   if (!r) throw new Error('Esa rutina no existe')
   const f = fecha ?? (await fechaHoy())
-  const s: SesionEntreno = { rutinaId, fecha: f, inicio: ahora(), estado: 'en_curso', paso: 0, orden: r.bloques.map((b) => b.id), series: [], hechos: [], saltados: [] }
+  const t0 = ahora()
+  const s: SesionEntreno = { rutinaId, fecha: f, inicio: t0, inicioQueCuenta: t0, estado: 'en_curso', paso: 0, orden: r.bloques.map((b) => b.id), series: [], hechos: [], saltados: [] }
   s.id = await db().sesionesEntreno.add(s)
   // El pilar de hoy queda «iniciado».
   const c = await db().compromisos.get(idCompromiso('entrenamiento', f))
@@ -355,7 +365,7 @@ export async function reiniciarEntreno(id: number): Promise<SesionEntreno> {
   const r = await obtenerRutina(antes.rutinaId)
   const t = ahora()
   const nueva: SesionEntreno = {
-    id, rutinaId: antes.rutinaId, fecha: antes.fecha, inicio: t, estado: 'en_curso', paso: 0,
+    id, rutinaId: antes.rutinaId, fecha: antes.fecha, inicio: t, inicioQueCuenta: antes.inicioQueCuenta ?? antes.inicio, estado: 'en_curso', paso: 0,
     orden: r ? r.bloques.map((b) => b.id) : antes.orden, series: [], hechos: [], saltados: [],
   }
   await db().sesionesEntreno.put(nueva)
@@ -544,7 +554,9 @@ export async function terminarEntreno(id: number): Promise<ResultadoTerminar> {
   let nuevoNivel: number | null = null
   if (c && (c.estado === 'pendiente' || c.estado === 'iniciado')) {
     const minutos = Math.max(resumen.minutos, accion?.duracionMinutos ?? accion?.minutosMinimos ?? 0)
-    const r = await completarCompromiso(c.id, { minutos, instante: s.fin })
+    // Cuenta la hora de inicio (hasta las 19:35), no la de fin: si empezó tarde, el pilar queda «tarde» y sin XP.
+    const tarde = await inicioTarde(s.fecha, s.inicioQueCuenta ?? s.inicio)
+    const r = await completarCompromiso(c.id, { minutos, instante: s.fin, tarde: tarde ? { minutos: tarde.minutos, motivo: `Empezaste ${tarde.minutos} min después de las ${tarde.limite}: el entreno cuenta, pero el pilar queda tarde, sin XP` } : undefined })
     xpPilar = r.xp
     motivoSinXp = r.motivoSinXp
     nuevoNivel = r.nuevoNivel

@@ -39,9 +39,11 @@ import { xpTotal } from './xp'
 
 const Z = 'America/Argentina/Cordoba'
 let n = 0
-const dia = (f: string, h = '07:00') => fijarAhora(instanteDe(f, h, Z))
+let horaDelDia = '07:00'
+const dia = (f: string, h = horaDelDia) => fijarAhora(instanteDe(f, h, Z))
 
 beforeEach(async () => {
+  horaDelDia = '07:00'
   await usarBaseDePruebas(`entreno-${++n}`)
   reiniciarReloj()
   dia('2026-11-02')
@@ -406,5 +408,44 @@ describe('duración real del entreno (ronda 5: el reloj marcaba 77:45)', () => {
     avanzar(60 * 60_000)
     s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
     expect(Math.round(duracionEntreno(s, s.series[1].instante))).toBe(PAUSA_MAXIMA_S)
+  })
+})
+
+describe('hora límite para empezar (19:35)', () => {
+  it('empezar 19:35 o antes cuenta aunque termine 20:30', async () => {
+    horaDelDia = '19:35'
+    const r = await hacerRutinaA('2026-11-02')
+    expect(r.xpPilar).toBe(30)
+    expect((await db().compromisos.get('entrenamiento:2026-11-02'))!.estado).toBe('completado')
+  })
+
+  it('empezar después de las 19:35 se guarda, pero el pilar queda tarde y sin XP', async () => {
+    horaDelDia = '19:50'
+    const antes = await xpTotal()
+    const r = await hacerRutinaA('2026-11-02')
+    expect(r.xpPilar).toBe(0)
+    expect(r.motivoSinXp).toMatch(/19:35/)
+    expect((await db().compromisos.get('entrenamiento:2026-11-02'))!.estado).toBe('tarde')
+    expect(r.resumen.series).toBe(12)
+    expect(await xpTotal()).toBe(antes)
+  })
+
+  it('reiniciar no cambia la hora de inicio que cuenta', async () => {
+    dia('2026-11-02', '19:30')
+    let s = await iniciarEntreno('rutina-a', '2026-11-02')
+    fijarAhora(instanteDe('2026-11-02', '19:50', Z))
+    s = await reiniciarEntreno(s.id!)
+    expect(s.inicioQueCuenta).toBe(instanteDe('2026-11-02', '19:30', Z))
+    const r = await terminarEntreno(s.id!)
+    expect(r.xpPilar).toBe(30)
+  })
+
+  it('la hora límite se puede editar', async () => {
+    const a = (await db().acciones.get('entrenamiento'))!
+    expect(a.horaLimiteInicio).toBe('19:35')
+    expect(a.avisoInicio).toEqual({ activo: true, hora: '19:00' })
+    await db().acciones.put({ ...a, horaLimiteInicio: '20:00' })
+    horaDelDia = '19:50'
+    expect((await hacerRutinaA('2026-11-02')).xpPilar).toBe(30)
   })
 })

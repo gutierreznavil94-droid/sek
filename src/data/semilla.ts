@@ -67,6 +67,8 @@ export const ACCIONES_INICIALES: Omit<Accion, 'creado'>[] = [
     hora: '07:00',
     minutosMinimos: 42,
     duracionMinutos: 42,
+    horaLimiteInicio: '19:35',
+    avisoInicio: { activo: true, hora: '19:00' },
     pilar: true,
     atributoIds: ['fisico'],
     objetivoIds: [],

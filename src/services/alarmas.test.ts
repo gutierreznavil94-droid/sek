@@ -54,9 +54,9 @@ describe('alarmas directas (etapa 1)', () => {
     await cerrarDiasPendientes()
   })
 
-  it('un día de entrenamiento tiene 4 alarmas en orden; un día de descanso, 3', async () => {
+  it('un día de entrenamiento tiene 5 alarmas en orden (con el aviso de las 19:00); un día de descanso, 3', async () => {
     const lunes = await alarmasDelDia('2026-11-02')
-    expect(lunes.map((a) => `${a.hora} ${a.tipo}`)).toEqual(['07:00 entrenamiento', '20:50 revision', '21:15 celu', '21:20 dormido'])
+    expect(lunes.map((a) => `${a.hora} ${a.tipo}`)).toEqual(['07:00 entrenamiento', '19:00 entreno-aviso', '20:50 revision', '21:15 celu', '21:20 dormido'])
     expect(lunes[0].instante).toBe(instanteDe('2026-11-02', '07:00', Z))
     const martes = await alarmasDelDia('2026-11-03')
     expect(martes.map((a) => a.tipo)).toEqual(['revision', 'celu', 'dormido'])

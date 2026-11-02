@@ -6,14 +6,14 @@
  */
 
 import { db } from '../data/db'
-import { diaSemanaDe, fechaDe, instanteDe, sumarDias, type FechaDia } from '../domain/fechas'
+import { diaSemanaDe, fechaDe, instanteDe, minutosDe, sumarDias, type FechaDia } from '../domain/fechas'
 import { recordatorios, type Recordatorio } from '../reminders/recordatorios'
 import { obtenerAjustes } from './base'
 import { cicloActivo } from './ciclo'
 import { horaFinMargen } from './dia'
 import { ahora } from './reloj'
 
-export type Alarma = Recordatorio & { fecha: FechaDia; hora: string; tipo: 'entrenamiento' | 'revision' | 'celu' | 'dormido' }
+export type Alarma = Recordatorio & { fecha: FechaDia; hora: string; tipo: 'entrenamiento' | 'entreno-aviso' | 'revision' | 'celu' | 'dormido' }
 
 /** Las alarmas de una fecha según la configuración actual. Solo dentro del ciclo. */
 export async function alarmasDelDia(fecha: FechaDia): Promise<Alarma[]> {
@@ -30,6 +30,12 @@ export async function alarmasDelDia(fecha: FechaDia): Promise<Alarma[]> {
     const hora = c?.horaPrevista ?? entreno.horasPorDia?.[ds] ?? entreno.hora ?? '07:00'
     if (!c || c.estado === 'pendiente' || c.estado === 'iniciado') {
       lista.push({ id: `alarma:entrenamiento:${fecha}`, tipo: 'entrenamiento', fecha, hora, titulo: 'Entrenamiento', cuerpo: `${entreno.duracionMinutos ?? entreno.minutosMinimos ?? 42} min. Tocá el pilar al terminar.`, instante: instanteDe(fecha, hora, a.zonaHoraria) })
+    }
+    // Aviso de las 19:00 si todavía no empezó (en la app Android suena aunque esté cerrada; si ya empezó, se reprograma sin él).
+    if (entreno.avisoInicio?.activo && entreno.horaLimiteInicio && (!c || c.estado === 'pendiente')) {
+      const h = entreno.avisoInicio.hora
+      const faltan = minutosDe(entreno.horaLimiteInicio) - minutosDe(h)
+      lista.push({ id: `alarma:entreno-aviso:${fecha}`, tipo: 'entreno-aviso', fecha, hora: h, titulo: 'Empezá el entreno', cuerpo: `Quedan ${faltan} min: hasta las ${entreno.horaLimiteInicio} el pilar cuenta.`, instante: instanteDe(fecha, h, a.zonaHoraria) })
     }
   }
   const revision = await d.acciones.get('revision_diaria')

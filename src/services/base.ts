@@ -132,6 +132,11 @@ async function migrar(): Promise<void> {
         await registrarEvento({ tipo: 'editar', entidad: 'accion', entidadId: base.id, antes: existente, despues, motivo: 'Migración: revisión diaria a las 20:50' })
         existente = despues
       }
+      // v0.36: el entreno se empieza hasta las 19:35, con aviso a las 19:00 (solo si nunca se configuró).
+      if (existente && base.horaLimiteInicio && existente.horaLimiteInicio === undefined) {
+        existente = { ...existente, horaLimiteInicio: base.horaLimiteInicio, avisoInicio: existente.avisoInicio ?? base.avisoInicio }
+        await d.acciones.put(existente)
+      }
       // v0.36: manga con segundo tope a los 30 min (solo si nunca se configuró).
       if (existente && base.minutosExtra && existente.minutosExtra === undefined) {
         existente = { ...existente, minutosExtra: base.minutosExtra, xpExtra: base.xpExtra }

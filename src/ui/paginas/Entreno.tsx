@@ -22,6 +22,7 @@ import {
   deshacerSerie,
   faseActual,
   iniciarEntreno,
+  inicioTarde,
   iniciarReloj,
   irABloque,
   kg,
@@ -46,6 +47,7 @@ import {
   ultimaVez,
   type ResultadoTerminar,
 } from '../../services/entreno'
+import { db } from '../../data/db'
 import { ahora } from '../../services/reloj'
 import { celebrarNivel, celebrarRecord } from '../animaciones/logros'
 import { animar } from '../animaciones/motor'
@@ -122,7 +124,10 @@ async function cargar(hoy: string) {
     if (bloque) ctx.sigueActual = await siguiente(sesion, rutina, bloque.id)
     if (bloque?.tipo === 'temporizador' && bloque.modo === 'cronometro') ctx.tiempo = await historialTiempo(bloque.nombre, sesion.id)
   }
-  return { sesion: sesion ?? null, rutinas, delDia: delDia ?? null, rutina, ctx }
+  // Hora límite para empezar (19:35): si ya pasó, se avisa antes de empezar.
+  const limiteInicio = (await db().acciones.get('entrenamiento'))?.horaLimiteInicio ?? null
+  const tarde = !sesion && limiteInicio && (await db().compromisos.get(`entrenamiento:${hoy}`)) ? await inicioTarde(hoy, ahora()) : null
+  return { sesion: sesion ?? null, rutinas, delDia: delDia ?? null, rutina, ctx, limiteInicio, tarde }
 }
 
 export function Entreno({ hoy }: { hoy: string }) {
@@ -136,7 +141,7 @@ export function Entreno({ hoy }: { hoy: string }) {
         {resultado ? <Resumen r={resultado} rutina={d?.rutinas.find((x) => x.id === resultado.sesion.rutinaId)} onReabrir={async () => { await mutar(() => reabrirEntreno(resultado.sesion.id!)); setResultado(null) }} />
           : !d ? <p className="vacio">Cargando…</p>
           : d.sesion && d.rutina ? <EnCurso s={d.sesion} r={d.rutina} ctx={d.ctx} onTerminado={setResultado} />
-          : <Empezar hoy={hoy} rutinas={d.rutinas} delDia={d.delDia} />}
+          : <Empezar hoy={hoy} rutinas={d.rutinas} delDia={d.delDia} limiteInicio={d.limiteInicio} tarde={d.tarde} />}
       </main>
       <Avisos />
     </div>
@@ -145,7 +150,7 @@ export function Entreno({ hoy }: { hoy: string }) {
 
 // ---------- Antes de empezar ----------
 
-function Empezar({ hoy, rutinas, delDia }: { hoy: string; rutinas: Rutina[]; delDia: Rutina | null }) {
+function Empezar({ hoy, rutinas, delDia, limiteInicio, tarde }: { hoy: string; rutinas: Rutina[]; delDia: Rutina | null; limiteInicio: string | null; tarde: { minutos: number; limite: string } | null }) {
   const [elegida, setElegida] = useState(delDia?.id ?? rutinas[0]?.id)
   const r = rutinas.find((x) => x.id === elegida)
   const n = r?.bloques.filter((b) => b.tipo === 'ejercicio').length ?? 0
@@ -170,7 +175,9 @@ function Empezar({ hoy, rutinas, delDia }: { hoy: string; rutinas: Rutina[]; del
           ))}
         </ol>
       )}
-      {r && <button className="boton primario grande ancho entreno-empezar" onClick={() => mutar(() => iniciarEntreno(r.id, hoy))}>Empezar entreno</button>}
+      {r && tarde && <p className="entreno-tarde" role="status"><b>Pasaron las {tarde.limite}:</b> el entreno cuenta, pero el pilar queda tarde (sin su XP). Las mejoras y récords se guardan igual.</p>}
+      {r && !tarde && delDia && limiteInicio && <p className="ayuda centro">Empezalo hasta las {limiteInicio} para que cuente el pilar; la hora en que terminás no importa.</p>}
+      {r && <button className="boton primario grande ancho entreno-empezar" onClick={() => mutar(() => iniciarEntreno(r.id, hoy))}>{tarde ? 'Empezar igual' : 'Empezar entreno'}</button>}
     </>
   )
 }

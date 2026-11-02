@@ -129,6 +129,35 @@ export function Hoy({ hoy }: { hoy: string }) {
     }
   }, [d, hoy])
 
+  // Aviso de entreno (19:00): si es día de entreno y todavía no empezó. En la web suena solo con la app abierta
+  // o recién minimizada; en la app Android lo programa programarAlarmas aunque esté cerrada.
+  const avisoEntreno = (() => {
+    if (!d || d.antes) return null
+    const p = d.pilares.pilares.find((x) => x.accion.tipo === 'entrenamiento')
+    const a = p?.accion
+    if (!p || !a?.horaLimiteInicio || !a.avisoInicio?.activo || p.compromiso?.estado !== 'pendiente' || d.entrenoEnCurso) return null
+    return { desde: instanteDe(hoy, a.avisoInicio.hora, d.ajustes.zonaHoraria), hasta: instanteDe(hoy, a.horaLimiteInicio, d.ajustes.zonaHoraria), limite: a.horaLimiteInicio }
+  })()
+  useEffect(() => {
+    if (!avisoEntreno || avisoEntreno.desde <= Date.now()) {
+      recordatorios.cancelar('entreno-1900')
+      return
+    }
+    const faltan = Math.round((avisoEntreno.hasta - avisoEntreno.desde) / 60_000)
+    recordatorios.programar({ id: 'entreno-1900', titulo: 'Empezá el entreno', cuerpo: `Quedan ${faltan} min: hasta las ${avisoEntreno.limite} el pilar cuenta.`, instante: avisoEntreno.desde })
+  }, [avisoEntreno?.desde, avisoEntreno?.hasta, avisoEntreno?.limite]) // eslint-disable-line react-hooks/exhaustive-deps
+  const enAvisoEntreno = !!avisoEntreno && tic >= avisoEntreno.desde && tic < avisoEntreno.hasta
+  // Vibración corta una vez por día al ver el aviso.
+  useEffect(() => {
+    if (!enAvisoEntreno) return
+    const clave = `aviso-entreno:${hoy}`
+    try {
+      if (localStorage.getItem(clave)) return
+      localStorage.setItem(clave, '1')
+    } catch { /* sin almacenamiento */ }
+    try { navigator.vibrate?.([120, 80, 120]) } catch { /* sin vibración */ }
+  }, [enAvisoEntreno, hoy])
+
   // A las 21:00 lo que sigue sin marcar queda omitido: se dispara sin esperar a recargar.
   useEffect(() => {
     if (!d || d.antes) return
@@ -278,6 +307,14 @@ export function Hoy({ hoy }: { hoy: string }) {
         <div className="fila entre tarjeta compacta">
           <span>Terminó la fase {d.estado.fase.numero}.</span>
           <Link className="boton chico primario" to={`/fase/${d.estado.fase.numero}`}>Revisar</Link>
+        </div>
+      )}
+
+      {/* Aviso de entreno: entre las 19:00 y las 19:35, si todavía no empezó */}
+      {enAvisoEntreno && avisoEntreno && (
+        <div className="aviso-entreno" role="alert">
+          <span><b>Quedan {Math.max(1, Math.ceil((avisoEntreno.hasta - tic) / 60_000))} min para empezar el entreno.</b><br /><span className="chico texto-2">Hasta las {avisoEntreno.limite} el pilar cuenta; la hora en que terminás no importa.</span></span>
+          <Link to="/entreno" className="boton chico primario">Empezar</Link>
         </div>
       )}
 

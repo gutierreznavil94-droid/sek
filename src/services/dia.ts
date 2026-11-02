@@ -126,7 +126,7 @@ export type ResultadoCompletar = { compromiso: Compromiso; xp: number; nuevoNive
  * Completa un compromiso y concede su XP (una sola vez). Si la acción es un
  * compromiso diario, aplica el tope de compromisos con XP por día.
  */
-export async function completarCompromiso(id: string, opciones?: { minutos?: number; nota?: string; respuesta?: string; esCorreccion?: boolean; motivo?: string; instante?: number }): Promise<ResultadoCompletar> {
+export async function completarCompromiso(id: string, opciones?: { minutos?: number; nota?: string; respuesta?: string; esCorreccion?: boolean; motivo?: string; instante?: number; tarde?: { minutos: number; motivo: string } }): Promise<ResultadoCompletar> {
   const d = db()
   const antes = await d.compromisos.get(id)
   if (!antes) throw new Error(`Compromiso ${id} no existe`)
@@ -136,7 +136,7 @@ export async function completarCompromiso(id: string, opciones?: { minutos?: num
   const t = opciones?.instante ?? ahora()
   // Hora límite del pilar (20:50) con margen (hasta las 21:00): marcarlo después cuenta como hecho tarde y no da XP.
   const limite = accion.horaLimite && accion.tipo !== 'acostarse' ? instanteDe(antes.fecha, accion.horaLimite, ajustes.zonaHoraria) + ajustes.margenNocheMinutos * 60_000 : null
-  const retrasoMinutos = limite !== null && t > limite ? Math.round((t - limite) / 60_000) : undefined
+  const retrasoMinutos = opciones?.tarde ? Math.max(1, opciones.tarde.minutos) : limite !== null && t > limite ? Math.round((t - limite) / 60_000) : undefined
   const compromiso = await cambiarEstado(
     id,
     { estado: retrasoMinutos ? 'tarde' : 'completado', finReal: t, inicioReal: antes.inicioReal ?? t, minutos: opciones?.minutos, nota: opciones?.nota, respuesta: opciones?.respuesta, retrasoMinutos },
@@ -145,7 +145,7 @@ export async function completarCompromiso(id: string, opciones?: { minutos?: num
   )
   if (retrasoMinutos) {
     await anularXp(claveDeCompromiso(accion, antes.fecha), `Marcado ${retrasoMinutos} min después de la hora límite`)
-    return { compromiso, xp: 0, nuevoNivel: null, motivoSinXp: `Marcado ${retrasoMinutos} min después de las ${horaFinMargen(accion.horaLimite!, ajustes.margenNocheMinutos)}: cuenta como tarde, sin XP` }
+    return { compromiso, xp: 0, nuevoNivel: null, motivoSinXp: opciones?.tarde ? opciones.tarde.motivo : `Marcado ${retrasoMinutos} min después de las ${horaFinMargen(accion.horaLimite!, ajustes.margenNocheMinutos)}: cuenta como tarde, sin XP` }
   }
   // Condición de cumplimiento: minutos mínimos (entrenamiento, manga).
   if (accion.minutosMinimos && opciones?.minutos !== undefined && opciones.minutos < accion.minutosMinimos) {

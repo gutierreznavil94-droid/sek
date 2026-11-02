@@ -84,6 +84,10 @@ export type Accion = {
   minutosMinimos?: number
   /** Duración fija (entrenamiento): tocar la tarjeta lo marca hecho con estos minutos. */
   duracionMinutos?: number
+  /** Entrenamiento: hora límite para empezar (HH:MM). Si empieza después, el pilar queda tarde, sin XP. */
+  horaLimiteInicio?: string
+  /** Entrenamiento: aviso si todavía no empezó (hora HH:MM y si está activo). */
+  avisoInicio?: { activo: boolean; hora: string }
   /** Segundo tope (manga): volver a marcar al llegar a estos minutos da el extra. 0 o vacío = sin extra. */
   minutosExtra?: number
   /** XP del extra (una vez por día). Por defecto 10. */
@@ -500,6 +504,8 @@ export type SesionEntreno = {
   rutinaId: string
   fecha: FechaDia
   inicio: number
+  /** Hora de inicio que cuenta para el límite (19:35). Reiniciar no la cambia. Si falta, vale `inicio`. */
+  inicioQueCuenta?: number
   fin?: number
   estado: 'en_curso' | 'terminada'
   /** Bloque en el que está (índice dentro de `orden`). */
