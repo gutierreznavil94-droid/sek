@@ -29,7 +29,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,jpg,woff2,json}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,jpg,webp,woff2,json}'],
         // Los videos de fondo (mp4) no van acá: Progreso los guarda aparte y los reproduce desde la memoria.
       },
     }),

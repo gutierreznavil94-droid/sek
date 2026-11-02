@@ -1370,3 +1370,7 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 .contenido.entreno .boton:not(.primario) { background: color-mix(in srgb, var(--fondo-2) 90%, transparent); }
 /* Texto suelto sobre la aguada: más claro y con halo oscuro, para mantener 4,5:1 aun sobre el trazo más cargado */
 .contenido.entreno { --texto-2: #e2ddd5; --texto-3: #d6d1c8; text-shadow: 0 0 3px rgba(12, 11, 10, 1), 0 0 8px rgba(12, 11, 10, 0.85), 0 0 14px rgba(12, 11, 10, 0.6); }
+/* Shinobi que camina por la barra de bloques */
+.entreno-camino { position: relative; padding-top: 36px; }
+.shinobi-barra { position: absolute; left: 0; bottom: 4px; width: 48px; height: 35px; pointer-events: none; z-index: 2; will-change: transform; }
+.shinobi-capa { position: absolute; inset: 0; background-repeat: no-repeat; image-rendering: auto; }

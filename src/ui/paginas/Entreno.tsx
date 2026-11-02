@@ -49,6 +49,7 @@ import { ahora } from '../../services/reloj'
 import { celebrarNivel, celebrarRecord } from '../animaciones/logros'
 import { Avisos, Confirmar, Hoja } from '../componentes'
 import { AguadaFondo, TintaPolvo } from '../TintaPolvo'
+import { ShinobiBarra } from '../Shinobi'
 import { avisar, mutar, useDatos, useTic } from '../estado'
 
 function vibrar(patron: number | number[]) {
@@ -194,6 +195,7 @@ function EnCurso({ s, r, ctx, onTerminado }: { s: SesionEntreno; r: Rutina; ctx:
 
   // Vibración suave al cambiar de fase del descanso y al terminarlo.
   const clave = s.descanso ? `${s.descanso.inicio}:${fase?.indice ?? 'fin'}` : null
+  const barra = useRef<HTMLDivElement>(null)
   const previa = useRef<string | null>(null)
   useEffect(() => {
     if (previa.current && clave && previa.current !== clave && previa.current.split(':')[0] === clave.split(':')[0]) vibrar(clave.endsWith('fin') ? [200, 100, 200] : 200)
@@ -216,8 +218,11 @@ function EnCurso({ s, r, ctx, onTerminado }: { s: SesionEntreno; r: Rutina; ctx:
         <span className="mono texto-2" aria-label="Duración del entreno">{reloj(duracionEntreno(s, t))}</span>
         <button className="boton chico suave" onClick={() => setBloques(true)}>Bloques {hechos}/{s.orden.length}</button>
       </div>
-      <div className="entreno-puntos" aria-hidden>
-        {s.orden.map((id, i) => { const b = r.bloques.find((x) => x.id === id); return <span key={id} className={`${b && bloqueTerminado(s, b) ? (s.saltados.includes(id) ? 'saltado' : 'hecho') : ''} ${i === s.paso ? 'actual' : ''}`} /> })}
+      <div className="entreno-camino">
+        <ShinobiBarra indice={bloque ? s.paso : s.orden.length} total={s.orden.length} barra={barra} />
+        <div className="entreno-puntos" aria-hidden ref={barra}>
+          {s.orden.map((id, i) => { const b = r.bloques.find((x) => x.id === id); return <span key={id} className={`${b && bloqueTerminado(s, b) ? (s.saltados.includes(id) ? 'saltado' : 'hecho') : ''} ${i === s.paso ? 'actual' : ''}`} /> })}
+        </div>
       </div>
       <div className="texto-3 chico">{r.nombre}</div>
       <AguadaFondo tenue={!!(s.descanso && fase)} />
