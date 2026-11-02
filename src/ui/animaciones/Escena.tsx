@@ -352,7 +352,7 @@ function Sangre({ cx, cy, semilla }: { cx: number; cy: number; semilla: number }
 
 function Kanji({ k, x, y, tam = 64, clase = 'sh-kanji', color = ROJO }: { k: string; x: number; y: number; tam?: number; clase?: string; color?: string }) {
   return (
-    <text className={clase} x={x} y={y} textAnchor="middle" fontSize={tam} fill={color} fontFamily="'Noto Serif JP','Noto Serif CJK JP','Hiragino Mincho ProN','Yu Mincho',serif" fontWeight={900}>
+    <text className={clase} x={x} y={y} textAnchor="middle" fontSize={tam} fill={color} fontFamily="'Pincel','Noto Serif JP','Noto Serif CJK JP','Hiragino Mincho ProN','Yu Mincho',serif" fontWeight={400}>
       {k}
     </text>
   )
@@ -471,6 +471,8 @@ const PARRY_CAJA = { x: 30, ancho: 300 }
 const PARRY_ALTO = (PARRY_CAJA.ancho * PARRY_HOJA.h) / PARRY_HOJA.w
 const PARRY_Y = SUELO_Y - (181 / PARRY_HOJA.h) * PARRY_ALTO
 const PARRY_CONTACTO = { x: PARRY_CAJA.x + (190 / PARRY_HOJA.w) * PARRY_CAJA.ancho, y: PARRY_Y + (84 / PARRY_HOJA.h) * PARRY_ALTO }
+// La fuente de pincel de los kanji también, para que el 忍 no salga con la letra del sistema.
+if (typeof document !== 'undefined') document.fonts?.load("64px Pincel", '忍').catch(() => undefined)
 // Las hojas se cargan de antemano para que el primer parry no salga vacío.
 if (typeof Image !== 'undefined') for (const t of ['claro', 'oscuro']) { const im = new Image(); im.src = `${import.meta.env.BASE_URL}animaciones/parry/parry-${t}.webp`; im.decode?.().catch(() => undefined) }
 

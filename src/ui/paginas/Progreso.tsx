@@ -127,7 +127,7 @@ export function Progreso({ hoy }: { hoy: string }) {
     <div className="progreso-tinta" data-fondo={fondo?.tipo ?? 'oscuro'} data-vidrio={vidrioClaro() && fondo?.tipo === 'claro' ? 'claro' : undefined} style={{ '--av-arriba': `${arriba}px` } as React.CSSProperties}>
       {/* Fondo fijo: el video vertical cubre toda la pantalla y no se mueve al desplazar */}
       {createPortal(
-        <div className="av-fondo" aria-hidden="true" data-orientacion={horizontal ? 'horizontal' : undefined}>
+        <div className="av-fondo" aria-hidden="true" data-orientacion={horizontal ? 'horizontal' : undefined} data-vista={enCodigo ? 'codigo' : undefined}>
           {fondo && <VideoDeFondo key={fondo.id} fondo={fondo} quieto={reducido} pausado={verNiveles || !!sel} />}
         </div>,
         document.body,
