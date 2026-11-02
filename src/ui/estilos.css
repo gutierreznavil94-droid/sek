@@ -1342,3 +1342,16 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 .entreno-barra.cronometro > div { background: var(--verde, #6FAF8E); }
 .entreno-tiempo { padding: 10px 12px; border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo-2); }
 .entreno-reloj.verde { color: var(--verde, #6FAF8E); }
+/* Cambios 29: ronda 5 · descanso más claro (sombra en verde, «Te queda», «Para alistar») */
+.entreno-app { --sombra-color: var(--verde, #6FAF8E); }
+.entreno-descanso.descanso .entreno-fase-fila .entreno-reloj, .entreno-descanso.descanso .entreno-fase { color: var(--texto-2); }
+.entreno-ahora { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--borde); background: var(--fondo-2); }
+.entreno-ahora .te-queda { font-size: 1.25rem; font-weight: 800; }
+.entreno-ahora .datos { color: var(--texto-2); }
+.entreno-ahora .entreno-sigue { margin-top: 8px; background: var(--fondo); }
+/* Polvo de tinta (ronda 5) */
+.tinta-polvo { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+.entreno-titulo.tinta-arma { animation: tinta-arma 0.9s ease-out both; }
+@keyframes tinta-arma { 0%, 62% { opacity: 0; filter: blur(3px); } 100% { opacity: 1; filter: none; } }
+@media (prefers-reduced-motion: reduce) { :root:not(.movimiento-siempre) .entreno-titulo.tinta-arma { animation: tinta-funde 0.35s ease-out both; } }
+@keyframes tinta-funde { from { opacity: 0; } to { opacity: 1; } }

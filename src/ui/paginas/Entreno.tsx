@@ -14,6 +14,7 @@ import {
   DESCUENTO_S,
   PREPARACION_S,
   descartarEntreno,
+  duracionEntreno,
   estadoCronometro,
   historialTiempo,
   terminarCronometro,
@@ -47,6 +48,7 @@ import {
 import { ahora } from '../../services/reloj'
 import { celebrarNivel, celebrarRecord } from '../animaciones/logros'
 import { Avisos, Confirmar, Hoja } from '../componentes'
+import { TintaPolvo } from '../TintaPolvo'
 import { avisar, mutar, useDatos, useTic } from '../estado'
 
 function vibrar(patron: number | number[]) {
@@ -211,13 +213,14 @@ function EnCurso({ s, r, ctx, onTerminado }: { s: SesionEntreno; r: Rutina; ctx:
     <>
       <div className="fila entre entreno-cab">
         <Link to="/" className="texto-2">‹ Hoy</Link>
-        <span className="mono texto-2">{reloj((t - s.inicio) / 1000)}</span>
+        <span className="mono texto-2" aria-label="Duración del entreno">{reloj(duracionEntreno(s, t))}</span>
         <button className="boton chico suave" onClick={() => setBloques(true)}>Bloques {hechos}/{s.orden.length}</button>
       </div>
       <div className="entreno-puntos" aria-hidden>
         {s.orden.map((id, i) => { const b = r.bloques.find((x) => x.id === id); return <span key={id} className={`${b && bloqueTerminado(s, b) ? (s.saltados.includes(id) ? 'saltado' : 'hecho') : ''} ${i === s.paso ? 'actual' : ''}`} /> })}
       </div>
       <div className="texto-3 chico">{r.nombre}</div>
+      <TintaPolvo bloque={bloque?.id ?? null} visible={!(s.descanso && fase)} tenue={!!(s.descanso && fase)} />
 
       {s.descanso && fase ? (
         <Descanso key={s.descanso.inicio} s={s} fase={fase} r={r} ctx={ctx} />
@@ -322,16 +325,16 @@ function marcaSerie(x: Pick<SerieHecha, 'reps' | 'repsExtra' | 'peso'>, ref?: Se
 
 function textoSigue(x: Siguiente): string {
   const b = x.bloque
-  if (b.tipo === 'ejercicio') return `${kg(x.peso)} · ${b.series} × ${x.reps}${b.repsExtra ? `+${b.repsExtra}` : ''}`
+  if (b.tipo === 'ejercicio') return `${kg(x.peso)} · ${b.series} ${b.series === 1 ? 'serie' : 'series'} × ${x.reps}${b.repsExtra ? `+${b.repsExtra}` : ''} reps`
   return resumenBloque(b)
 }
 
-function TarjetaSigue({ x, grande }: { x?: Siguiente; grande?: boolean }) {
-  if (!x) return <div className="entreno-sigue"><span className="seccion-titulo">Sigue</span><b>Terminar el entreno</b></div>
+function TarjetaSigue({ x, grande, titulo }: { x?: Siguiente; grande?: boolean; titulo?: string }) {
+  if (!x) return <div className="entreno-sigue"><span className="seccion-titulo">{titulo ?? 'Sigue'}</span><b>Terminar el entreno</b></div>
   const nota = 'nota' in x.bloque ? x.bloque.nota : undefined
   return (
     <div className={`entreno-sigue ${grande ? 'grande' : ''}`} aria-label="Lo que sigue">
-      <span className="seccion-titulo">{grande ? 'Acomodá para' : 'Sigue'}</span>
+      <span className="seccion-titulo">{titulo ?? (grande ? 'Acomodá para' : 'Sigue')}</span>
       <b className="nombre">{x.bloque.nombre}</b>
       <span className="mono datos">{textoSigue(x)}</span>
       {nota && <span className="entreno-nota">«{nota}»</span>}
@@ -383,17 +386,17 @@ function Ejercicio({ s, b, anterior, sigue }: { s: SesionEntreno; b: BloqueEjerc
 }
 
 /** «¿Cuántas hiciste?»: se guarda solo con cada toque. */
-function CorregirSerie({ s, b, x, ref_, conPeso = true }: { s: SesionEntreno; b: BloqueEjercicio; x: SerieHecha; ref_?: SerieHecha; conPeso?: boolean }) {
+function CorregirSerie({ s, b, x, ref_, conPeso = true, titulo }: { s: SesionEntreno; b: BloqueEjercicio; x: SerieHecha; ref_?: SerieHecha; conPeso?: boolean; titulo?: string }) {
   const [r, setR] = useState(x.reps)
   const [e, setE] = useState(x.repsExtra ?? 0)
   const [p, setP] = useState(x.peso)
   const guardar = (c: { reps?: number; repsExtra?: number; peso?: number }) => void mutar(() => corregirSerie(s.id!, b.id, x.n, c))
   return (
     <div className="col" style={{ gap: 10 }}>
-      <Stepper etiqueta={`¿Cuántas hiciste? · serie ${x.n}`} valor={r} paso={1} onCambio={(v) => { setR(v); guardar({ reps: v }) }} marca={marcaSerie({ reps: r, repsExtra: e, peso: p }, ref_)} />
+      <Stepper etiqueta={titulo ?? `¿Cuántas hiciste? · serie ${x.n}`} valor={r} paso={1} onCambio={(v) => { setR(v); guardar({ reps: v }) }} marca={marcaSerie({ reps: r, repsExtra: e, peso: p }, ref_)} />
       {b.repsExtra !== undefined && <Stepper etiqueta="Extra" valor={e} paso={1} formato={(v) => `+${v}`} onCambio={(v) => { setE(v); guardar({ repsExtra: v }) }} />}
       {conPeso && <Stepper etiqueta="Peso" valor={p} paso={0.5} escribible compacto formato={(v) => (v === 0 ? 'corporal' : `${String(v).replace('.', ',')} kg`)} onCambio={(v) => { setP(v); guardar({ peso: v }) }} />}
-      {ref_ && <p className="ayuda">La vez pasada en la serie {x.n}: {reps(ref_)} × {kg(ref_.peso)}. Se guarda solo.</p>}
+      {ref_ && <p className="ayuda">La vez pasada: {reps(ref_)} × {kg(ref_.peso)} · se guarda solo</p>}
     </div>
   )
 }
@@ -403,21 +406,31 @@ function Descanso({ s, fase, r, ctx }: { s: SesionEntreno; fase: NonNullable<Ret
   void r
   const pct = Math.max(0, Math.min(100, (fase.restante / f.segundos) * 100))
   const u = ctx.ultima
+  // ¿Falta alguna serie del ejercicio que acaba de hacer?
+  const faltan = u ? u.bloque.series - seriesDe(s, u.bloque.id).length : 0
+  const pesoActual = u ? s.pesos?.[u.bloque.id] ?? u.serie.peso : 0
+  const objetivoProxima = u && faltan > 0 ? objetivoSerie(u.bloque, u.anterior, u.serie.n + 1, pesoActual) : 0
   return (
     <section className={`col entreno-descanso ${f.tipo}`} aria-live="polite">
-      <span className="seccion-titulo">{u ? `${u.bloque.nombre} · serie ${u.serie.n} de ${u.bloque.series} hecha` : 'Descanso'}</span>
       <div className="fila entre entreno-fase-fila"><h1 className="entreno-fase">{f.tipo === 'acomodar' ? 'Acomodá' : f.texto}</h1><span className="entreno-reloj mono">{reloj(fase.restante)}</span></div>
-      <div hidden className="entreno-reloj mono">{reloj(fase.restante)}</div>
       <div className="entreno-barra"><div style={{ width: `${pct}%` }} /></div>
-      <div className="entreno-fases">
-        {s.descanso!.fases.map((x, i) => <span key={i} className={`${x.tipo} ${i === fase.indice ? 'actual' : i < fase.indice ? 'paso' : ''}`} style={{ flex: x.segundos }}>{x.tipo === 'sombra' ? 'Sombra' : x.tipo === 'acomodar' ? 'Acomodar' : 'Descansá'} {reloj(x.segundos)}</span>)}
-      </div>
-      <TarjetaSigue x={ctx.sigueDescanso} grande={f.tipo === 'acomodar'} />
-      {u && <div className="entreno-cuantas"><CorregirSerie s={s} b={u.bloque} x={u.serie} ref_={u.anterior.find((a) => a.n === u.serie.n)} conPeso={false} /><button className="enlace texto-3 chico" onClick={() => mutar(() => deshacerSerie(s.id!))}>Deshacer esta serie</button></div>}
+      {s.descanso!.fases.length > 1 && <p className="ayuda">{s.descanso!.fases.map((x) => `${x.tipo === 'sombra' ? 'Sombra' : 'Descansá'} ${reloj(x.segundos)}`).join(' → ')}</p>}
+      {u && faltan > 0 ? (
+        <div className="entreno-ahora">
+          <span className="seccion-titulo">Ahora</span>
+          <b className="te-queda">Te queda {faltan} {faltan === 1 ? 'serie' : 'series'} de {u.bloque.nombre}</b>
+          <span className="mono datos">{kg(pesoActual)} · objetivo {objetivoProxima}{u.bloque.repsExtra ? `+${u.bloque.repsExtra}` : ''} reps</span>
+          <TarjetaSigue x={ctx.sigueDescanso} titulo="Para alistar" />
+        </div>
+      ) : (
+        <TarjetaSigue x={ctx.sigueDescanso} grande />
+      )}
+      {u && <div className="entreno-cuantas"><CorregirSerie s={s} b={u.bloque} x={u.serie} ref_={u.anterior.find((a) => a.n === u.serie.n)} conPeso={false} titulo={`${u.bloque.nombre} · serie ${u.serie.n} · ¿cuántas hiciste?`} /></div>}
       <div className="botonera">
         <button className="boton grande" onClick={() => mutar(() => alargarDescanso(s.id!, 30))}>+30 s</button>
         <button className="boton grande primario" onClick={() => mutar(() => terminarDescanso(s.id!))}>Saltar descanso</button>
       </div>
+      <button className="enlace texto-3 chico centro" onClick={() => mutar(() => deshacerSerie(s.id!))}>Deshacer la serie</button>
     </section>
   )
 }

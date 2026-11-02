@@ -344,3 +344,28 @@ describe('colgarse en barra con cronómetro', () => {
     expect(h.record).toMatchObject({ segundos: 72, peso: 15 })
   })
 })
+
+describe('duración real del entreno (ronda 5: el reloj marcaba 77:45)', () => {
+  it('cuenta desde el primer movimiento, no desde que se abrió la pantalla', async () => {
+    const { duracionEntreno } = await import('./entreno')
+    let s = await iniciarEntreno('rutina-a')
+    avanzar(75 * 60_000) // la pantalla quedó abierta 75 min sin entrenar
+    expect(duracionEntreno(s, Date.now())).toBe(0)
+    s = await iniciarReloj(s.id!, 'a-calentar')
+    avanzar(3 * 60_000)
+    s = await marcarBloque(s.id!, 'a-calentar')
+    avanzar(60_000)
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
+    const ahoraMs = s.series[0].instante
+    expect(Math.round(duracionEntreno(s, ahoraMs))).toBe(4 * 60)
+  })
+
+  it('un hueco largo sin actividad cuenta como mucho 15 min', async () => {
+    const { duracionEntreno, PAUSA_MAXIMA_S } = await import('./entreno')
+    let s = await iniciarEntreno('rutina-a')
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
+    avanzar(60 * 60_000)
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
+    expect(Math.round(duracionEntreno(s, s.series[1].instante))).toBe(PAUSA_MAXIMA_S)
+  })
+})

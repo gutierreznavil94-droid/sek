@@ -480,6 +480,8 @@ export type SesionEntreno = {
   saltados: string[]
   /** «Peso de hoy» elegido antes de la primera serie de cada ejercicio. */
   pesos?: Record<string, number>
+  /** Primer movimiento real (serie, temporizador o bloque): la duración cuenta desde acá, no desde que se abrió. */
+  primerMovimiento?: number
   /** Tiempos de los bloques con cronómetro. */
   tiempos?: TiempoHecho[]
   /** Descanso en marcha: para retomarlo si la app se cierra. */

@@ -130,6 +130,7 @@ export function faseActual(descanso: { inicio: number; fases: FaseDescanso[] }, 
 // ---------- Sesión ----------
 
 async function guardarSesion(s: SesionEntreno): Promise<SesionEntreno> {
+  if (!s.primerMovimiento && s.estado === 'en_curso' && (s.series.length || s.hechos.length || s.saltados.length || s.reloj || s.tiempos?.length)) s = { ...s, primerMovimiento: s.reloj?.inicio ?? ahora() }
   await db().sesionesEntreno.put(s)
   return s
 }
@@ -487,7 +488,7 @@ export async function calcularResumen(s: SesionEntreno): Promise<ResumenEntreno>
   }
   const xpSinTope = ejerciciosHechos.reduce((t, e) => t + e.xp, 0)
   return {
-    minutos: Math.max(1, Math.round(((s.fin ?? ahora()) - s.inicio) / 60_000)),
+    minutos: Math.max(1, Math.round(duracionEntreno(s, s.fin ?? ahora()) / 60)),
     series: s.series.length,
     volumen: Math.round(s.series.reduce((t, x) => t + total(x) * x.peso, 0)),
     ejercicios: ejerciciosHechos,
@@ -659,4 +660,22 @@ export async function historialTiempo(nombre: string, excepto?: number): Promise
   let record: TiempoHecho | null = null
   for (const x of lista) if (!record || x.peso > record.peso || (x.peso === record.peso && x.segundos > record.segundos)) record = x
   return { ultimo: lista[lista.length - 1] ?? null, record }
+}
+
+/** Pausa máxima que cuenta entre dos movimientos (si la app quedó abierta sin entrenar, no suma de más). */
+export const PAUSA_MAXIMA_S = 15 * 60
+
+/**
+ * Duración real del entreno, en segundos: desde el primer movimiento (no desde
+ * que se abrió la pantalla), y cada hueco sin actividad cuenta como mucho 15 min.
+ */
+export function duracionEntreno(s: Pick<SesionEntreno, 'inicio' | 'primerMovimiento' | 'series' | 'tiempos' | 'reloj' | 'descanso'>, t: number): number {
+  const desde = s.primerMovimiento
+  if (!desde) return 0
+  const marcas = [desde, ...s.series.map((x) => x.instante), ...(s.tiempos ?? []).map((x) => x.instante), s.reloj?.inicio ?? 0, s.descanso?.inicio ?? 0, t]
+    .filter((x) => x >= desde && x <= t)
+    .sort((a, b) => a - b)
+  let total = 0
+  for (let i = 1; i < marcas.length; i++) total += Math.min(PAUSA_MAXIMA_S, (marcas[i] - marcas[i - 1]) / 1000)
+  return total
 }
