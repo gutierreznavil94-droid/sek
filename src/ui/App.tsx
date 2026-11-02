@@ -24,6 +24,8 @@ import { CierreFase } from './paginas/CierreFase'
 import { Copia } from './paginas/Copia'
 import { Sincronizar } from './paginas/Sincronizar'
 import { Entrenamiento } from './paginas/Entrenamiento'
+import { Entreno } from './paginas/Entreno'
+import { EditarRutina, Rutinas } from './paginas/Rutinas'
 import { Historial } from './paginas/Historial'
 import { Hoy } from './paginas/Hoy'
 import { Identidad } from './paginas/Identidad'
@@ -191,6 +193,8 @@ function Rutas() {
         <Route path="/mas/contadores" element={<Contadores hoy={hoy} />} />
         <Route path="/mas/acciones" element={<Acciones hoy={hoy} />} />
         <Route path="/mas/entrenamiento" element={<Entrenamiento hoy={hoy} />} />
+        <Route path="/mas/rutinas" element={<Rutinas />} />
+        <Route path="/mas/rutinas/:id" element={<EditarRutina />} />
         <Route path="/mas/alarmas" element={<AlarmasTelefono />} />
         <Route path="/mas/copia" element={<Copia />} />
         <Route path="/mas/sincronizar" element={<Sincronizar />} />
@@ -207,6 +211,7 @@ function Rutas() {
         <Route path="/semana/:fecha" element={<RevisionSemanal hoy={hoy} />} />
         <Route path="/fase/:numero" element={<CierreFase hoy={hoy} />} />
       </Route>
+      <Route path="/entreno" element={<Entreno hoy={hoy} />} />
       <Route path="/321" element={<Protocolo321 hoy={hoy} />} />
       <Route path="/siguiente" element={<SiguienteAccion hoy={hoy} />} />
       <Route path="/inicio" element={<Navigate to="/" replace />} />

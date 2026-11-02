@@ -143,7 +143,8 @@ describe('registro de sueño (v0.34: Dejo celu + 15 min y ventana de levantarse)
   })
 
   it('no hay alarma de despertar', async () => {
-    expect((await alarmasDelDia('2026-11-03')).map((a) => a.tipo)).toEqual(['revision', 'celu', 'dormido'])
+    // Domingo: día libre de entreno.
+    expect((await alarmasDelDia('2026-11-08')).map((a) => a.tipo)).toEqual(['revision', 'celu', 'dormido'])
   })
 })
 

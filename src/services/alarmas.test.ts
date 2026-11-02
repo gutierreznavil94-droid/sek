@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { usarBaseDePruebas } from '../data/db'
+import { db, usarBaseDePruebas } from '../data/db'
 import { diaDelCiclo, fechaDelDiaDelCiclo, fechaLegible, instanteDe } from '../domain/fechas'
 import { alarmasDelDia, alarmasProximas, programarAlarmas } from './alarmas'
 import { guardarAjustes, inicializarSiHaceFalta } from './base'
@@ -48,6 +48,8 @@ describe('alarmas directas (etapa 1)', () => {
   beforeEach(async () => {
     fijarAhora(instanteDe('2026-11-02', '08:00', Z))
     await inicializarSiHaceFalta()
+    // Calendario anterior (entreno lun, mié y vie) para probar un día de descanso entre semana.
+    await db().acciones.update('entrenamiento', { dias: [1, 3, 5] })
     await iniciarCiclo('2026-11-01')
     await cerrarDiasPendientes()
   })
@@ -83,6 +85,8 @@ describe('orden fijo de los 4 pilares', () => {
     const { pilaresDelDia, pilaresPorDia } = await import('./dia')
     fijarAhora(instanteDe('2026-11-02', '08:00', Z))
     await inicializarSiHaceFalta()
+    // Calendario anterior (entreno lun, mié y vie) para probar un día de descanso entre semana.
+    await db().acciones.update('entrenamiento', { dias: [1, 3, 5] })
     await iniciarCiclo('2026-11-01')
     await cerrarDiasPendientes()
     const esperado = ['Entrenamiento', 'Avanzar en la empresa', 'Dibujar manga', 'Dormir a horario']

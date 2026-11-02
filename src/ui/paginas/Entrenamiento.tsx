@@ -69,6 +69,10 @@ export function Entrenamiento({ hoy }: { hoy: string }) {
     <>
       <Atras />
       <h1>Entrenamiento y descanso</h1>
+      <div className="lista-nav tarjeta compacta">
+        <Link to="/entreno"><span>Empezar entreno<span className="desc">modo juego: series, descanso con sombra, XP por mejorar</span></span><span className="flecha">›</span></Link>
+        <Link to="/mas/rutinas"><span>Rutinas<span className="desc">A, B y C · ejercicios, días, pesos y progreso</span></span><span className="flecha">›</span></Link>
+      </div>
       <Tarjeta titulo="Entrenamiento">
         <div className="campo"><label>Días</label><DiasSemana valor={dias} onChange={setDias} /></div>
         <div className="rejilla-2">

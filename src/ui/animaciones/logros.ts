@@ -41,3 +41,10 @@ export function celebrarFase(numero: number, nombre: string | undefined, cicloId
   if (!unaVez(`anim-fase-${cicloId}-${numero}`)) return
   animar({ tipo: 'logro', clase: 'fase', texto: `Fase ${numero}`, sub: nombre ? `段 · ${nombre}` : '段 · nueva etapa' })
 }
+
+/** Récord personal en un ejercicio (al terminar el entreno). Uno solo, aunque haya varios. */
+export function celebrarRecord(ejercicios: string[]): void {
+  if (!ejercicios.length) return
+  const texto = ejercicios.length === 1 ? `Récord · ${ejercicios[0]}` : `${ejercicios.length} récords`
+  animar({ tipo: 'logro', clase: 'record', texto, sub: '力 · fuerza' })
+}

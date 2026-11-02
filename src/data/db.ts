@@ -25,6 +25,8 @@ import type {
   ModoSuenio,
   Objetivo,
   RegistroContador,
+  Rutina,
+  SesionEntreno,
   RegistroNivel,
   RegistroSuenio,
   RegistroXp,
@@ -58,6 +60,8 @@ export class BaseDatos extends Dexie {
   feriados!: EntityTable<Feriado, 'fecha'>
   contadores!: EntityTable<Contador, 'id'>
   registrosContador!: EntityTable<RegistroContador, 'id'>
+  rutinas!: EntityTable<Rutina, 'id'>
+  sesionesEntreno!: EntityTable<SesionEntreno, 'id'>
   eventos!: EntityTable<Evento, 'id'>
   temporizador!: EntityTable<TemporizadorActivo, 'id'>
   modoSuenio!: EntityTable<ModoSuenio, 'id'>
@@ -97,6 +101,10 @@ export class BaseDatos extends Dexie {
     this.version(4).stores({
       modoSuenio: 'id',
     })
+    this.version(5).stores({
+      rutinas: 'id, orden',
+      sesionesEntreno: '++id, rutinaId, fecha, estado, [rutinaId+fecha]',
+    })
   }
 
   /** Todas las tablas, para exportar e importar. */
@@ -108,7 +116,7 @@ export class BaseDatos extends Dexie {
 export const TABLAS = [
   'identidad', 'atributos', 'ciclos', 'fases', 'objetivos', 'acciones', 'reglasXp', 'metas', 'ajustes',
   'compromisos', 'sesionesJuego', 'suenio', 'siguienteAccion', 'revisiones', 'xp', 'niveles',
-  'atributosDiarios', 'diasCerrados', 'excepciones', 'feriados', 'contadores', 'registrosContador', 'eventos', 'temporizador', 'modoSuenio',
+  'atributosDiarios', 'diasCerrados', 'excepciones', 'feriados', 'contadores', 'registrosContador', 'eventos', 'temporizador', 'modoSuenio', 'rutinas', 'sesionesEntreno',
 ] as const
 
 let instancia: BaseDatos | null = null

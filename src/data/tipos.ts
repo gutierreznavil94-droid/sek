@@ -403,3 +403,78 @@ export type TemporizadorActivo = {
   id: 'activo'
   sesionId: number
 }
+
+// ---------- Entrenamiento en modo juego (v0.36) ----------
+
+/** Un ejercicio dentro de una rutina. Peso 0 = peso corporal. */
+export type BloqueEjercicio = {
+  id: string
+  tipo: 'ejercicio'
+  nombre: string
+  /** Músculo o grupo (Pecho, Hombro…). */
+  grupo?: string
+  series: number
+  /** Repeticiones objetivo (mínimo de la doble progresión). */
+  reps: number
+  /** Repeticiones extra, como el «+3» de «12 + 3». */
+  repsExtra?: number
+  /** Tope de repeticiones: al llegar en todas las series, se propone subir peso. */
+  repsTope: number
+  peso: number
+  /** Cuánto subir el peso cuando toca (kg). */
+  incremento: number
+  /** Descanso entre series, en segundos. */
+  descanso: number
+  /** Sombra al principio del descanso (segundos) después de las series que no son la última. 0 = sin sombra. */
+  sombra: number
+  nota?: string
+}
+
+/** Temporizador simple (calentamiento, colgarse en barra). */
+export type BloqueTemporizador = { id: string; tipo: 'calentamiento' | 'temporizador'; nombre: string; segundos: number; veces?: number; peso?: number; nota?: string }
+/** Rondas con cuenta regresiva (kick boxing). */
+export type BloqueRondas = { id: string; tipo: 'rondas'; nombre: string; rondas: { segundos: number; texto: string }[] }
+/** Casilla para marcar (estirar). */
+export type BloqueCasilla = { id: string; tipo: 'casilla'; nombre: string; nota?: string }
+
+export type BloqueRutina = BloqueEjercicio | BloqueTemporizador | BloqueRondas | BloqueCasilla
+
+export type Rutina = {
+  id: string
+  nombre: string
+  /** Días de la semana (0 = domingo … 6 = sábado). */
+  dias: number[]
+  bloques: BloqueRutina[]
+  /** Duración aproximada en minutos. */
+  minutos: number
+  orden: number
+  activa: boolean
+  creado: number
+}
+
+export type SerieHecha = { bloqueId: string; n: number; reps: number; repsExtra?: number; peso: number; instante: number }
+
+/** Fase del descanso: sombra, descansar o acomodar para el siguiente ejercicio. */
+export type FaseDescanso = { tipo: 'sombra' | 'descanso' | 'acomodar'; segundos: number; texto: string }
+
+export type SesionEntreno = {
+  id?: number
+  rutinaId: string
+  fecha: FechaDia
+  inicio: number
+  fin?: number
+  estado: 'en_curso' | 'terminada'
+  /** Bloque en el que está (índice dentro de `orden`). */
+  paso: number
+  /** Orden de los bloques en esta sesión (se puede cambiar o saltar). */
+  orden: string[]
+  series: SerieHecha[]
+  /** Bloques hechos o saltados que no son ejercicios (calentamiento, kick boxing…). */
+  hechos: string[]
+  saltados: string[]
+  /** Descanso en marcha: para retomarlo si la app se cierra. */
+  descanso?: { inicio: number; fases: FaseDescanso[] }
+  /** Temporizador en marcha (calentamiento, colgarse, rondas). */
+  reloj?: { bloqueId: string; ronda: number; inicio: number; segundos: number }
+  xpExtra?: number
+}

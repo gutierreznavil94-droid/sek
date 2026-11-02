@@ -7,6 +7,7 @@ import { ACCIONES_INICIALES, AJUSTES_INICIALES, ATRIBUTOS_INICIALES, IDENTIDAD_I
 import type { Ajustes, Evento, Identidad, TipoEvento } from '../data/tipos'
 import { fechaDe } from '../domain/fechas'
 import { cargarContadoresIniciales } from './contadores'
+import { cargarRutinasIniciales } from './entreno'
 import { cargarFeriadosIniciales } from './feriados'
 import { ahora } from './reloj'
 
@@ -69,6 +70,7 @@ export async function inicializarSiHaceFalta(): Promise<void> {
   })
   await cargarFeriadosIniciales()
   await cargarContadoresIniciales()
+  await cargarRutinasIniciales()
 }
 
 /**
@@ -134,6 +136,7 @@ async function migrar(): Promise<void> {
   })
   await cargarFeriadosIniciales()
   await cargarContadoresIniciales()
+  await cargarRutinasIniciales()
 }
 
 export type EventoTipo = TipoEvento

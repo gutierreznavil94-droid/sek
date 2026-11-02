@@ -34,6 +34,7 @@ import { deshacerUltimoToque, propuestasDeSubida, responderPropuesta, resumenCon
 import { estadoVisible, metasPorDia } from '../../services/metas'
 import { FilaMeta } from '../metas'
 import { ahora } from '../../services/reloj'
+import { rutinaDelDia, sesionEnCurso } from '../../services/entreno'
 import { obtenerRevision } from '../../services/revisiones'
 import { xpDelDia, xpTotal } from '../../services/xp'
 import { Celebracion, Hoja, IconoPilar } from '../componentes'
@@ -72,7 +73,9 @@ async function cargarPanel(hoy: string) {
   try { buenosDias = localStorage.getItem('buenos-dias') } catch { /* sin almacenamiento */ }
   const anoche = buenosDias ? (await resumenSuenio(hoy, 2)).anoche : null
   const ajusteDeAyer = revisionAyer?.respuestas.ajuste?.trim() || null
-  return { antes: false as const, metasSemana, ajustes, estado, compromisos, nivel, atributos, racha, juego, semana, xpHoy, revision, nocheAbierta, suenio, proximoEntreno, pilares, propuestas, contadores, ventana, ajusteDeAyer, buenosDias, anoche }
+  const rutina = (await rutinaDelDia(hoy)) ?? null
+  const entrenoEnCurso = !!(await sesionEnCurso())
+  return { antes: false as const, rutina, entrenoEnCurso, metasSemana, ajustes, estado, compromisos, nivel, atributos, racha, juego, semana, xpHoy, revision, nocheAbierta, suenio, proximoEntreno, pilares, propuestas, contadores, ventana, ajusteDeAyer, buenosDias, anoche }
 }
 
 async function proximoEntrenamiento(hoy: string, zona: string) {
@@ -99,6 +102,7 @@ const ICONO_SIG = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 
 export function Hoy({ hoy }: { hoy: string }) {
   const panel = useDatos(() => cargarPanel(hoy), [hoy])
+  const navegar = useNavigate()
   const tic = useTic(30_000)
   const [seleccion, setSeleccion] = useState<CompromisoConAccion | null>(null)
   const [pilarSel, setPilarSel] = useState<Pilar | null>(null)
@@ -225,6 +229,8 @@ export function Hoy({ hoy }: { hoy: string }) {
   const tocarPilar = (p: Pilar) => {
     if (p.estado === 'descanso' || !p.compromiso) return
     if (p.estado !== 'pendiente') return setPilarSel(p)
+    // Entrenamiento: abre el modo entreno (la rutina que toca hoy); al terminar se marca solo.
+    if (p.accion.tipo === 'entrenamiento') return navegar('/entreno')
     if (p.accion.tipo === 'acostarse') {
       if (p.ventanaCerrada) return avisar(`Pasaron las ${ajustes.horaLimiteCelu}: la noche queda sin cumplir.`, { tipo: 'bajo' })
       return void dejoCelu()
@@ -310,6 +316,8 @@ export function Hoy({ hoy }: { hoy: string }) {
               onTocar={() => tocarPilar(p)}
               onMas={() => p.compromiso && setPilarSel(p)}
               horaLimiteCelu={ajustes.horaLimiteCelu}
+              rutina={d.rutina}
+              entrenoEnCurso={d.entrenoEnCurso}
             />
           ))}
         </div>
@@ -455,7 +463,7 @@ function iconoPilar(estado: Pilar['estado']): string {
   }
 }
 
-function TarjetaPilar({ p, suenio, zona, tic, flash, marcado, onTocar, onMas, horaLimiteCelu }: { p: Pilar; suenio: { horaReal: number } | undefined; zona: string; tic: number; flash?: number; marcado: boolean; onTocar: () => void; onMas: () => void; horaLimiteCelu: string }) {
+function TarjetaPilar({ p, suenio, zona, tic, flash, marcado, onTocar, onMas, horaLimiteCelu, rutina, entrenoEnCurso }: { p: Pilar; suenio: { horaReal: number } | undefined; zona: string; tic: number; flash?: number; marcado: boolean; onTocar: () => void; onMas: () => void; horaLimiteCelu: string; rutina?: { nombre: string; minutos: number } | null; entrenoEnCurso?: boolean }) {
   const c = p.compromiso
   const esCelu = p.accion.tipo === 'acostarse'
   const esEntreno = p.accion.tipo === 'entrenamiento'
@@ -476,9 +484,9 @@ function TarjetaPilar({ p, suenio, zona, tic, flash, marcado, onTocar, onMas, ho
       detalle = 'Descanso'
       break
     default:
-      detalle = p.ventanaCerrada ? 'Ya no se registra' : p.vencido ? (esCelu ? `Tarde · hasta ${horaLimiteCelu}` : `Venció ${p.horaLimite}`) : esCelu ? `Dejo celu hasta ${p.horaLimite}` : esEntreno ? `${c?.horaPrevista ?? ''} · mín. ${p.accion.minutosMinimos ?? 0} min` : `Hasta ${p.horaLimite}${p.accion.minutosMinimos ? ` · ${p.accion.minutosMinimos} min` : ''}`
+      detalle = p.ventanaCerrada ? 'Ya no se registra' : p.vencido ? (esCelu ? `Tarde · hasta ${horaLimiteCelu}` : `Venció ${p.horaLimite}`) : esCelu ? `Dejo celu hasta ${p.horaLimite}` : esEntreno ? (rutina ? `${rutina.nombre} · ~${rutina.minutos} min` : `${c?.horaPrevista ?? ''} · mín. ${p.accion.minutosMinimos ?? 0} min`) : `Hasta ${p.horaLimite}${p.accion.minutosMinimos ? ` · ${p.accion.minutosMinimos} min` : ''}`
   }
-  const accionTexto = p.estado === 'pendiente' ? (esCelu ? 'Tocá para registrar' : esEntreno ? 'Tocá al terminar' : 'Tocá si lo hiciste') : ''
+  const accionTexto = p.estado === 'pendiente' ? (esCelu ? 'Tocá para registrar' : esEntreno ? (entrenoEnCurso ? 'En curso · tocá para seguir' : 'Tocá para empezar') : 'Tocá si lo hiciste') : ''
   return (
     <button
       type="button"

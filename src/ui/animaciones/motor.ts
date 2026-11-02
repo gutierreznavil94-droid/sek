@@ -13,7 +13,7 @@ export type Animacion =
   | { tipo: 'ejecucion'; pilar: string; estilo?: EstiloCorte }
   | { tipo: 'parry'; nombre?: string }
   | { tipo: 'postura'; modo: '321' | 'siguiente' }
-  | { tipo: 'logro'; clase: 'nivel' | 'racha' | 'fase'; texto: string; sub?: string }
+  | { tipo: 'logro'; clase: 'nivel' | 'racha' | 'fase' | 'record'; texto: string; sub?: string }
 
 export type ModoAnimaciones = 'todas' | 'logros' | 'ninguna'
 
@@ -37,6 +37,7 @@ export const KANJI: Record<string, { k: string; significado: string }> = {
   nivel: { k: '昇', significado: 'ascender' },
   racha: { k: '連', significado: 'seguidos' },
   fase: { k: '段', significado: 'etapa' },
+  record: { k: '力', significado: 'fuerza' },
 }
 
 /** Corte por defecto de cada pilar; a veces sale otro al azar para que no se repita. */

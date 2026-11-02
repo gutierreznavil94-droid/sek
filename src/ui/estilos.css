@@ -1228,3 +1228,87 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 @keyframes menu-entra { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 .menu-flotante.arriba { animation-name: menu-entra-arriba; }
 @keyframes menu-entra-arriba { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Cambios 26: entrenamiento en modo juego (v0.36) ---------- */
+.entreno-app { --sombra-color: #8b6cf0; --acomodar-color: var(--papel); }
+.contenido.entreno { padding-bottom: calc(24px + env(safe-area-inset-bottom)); gap: 12px; }
+.entreno-cab { padding-top: env(safe-area-inset-top); }
+.entreno-titulo { font-size: 1.9rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+.entreno-nota { color: var(--texto-2); font-style: italic; }
+.entreno-nota.grande { font-style: normal; color: var(--texto); font-size: 1.5rem; font-weight: 750; }
+.entreno-serie { font-size: 1.15rem; font-weight: 700; }
+.entreno-k { font-size: 3.4rem; color: var(--acento); text-align: center; line-height: 1; }
+.entreno-puntos { display: flex; gap: 4px; }
+.entreno-puntos span { flex: 1; height: 5px; border-radius: 3px; background: var(--fondo-3); }
+.entreno-puntos span.hecho { background: var(--verde, #6FAF8E); }
+.entreno-puntos span.saltado { background: var(--borde); }
+.entreno-puntos span.actual { background: var(--acento); }
+.entreno-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.entreno-lista li { display: flex; align-items: center; gap: 8px; padding: 9px 0; border-top: 1px solid var(--borde); }
+.entreno-lista li:first-child { border-top: 0; }
+.entreno-lista li.actual { color: var(--acento); }
+.entreno-lista li.mejor { color: var(--verde, #6FAF8E); }
+.entreno-lista li.igual { color: var(--texto-3); }
+.entreno-ir { background: none; border: 0; padding: 4px 0; text-align: left; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+.tachado { text-decoration: line-through; }
+.entreno-bloque { gap: 12px; }
+.stepper { display: flex; flex-direction: column; gap: 4px; }
+.stepper .etiqueta { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texto-3); }
+.stepper .fila { gap: 8px; }
+.stepper .boton.grande { min-width: 64px; min-height: 64px; font-size: 1.8rem; border-radius: 16px; }
+.stepper .valor { flex: 1; text-align: center; font-size: 2.3rem; font-weight: 800; border: 1px solid var(--borde); border-radius: 16px; min-height: 64px; display: flex; align-items: center; justify-content: center; background: var(--fondo-2); }
+.stepper.mejor .valor { color: var(--verde, #6FAF8E); border-color: var(--verde, #6FAF8E); }
+.stepper.igual .valor { color: var(--texto-2); }
+.entreno-hecha { min-height: 68px; font-size: 1.3rem; }
+.entreno-sugerencia { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; border: 1px dashed var(--verde, #6FAF8E); background: rgba(var(--verde-rgb, 111, 175, 142), 0.1); color: var(--verde, #6FAF8E); border-radius: 12px; padding: 8px 12px; font-weight: 700; cursor: pointer; }
+.entreno-sugerencia .chico { color: var(--texto-2); font-weight: 500; }
+.entreno-hoy { display: flex; flex-wrap: wrap; gap: 6px; }
+.marca { border: 1px solid var(--borde); border-radius: 999px; padding: 3px 10px; color: var(--texto-2); }
+.marca.mejor { border-color: var(--verde, #6FAF8E); color: var(--verde, #6FAF8E); }
+.marca.igual { color: var(--texto-3); }
+.entreno-pie { margin-top: 4px; }
+.entreno-reloj { font-size: 5.2rem; font-weight: 800; text-align: center; letter-spacing: -0.03em; line-height: 1; margin: 6px 0; }
+.entreno-barra { height: 12px; border-radius: 6px; background: var(--fondo-3); overflow: hidden; }
+.entreno-barra > div { height: 100%; background: var(--acento); transition: width 0.25s linear; }
+.entreno-descanso { gap: 12px; }
+.entreno-fase { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; }
+.entreno-descanso.sombra .entreno-fase, .entreno-descanso.sombra .entreno-reloj { color: var(--sombra-color); }
+.entreno-descanso.sombra .entreno-barra > div { background: var(--sombra-color); }
+.entreno-descanso.descanso .entreno-barra > div { background: var(--texto-2); }
+.entreno-descanso.acomodar .entreno-barra > div { background: var(--acomodar-color); }
+.entreno-fases { display: flex; gap: 4px; }
+.entreno-fases span { border-radius: 8px; padding: 6px 8px; font-size: 0.78rem; font-weight: 700; background: var(--fondo-3); color: var(--texto-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.entreno-fases span.sombra { background: color-mix(in srgb, var(--sombra-color) 22%, transparent); color: var(--sombra-color); }
+.entreno-fases span.actual { outline: 2px solid currentColor; color: var(--texto); }
+.entreno-fases span.sombra.actual { color: var(--sombra-color); }
+.entreno-fases span.paso { opacity: 0.45; }
+.entreno-timer.rondas .entreno-barra > div { background: var(--acento); }
+.entreno-timer.calentamiento .entreno-barra > div { background: var(--verde, #6FAF8E); }
+.entreno-ronda { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--borde); border-radius: 12px; color: var(--texto-2); }
+.entreno-ronda.actual { border-color: var(--acento); color: var(--texto); background: var(--acento-suave); font-weight: 700; }
+.entreno-ronda.paso { opacity: 0.5; text-decoration: line-through; }
+.entreno-casilla { display: flex; align-items: center; justify-content: center; gap: 14px; min-height: 96px; border-radius: 18px; border: 2px dashed var(--borde); background: var(--fondo-2); color: var(--texto); font-size: 1.3rem; font-weight: 750; cursor: pointer; }
+.entreno-casilla .caja { width: 40px; height: 40px; border-radius: 10px; border: 2px solid var(--verde, #6FAF8E); color: var(--verde, #6FAF8E); display: inline-flex; align-items: center; justify-content: center; }
+.entreno-fin { align-items: stretch; text-align: center; gap: 12px; padding-top: 30px; }
+.entreno-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.entreno-stats > div { background: var(--fondo-2); border: 1px solid var(--borde); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; align-items: center; }
+.entreno-stats b { font-size: 1.8rem; font-weight: 800; }
+.entreno-stats span { font-size: 0.8rem; color: var(--texto-3); }
+.entreno-empezar { margin-top: 6px; }
+.rutina-item { color: var(--texto); gap: 6px; }
+.chips-mini { display: flex; flex-wrap: wrap; gap: 4px; }
+.chips-mini span { font-size: 0.75rem; color: var(--texto-2); background: var(--fondo-3); border-radius: 999px; padding: 2px 8px; }
+.bloque-ed-cab { background: none; border: 0; color: var(--texto); text-align: left; padding: 6px 0; font: inherit; cursor: pointer; }
+.bloque-ed.calentamiento, .bloque-ed.temporizador, .bloque-ed.rondas, .bloque-ed.casilla { border-style: dashed; }
+.grafico-ejercicio .eje { stroke: var(--borde); }
+.grafico-ejercicio .barra-peso { fill: var(--fondo-3); stroke: var(--borde); }
+.grafico-ejercicio .barra-peso.record { fill: var(--acento-suave); stroke: var(--acento); }
+.grafico-ejercicio .linea-reps { stroke: var(--verde, #6FAF8E); stroke-width: 2.5; }
+.grafico-ejercicio .punto-reps { fill: var(--verde, #6FAF8E); }
+.grafico-ejercicio .estrella { fill: var(--acento); font-size: 12px; }
+.grafico-ejercicio .etq { fill: var(--texto-3); font-size: 10px; }
+.grafico-ejercicio .etq.reps { fill: var(--verde, #6FAF8E); }
+.av-fuerza { display: grid; grid-template-columns: 1fr 96px; gap: 10px; align-items: end; }
+.av-fuerza-records, .av-fuerza > .av-nota { grid-column: 1 / -1; }
+.av-fuerza-records { display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; }
+.entreno-ronda .mono { white-space: nowrap; }

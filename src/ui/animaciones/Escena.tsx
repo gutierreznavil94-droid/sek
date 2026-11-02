@@ -477,8 +477,8 @@ function Postura({ modo, dur }: { modo: '321' | 'siguiente'; dur: number }) {
   )
 }
 
-function Logro({ clase, dur, enemigo }: { clase: 'nivel' | 'racha' | 'fase'; dur: number; enemigo: VarianteEnemigo }) {
-  const estilo: EstiloCorte = clase === 'nivel' ? 'diagonal' : clase === 'racha' ? 'horizontal' : 'vertical'
+function Logro({ clase, dur, enemigo }: { clase: 'nivel' | 'racha' | 'fase' | 'record'; dur: number; enemigo: VarianteEnemigo }) {
+  const estilo: EstiloCorte = clase === 'nivel' ? 'diagonal' : clase === 'racha' || clase === 'record' ? 'horizontal' : 'vertical'
   const k = KANJI[clase].k
   return (
     <g className="sh-logro">

@@ -10,6 +10,7 @@ import { atributosHoy, cumplimientoPorDia, pilaresPorDia, rachaActual, type Esta
 import { xpAntesDe, xpPorDia, xpTotal } from '../../services/xp'
 import { resumenContadores } from '../../services/contadores'
 import { duracionSuenio, resumenSuenio, type ResumenSuenio } from '../../services/suenio'
+import { kg, resumenFuerza, type ResumenFuerza } from '../../services/entreno'
 import { Hoja, clasePorcentaje, elegirMovimiento, movimientoReducido } from '../componentes'
 import { useDatos } from '../estado'
 import { graficoMetas } from '../../services/metas'
@@ -48,6 +49,7 @@ export function Progreso({ hoy }: { hoy: string }) {
     for (const c of await db().contadores.toArray()) acciones.set(`contador:${c.id}`, `${c.nombre} (meta diaria)`)
     const contadores = await resumenContadores(hoy)
     const sueno = await resumenSuenio(hoy, 14)
+    const fuerza = await resumenFuerza(hoy, estado && !estado.noEmpezado ? estado.ciclo.inicio : hoy)
     let pilares: { id: string; nombre: string; hechos: number; programados: number }[] = []
     let diasCumplidos = 0
     let diasContados = 0
@@ -83,7 +85,7 @@ export function Progreso({ hoy }: { hoy: string }) {
         if (c.porcentaje >= ajustes.umbralRacha) diasCumplidos++
       }
     }
-    return { ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, pilares, diasCumplidos, diasContados }
+    return { ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados }
   }, [hoy])
   const reducido = useMemo(() => movimientoReducido(), [])
   const modo = useModoFondo()
@@ -153,6 +155,9 @@ export function Progreso({ hoy }: { hoy: string }) {
 
             {/* Sueño: una variable más de mejora. Tocar abre la pantalla Sueño. */}
             <TarjetaSueno r={d.sueno} />
+
+            {/* Fuerza: récords del ciclo, mejoras del mes y volumen por semana. Tocar abre las rutinas. */}
+            <TarjetaFuerza f={d.fuerza} />
 
             {/* Pilares del ciclo */}
             {d.pilares.length > 0 && (
@@ -641,6 +646,41 @@ function TarjetaSueno({ r }: { r: ResumenSuenio }) {
         </div>
       ) : (
         <div className="av-nota">Con la primera noche registrada aparece acá cómo dormís.</div>
+      )}
+    </section>
+  )
+}
+
+function TarjetaFuerza({ f }: { f: ResumenFuerza }) {
+  const navegar = useNavigate()
+  const abrir = () => navegar('/mas/rutinas')
+  const tope = Math.max(1, ...f.volumenPorSemana.map((v) => v.volumen))
+  return (
+    <section className="av-tarjeta av-tocable" role="button" tabIndex={0} onClick={abrir} onKeyDown={(e) => e.key === 'Enter' && abrir()} aria-label="Fuerza. Tocá para ver las rutinas">
+      <div className="av-tarjeta-titulo"><span>Fuerza</span><span className="av-nota">{f.entrenos} entrenos en el ciclo ›</span></div>
+      {f.entrenos ? (
+        <div className="av-fuerza">
+          <div className="av-sueno-cifras">
+            <div><b className="av-mono">{f.records.length}</b><span className="av-nota">récords del ciclo</span></div>
+            <div><b className="av-mono av-verde">{f.mejoraronEsteMes.length}</b><span className="av-nota">mejoraron este mes</span></div>
+            <div><b className="av-mono">{(f.volumenPorSemana.at(-1)?.volumen ?? 0).toLocaleString('es-AR')}</b><span className="av-nota">kg esta semana</span></div>
+          </div>
+          <svg className="av-sueno-mini" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">
+            {f.volumenPorSemana.map((v, i) => {
+              const w = 100 / f.volumenPorSemana.length
+              const h = Math.max(1, (v.volumen / tope) * 38)
+              return <rect key={v.semana} x={i * w + w * 0.2} y={40 - h} width={w * 0.6} height={h} rx={1.5} className={i === f.volumenPorSemana.length - 1 ? 'ok' : ''} />
+            })}
+          </svg>
+          {f.records.length > 0 && (
+            <div className="av-fuerza-records">
+              {f.records.slice(0, 4).map((r) => <span key={r.nombre}>★ {r.nombre} · <span className="av-mono">{r.marca.reps} × {kg(r.marca.peso)}</span></span>)}
+            </div>
+          )}
+          <div className="av-nota">Volumen por semana (últimas {f.volumenPorSemana.length})</div>
+        </div>
+      ) : (
+        <div className="av-nota">Con tu primer entreno en modo juego aparecen acá tus récords y tu volumen.</div>
       )}
     </section>
   )

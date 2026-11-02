@@ -3,7 +3,7 @@
  * reglas de XP. Todo es editable desde la app después.
  */
 
-import type { Contador, Accion, Ajustes, Atributo, Feriado, Identidad, ReglaXp } from './tipos'
+import type { Contador, Accion, Ajustes, Atributo, BloqueEjercicio, BloqueRutina, Feriado, Identidad, ReglaXp, Rutina } from './tipos'
 import { ZONA_POR_DEFECTO } from '../domain/fechas'
 
 export const AJUSTES_INICIALES: Ajustes = {
@@ -63,7 +63,7 @@ export const ACCIONES_INICIALES: Omit<Accion, 'creado'>[] = [
     nombre: 'Entrenamiento',
     tipo: 'entrenamiento',
     condicion: 'Hacer el entrenamiento completo (42 min) el día programado. Los demás días el pilar muestra «Descanso».',
-    dias: [1, 3, 5],
+    dias: [1, 2, 3, 4, 5, 6],
     hora: '07:00',
     minutosMinimos: 42,
     duracionMinutos: 42,
@@ -195,4 +195,88 @@ export const FERIADOS_INICIALES: Omit<Feriado, 'creado'>[] = [
 export const CONTADORES_INICIALES: Omit<Contador, 'creado'>[] = [
   { id: 'flexiones', nombre: 'Flexiones', cantidadPorToque: 14, metaDiaria: 70, xpMetaDiaria: 10, metaExtra: 105, xpExtra: 10, pasoSubida: 5, atributoIds: ['fisico'], orden: 1, activo: true },
   { id: 'dominadas', nombre: 'Dominadas', cantidadPorToque: 7, metaDiaria: 35, xpMetaDiaria: 10, metaExtra: 53, xpExtra: 10, pasoSubida: 2, atributoIds: ['fisico'], orden: 2, activo: true },
+]
+
+// ---------- Rutinas de entrenamiento (planilla «HORARIO FINAL 2026» de Navil) ----------
+
+/** Ejercicio con los valores de la planilla. Tope de la doble progresión: 3 repeticiones arriba del objetivo. */
+function ej(id: string, nombre: string, grupo: string | undefined, series: number, reps: number, peso: number, extra: Partial<BloqueEjercicio> = {}): BloqueEjercicio {
+  // Mancuernas y discos chicos suben de a 1 kg; la barra, de a 2,5 kg; peso corporal, más repeticiones.
+  const incremento = peso === 0 ? 0 : /mancuerna|vuelos|martillo|zancadas|sentado|tríceps polea/i.test(nombre) ? 1 : 2.5
+  return { id, tipo: 'ejercicio', nombre, grupo, series, reps, repsTope: reps + 3, peso, incremento, descanso: 90, sombra: 30, ...extra }
+}
+
+const calentamiento = (r: string): BloqueRutina => ({ id: `${r}-calentar`, tipo: 'calentamiento', nombre: 'Calentamiento', segundos: 180, nota: 'Banda elástica' })
+const colgarse = (r: string): BloqueRutina => ({ id: `${r}-colgarse`, tipo: 'temporizador', nombre: 'Colgarse en barra', segundos: 70, veces: 1, peso: 15, nota: 'Recuperación' })
+const kick = (r: string): BloqueRutina => ({
+  id: `${r}-kick`,
+  tipo: 'rondas',
+  nombre: 'Kick boxing',
+  rondas: [
+    { segundos: 60, texto: 'Enfoque en velocidad y ritmo' },
+    { segundos: 60, texto: 'Combinación y vaciado (FULL)' },
+  ],
+})
+const estirar = (r: string): BloqueRutina => ({ id: `${r}-estirar`, tipo: 'casilla', nombre: 'Estirar' })
+
+export const RUTINAS_INICIALES: Omit<Rutina, 'creado'>[] = [
+  {
+    id: 'rutina-a',
+    nombre: 'Rutina A · Pecho, hombro y tríceps',
+    dias: [1, 4],
+    minutos: 42,
+    orden: 1,
+    activa: true,
+    bloques: [
+      calentamiento('a'),
+      ej('a-press-banca', 'Press banca', 'Pecho', 2, 8, 53),
+      ej('a-press-inclinado', 'Press inclinado', 'Pecho', 2, 7, 48),
+      ej('a-press-hombro', 'Press mancuerna hombro', 'Hombro', 2, 6, 12.5, { nota: 'Disco más atrás' }),
+      ej('a-vuelos', 'Vuelos laterales', 'Hombro', 2, 11, 5),
+      colgarse('a'),
+      ej('a-press-frances', 'Press francés', 'Tríceps', 2, 5, 15),
+      ej('a-jalon-triceps', 'Jalón tríceps polea', 'Tríceps', 2, 12, 5, { repsExtra: 3, nota: 'Codo costilla' }),
+      kick('a'),
+      estirar('a'),
+    ],
+  },
+  {
+    id: 'rutina-b',
+    nombre: 'Rutina B · Espalda, bíceps y abdomen',
+    dias: [2, 5],
+    minutos: 42,
+    orden: 2,
+    activa: true,
+    bloques: [
+      calentamiento('b'),
+      ej('b-dominadas', 'Dominadas neutro', 'Espalda', 2, 11, 6),
+      ej('b-remo', 'Remo con mancuerna', 'Espalda', 2, 14, 5, { nota: 'Con buena técnica' }),
+      ej('b-curl-z', 'Curl con barra Z', 'Bíceps', 2, 5, 20),
+      ej('b-martillo', 'Curl martillo', 'Bíceps', 2, 9, 10, { nota: 'Controlado' }),
+      colgarse('b'),
+      ej('b-abdomen-barra', 'Abdomen en barra', 'Abdomen', 2, 18, 0),
+      ej('b-abdomen-declinado', 'Abdomen en press declinado', 'Abdomen', 2, 10, 0),
+      kick('b'),
+      estirar('b'),
+    ],
+  },
+  {
+    id: 'rutina-c',
+    nombre: 'Rutina C · Pierna',
+    dias: [3, 6],
+    minutos: 35,
+    orden: 3,
+    activa: true,
+    bloques: [
+      calentamiento('c'),
+      ej('c-sentadillas', 'Sentadillas con barra', 'Pierna', 2, 7, 20, { descanso: 120, nota: 'Controlado' }),
+      ej('c-zancadas', 'Zancadas con subida', 'Pierna', 2, 7, 10, { nota: 'Controlado' }),
+      ej('c-rumano', 'Peso muerto rumano', 'Pierna', 2, 7, 20, { nota: 'Controlado' }),
+      ej('c-gemelos-barra', 'Gemelos con barra', 'Gemelos', 2, 20, 20, { nota: 'Controlado, sin disco por ahora' }),
+      ej('c-gemelos-sentado', 'Gemelos sentado', 'Gemelos', 2, 18, 10, { nota: 'Controlado' }),
+      colgarse('c'),
+      kick('c'),
+      estirar('c'),
+    ],
+  },
 ]
