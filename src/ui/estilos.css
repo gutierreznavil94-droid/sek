@@ -1524,3 +1524,14 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .entreno-tarde { margin: 4px 0 0; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(200, 16, 46, .6); background: rgba(200, 16, 46, .1); font-size: 14px; line-height: 1.4; }
 .aviso-entreno { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 10px 12px 9px 13px; border: 1px solid rgba(200, 16, 46, .7); background: linear-gradient(160deg, rgba(200, 16, 46, .16), rgba(18, 17, 16, .6)); box-shadow: 0 0 16px rgba(200, 16, 46, .2); margin-bottom: 4px; }
 .aviso-entreno .boton { flex: none; }
+
+/* Fechas clave (印): sello violeta tipo hanko. Violeta y no rojo: no es «no cumplido». */
+:root { --violeta: #9b7bd4; --violeta-rgb: 155, 123, 212; }
+.sello-clave { font-family: 'Pincel', serif; font-size: 0.62rem; line-height: 1; color: #f4eefc; background: rgba(var(--violeta-rgb), 0.92); border-radius: 2px 3px 2px 3px; padding: 1px 1.5px; box-shadow: 0 0 0 1px rgba(var(--violeta-rgb), 0.5), 0 0 6px rgba(var(--violeta-rgb), 0.45); transform: rotate(-6deg); display: inline-block; }
+.cal-dia .sello-clave { position: absolute; top: 3px; left: 3px; }
+.cal-dia.fuera:has(.sello-clave) { opacity: 0.6; }
+.sello-clave.muestra { position: static; margin-right: 4px; font-size: 0.7rem; }
+.sello-clave.grande { font-size: 1rem; padding: 3px 4px; flex: none; }
+.claves-del-dia { display: flex; flex-direction: column; gap: 6px; padding: 8px 0; border-bottom: 1px solid var(--borde); }
+.clave-fila { display: flex; align-items: center; gap: 10px; text-align: left; width: 100%; padding: 8px 10px; background: rgba(var(--violeta-rgb), 0.08); border: 1px solid rgba(var(--violeta-rgb), 0.35); border-radius: 9px 11px 8px 12px / 12px 8px 11px 9px; color: var(--texto); cursor: pointer; font: inherit; }
+.clave-nueva { align-self: flex-start; color: var(--violeta); border-color: rgba(var(--violeta-rgb), 0.45); }

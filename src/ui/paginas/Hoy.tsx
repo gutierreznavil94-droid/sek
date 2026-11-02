@@ -546,7 +546,7 @@ function TarjetaPilar({ p, suenio, zona, tic, flash, marcado, destello, onTocar,
       detalle = 'Descanso'
       break
     default:
-      detalle = p.ventanaCerrada ? 'Ya no se registra' : p.vencido ? (esCelu ? `Tarde · hasta ${horaLimiteCelu}` : `Venció ${p.horaLimite}`) : esCelu ? `Dejo celu hasta ${p.horaLimite}` : esEntreno ? (rutina ? `${rutina.nombre} · ~${rutina.minutos} min` : `${c?.horaPrevista ?? ''} · mín. ${p.accion.minutosMinimos ?? 0} min`) : `Hasta ${p.horaLimite}${p.accion.minutosMinimos ? ` · ${p.accion.minutosMinimos} min` : ''}`
+      detalle = p.ventanaCerrada ? 'Ya no se registra' : p.vencido ? (esCelu ? `Tarde · hasta ${horaLimiteCelu}` : `Venció ${p.horaLimite}`) : esCelu ? `Dejo celu hasta ${p.horaLimite}` : esEntreno ? `${p.accion.horaLimiteInicio && !entrenoEnCurso ? `Empezar hasta ${p.accion.horaLimiteInicio} · ` : ''}${rutina ? `${rutina.nombre} · ~${rutina.minutos} min` : `mín. ${p.accion.minutosMinimos ?? 0} min`}` : `Hasta ${p.horaLimite}${p.accion.minutosMinimos ? ` · ${p.accion.minutosMinimos} min` : ''}`
   }
   const conExtra = tieneExtra(p.accion) && (p.estado === 'cumplido' || p.estado === 'tarde')
   const accionTexto = conExtra && !c?.extra ? `A los ${p.accion.minutosExtra} min, tocá de nuevo` : p.estado === 'pendiente' ? (esCelu ? 'Tocá para registrar' : esEntreno ? (entrenoEnCurso ? 'En curso · tocá para seguir' : 'Tocá para empezar') : 'Tocá si lo hiciste') : ''

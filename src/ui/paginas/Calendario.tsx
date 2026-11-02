@@ -12,6 +12,9 @@ import { Hoja, IconoPilar, Porcentaje, Tarjeta } from '../componentes'
 import { formatoHora } from '../../domain/fechas'
 import { obtenerAjustes } from '../../services/base'
 import { avisar, mutar, useDatos } from '../estado'
+import { agregarFechaClave, borrarFechaClave, editarFechaClave, fechasClavePorDia } from '../../services/fechasClave'
+import type { FechaClave } from '../../data/tipos'
+import { Confirmar } from '../componentes'
 
 function primerDiaMes(fecha: string): string {
   return fecha.slice(0, 8) + '01'
@@ -48,7 +51,8 @@ export function Calendario({ hoy }: { hoy: string }) {
     const excepciones = new Set((await db().excepciones.where('fecha').between(dias[0], ultimo, true, true).toArray()).map((e) => e.fecha))
     const feriados = new Map((await feriadosEntre(dias[0], ultimo)).map((f) => [f.fecha, f.nombre]))
     const acciones = ordenarPilares(await db().acciones.filter((a) => a.activa && !!a.pilar).toArray())
-    return { ciclo, pilares, metas, excepciones, feriados, acciones }
+    const claves = await fechasClavePorDia(dias[0], ultimo)
+    return { ciclo, pilares, metas, excepciones, feriados, acciones, claves }
   }, [mes, hoy])
 
   const d = datos.datos
@@ -74,15 +78,17 @@ export function Calendario({ hoy }: { hoy: string }) {
             const puntos = enCiclo ? d?.pilares.get(f) ?? [] : []
             const linea = lineaDeMetas(d?.metas.get(f) ?? [], hoy)
             const inicioFase = enCiclo && ciclo && (dia - 1) % ciclo.diasPorFase === 0
+            const claves = d?.claves.get(f) ?? []
             return (
               <div
                 key={f}
                 className={`cal-dia ${!enCiclo ? 'fuera' : ''} ${f === hoy ? 'hoy' : ''} ${sel === f ? 'seleccionado' : ''} ${d?.excepciones.has(f) ? 'excepcion' : ''} ${d?.feriados.has(f) ? 'feriado' : ''} ${inicioFase ? 'fase-inicio' : ''}`}
                 onClick={() => { setSel(sel === f ? null : f); setEnfocar(sel !== f) }}
                 role="button"
-                aria-label={`${fechaLegible(f, false)}${enCiclo ? `, día ${dia}` : ''}`}
+                aria-label={`${fechaLegible(f, false)}${enCiclo ? `, día ${dia}` : ''}${claves.length ? `, fecha clave: ${claves.map((c) => c.titulo).join(', ')}` : ''}`}
               >
                 <span className="num">{Number(f.slice(8))}</span>
+                {claves.length > 0 && <span className="sello-clave" aria-hidden>印</span>}
                 {puntos.length > 0 && (
                   <span className="puntos" aria-hidden>
                     {puntos.map((p) => <i key={p.accionId} className={f > hoy ? '' : p.estado} />)}
@@ -105,6 +111,7 @@ export function Calendario({ hoy }: { hoy: string }) {
           <span><span className="puntos"><i /></span>pendiente</span>
           <span><span className="linea-meta verde muestra" />meta cumplida</span>
           <span><span className="linea-meta roja muestra" />meta no cumplida</span>
+          <span><span className="sello-clave muestra">印</span>fecha clave</span>
         </div>
         <p className="ayuda">Los 4 puntos van siempre en ese orden: entrenamiento, empresa, manga, dormir. Tocá un día para ver cuál es cada uno. Borde: hoy. Punto arriba: feriado. Línea abajo: meta (gris pendiente). ▎ inicio de fase.</p>
       </Tarjeta>
@@ -163,6 +170,7 @@ function PilaresDelDiaSel({ fecha, hoy, ciclo, enfocar, onMas }: { fecha: string
         {d.metas.map((m) => <FilaMeta key={m.id} m={m} hoy={hoy} />)}
         {fecha < hoy && d.metas.length === 0 && <p className="muy-chico texto-3">Sin metas ese día. En días pasados no se agregan.</p>}
       </div>
+      <FechasClaveDelDia fecha={fecha} />
       {!enCiclo && <p className="texto-3 chico">Fuera del ciclo: ese día no se registra nada.</p>}
       {enCiclo && (
         <div className="pilares-lista">
@@ -298,3 +306,61 @@ function DetalleDia({ fecha, hoy, ciclo, onCerrar }: { fecha: string; hoy: strin
 }
 
 export { esFechaValida }
+
+/** Debajo de las metas del día: las fechas clave (印). Se agregan, editan y borran; no dan XP. */
+function FechasClaveDelDia({ fecha }: { fecha: string }) {
+  const datos = useDatos(async () => (await fechasClavePorDia(fecha, fecha)).get(fecha) ?? [], [fecha])
+  const [editor, setEditor] = useState<FechaClave | 'nueva' | null>(null)
+  const lista = datos.datos ?? []
+  return (
+    <div className="claves-del-dia">
+      {lista.map((fc) => (
+        <button key={fc.id} type="button" className="clave-fila" onClick={() => setEditor(fc)} aria-label={`Fecha clave: ${fc.titulo}. Tocá para editar`}>
+          <span className="sello-clave grande" aria-hidden>印</span>
+          <span className="crece col" style={{ gap: 0 }}>
+            <b className="chico">{fc.titulo}</b>
+            {(fc.nota || fc.anual) && <span className="muy-chico texto-3">{[fc.nota, fc.anual ? `cada año${fc.fecha.slice(0, 4) !== fecha.slice(0, 4) ? ` · desde ${fc.fecha.slice(0, 4)}` : ''}` : ''].filter(Boolean).join(' · ')}</span>}
+          </span>
+        </button>
+      ))}
+      <button type="button" className="boton chico suave clave-nueva" onClick={() => setEditor('nueva')}>+ fecha clave</button>
+      {editor && <EditorFechaClave fecha={fecha} fc={editor === 'nueva' ? undefined : editor} onCerrar={() => setEditor(null)} />}
+    </div>
+  )
+}
+
+function EditorFechaClave({ fecha, fc, onCerrar }: { fecha: string; fc?: FechaClave; onCerrar: () => void }) {
+  const [titulo, setTitulo] = useState(fc?.titulo ?? '')
+  const [nota, setNota] = useState(fc?.nota ?? '')
+  const [anual, setAnual] = useState(!!fc?.anual)
+  const [borrar, setBorrar] = useState(false)
+  const guardar = async () => {
+    if (!titulo.trim()) return
+    if (fc) await mutar(() => editarFechaClave(fc.id, { titulo, nota, anual }))
+    else await mutar(() => agregarFechaClave(fecha, titulo, nota, anual))
+    avisar(fc ? 'Fecha clave guardada' : 'Fecha clave marcada 印', { tipo: 'ok' })
+    onCerrar()
+  }
+  return (
+    <Hoja abierta onCerrar={onCerrar} titulo={fc ? 'Editar fecha clave' : 'Nueva fecha clave'}>
+      <p className="ayuda">{fechaLegible(fc && !fc.anual ? fc.fecha : fecha, false)}. Queda marcada en el calendario; no da XP ni cuenta como meta.</p>
+      <div className="campo">
+        <label>Título</label>
+        <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ej.: Ingreso a la facultad" maxLength={80} />
+      </div>
+      <div className="campo">
+        <label>Nota (opcional)</label>
+        <textarea rows={2} value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej.: llevar DNI y título" maxLength={240} />
+      </div>
+      <label className="fila" style={{ gap: 8, marginBottom: 12 }}>
+        <input type="checkbox" checked={anual} onChange={(e) => setAnual(e.target.checked)} />
+        <span>Se repite cada año (cumpleaños, aniversarios)</span>
+      </label>
+      <button className="boton primario ancho" disabled={!titulo.trim()} onClick={() => void guardar()}>Guardar</button>
+      {fc && <button className="boton suave ancho" style={{ marginTop: 8 }} onClick={() => setBorrar(true)}>Borrar fecha clave</button>}
+      <Confirmar abierta={borrar} titulo="¿Borrar esta fecha clave?" texto={`«${titulo}» sale del calendario${fc?.anual ? ' (de todos los años)' : ''}.`} confirmar="Borrar" peligro
+        onConfirmar={async () => { setBorrar(false); if (fc) await mutar(() => borrarFechaClave(fc.id)); avisar('Fecha clave borrada'); onCerrar() }}
+        onCancelar={() => setBorrar(false)} />
+    </Hoja>
+  )
+}

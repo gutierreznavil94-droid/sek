@@ -183,6 +183,17 @@ export type RegistroContador = {
   nota?: string
 }
 
+/** Fecha clave del calendario (印): una nota para tener a la vista. No da XP ni cuenta como meta. */
+export type FechaClave = {
+  id: string
+  /** AAAA-MM-DD. Si se repite cada año, vale el mes y día. */
+  fecha: string
+  titulo: string
+  nota?: string
+  anual?: boolean
+  creada: number
+}
+
 /** Regla de «Mi código» (掟): solo se lee, no se marca ni da XP. */
 export type GrupoCodigo = 'cuerpo' | 'mente' | 'comida' | 'cuidado'
 /** Momento del día de una regla: mañana, tarde, noche o siempre (costumbres que valen todo el día). */
