@@ -1336,3 +1336,8 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 .entreno-fase-fila { align-items: center; }
 .entreno-fase-fila .entreno-reloj { font-size: 4rem; margin: 0; }
 .entreno-descanso.sombra .entreno-fase-fila .entreno-reloj { color: var(--sombra-color); }
+/* Cambios 28: colgarse en barra como cronómetro */
+.entreno-prep { font-size: 7rem; color: var(--acento); }
+.entreno-fase.ok { color: var(--verde, #6FAF8E); }
+.entreno-barra.cronometro > div { background: var(--verde, #6FAF8E); }
+.entreno-tiempo { padding: 10px 12px; border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo-2); }

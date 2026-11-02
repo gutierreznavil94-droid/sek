@@ -145,8 +145,11 @@ function EditorBloque({ b, onCambio, onQuitar, onGrafico }: { b: BloqueRutina; o
       )}
       {(b.tipo === 'calentamiento' || b.tipo === 'temporizador') && (
         <div className="rejilla-2">
-          <Num etiqueta="Segundos" valor={b.segundos} paso={5} onCambio={(v) => onCambio({ segundos: v })} />
+          <Num etiqueta={b.tipo === 'temporizador' && b.modo === 'cronometro' ? 'Objetivo (s)' : 'Segundos'} valor={b.segundos} paso={5} onCambio={(v) => onCambio({ segundos: v })} />
           <Num etiqueta="Peso (kg)" valor={b.peso} paso={0.5} onCambio={(v) => onCambio({ peso: v || undefined })} />
+          {b.tipo === 'temporizador' && (
+            <div className="campo"><label>Tipo</label><button className="boton" onClick={() => onCambio({ modo: b.modo === 'cronometro' ? 'cuenta' : 'cronometro' })}>{b.modo === 'cronometro' ? 'Cronómetro (cuenta para arriba)' : 'Cuenta regresiva'}</button></div>
+          )}
         </div>
       )}
       {b.tipo === 'rondas' && b.rondas.map((x, i) => (

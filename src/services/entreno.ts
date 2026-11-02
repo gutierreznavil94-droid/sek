@@ -13,7 +13,7 @@
 
 import { db } from '../data/db'
 import { RUTINAS_INICIALES } from '../data/semilla'
-import type { BloqueEjercicio, BloqueRutina, FaseDescanso, Rutina, SerieHecha, SesionEntreno } from '../data/tipos'
+import type { BloqueEjercicio, BloqueRutina, FaseDescanso, Rutina, SerieHecha, SesionEntreno, TiempoHecho } from '../data/tipos'
 import { diaSemanaDe, lunesDe, sumarDias, type FechaDia } from '../domain/fechas'
 import { claveXp } from '../domain/xp'
 import { fechaHoy, registrarEvento } from './base'
@@ -32,6 +32,11 @@ export const TOPE_XP_EXTRA = 20
 export async function cargarRutinasIniciales(): Promise<void> {
   const d = db()
   if ((await d.rutinas.count()) > 0) {
+    // Colgarse en barra pasa de temporizador a cronómetro (pedido de Navil, ronda 3).
+    for (const r of await d.rutinas.toArray()) {
+      if (!r.bloques.some((b) => b.tipo === 'temporizador' && b.id.endsWith('-colgarse') && !b.modo)) continue
+      await d.rutinas.put({ ...r, bloques: r.bloques.map((b) => (b.tipo === 'temporizador' && b.id.endsWith('-colgarse') && !b.modo ? { ...b, modo: 'cronometro' as const } : b)) })
+    }
     // Primera prueba de la v0.36: tenía incrementos automáticos y tope = planilla + 3. Ahora tope 12 y sin incrementos.
     for (const r of await d.rutinas.toArray()) {
       if (!r.bloques.some((b) => b.tipo === 'ejercicio' && b.incremento !== undefined)) continue
@@ -605,4 +610,53 @@ export async function resumenFuerza(hoy: FechaDia, inicioCiclo: FechaDia, semana
     volumenPorSemana.push({ semana: desde, volumen: Math.round(volumen) })
   }
   return { entrenos: todas.filter((s) => s.fecha >= inicioCiclo).length, records: [...records.values()].sort((a, b) => b.fecha.localeCompare(a.fecha)), mejoraronEsteMes: [...mejoraron], volumenPorSemana }
+}
+
+// ---------- Cronómetro (colgarse en barra) ----------
+
+/** Segundos para acomodarse y colgarse después de tocar «Empezar». */
+export const PREPARACION_S = 5
+/** Segundos que se descuentan al tocar «Listo» (lo que tarda en bajar y tocar). */
+export const DESCUENTO_S = 3
+
+/** Estado del cronómetro: preparándose (cuenta 5 → 1) o colgado (segundos para arriba). */
+export function estadoCronometro(inicio: number, t: number): { preparando: boolean; prep: number; segundos: number } {
+  const pasado = (t - inicio) / 1000
+  if (pasado < PREPARACION_S) return { preparando: true, prep: Math.ceil(PREPARACION_S - pasado), segundos: 0 }
+  return { preparando: false, prep: 0, segundos: pasado - PREPARACION_S }
+}
+
+/** Tiempo final: lo colgado menos el descuento, sin negativos. */
+export function tiempoFinal(inicio: number, t: number): number {
+  return Math.max(0, Math.round(estadoCronometro(inicio, t).segundos - DESCUENTO_S))
+}
+
+/** «Listo»: guarda el tiempo (con el descuento) y el peso, y pasa al siguiente bloque. */
+export async function terminarCronometro(id: number, bloqueId: string, peso: number): Promise<{ sesion: SesionEntreno; tiempo: TiempoHecho }> {
+  const s = await sesion(id)
+  const r = await obtenerRutina(s.rutinaId)
+  const b = r && bloqueDe(r, bloqueId)
+  if (!r || !b) throw new Error('Bloque no encontrado')
+  const t = ahora()
+  const segundos = s.reloj?.bloqueId === bloqueId ? tiempoFinal(s.reloj.inicio, t) : 0
+  const tiempo: TiempoHecho = { bloqueId, nombre: b.nombre, segundos, peso: Math.max(0, peso), instante: t }
+  const nueva: SesionEntreno = { ...s, tiempos: [...(s.tiempos ?? []).filter((x) => x.bloqueId !== bloqueId), tiempo], pesos: { ...s.pesos, [bloqueId]: peso }, hechos: s.hechos.includes(bloqueId) ? s.hechos : [...s.hechos, bloqueId], reloj: undefined, descanso: undefined }
+  nueva.paso = siguientePaso(nueva, r, s.paso)
+  return { sesion: await guardarSesion(nueva), tiempo }
+}
+
+/** Corrige el tiempo registrado (por si tocó tarde). */
+export async function corregirTiempo(id: number, bloqueId: string, segundos: number): Promise<SesionEntreno> {
+  const s = await sesion(id)
+  return guardarSesion({ ...s, tiempos: (s.tiempos ?? []).map((x) => (x.bloqueId === bloqueId ? { ...x, segundos: Math.max(0, Math.round(segundos)) } : x)) })
+}
+
+/** Últimos tiempos y récord de un cronómetro (por nombre: el mismo en las 3 rutinas). */
+export async function historialTiempo(nombre: string, excepto?: number): Promise<{ ultimo: TiempoHecho | null; record: TiempoHecho | null }> {
+  const lista = (await db().sesionesEntreno.filter((s) => s.estado === 'terminada' && s.id !== excepto).toArray())
+    .flatMap((s) => (s.tiempos ?? []).filter((x) => x.nombre === nombre))
+    .sort((a, b) => a.instante - b.instante)
+  let record: TiempoHecho | null = null
+  for (const x of lista) if (!record || x.peso > record.peso || (x.peso === record.peso && x.segundos > record.segundos)) record = x
+  return { ultimo: lista[lista.length - 1] ?? null, record }
 }

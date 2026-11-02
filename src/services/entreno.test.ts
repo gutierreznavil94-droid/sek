@@ -31,6 +31,7 @@ import {
   terminarEntreno,
   ultimaVez,
 } from './entreno'
+import { DESCUENTO_S, PREPARACION_S, estadoCronometro, historialTiempo, iniciarReloj, terminarCronometro } from './entreno'
 import { avanzar, fijarAhora, reiniciarReloj } from './reloj'
 import { xpTotal } from './xp'
 
@@ -302,5 +303,44 @@ describe('historial y fuerza', () => {
     expect(f.records.map((r) => r.nombre)).toEqual(['Press banca'])
     expect(f.mejoraronEsteMes).toEqual(['Press banca'])
     expect(f.volumenPorSemana.at(-1)!.volumen).toBeGreaterThan(0)
+  })
+})
+
+describe('colgarse en barra con cronómetro', () => {
+  it('es un cronómetro con peso en las 3 rutinas', async () => {
+    for (const id of ['rutina-a', 'rutina-b', 'rutina-c']) {
+      const b = (await obtenerRutina(id))!.bloques.find((x) => x.nombre === 'Colgarse en barra')
+      expect(b).toMatchObject({ tipo: 'temporizador', modo: 'cronometro', segundos: 70, peso: 15 })
+    }
+  })
+
+  it('espera 5 s para colgarse, cuenta para arriba y al tocar Listo descuenta 3 s', async () => {
+    expect([PREPARACION_S, DESCUENTO_S]).toEqual([5, 3])
+    expect(estadoCronometro(0, 2_000)).toMatchObject({ preparando: true, prep: 3 })
+    expect(estadoCronometro(0, 7_000)).toMatchObject({ preparando: false, segundos: 2 })
+    let s = await iniciarEntreno('rutina-a')
+    s = await iniciarReloj(s.id!, 'a-colgarse')
+    avanzar((5 + 76) * 1000) // 5 s de preparación + 76 s colgado (incluye bajar)
+    const r = await terminarCronometro(s.id!, 'a-colgarse', 17.5)
+    expect(r.tiempo).toMatchObject({ segundos: 73, peso: 17.5 })
+    expect(r.sesion.hechos).toContain('a-colgarse')
+    expect(r.sesion.reloj).toBeUndefined()
+  })
+
+  it('el tiempo queda en el historial con la vez pasada y el récord (el mismo en las 3 rutinas)', async () => {
+    let s = await iniciarEntreno('rutina-a')
+    s = await iniciarReloj(s.id!, 'a-colgarse')
+    avanzar(80_000)
+    await terminarCronometro(s.id!, 'a-colgarse', 15)
+    await terminarEntreno(s.id!)
+    dia('2026-11-03')
+    s = await iniciarEntreno('rutina-b', '2026-11-03')
+    s = await iniciarReloj(s.id!, 'b-colgarse')
+    avanzar(70_000)
+    await terminarCronometro(s.id!, 'b-colgarse', 15)
+    await terminarEntreno(s.id!)
+    const h = await historialTiempo('Colgarse en barra')
+    expect(h.ultimo).toMatchObject({ segundos: 62, peso: 15 })
+    expect(h.record).toMatchObject({ segundos: 72, peso: 15 })
   })
 })

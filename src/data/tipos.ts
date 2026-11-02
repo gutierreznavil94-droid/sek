@@ -431,7 +431,13 @@ export type BloqueEjercicio = {
 }
 
 /** Temporizador simple (calentamiento, colgarse en barra). */
-export type BloqueTemporizador = { id: string; tipo: 'calentamiento' | 'temporizador'; nombre: string; segundos: number; veces?: number; peso?: number; nota?: string }
+/**
+ * Temporizador (calentamiento) o cronómetro (colgarse en barra: cuenta para
+ * arriba, con peso; `segundos` es el objetivo).
+ */
+export type BloqueTemporizador = { id: string; tipo: 'calentamiento' | 'temporizador'; nombre: string; segundos: number; veces?: number; peso?: number; nota?: string; modo?: 'cuenta' | 'cronometro' }
+/** Tiempo registrado con el cronómetro (colgarse en barra). */
+export type TiempoHecho = { bloqueId: string; nombre: string; segundos: number; peso: number; instante: number }
 /** Rondas con cuenta regresiva (kick boxing). */
 export type BloqueRondas = { id: string; tipo: 'rondas'; nombre: string; rondas: { segundos: number; texto: string }[] }
 /** Casilla para marcar (estirar). */
@@ -474,6 +480,8 @@ export type SesionEntreno = {
   saltados: string[]
   /** «Peso de hoy» elegido antes de la primera serie de cada ejercicio. */
   pesos?: Record<string, number>
+  /** Tiempos de los bloques con cronómetro. */
+  tiempos?: TiempoHecho[]
   /** Descanso en marcha: para retomarlo si la app se cierra. */
   descanso?: { inicio: number; fases: FaseDescanso[] }
   /** Temporizador en marcha (calentamiento, colgarse, rondas). */

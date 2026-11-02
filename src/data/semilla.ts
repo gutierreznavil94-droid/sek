@@ -208,7 +208,7 @@ function ej(id: string, nombre: string, grupo: string | undefined, series: numbe
 }
 
 const calentamiento = (r: string): BloqueRutina => ({ id: `${r}-calentar`, tipo: 'calentamiento', nombre: 'Calentamiento', segundos: 180, nota: 'Banda elástica' })
-const colgarse = (r: string): BloqueRutina => ({ id: `${r}-colgarse`, tipo: 'temporizador', nombre: 'Colgarse en barra', segundos: 70, veces: 1, peso: 15, nota: 'Recuperación' })
+const colgarse = (r: string): BloqueRutina => ({ id: `${r}-colgarse`, tipo: 'temporizador', nombre: 'Colgarse en barra', segundos: 70, veces: 1, peso: 15, nota: 'Recuperación', modo: 'cronometro' })
 const kick = (r: string): BloqueRutina => ({
   id: `${r}-kick`,
   tipo: 'rondas',

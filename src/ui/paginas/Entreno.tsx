@@ -5,13 +5,18 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import type { BloqueEjercicio, BloqueRutina, Rutina, SerieHecha, SesionEntreno } from '../../data/tipos'
+import type { BloqueEjercicio, BloqueRutina, BloqueTemporizador, Rutina, SerieHecha, SesionEntreno, TiempoHecho } from '../../data/tipos'
 import {
   TOPE_XP_EXTRA,
   alargarDescanso,
   bloqueTerminado,
   corregirSerie,
+  DESCUENTO_S,
+  PREPARACION_S,
   descartarEntreno,
+  estadoCronometro,
+  historialTiempo,
+  terminarCronometro,
   fijarPeso,
   deshacerSerie,
   faseActual,
@@ -81,6 +86,8 @@ export type Contexto = {
   /** Lo que sigue después del ejercicio de la última serie (descanso) y del bloque actual. */
   sigueDescanso?: Siguiente
   sigueActual?: Siguiente
+  /** Cronómetro actual (colgarse): la vez pasada y el récord. */
+  tiempo?: { ultimo: TiempoHecho | null; record: TiempoHecho | null }
 }
 
 async function siguiente(s: SesionEntreno, r: Rutina, desdeId?: string): Promise<Siguiente | undefined> {
@@ -108,6 +115,7 @@ async function cargar(hoy: string) {
       ctx.sigueDescanso = await siguiente(sesion, rutina, bu.id)
     }
     if (bloque) ctx.sigueActual = await siguiente(sesion, rutina, bloque.id)
+    if (bloque?.tipo === 'temporizador' && bloque.modo === 'cronometro') ctx.tiempo = await historialTiempo(bloque.nombre, sesion.id)
   }
   return { sesion: sesion ?? null, rutinas, delDia: delDia ?? null, rutina, ctx }
 }
@@ -231,7 +239,9 @@ function EnCurso({ s, r, ctx, onTerminado }: { s: SesionEntreno; r: Rutina; ctx:
           <button className="entreno-casilla" onClick={() => mutar(() => marcarBloque(s.id!, bloque.id))}><span className="caja" aria-hidden>✓</span> Listo, estiré</button>
         </section>
       ) : (
-        <Temporizador key={bloque.id} s={s} b={bloque} t={t} />
+        bloque.tipo === 'temporizador' && bloque.modo === 'cronometro'
+          ? <Cronometro key={bloque.id} s={s} b={bloque} t={t} hist={ctx.tiempo} sigue={ctx.sigueActual} />
+          : <Temporizador key={bloque.id} s={s} b={bloque} t={t} />
       )}
 
       {bloque && !(s.descanso && fase) && (
@@ -412,6 +422,61 @@ function Descanso({ s, fase, r, ctx }: { s: SesionEntreno; fase: NonNullable<Ret
   )
 }
 
+/** Colgarse en barra: cronómetro que cuenta para arriba, con peso. 5 s para colgarse; al tocar Listo se descuentan 3 s. */
+function Cronometro({ s, b, t, hist, sigue }: { s: SesionEntreno; b: BloqueTemporizador; t: number; hist?: { ultimo: TiempoHecho | null; record: TiempoHecho | null }; sigue?: Siguiente }) {
+  const corriendo = s.reloj?.bloqueId === b.id ? s.reloj : undefined
+  const [peso, setPeso] = useState(s.pesos?.[b.id] ?? hist?.ultimo?.peso ?? b.peso ?? 0)
+  const e = corriendo ? estadoCronometro(corriendo.inicio, t) : null
+  const objetivo = b.segundos
+  // Vibra al terminar la preparación (ya colgado: empieza a contar) y al llegar al objetivo.
+  const fase = !e ? null : e.preparando ? 'prep' : objetivo && e.segundos >= objetivo ? 'objetivo' : 'colgado'
+  const previa = useRef<string | null>(null)
+  useEffect(() => {
+    if (previa.current && fase && previa.current !== fase) vibrar(fase === 'objetivo' ? [200, 100, 200] : 250)
+    previa.current = fase
+  }, [fase])
+  const listo = async () => {
+    const r = await mutar(() => terminarCronometro(s.id!, b.id, peso))
+    vibrar(60)
+    avisar(`${b.nombre}: ${reloj(r.tiempo.segundos)}${peso ? ` con ${kg(peso)}` : ''} (ya descontados ${DESCUENTO_S} s)`, { tipo: 'ok' })
+  }
+  const pct = e && objetivo ? Math.min(100, (e.segundos / objetivo) * 100) : 0
+  const texto = (x: TiempoHecho) => `${reloj(x.segundos)} · ${kg(x.peso)}`
+  return (
+    <section className="col entreno-bloque entreno-timer cronometro">
+      <span className="seccion-titulo">{b.nota ?? 'Cronómetro'}</span>
+      <h1 className="entreno-titulo">{b.nombre}</h1>
+      <p className="texto-2 chico">
+        {hist?.ultimo ? <>La vez pasada: <b>{texto(hist.ultimo)}</b>{hist.record && hist.record.instante !== hist.ultimo.instante ? <> · récord <b>{texto(hist.record)}</b></> : null}</> : `Objetivo de la planilla: ${reloj(objetivo)}${b.peso ? ` con ${kg(b.peso)}` : ''}.`}
+      </p>
+      {!corriendo ? (
+        <>
+          <Stepper etiqueta="Peso" valor={peso} paso={0.5} escribible formato={(v) => (v === 0 ? 'corporal' : `${String(v).replace('.', ',')} kg`)} onCambio={(v) => { setPeso(v); void mutar(() => fijarPeso(s.id!, b.id, v)) }} marca={hist?.ultimo ? (peso > hist.ultimo.peso ? 'mejor' : peso === hist.ultimo.peso ? 'igual' : null) : null} />
+          <div className="entreno-reloj mono">0:00</div>
+          <button className="boton primario grande ancho entreno-hecha" onClick={() => mutar(() => iniciarReloj(s.id!, b.id))}>Empezar</button>
+          <p className="ayuda centro">Tenés {PREPARACION_S} s para acomodarte y colgarte. Al tocar «Listo» se descuentan {DESCUENTO_S} s (lo que tardás en bajar).</p>
+        </>
+      ) : e!.preparando ? (
+        <>
+          <p className="entreno-fase centro">Acomodate y colgate</p>
+          <div className="entreno-reloj mono entreno-prep">{e!.prep}</div>
+          <button className="boton grande" onClick={() => mutar(() => pararReloj(s.id!))}>Cancelar</button>
+        </>
+      ) : (
+        <>
+          <p className={`entreno-fase centro ${fase === 'objetivo' ? 'ok' : ''}`}>{fase === 'objetivo' ? '¡Objetivo! Seguí si podés' : `Colgado · con ${kg(peso)}`}</p>
+          <div className="entreno-reloj mono">{reloj(Math.floor(e!.segundos))}</div>
+          {objetivo > 0 && <div className="entreno-barra cronometro"><div style={{ width: `${pct}%` }} /></div>}
+          {objetivo > 0 && <p className="ayuda centro">Objetivo {reloj(objetivo)}</p>}
+          <button className="boton primario grande ancho entreno-hecha" onClick={listo}>Listo</button>
+          <button className="enlace texto-3" onClick={() => mutar(() => pararReloj(s.id!))}>Reiniciar</button>
+        </>
+      )}
+      {sigue && <p className="texto-3 chico">Después: <b className="texto-2">{sigue.bloque.nombre}</b></p>}
+    </section>
+  )
+}
+
 function Temporizador({ s, b, t }: { s: SesionEntreno; b: Exclude<BloqueRutina, BloqueEjercicio | { tipo: 'casilla' }>; t: number }) {
   const corriendo = s.reloj?.bloqueId === b.id ? s.reloj : undefined
   const rondas = b.tipo === 'rondas' ? b.rondas : Array.from({ length: b.veces ?? 1 }, () => ({ segundos: b.segundos, texto: '' }))
@@ -494,6 +559,9 @@ function Resumen({ r, rutina, onReabrir }: { r: ResultadoTerminar; rutina?: Ruti
           </li>
         ))}
       </ul>
+      {(r.sesion.tiempos ?? []).map((x) => (
+        <div key={x.bloqueId} className="fila entre entreno-tiempo"><span>{x.nombre}</span><b className="mono">{reloj(x.segundos)} · {kg(x.peso)}</b></div>
+      ))}
       <p className="ayuda centro">Verde: superaste la vez pasada · gris: igualaste · ★ récord personal.</p>
       <button className="boton primario grande ancho" onClick={() => navegar('/')}>Volver a Hoy</button>
       <button className="enlace texto-3 centro" onClick={onReabrir}>Reabrir para corregir una serie</button>
