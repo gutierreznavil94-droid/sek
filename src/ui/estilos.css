@@ -1358,3 +1358,15 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 /* Aguada blanca del fondo (ronda 6): detrás de todo */
 .aguada-fondo { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
 .contenido.entreno { position: relative; z-index: 1; }
+/* Ronda 7: papel y pincel más presentes; tarjetas y botones oscuros esmerilados encima */
+.aguada-fondo { background-repeat: repeat; background-size: 256px 256px; }
+.contenido.entreno { text-shadow: 0 0 6px rgba(12, 11, 10, 0.95), 0 0 2px rgba(12, 11, 10, 0.9); }
+.contenido.entreno .boton,
+.contenido.entreno .entreno-ahora,
+.contenido.entreno .entreno-tiempo,
+.contenido.entreno .entreno-sigue,
+.contenido.entreno .stepper,
+.contenido.entreno .tarjeta { -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.contenido.entreno .boton:not(.primario) { background: color-mix(in srgb, var(--fondo-2) 90%, transparent); }
+/* Texto suelto sobre la aguada: más claro y con halo oscuro, para mantener 4,5:1 aun sobre el trazo más cargado */
+.contenido.entreno { --texto-2: #e2ddd5; --texto-3: #d6d1c8; text-shadow: 0 0 3px rgba(12, 11, 10, 1), 0 0 8px rgba(12, 11, 10, 0.85), 0 0 14px rgba(12, 11, 10, 0.6); }

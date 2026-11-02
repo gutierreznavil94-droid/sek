@@ -186,15 +186,21 @@ function pintarTrazo(largo: number, ancho: number): HTMLCanvasElement {
   g.lineCap = 'round'
   // Cuerpo de la aguada: una banda suave con puntas afinadas (lo que se ve de lejos).
   const grad = g.createLinearGradient(0, 0, largo, 0)
-  grad.addColorStop(0, 'rgba(255,255,255,0)')
-  grad.addColorStop(0.12, 'rgba(255,255,255,0.55)')
-  grad.addColorStop(0.7, 'rgba(255,255,255,0.6)')
-  grad.addColorStop(1, 'rgba(255,255,255,0)')
+  grad.addColorStop(0, 'rgba(244,236,220,0)')
+  grad.addColorStop(0.12, 'rgba(244,236,220,0.5)')
+  grad.addColorStop(0.7, 'rgba(244,236,220,0.55)')
+  grad.addColorStop(1, 'rgba(244,236,220,0)')
   g.fillStyle = grad
   g.beginPath()
   g.moveTo(0, ancho / 2)
   g.bezierCurveTo(largo * 0.2, ancho * 0.08, largo * 0.8, ancho * 0.12, largo, ancho * 0.45)
   g.bezierCurveTo(largo * 0.8, ancho * 0.9, largo * 0.2, ancho * 0.95, 0, ancho / 2)
+  g.fill()
+  // Centro más cargado: una segunda banda angosta encima.
+  g.beginPath()
+  g.moveTo(largo * 0.06, ancho / 2)
+  g.bezierCurveTo(largo * 0.25, ancho * 0.3, largo * 0.75, ancho * 0.32, largo * 0.94, ancho * 0.47)
+  g.bezierCurveTo(largo * 0.75, ancho * 0.68, largo * 0.25, ancho * 0.72, largo * 0.06, ancho / 2)
   g.fill()
   // Muchas cerdas: líneas finas a lo largo, con cortes (pincel seco) y puntas afinadas.
   const cerdas = Math.round(ancho / 2.2)
@@ -203,7 +209,7 @@ function pintarTrazo(largo: number, ancho: number): HTMLCanvasElement {
     const centro = 1 - Math.abs(y0 / ancho - 0.5) * 2 // más carga en el medio
     const inicio = Math.random() * largo * 0.18 * (1 - centro + 0.3)
     const fin = largo - Math.random() * largo * 0.25 * (1 - centro + 0.3)
-    g.strokeStyle = `rgba(255,255,255,${0.55 + centro * 0.45})`
+    g.strokeStyle = `rgba(244,236,220,${0.5 + centro * 0.5})`
     g.lineWidth = 0.8 + Math.random() * 2.2
     let x = inicio
     g.beginPath()
@@ -213,12 +219,36 @@ function pintarTrazo(largo: number, ancho: number): HTMLCanvasElement {
       x = Math.min(fin, x + paso)
       const y = y0 + Math.sin(x / 90 + i) * 2.5
       // Cortes del pincel seco.
-      if (Math.random() < 0.12 * (1.2 - centro)) g.moveTo(x, y)
+      if (Math.random() < 0.22 * (1.2 - centro)) g.moveTo(x, y)
       else g.lineTo(x, y)
     }
     g.stroke()
   }
   return c
+}
+
+/** Textura de papel cálido (grano y fibras), en mosaico detrás de los trazos. Opacidad media ~4 %. */
+let texturaPapel: string | null = null
+function papel(): string {
+  if (texturaPapel) return texturaPapel
+  const c = document.createElement('canvas')
+  c.width = c.height = 256
+  const g = c.getContext('2d')
+  if (!g) return ''
+  const img = g.createImageData(256, 256)
+  for (let i = 0; i < img.data.length; i += 4) {
+    img.data[i] = 240; img.data[i + 1] = 228; img.data[i + 2] = 205
+    img.data[i + 3] = Math.round(4 + Math.random() * 14) // 1,5 a 7 %
+  }
+  g.putImageData(img, 0, 0)
+  g.strokeStyle = 'rgba(240,228,205,0.06)'
+  g.lineWidth = 0.7
+  for (let i = 0; i < 70; i++) {
+    const x = Math.random() * 256, y = Math.random() * 256, a = Math.random() * Math.PI, l = 6 + Math.random() * 22
+    g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a) * l * 0.5 + 3, y + Math.sin(a) * l * 0.5, x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke()
+  }
+  texturaPapel = c.toDataURL()
+  return texturaPapel
 }
 
 export function AguadaFondo({ tenue }: { tenue: boolean }) {
@@ -232,6 +262,7 @@ export function AguadaFondo({ tenue }: { tenue: boolean }) {
     if (!c) return
     const g = c.getContext('2d')
     if (!g) return
+    c.style.backgroundImage = `url(${papel()})`
     let w = window.innerWidth
     let h = window.innerHeight
     const tam = () => {
@@ -246,9 +277,10 @@ export function AguadaFondo({ tenue }: { tenue: boolean }) {
     }
     tam()
     const nuevo = (i: number, desdeAfuera: boolean): Trazo => {
-      const largo = Math.round(w * (0.9 + Math.random() * 0.7))
-      const ancho = Math.round(50 + Math.random() * 70)
-      const segundos = 8 + Math.random() * 7 // cruza la pantalla en 8 a 15 s
+      const principal = i === 0 // una pincelada principal, ancha y lenta; las otras más finas
+      const largo = Math.round(w * (principal ? 1.4 + Math.random() * 0.4 : 0.8 + Math.random() * 0.6))
+      const ancho = Math.round(principal ? 150 + Math.random() * 50 : 30 + Math.random() * 35)
+      const segundos = principal ? 13 + Math.random() * 2 : 8 + Math.random() * 6 // cruza la pantalla en 8 a 15 s
       const vx = (w + largo) / segundos
       const sube = i % 2 === 0
       const vy = (sube ? -1 : 1) * vx * (0.12 + Math.random() * 0.12)
@@ -258,7 +290,7 @@ export function AguadaFondo({ tenue }: { tenue: boolean }) {
         y: h * (0.12 + ((i * 0.23 + Math.random() * 0.15) % 0.8)),
         vx, vy,
         ang: Math.atan2(vy, vx),
-        alfa: 0.09 + Math.random() * 0.03, // 9 a 12 %
+        alfa: 0.18 + Math.random() * 0.1, // 18 a 28 %
         gotas: Array.from({ length: 2 + Math.floor(Math.random() * 4) }, () => ({ dx: Math.random() * largo, dy: (Math.random() < 0.5 ? -1 : 1) * (ancho * 0.6 + Math.random() * 30), r: 1 + Math.random() * 2.5 })),
       }
     }
@@ -272,8 +304,8 @@ export function AguadaFondo({ tenue }: { tenue: boolean }) {
         g.rotate(t.ang)
         g.globalAlpha = t.alfa * factor
         g.drawImage(t.img, 0, -t.img.height / 2)
-        g.fillStyle = '#fff'
-        g.globalAlpha = Math.min(0.35, t.alfa * 2.2) * factor
+        g.fillStyle = '#f4ecdc'
+        g.globalAlpha = Math.min(0.5, t.alfa * 1.8) * factor
         for (const d of t.gotas) { g.beginPath(); g.arc(d.dx, d.dy, d.r, 0, Math.PI * 2); g.fill() }
         g.restore()
       }
