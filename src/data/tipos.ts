@@ -84,6 +84,10 @@ export type Accion = {
   minutosMinimos?: number
   /** Duración fija (entrenamiento): tocar la tarjeta lo marca hecho con estos minutos. */
   duracionMinutos?: number
+  /** Segundo tope (manga): volver a marcar al llegar a estos minutos da el extra. 0 o vacío = sin extra. */
+  minutosExtra?: number
+  /** XP del extra (una vez por día). Por defecto 10. */
+  xpExtra?: number
   /** Pilar del día: aparece arriba de Hoy y cuenta para el cumplimiento diario. */
   pilar?: boolean
   /** Hora límite HH:MM para marcarlo; después queda como «tarde» y no da XP. */
@@ -175,8 +179,20 @@ export type RegistroContador = {
   nota?: string
 }
 
+/** Regla de «Mi código» (掟): solo se lee, no se marca ni da XP. */
+export type GrupoCodigo = 'cuerpo' | 'mente' | 'comida' | 'cuidado'
+export type ReglaCodigo = {
+  id: string
+  texto: string
+  grupo: GrupoCodigo
+  orden: number
+  creado: number
+}
+
 export type Ajustes = {
   id: 'unicos'
+  /** Ya se cargaron las reglas de ejemplo de «Mi código» (para no volver a cargarlas si se borran). */
+  codigoSembrado?: boolean
   zonaHoraria: string
   baseNivel: number
   /** Límite de juego de lunes a viernes, en minutos. */
@@ -244,6 +260,8 @@ export type Compromiso = {
   respuesta?: string
   /** Marcado después de la hora límite: cuenta como hecho tarde, sin XP. */
   retrasoMinutos?: number
+  /** Segunda marca del día (manga a los 30 min): el extra. No cambia el cumplimiento. */
+  extra?: boolean
   excepcion?: boolean
   actualizado: number
 }

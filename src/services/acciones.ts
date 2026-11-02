@@ -21,6 +21,7 @@ export function validarAccion(a: Partial<Accion>): string[] {
   if (!a.dias || a.dias.length === 0) errores.push('Elegí al menos un día de la semana.')
   if (!a.atributoIds || a.atributoIds.length === 0) errores.push('Vinculá la acción a al menos un atributo.')
   if (a.peso !== undefined && (a.peso <= 0 || a.peso > 5)) errores.push('El peso va de 1 a 5.')
+  if (a.minutosExtra && a.minutosMinimos && a.minutosExtra <= a.minutosMinimos) errores.push('Los minutos del extra tienen que ser más que los mínimos.')
   return errores
 }
 

@@ -8,6 +8,7 @@ import type { Ajustes, Evento, Identidad, TipoEvento } from '../data/tipos'
 import { fechaDe } from '../domain/fechas'
 import { cargarContadoresIniciales } from './contadores'
 import { cargarRutinasIniciales } from './entreno'
+import { sembrarCodigo } from './codigo'
 import { cargarFeriadosIniciales } from './feriados'
 import { ahora } from './reloj'
 
@@ -71,6 +72,7 @@ export async function inicializarSiHaceFalta(): Promise<void> {
   await cargarFeriadosIniciales()
   await cargarContadoresIniciales()
   await cargarRutinasIniciales()
+  await sembrarCodigo()
 }
 
 /**
@@ -105,6 +107,11 @@ async function migrar(): Promise<void> {
         await registrarEvento({ tipo: 'editar', entidad: 'accion', entidadId: base.id, antes: existente, despues, motivo: 'Migración: revisión diaria a las 20:50' })
         existente = despues
       }
+      // v0.36: manga con segundo tope a los 30 min (solo si nunca se configuró).
+      if (existente && base.minutosExtra && existente.minutosExtra === undefined) {
+        existente = { ...existente, minutosExtra: base.minutosExtra, xpExtra: base.xpExtra }
+        await d.acciones.put(existente)
+      }
       if (existente && base.pilar && !existente.pilar) {
         const despues = { ...existente, pilar: true, horaLimite: base.horaLimite, ...(base.id === 'acostarse' ? { nombre: base.nombre, condicion: base.condicion, hora: base.hora, atributoIds: base.atributoIds } : {}) }
         await d.acciones.put(despues)
@@ -137,6 +144,7 @@ async function migrar(): Promise<void> {
   await cargarFeriadosIniciales()
   await cargarContadoresIniciales()
   await cargarRutinasIniciales()
+  await sembrarCodigo()
 }
 
 export type EventoTipo = TipoEvento

@@ -208,8 +208,60 @@ export async function deshacerCompromiso(id: string, motivo = 'Deshacer'): Promi
   const antes = await d.compromisos.get(id)
   if (!antes) throw new Error(`Compromiso ${id} no existe`)
   const accion = await d.acciones.get(antes.accionId)
-  if (accion) await anularXp(claveDeCompromiso(accion, antes.fecha), motivo)
-  return cambiarEstado(id, { estado: 'pendiente', finReal: undefined, minutos: undefined, retrasoMinutos: undefined, respuesta: undefined }, 'corregir', motivo)
+  if (accion) {
+    await anularXp(claveDeCompromiso(accion, antes.fecha), motivo)
+    await anularXp(claveDeExtra(accion, antes.fecha), motivo)
+  }
+  return cambiarEstado(id, { estado: 'pendiente', finReal: undefined, minutos: undefined, retrasoMinutos: undefined, respuesta: undefined, extra: undefined }, 'corregir', motivo)
+}
+
+/** Clave del XP del segundo tope (manga a los 30 min): una vez por día. */
+export function claveDeExtra(accion: Pick<Accion, 'id'>, fecha: FechaDia): string {
+  return claveXp('extra', [accion.id, fecha])
+}
+
+/** El pilar tiene segundo tope (ej. manga: 15 min cumple, 30 min es el extra). */
+export function tieneExtra(accion: Pick<Accion, 'minutosExtra'>): boolean {
+  return !!accion.minutosExtra && accion.minutosExtra > 0
+}
+
+export type ResultadoExtra = { compromiso: Compromiso; xp: number; nuevoNivel: number | null; motivoSinXp?: string }
+
+/**
+ * Segunda marca del día: llegó a los minutos del extra (manga 30 min).
+ * Solo después de la primera marca. No cambia el cumplimiento ni la racha; da su XP una sola vez por día.
+ */
+export async function marcarExtra(id: string, opciones?: { minutos?: number; instante?: number }): Promise<ResultadoExtra> {
+  const d = db()
+  const antes = await d.compromisos.get(id)
+  if (!antes) throw new Error(`Compromiso ${id} no existe`)
+  const accion = await d.acciones.get(antes.accionId)
+  if (!accion || !tieneExtra(accion)) throw new Error('Este pilar no tiene extra')
+  if (antes.estado !== 'completado' && antes.estado !== 'tarde') throw new Error('Primero marcá el pilar')
+  const minutos = Math.max(opciones?.minutos ?? accion.minutosExtra!, antes.minutos ?? 0)
+  const compromiso = await cambiarEstado(id, { extra: true, minutos }, 'editar', `Extra: ${accion.minutosExtra} min`)
+  if (antes.estado === 'tarde') return { compromiso, xp: 0, nuevoNivel: null, motivoSinXp: 'El pilar quedó tarde: el extra no da XP' }
+  if (opciones?.minutos !== undefined && opciones.minutos < accion.minutosExtra!) {
+    await anularXp(claveDeExtra(accion, antes.fecha), 'Menos minutos que el extra')
+    return { compromiso: { ...compromiso, extra: false }, xp: 0, nuevoNivel: null, motivoSinXp: `Menos de ${accion.minutosExtra} min` }
+  }
+  const ajustes = await obtenerAjustes()
+  const t = opciones?.instante ?? ahora()
+  const limite = accion.horaLimite ? instanteDe(antes.fecha, accion.horaLimite, ajustes.zonaHoraria) + ajustes.margenNocheMinutos * 60_000 : null
+  if (limite !== null && t > limite) return { compromiso, xp: 0, nuevoNivel: null, motivoSinXp: 'Marcado después de la hora límite: el extra no da XP' }
+  const r = await concederXp({ clave: claveDeExtra(accion, antes.fecha), cantidad: accion.xpExtra ?? 10, origen: 'extra', fecha: antes.fecha, descripcion: `${accion.nombre}: extra (${accion.minutosExtra} min)` })
+  return { compromiso, xp: r.concedido ? r.cantidad : 0, nuevoNivel: r.nuevoNivel, motivoSinXp: r.concedido ? undefined : r.motivo }
+}
+
+/** Quita la segunda marca: el pilar sigue cumplido, el XP del extra se anula. */
+export async function deshacerExtra(id: string, motivo = 'Deshacer extra'): Promise<Compromiso> {
+  const d = db()
+  const antes = await d.compromisos.get(id)
+  if (!antes) throw new Error(`Compromiso ${id} no existe`)
+  const accion = await d.acciones.get(antes.accionId)
+  if (accion) await anularXp(claveDeExtra(accion, antes.fecha), motivo)
+  const minutos = accion?.minutosMinimos && antes.minutos && accion.minutosExtra && antes.minutos >= accion.minutosExtra ? accion.minutosMinimos : antes.minutos
+  return cambiarEstado(id, { extra: undefined, minutos }, 'corregir', motivo)
 }
 
 /** Corrección explícita de un día ya cerrado (ventana de 48 h en la interfaz). */
@@ -223,8 +275,11 @@ export async function corregirCompromiso(id: string, nuevoEstado: EstadoCompromi
     await completarCompromiso(id, { minutos, esCorreccion: true, motivo, instante: instanteDe(antes.fecha, '12:00', ajustes.zonaHoraria) })
   } else {
     const accion = await d.acciones.get(antes.accionId)
-    if (accion) await anularXp(claveDeCompromiso(accion, antes.fecha), motivo)
-    await cambiarEstado(id, { estado: nuevoEstado, finReal: undefined }, 'corregir', motivo)
+    if (accion) {
+      await anularXp(claveDeCompromiso(accion, antes.fecha), motivo)
+      await anularXp(claveDeExtra(accion, antes.fecha), motivo)
+    }
+    await cambiarEstado(id, { estado: nuevoEstado, finReal: undefined, extra: undefined }, 'corregir', motivo)
   }
   await recalcularDiaCerrado(antes.fecha)
 }

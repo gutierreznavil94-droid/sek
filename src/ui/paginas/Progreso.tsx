@@ -1,4 +1,5 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { MiCodigo } from './MiCodigo'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { db } from '../../data/db'
@@ -53,6 +54,7 @@ export function Progreso({ hoy }: { hoy: string }) {
     let pilares: { id: string; nombre: string; hechos: number; programados: number }[] = []
     let diasCumplidos = 0
     let diasContados = 0
+    const conExtra: PilarConExtra[] = []
     // Serie del gráfico: desde el Día 1 hasta hoy.
     const serie: PuntoSerie[] = []
     if (estado && !estado.noEmpezado) {
@@ -79,13 +81,25 @@ export function Progreso({ hoy }: { hoy: string }) {
         }
       }
       pilares = [...porPilar.values()]
+      // Pilares con segundo tope (manga): cada día del ciclo en gris, verde (cumplido) o verde brillante (extra).
+      for (const a of await db().acciones.toArray()) {
+        if (!a.pilar || !a.minutosExtra) continue
+        const comps = new Map((await db().compromisos.where('[accionId+fecha]').between([a.id, inicio], [a.id, hasta], true, true).toArray()).map((c) => [c.fecha, c]))
+        const dias: DiaExtra[] = []
+        for (let f = inicio; f <= hasta; f = sumarDias(f, 1)) {
+          const c = comps.get(f)
+          const hecho = c && (c.estado === 'completado' || c.estado === 'tarde')
+          dias.push({ fecha: f, estado: hecho ? (c.extra ? 'extra' : 'cuota') : 'no', minutos: c?.minutos })
+        }
+        conExtra.push({ id: a.id, nombre: a.nombre, minutos: a.minutosMinimos ?? 0, minutosExtra: a.minutosExtra, dias })
+      }
       for (const [, c] of await cumplimientoPorDia(inicio, hasta, hoy)) {
         if (c.porcentaje === null || c.excepcion) continue
         diasContados++
         if (c.porcentaje >= ajustes.umbralRacha) diasCumplidos++
       }
     }
-    return { ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados }
+    return { ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados, conExtra, reglasCodigo: await db().codigo.count() }
   }, [hoy])
   const reducido = useMemo(() => movimientoReducido(), [])
   const modo = useModoFondo()
@@ -101,6 +115,7 @@ export function Progreso({ hoy }: { hoy: string }) {
     return () => ro?.disconnect()
   }, [])
   const d = datos.datos
+  const enCodigo = useLocation().pathname.startsWith('/progreso/codigo')
   const sel = d?.atributos.find((a) => a.atributoId === atributoSel)
   const fechaNivel = (n: number) => d?.niveles.find((x) => x.nivel === n)
   // Video del día: se decide con la fecha de Córdoba y el Día 1 del ciclo.
@@ -119,6 +134,7 @@ export function Progreso({ hoy }: { hoy: string }) {
       )}
 
       <div className="av-contenido">
+        {enCodigo ? <MiCodigo /> : <>
         {/* Hueco para que el video se vea entero antes de las tarjetas */}
         <div className="av-hueco" />
         {!d ? (
@@ -132,6 +148,13 @@ export function Progreso({ hoy }: { hoy: string }) {
               <Dato grande={String(d.racha)} chico="RACHA" sub={d.racha === 1 ? 'día seguido' : 'días seguidos'} rojo={d.racha > 0} />
               <div className="av-barra" aria-hidden="true"><div style={{ width: `${Math.round(100 * d.nivel.progreso)}%` }} /></div>
             </section>
+
+            {/* 掟 Mi código: abre su propia pantalla sobre el mismo video */}
+            <Link to="/progreso/codigo" className="av-tarjeta av-codigo-boton" aria-label="Mi código: tus reglas y principios">
+              <span className="codigo-kanji chico" aria-hidden>掟</span>
+              <span className="crece"><b>Mi código</b><span className="av-nota"> · {d.reglasCodigo} {d.reglasCodigo === 1 ? 'regla' : 'reglas'}</span><br /><span className="av-nota">Lo que un shinobi no rompe</span></span>
+              <span aria-hidden>›</span>
+            </Link>
 
             {/* Gráfico de XP: semana, mes o ciclo */}
             <section className="av-tarjeta">
@@ -166,6 +189,7 @@ export function Progreso({ hoy }: { hoy: string }) {
                 <div className="av-pilares">
                   {d.pilares.map((p) => <Anillo key={p.id} nombre={p.nombre} valor={p.programados ? p.hechos / p.programados : null} texto={p.programados ? `${p.hechos} de ${p.programados}` : `0 de 0 · sin días de ${p.id === 'entrenamiento' ? 'entreno' : 'este pilar'} todavía`} />)}
                 </div>
+                {d.conExtra.map((x) => <TiraExtra key={x.id} x={x} hoy={hoy} />)}
               </section>
             )}
 
@@ -191,6 +215,7 @@ export function Progreso({ hoy }: { hoy: string }) {
             )}
           </div>
         )}
+        </>}
       </div>
 
       {d && (
@@ -771,6 +796,33 @@ function SerieRapida({ c, hoy }: { c: ResumenContador; hoy: string }) {
       ) : (
         <div className="av-nota">Empieza el Día 1.</div>
       )}
+    </div>
+  )
+}
+
+type DiaExtra = { fecha: string; estado: 'no' | 'cuota' | 'extra'; minutos?: number }
+type PilarConExtra = { id: string; nombre: string; minutos: number; minutosExtra: number; dias: DiaExtra[] }
+
+/** Pilar con segundo tope (manga): gris = no, verde = cumplido, verde brillante = extra. Tocar un día muestra los minutos. */
+function TiraExtra({ x, hoy }: { x: PilarConExtra; hoy: string }) {
+  const [sel, setSel] = useState<string | null>(null)
+  const cumplidos = x.dias.filter((d) => d.estado !== 'no').length
+  const extras = x.dias.filter((d) => d.estado === 'extra').length
+  const elegido = sel ? x.dias.find((d) => d.fecha === sel) : undefined
+  return (
+    <div className="sr-bloque" style={{ marginTop: 10 }}>
+      <div className="sr-sub">{x.nombre} · {x.minutos} y {x.minutosExtra} min</div>
+      <div className="sr-dias" role="list" aria-label={`${x.nombre} por día`}>
+        {x.dias.map((d) => (
+          <button key={d.fecha} type="button" role="listitem" className={`sr-dia ${d.estado} ${d.fecha === hoy ? 'hoy' : ''} ${sel === d.fecha ? 'sel' : ''}`} onClick={() => setSel(sel === d.fecha ? null : d.fecha)} aria-label={`${fechaLegible(d.fecha, false)}: ${d.estado === 'extra' ? `${x.minutosExtra} min, extra` : d.estado === 'cuota' ? 'cumplido' : 'no'}`} />
+        ))}
+      </div>
+      <div className="sr-leyenda" aria-hidden="true"><span><i className="sr-dia no" />no</span><span><i className="sr-dia cuota" />{x.minutos} min</span><span><i className="sr-dia extra" />{x.minutosExtra} min</span></div>
+      <div className="av-nota sr-detalle">
+        {elegido
+          ? <><b>{fechaLegible(elegido.fecha)}</b> · {elegido.estado === 'no' ? 'sin marcar' : `${elegido.minutos ?? (elegido.estado === 'extra' ? x.minutosExtra : x.minutos)} min${elegido.estado === 'extra' ? ' · extra ✓' : ' · cumplido ✓'}`}</>
+          : <>Cumplido <b>{cumplidos}</b> {cumplidos === 1 ? 'día' : 'días'} · {x.minutosExtra} min <b>{extras}</b> {extras === 1 ? 'día' : 'días'} · tocá un día</>}
+      </div>
     </div>
   )
 }

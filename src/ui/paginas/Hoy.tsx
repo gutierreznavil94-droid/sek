@@ -16,7 +16,10 @@ import {
   cumplimientoEntre,
   deshacerCompromiso,
   deshacerDejoCelu,
+  deshacerExtra,
   iniciarCompromiso,
+  marcarExtra,
+  tieneExtra,
   omitirCompromiso,
   pilaresDelDia,
   rachaActual,
@@ -226,8 +229,29 @@ export function Hoy({ hoy }: { hoy: string }) {
     })
   }
 
+  // Segunda marca (manga a los 30 min): extra con brillo verde, como en las series.
+  const marcarExtraPilar = async (p: Pilar) => {
+    const c = p.compromiso
+    if (!c) return
+    const r = await mutar(() => marcarExtra(c.id))
+    setMarcado(p.accion.id)
+    setTimeout(() => setMarcado((m) => (m === p.accion.id ? null : m)), 450)
+    if (r.xp > 0) {
+      setFlash((f) => ({ ...f, [p.accion.id]: r.xp }))
+      setTimeout(() => setFlash((f) => { const { [p.accion.id]: _quitar, ...resto } = f; void _quitar; return resto }), 1200)
+    }
+    setDestello(p.accion.id)
+    setTimeout(() => setDestello((x) => (x === p.accion.id ? null : x)), 1600)
+    subioNivel(r.nuevoNivel)
+    avisar(r.xp > 0 ? `${p.accion.nombre}: ${p.accion.minutosExtra} min · extra +${r.xp} XP` : `${p.accion.nombre}: extra (${r.motivoSinXp ?? 'sin XP'})`, {
+      tipo: r.xp > 0 ? 'ok' : 'bajo',
+      accion: { texto: 'Deshacer', fn: () => mutar(() => deshacerExtra(c.id)) },
+    })
+  }
+
   const tocarPilar = (p: Pilar) => {
     if (p.estado === 'descanso' || !p.compromiso) return
+    if ((p.estado === 'cumplido' || p.estado === 'tarde') && tieneExtra(p.accion) && !p.compromiso.extra) return void marcarExtraPilar(p)
     if (p.estado !== 'pendiente') return setPilarSel(p)
     // Entrenamiento: abre el modo entreno (la rutina que toca hoy); al terminar se marca solo.
     if (p.accion.tipo === 'entrenamiento') return navegar('/entreno')
@@ -313,6 +337,7 @@ export function Hoy({ hoy }: { hoy: string }) {
               tic={tic}
               flash={flash[p.accion.id]}
               marcado={marcado === p.accion.id}
+              destello={destello === p.accion.id}
               onTocar={() => tocarPilar(p)}
               onMas={() => p.compromiso && setPilarSel(p)}
               horaLimiteCelu={ajustes.horaLimiteCelu}
@@ -463,7 +488,7 @@ function iconoPilar(estado: Pilar['estado']): string {
   }
 }
 
-function TarjetaPilar({ p, suenio, zona, tic, flash, marcado, onTocar, onMas, horaLimiteCelu, rutina, entrenoEnCurso }: { p: Pilar; suenio: { horaReal: number } | undefined; zona: string; tic: number; flash?: number; marcado: boolean; onTocar: () => void; onMas: () => void; horaLimiteCelu: string; rutina?: { nombre: string; minutos: number } | null; entrenoEnCurso?: boolean }) {
+function TarjetaPilar({ p, suenio, zona, tic, flash, marcado, destello, onTocar, onMas, horaLimiteCelu, rutina, entrenoEnCurso }: { p: Pilar; suenio: { horaReal: number } | undefined; zona: string; tic: number; flash?: number; marcado: boolean; destello?: boolean; onTocar: () => void; onMas: () => void; horaLimiteCelu: string; rutina?: { nombre: string; minutos: number } | null; entrenoEnCurso?: boolean }) {
   const c = p.compromiso
   const esCelu = p.accion.tipo === 'acostarse'
   const esEntreno = p.accion.tipo === 'entrenamiento'
@@ -472,7 +497,7 @@ function TarjetaPilar({ p, suenio, zona, tic, flash, marcado, onTocar, onMas, ho
   let detalle: string
   switch (p.estado) {
     case 'cumplido':
-      detalle = esCelu && suenio ? `${formatoHora(suenio.horaReal, zona)} · +${p.xpPrevisto} XP` : c?.minutos ? `${c.minutos} min · +${p.xpPrevisto} XP` : `+${p.xpPrevisto} XP`
+      detalle = esCelu && suenio ? `${formatoHora(suenio.horaReal, zona)} · +${p.xpPrevisto} XP` : c?.extra ? `${c.minutos ?? p.accion.minutosExtra} min · extra ✓` : c?.minutos ? `${c.minutos} min · +${p.xpPrevisto} XP` : `+${p.xpPrevisto} XP`
       break
     case 'tarde':
       detalle = `Tarde · ${c?.retrasoMinutos ?? 0} min`
@@ -486,11 +511,12 @@ function TarjetaPilar({ p, suenio, zona, tic, flash, marcado, onTocar, onMas, ho
     default:
       detalle = p.ventanaCerrada ? 'Ya no se registra' : p.vencido ? (esCelu ? `Tarde · hasta ${horaLimiteCelu}` : `Venció ${p.horaLimite}`) : esCelu ? `Dejo celu hasta ${p.horaLimite}` : esEntreno ? (rutina ? `${rutina.nombre} · ~${rutina.minutos} min` : `${c?.horaPrevista ?? ''} · mín. ${p.accion.minutosMinimos ?? 0} min`) : `Hasta ${p.horaLimite}${p.accion.minutosMinimos ? ` · ${p.accion.minutosMinimos} min` : ''}`
   }
-  const accionTexto = p.estado === 'pendiente' ? (esCelu ? 'Tocá para registrar' : esEntreno ? (entrenoEnCurso ? 'En curso · tocá para seguir' : 'Tocá para empezar') : 'Tocá si lo hiciste') : ''
+  const conExtra = tieneExtra(p.accion) && (p.estado === 'cumplido' || p.estado === 'tarde')
+  const accionTexto = conExtra && !c?.extra ? `A los ${p.accion.minutosExtra} min, tocá de nuevo` : p.estado === 'pendiente' ? (esCelu ? 'Tocá para registrar' : esEntreno ? (entrenoEnCurso ? 'En curso · tocá para seguir' : 'Tocá para empezar') : 'Tocá si lo hiciste') : ''
   return (
     <button
       type="button"
-      className={`pilar-tarjeta ${p.estado} ${p.vencido ? 'vencido' : ''} ${cerca ? 'cerca' : ''} ${marcado ? 'marcado' : ''}`}
+      className={`pilar-tarjeta ${p.estado} ${p.vencido ? 'vencido' : ''} ${cerca ? 'cerca' : ''} ${marcado ? 'marcado' : ''} ${c?.extra ? 'extra' : ''} ${destello ? 'destello-extra' : ''}`}
       onClick={onTocar}
       aria-label={`${p.accion.nombre}: ${detalle}`}
       disabled={p.estado === 'descanso'}
@@ -596,6 +622,11 @@ function DetallePilar({ p, hoy, onCerrar, onResultado }: { p: Pilar | null; hoy:
             {esEntreno && <button className="boton" onClick={() => mutar(() => reprogramarCompromiso(c.id, sumarDias(hoy, 1))).then(() => { avisar('Movido a mañana'); onCerrar() })}>Mover a mañana</button>}
           </div>
         </>
+      )}
+      {(c.estado === 'completado' || c.estado === 'tarde') && tieneExtra(p.accion) && (
+        c.extra
+          ? <button className="boton ancho" onClick={() => mutar(() => deshacerExtra(c.id)).then(() => { avisar('Extra quitado'); onCerrar() })}>Quitar el extra de {p.accion.minutosExtra} min</button>
+          : <button className="boton ok ancho" onClick={() => mutar(() => marcarExtra(c.id)).then((r) => { avisar(r.xp > 0 ? `Extra +${r.xp} XP` : `Extra: ${r.motivoSinXp ?? 'sin XP'}`, { tipo: r.xp > 0 ? 'ok' : 'bajo' }); onCerrar() })}>Llegué a {p.accion.minutosExtra} min (extra)</button>
       )}
       {!activo && c.estado !== 'reprogramado' && (
         <button className="boton ancho" onClick={() => mutar(() => deshacerCompromiso(c.id, 'Cambiado desde Hoy')).then(onCerrar)}>Volver a pendiente</button>

@@ -184,7 +184,7 @@ function Rutas() {
         <Route path="/" element={<Hoy hoy={hoy} />} />
         <Route path="/calendario" element={<Calendario hoy={hoy} />} />
         <Route path="/juego" element={<Juego hoy={hoy} />} />
-        <Route path="/progreso" element={<Progreso hoy={hoy} />} />
+        <Route path="/progreso/*" element={<Progreso hoy={hoy} />} />
         <Route path="/mas" element={<Mas />} />
         <Route path="/mas/identidad" element={<Identidad />} />
         <Route path="/mas/atributos" element={<Atributos hoy={hoy} />} />

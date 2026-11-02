@@ -73,6 +73,7 @@ function EditarAccion({ accion, xpActual, atributos, hoy, onCerrar, onDesactivar
   const [dias, setDias] = useState<number[]>(accion?.dias ?? [1, 2, 3, 4, 5])
   const [hora, setHora] = useState(accion?.hora ?? '')
   const [minutosMinimos, setMinutosMinimos] = useState(accion?.minutosMinimos ?? 0)
+  const [minutosExtra, setMinutosExtra] = useState(accion?.minutosExtra ?? 0)
   const [pilar, setPilar] = useState(!!accion?.pilar)
   const [horaLimite, setHoraLimite] = useState(accion?.horaLimite ?? '')
   const [pregunta, setPregunta] = useState(accion?.pregunta ?? '')
@@ -91,6 +92,10 @@ function EditarAccion({ accion, xpActual, atributos, hoy, onCerrar, onDesactivar
       dias,
       hora: hora || undefined,
       minutosMinimos: minutosMinimos > 0 ? minutosMinimos : undefined,
+      // 0 queda guardado (= sin extra) para que la migración no lo vuelva a poner en 30.
+      minutosExtra: accion?.minutosExtra !== undefined || minutosExtra > 0 ? Math.max(0, minutosExtra) : undefined,
+      xpExtra: accion?.xpExtra,
+      duracionMinutos: accion?.duracionMinutos,
       pilar: pilar || undefined,
       horaLimite: horaLimite || undefined,
       pregunta: pregunta.trim() || undefined,
@@ -122,6 +127,7 @@ function EditarAccion({ accion, xpActual, atributos, hoy, onCerrar, onDesactivar
       </div>
       <div className="rejilla-2">
         <div className="campo"><label>Minutos mínimos para dar XP</label><input type="number" inputMode="numeric" min={0} value={minutosMinimos} onChange={(e) => setMinutosMinimos(Number(e.target.value))} /><span className="ayuda">0 = sin mínimo.</span></div>
+        <div className="campo"><label>Minutos del extra</label><input type="number" inputMode="numeric" min={0} value={minutosExtra} onChange={(e) => setMinutosExtra(Number(e.target.value))} /><span className="ayuda">Volver a marcar al llegar da +{accion?.xpExtra ?? 10} XP extra. 0 = sin extra.</span></div>
         {(fijo ? accion!.tipo : tipo[0]) !== 'acostarse' && <div className="campo"><label>Hora límite para marcar</label><input type="time" value={horaLimite} onChange={(e) => setHoraLimite(e.target.value)} /><span className="ayuda">Después de esta hora cuenta como tarde, sin XP.</span></div>}
       </div>
       <div className="campo"><label>Pregunta al marcar (opcional)</label><input value={pregunta} onChange={(e) => setPregunta(e.target.value)} placeholder="Ej.: ¿Qué avancé?" /></div>

@@ -22,6 +22,7 @@ export type OrigenXp =
   | 'racha7'
   | 'meta'
   | 'contador'
+  | 'extra'
   | 'manual'
 
 export type ReglaXp = {
