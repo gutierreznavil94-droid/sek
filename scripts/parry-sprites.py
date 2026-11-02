@@ -10,13 +10,14 @@ import sys, json
 import numpy as np
 from PIL import Image
 
-# (cuadro del video, cuántos cuadros de 24 fps se muestra). El choque es el 29.
-TIRA = [(7, 2), (9, 2), (11, 2), (13, 2), (15, 2), (17, 2), (19, 2), (20, 1), (21, 1), (22, 1), (23, 1), (24, 1),
-        (29, 3),
-        (55, 1), (57, 1), (59, 1), (61, 1), (63, 1), (65, 1), (67, 1), (69, 1), (71, 1), (73, 1), (76, 2), (82, 2), (88, 4)]
+# (cuadro del video, cuántos cuadros de 24 fps se muestra). Todos los cuadros seguidos de cada tramo.
+# 1001–1003: cuadros intermedios del choque (29) al rebote (55), generados con
+#   ffmpeg minterpolate (mci, aobmc, bidir) sobre 28, 29, 55, 56, 57 -> o06, o07, o08.
+TIRA = [(n, 1) for n in range(13, 29)] + [(29, 3)] + [(1001, 1), (1002, 1), (1003, 1)] + [(n, 1) for n in range(55, 84)] + [(84, 4)]
 CUADROS = [n for n, _ in TIRA]
 CAJA = (40, 30, 945, 445)                           # x0, y0, x1, y1 en el video (sin la marca de Luma)
-ESCALA = 0.4                                         # 905 px de ancho -> 362
+ESCALA = 0.5                                         # 905 px de ancho -> 452 (escena grande)
+CONTACTO = (462, 217)                                # donde se cruzan las hojas en el cuadro 29 (px del video)
 TEMAS = {
     'claro':  {'shinobi': (20, 20, 20), 'rival': (75, 75, 75)},
     'oscuro': {'shinobi': (236, 230, 216), 'rival': (138, 138, 146)},
@@ -77,11 +78,11 @@ def cuadro(n, tema):
 for tema in TEMAS:
     celdas = [cuadro(n, tema) for n in CUADROS]
     w, h = celdas[0].size
-    cols = 6
+    cols = 8
     filas = (len(celdas) + cols - 1) // cols
     hoja = Image.new('RGBA', (w * cols, h * filas), (0, 0, 0, 0))
     for i, c in enumerate(celdas):
         hoja.paste(c, ((i % cols) * w, (i // cols) * h))
-    hoja.save(f'{salida}/parry-{tema}.webp', 'WEBP', quality=82, method=6, alpha_quality=85)
+    hoja.save(f'{salida}/parry-{tema}.webp', 'WEBP', quality=74, method=6, alpha_quality=80)
 
-print(json.dumps({'celda': [w, h], 'columnas': cols, 'filas': filas, 'cuadros': len(CUADROS), 'pies': round((432 - CAJA[1]) * ESCALA), 'tiempos': [t for _, t in TIRA], 'choque': CUADROS.index(29)}))
+print(json.dumps({'celda': [w, h], 'columnas': cols, 'filas': filas, 'cuadros': len(CUADROS), 'pies': round((432 - CAJA[1]) * ESCALA), 'tiempos': [t for _, t in TIRA], 'choque': CUADROS.index(29), 'contacto': [round((CONTACTO[0] - CAJA[0]) * ESCALA), round((CONTACTO[1] - CAJA[1]) * ESCALA)]}))

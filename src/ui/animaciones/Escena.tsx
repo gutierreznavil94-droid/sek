@@ -454,14 +454,14 @@ function Parry({ dur }: { dur: number }) {
 }
 
 /**
- * Parry hecho con el video de Luma de Navil (scripts/parry-sprites.py): el rival se prepara, salta y ataca,
- * choque (pausa de impacto, destello y chispas que dibuja la app), rebote: se separan, el rival sale
- * despedido y vuelven a guardia. Los cuadros con hojas deformadas quedan afuera.
+ * Parry hecho con el video de Luma de Navil (scripts/parry-sprites.py), todos los cuadros seguidos a 24 fps:
+ * el rival salta y ataca, choque (pausa de impacto, destello, chispas, estela y el kanji 忍), tres cuadros
+ * intermedios generados (minterpolate) hacia el rebote, se separan, el rival sale despedido y vuelven a guardia.
  */
-const PARRY_HOJA = { w: 362, h: 166, cols: 6, filas: 5 }
+const PARRY_HOJA = { w: 452, h: 208, cols: 8, filas: 7 }
 /** Cuántos cuadros de 24 fps se muestra cada celda de la hoja, en orden (velocidad natural del video). */
-const PARRY_TIEMPOS = [2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 4]
-const PARRY_CELDA_CHOQUE = 12
+const PARRY_TIEMPOS = [...Array(16).fill(1), 3, ...Array(32).fill(1), 4]
+const PARRY_CELDA_CHOQUE = 16
 const PARRY_TICKS = PARRY_TIEMPOS.reduce((a, b) => a + b, 0)
 const PARRY_INICIOS = PARRY_TIEMPOS.map((_, i) => PARRY_TIEMPOS.slice(0, i).reduce((a, b) => a + b, 0) / PARRY_TICKS)
 /** Momento del choque y del rebote (fracción de la duración). */
@@ -469,10 +469,10 @@ const PARRY_CHOQUE = PARRY_INICIOS[PARRY_CELDA_CHOQUE]
 const PARRY_REBOTE = PARRY_INICIOS[PARRY_CELDA_CHOQUE + 1]
 const PARRY_CAJA = { x: 30, ancho: 300 }
 const PARRY_ALTO = (PARRY_CAJA.ancho * PARRY_HOJA.h) / PARRY_HOJA.w
-const PARRY_Y = SUELO_Y - (161 / PARRY_HOJA.h) * PARRY_ALTO
-const PARRY_CONTACTO = { x: PARRY_CAJA.x + (169 / PARRY_HOJA.w) * PARRY_CAJA.ancho, y: PARRY_Y + (75 / PARRY_HOJA.h) * PARRY_ALTO }
+const PARRY_Y = SUELO_Y - (201 / PARRY_HOJA.h) * PARRY_ALTO
+const PARRY_CONTACTO = { x: PARRY_CAJA.x + (211 / PARRY_HOJA.w) * PARRY_CAJA.ancho, y: PARRY_Y + (94 / PARRY_HOJA.h) * PARRY_ALTO }
 // Las hojas se cargan de antemano para que el primer parry no salga vacío.
-if (typeof Image !== 'undefined') for (const t of ['claro', 'oscuro']) new Image().src = `${import.meta.env.BASE_URL}animaciones/parry/parry-${t}.webp`
+if (typeof Image !== 'undefined') for (const t of ['claro', 'oscuro']) { const im = new Image(); im.src = `${import.meta.env.BASE_URL}animaciones/parry/parry-${t}.webp`; im.decode?.().catch(() => undefined) }
 
 function ParryVideo({ dur, oscuro }: { dur: number; oscuro: boolean }) {
   const vista = useRef<SVGSVGElement>(null)
@@ -503,6 +503,8 @@ function ParryVideo({ dur, oscuro }: { dur: number; oscuro: boolean }) {
     @keyframes sh-pv-destello { 0%, ${pct(PARRY_CHOQUE - 0.001)} { opacity: 0; transform: scale(.5) } ${pct(PARRY_CHOQUE)} { opacity: .95; transform: scale(1.25) } ${pct(PARRY_CHOQUE + 0.025)} { opacity: .95; transform: scale(1.25) } ${pct(PARRY_CHOQUE + 0.026)}, 100% { opacity: 0; transform: scale(1) } }
     @keyframes sh-pv-brillo { 0%, ${pct(PARRY_CHOQUE - 0.001)} { opacity: 0; transform: scale(.4) } ${pct(PARRY_CHOQUE)} { opacity: 1; transform: scale(1.6) } ${pct(PARRY_REBOTE + 0.06)} { opacity: .4; transform: scale(1) } ${pct(PARRY_REBOTE + 0.12)}, 100% { opacity: 0 } }
     @keyframes sh-pv-chispas { 0%, ${pct(PARRY_CHOQUE - 0.001)} { opacity: 0; transform: scale(.2) } ${pct(PARRY_CHOQUE + 0.01)} { opacity: 1; transform: scale(.6) } ${pct(PARRY_REBOTE + 0.14)}, 100% { opacity: 0; transform: scale(1.8) } }
+    @keyframes sh-pv-kanji { 0%, ${pct(PARRY_CHOQUE - 0.001)} { opacity: 0; transform: scale(1.8) } ${pct(PARRY_CHOQUE + 0.04)} { opacity: 1; transform: scale(.96) } ${pct(PARRY_CHOQUE + 0.08)}, 100% { opacity: 1; transform: scale(1) } }
+    @keyframes sh-pv-estela { 0%, ${pct(PARRY_CHOQUE - 0.001)} { opacity: 0; stroke-dashoffset: 100 } ${pct(PARRY_CHOQUE + 0.02)} { opacity: .9 } ${pct(PARRY_REBOTE + 0.04)} { opacity: .8; stroke-dashoffset: 0 } ${pct(PARRY_REBOTE + 0.16)}, 100% { opacity: 0; stroke-dashoffset: 0 } }
     @keyframes sh-pv-rebote { 0%, ${pct(PARRY_REBOTE - 0.001)} { transform: none } ${pct(PARRY_REBOTE + 0.01)} { transform: translate(-3px, 1px) } ${pct(PARRY_REBOTE + 0.035)} { transform: translate(2.5px, -1px) } ${pct(PARRY_REBOTE + 0.06)} { transform: translate(-1px, 0) } ${pct(PARRY_REBOTE + 0.085)}, 100% { transform: none } }`
   return (
     <g className="sh-parry-video">
@@ -512,6 +514,8 @@ function ParryVideo({ dur, oscuro }: { dur: number; oscuro: boolean }) {
           <image href={hoja} x={0} y={0} width={PARRY_HOJA.w * PARRY_HOJA.cols} height={PARRY_HOJA.h * PARRY_HOJA.filas} />
         </svg>
       </g>
+      {/* Estela de pincel del choque al rebote: tapa el salto entre tramos */}
+      <path className="sh-pv-estela" d={`M${cx - 46},${cy + 26} Q${cx - 6},${cy - 4} ${cx + 52},${cy - 30}`} fill="none" stroke={ROJO} strokeWidth={5} strokeLinecap="round" pathLength={100} strokeDasharray="100" />
       <circle className="sh-pv-destello" cx={cx} cy={cy} r={22} fill="#fff6d6" />
       <g className="sh-pv-chispas" style={{ transformOrigin: `${cx}px ${cy}px` }}>
         {Array.from({ length: 14 }, (_, i) => {
@@ -522,6 +526,7 @@ function ParryVideo({ dur, oscuro }: { dur: number; oscuro: boolean }) {
         })}
       </g>
       <circle className="sh-pv-brillo" cx={cx} cy={cy} r={9} fill="#fffbe8" />
+      <Kanji k={KANJI.parry.k} x={310} y={86} clase="sh-kanji sh-pv-kanji" />
     </g>
   )
 }
@@ -600,6 +605,9 @@ export function Escena({ a, nombre, lento = 1, tema = 'claro', tinta = true, onS
     kanji = k.k
     titulo = a.texto
     sub = a.sub ?? <>{k.k} · {k.significado}</>
+  } else if (a.tipo === 'parry' && !a.vieja) {
+    kanji = KANJI.parry.k
+    sub = <>{KANJI.parry.k} · {KANJI.parry.significado}</>
   } else {
     kanji = '弾'
   }
@@ -607,7 +615,7 @@ export function Escena({ a, nombre, lento = 1, tema = 'claro', tinta = true, onS
   const temaClase = `${tema === 'oscuro' ? 'oscura' : ''} ${tinta ? '' : 'sin-tinta'}`
   if (reducido) {
     // Sin movimiento: solo un destello de color y el texto.
-    if (a.tipo === 'parry') return null
+    if (a.tipo === 'parry' && a.vieja) return null
     return (
       <div className={`sh-capa reducida ${temaClase}`} style={{ '--color': color } as CSSProperties} onPointerDown={onSaltar} role="status" aria-label={typeof titulo === 'string' ? titulo : 'Logro'}>
         <div className="sh-reducida-k" style={{ color }}>{kanji}</div>
@@ -617,9 +625,11 @@ export function Escena({ a, nombre, lento = 1, tema = 'claro', tinta = true, onS
     )
   }
 
-  const parry = a.tipo === 'parry'
+  // El parry anterior (muñeco) es chiquito abajo y deja pasar los toques; el de Luma es una escena grande como las demás.
+  const parry = a.tipo === 'parry' && !!a.vieja
+  const parryVideo = a.tipo === 'parry' && !a.vieja
   return (
-    <div className={`sh-capa ${parry ? 'parry' : ''} ${parry && !a.vieja ? 'parry-video' : ''} ${a.tipo} ${temaClase}`} style={{ '--dur': `${dur}ms` } as CSSProperties} onPointerDown={parry ? undefined : onSaltar} role="status" aria-label={a.tipo === 'parry' ? 'Parry' : typeof titulo === 'string' ? titulo : 'Animación de logro'}>
+    <div className={`sh-capa ${parry ? 'parry-chico' : ''} ${parryVideo ? 'parry-video' : ''} ${a.tipo} ${temaClase}`} style={{ '--dur': `${dur}ms` } as CSSProperties} onPointerDown={parry ? undefined : onSaltar} role="status" aria-label={a.tipo === 'parry' ? 'Parry' : typeof titulo === 'string' ? titulo : 'Animación de logro'}>
       <svg className="sh-escenario" viewBox="0 0 360 240" aria-hidden>
         <Fondo tinte={a.tipo === 'postura' ? color : undefined} lluvia={a.tipo === 'logro'} />
         {a.tipo === 'ejecucion' && <Ejecucion estilo={estilo} kanji={kanji} dur={dur} enemigo={enemigo} />}

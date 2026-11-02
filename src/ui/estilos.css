@@ -467,8 +467,8 @@ p { margin: 0; }
 /* ---------- Cambios 08/09: animaciones de logro (shinobi de tinta sobre papel) ---------- */
 .sh-capa { --sh-papel: #f3efe6; --sh-tinta: #141414; --sh-tinta-2: #2e2c2c; --sh-tinta-seca: #3a3836; --sh-enemigo: #4b4b4b; --sh-enemigo-2: #6a6a6a; --sh-lejos: #d9d5cc; --sh-lejos-2: #e6e2d9; --sh-piedra: #8d8a82; --sh-texto: #1a1a1a; --sh-texto-2: #5c584f; position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: var(--sh-papel); color: var(--sh-texto); cursor: pointer; animation: sh-entrar 160ms ease-out both; -webkit-tap-highlight-color: transparent; user-select: none; }
 .sh-capa.oscura { --sh-papel: #15151a; --sh-tinta: #ece6d8; --sh-tinta-2: #cbc4b4; --sh-tinta-seca: #b9b2a3; --sh-enemigo: #8a8a92; --sh-enemigo-2: #6e6e76; --sh-lejos: #24242b; --sh-lejos-2: #1d1d23; --sh-piedra: #6f6c64; --sh-texto: #f1ece2; --sh-texto-2: #a9a399; }
-.sh-capa.parry { inset: auto 0 calc(var(--nav-alto) + 24px) 0; background: none; pointer-events: none; animation: none; }
-.sh-capa.parry .sh-escenario { width: min(62vw, 240px); filter: drop-shadow(0 6px 18px rgba(0,0,0,.45)); border-radius: 12px; }
+.sh-capa.parry-chico { inset: auto 0 calc(var(--nav-alto) + 24px) 0; background: none; pointer-events: none; animation: none; }
+.sh-capa.parry-chico .sh-escenario { width: min(62vw, 240px); filter: drop-shadow(0 6px 18px rgba(0,0,0,.45)); border-radius: 12px; }
 .sh-escenario { width: min(94vw, 520px); height: auto; overflow: visible; }
 .sh-grano { opacity: .55; }
 .sh-capa.oscura .sh-grano { opacity: .25; }
@@ -1390,7 +1390,11 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
   -webkit-mask-image: linear-gradient(100deg, #000 0 42%, rgba(0,0,0,.6) 47%, transparent 52%);
   mask-image: linear-gradient(100deg, #000 0 42%, rgba(0,0,0,.6) 47%, transparent 52%);
   -webkit-mask-size: 260% 100%; mask-size: 260% 100%;
-  animation: sh-pv-revela calc(var(--dur) * .09) ease-out both, sh-pv-sale calc(var(--dur) * .09) linear calc(var(--dur) * .91) forwards;
+  animation: sh-pv-revela calc(var(--dur) * .08) ease-out both;
 }
+/* Escena grande como las demás; al final, ya en guardia, se va rápido (0,15 s). */
+.sh-capa.parry-video { animation: sh-entrar 160ms ease-out both, sh-pv-sale calc(var(--dur) * .07) linear calc(var(--dur) * .93) forwards; }
+.sh-kanji.sh-pv-kanji { animation-name: sh-pv-kanji; }
+.sh-pv-estela { opacity: 0; animation: sh-pv-estela var(--dur) ease-out forwards; }
 @keyframes sh-pv-revela { from { -webkit-mask-position: 100% 0; mask-position: 100% 0 } to { -webkit-mask-position: 0 0; mask-position: 0 0 } }
 @keyframes sh-pv-sale { to { opacity: 0 } }

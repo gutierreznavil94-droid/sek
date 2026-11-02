@@ -48,6 +48,7 @@ import {
 } from '../../services/entreno'
 import { ahora } from '../../services/reloj'
 import { celebrarNivel, celebrarRecord } from '../animaciones/logros'
+import { animar } from '../animaciones/motor'
 import { Avisos, Confirmar, Hoja } from '../componentes'
 import { AguadaFondo, TintaPolvo } from '../TintaPolvo'
 import { ShinobiBarra } from '../Shinobi'
@@ -366,6 +367,8 @@ function Ejercicio({ s, b, anterior, sigue }: { s: SesionEntreno; b: BloqueEjerc
   const guardar = async () => {
     await mutar(() => registrarSerie(s.id!, b.id, { reps: objetivo, repsExtra: b.repsExtra, peso }))
     vibrar(60)
+    // La serie ya quedó guardada y el descanso corre por su cuenta: el parry solo se muestra (un toque lo salta).
+    animar({ tipo: 'parry' })
   }
   const primera = hechas.length === 0
   return (
