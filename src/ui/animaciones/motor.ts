@@ -20,7 +20,7 @@ export type ModoAnimaciones = 'todas' | 'logros' | 'ninguna'
 /** Duración máxima de cada animación (ms), según lo pedido. */
 export const DURACION: Record<Animacion['tipo'], number> = {
   ejecucion: 1500,
-  parry: 2933, // parry hecho con el video de Luma (88 cuadros seguidos a 30 fps: un 25 % más rápido que el video)
+  parry: 1900, // parry hecho con el video de Luma (88 cuadros seguidos a ~46 fps: casi el doble de rápido que el video)
   postura: 1200,
   logro: 2000,
 }

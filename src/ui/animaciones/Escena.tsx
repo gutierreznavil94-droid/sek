@@ -455,7 +455,7 @@ function Parry({ dur }: { dur: number }) {
 
 /**
  * Parry hecho con el video de Luma de Navil (scripts/parry-sprites.py): los cuadros 13 a 100 seguidos a
- * 30 fps (un poco más rápido que el video), sin saltos ni pausas: el rival salta y ataca, choque (destello, chispas y el kanji 忍 con su aura),
+ * ~46 fps (casi el doble de rápido que el video, Navil lo quiere ágil), sin saltos ni pausas: el rival salta y ataca, choque (destello, chispas y el kanji 忍 con su aura),
  * forcejeo, se separan, el rival sale despedido y vuelven a guardia hasta que la tela se asienta.
  */
 const PARRY_HOJA = { w: 407, h: 187, cols: 10, filas: 9 }
