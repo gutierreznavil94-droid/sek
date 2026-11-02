@@ -73,6 +73,31 @@ export async function inicializarSiHaceFalta(): Promise<void> {
   await cargarContadoresIniciales()
   await cargarRutinasIniciales()
   await sembrarCodigo()
+  await equilibrarXp()
+}
+
+/**
+ * Equilibrio de XP (2 nov 2026), una sola vez: el extra de las series pasa a +5 y
+ * las metas todavía pendientes con los 30 XP de antes pasan a 15. Lo ya ganado no se toca.
+ */
+async function equilibrarXp(): Promise<void> {
+  const d = db()
+  if ((await obtenerAjustes()).xpEquilibrado) return
+  await d.transaction('rw', [d.contadores, d.metas, d.eventos], async () => {
+    for (const c of await d.contadores.toArray()) {
+      if (c.xpExtra === undefined || c.xpExtra === 10) {
+        await d.contadores.put({ ...c, xpExtra: 5 })
+        await registrarEvento({ tipo: 'editar', entidad: 'contador', entidadId: c.id, antes: { xpExtra: c.xpExtra }, despues: { xpExtra: 5 }, motivo: 'Equilibrio de XP: extra +5' })
+      }
+    }
+    for (const m of await d.metas.toArray()) {
+      if (m.estado === 'pendiente' && m.xp === 30) {
+        await d.metas.put({ ...m, xp: 15 })
+        await registrarEvento({ tipo: 'editar', entidad: 'meta', entidadId: m.id, antes: { xp: 30 }, despues: { xp: 15 }, motivo: 'Equilibrio de XP: metas 15' })
+      }
+    }
+  })
+  await guardarAjustes({ xpEquilibrado: true }, 'Equilibrio de XP')
 }
 
 /**
@@ -145,6 +170,7 @@ async function migrar(): Promise<void> {
   await cargarContadoresIniciales()
   await cargarRutinasIniciales()
   await sembrarCodigo()
+  await equilibrarXp()
 }
 
 export type EventoTipo = TipoEvento

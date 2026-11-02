@@ -155,7 +155,7 @@ async function ajustarXpMeta(c: Contador, fecha: FechaDia): Promise<ResultadoXp>
     return 0
   }
   r.xp += await tope(claveXp('contador', [c.id, fecha]), r.metaLograda, c.xpMetaDiaria, `${c.nombre}: cuota diaria (${cuota})`)
-  r.xpExtra = await tope(claveXp('contador', [c.id, fecha, 'extra']), r.extraLogrado, c.xpExtra ?? 10, `${c.nombre}: extra (${extra})`)
+  r.xpExtra = await tope(claveXp('contador', [c.id, fecha, 'extra']), r.extraLogrado, c.xpExtra ?? 5, `${c.nombre}: extra (${extra})`)
   r.xp += r.xpExtra
   return r
 }

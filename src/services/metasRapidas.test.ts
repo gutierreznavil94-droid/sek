@@ -7,7 +7,7 @@ import { cerrarDiasPendientes } from './dia'
 import { exportarTodo } from './exportar'
 import { fijarAhora, reiniciarReloj } from './reloj'
 import { xpTotal } from './xp'
-import { crearMetaRapida, cumplirMeta, desmarcarMeta, estadoVisible, graficoMetas, lineaDeMetas, metasPorDia, XP_META_RAPIDA } from './metas'
+import { crearMeta, crearMetaRapida, cumplirMeta, resolverMeta, desmarcarMeta, estadoVisible, graficoMetas, lineaDeMetas, metasPorDia, XP_META_RAPIDA } from './metas'
 
 const Z = 'America/Argentina/Cordoba'
 let n = 0
@@ -44,20 +44,36 @@ describe('metas rápidas por día', () => {
     expect(estadoVisible((await db().metas.get(meta.id))!, '2026-11-02')).toBe('cumplida')
   })
 
-  it('tope: solo 3 metas por día dan XP', async () => {
+  it('tope: solo 2 metas por día dan XP', async () => {
     const base = await xpTotal()
     const ids = []
-    for (let i = 0; i < 4; i++) ids.push((await crearMetaRapida('2026-11-02', `Meta ${i}`, '2026-11-02')).id)
-    for (const id of ids.slice(0, 3)) expect((await cumplirMeta(id)).xp).toBe(15)
-    const cuarta = await cumplirMeta(ids[3])
-    expect(cuarta.xp).toBe(0)
-    expect(cuarta.conTope).toBe(true)
-    expect(await xpTotal()).toBe(base + 45)
-    // Si se desmarca una con XP, la cuarta puede dar XP al volver a marcarla
+    for (let i = 0; i < 3; i++) ids.push((await crearMetaRapida('2026-11-02', `Meta ${i}`, '2026-11-02')).id)
+    for (const id of ids.slice(0, 2)) expect((await cumplirMeta(id)).xp).toBe(15)
+    const tercera = await cumplirMeta(ids[2])
+    expect(tercera.xp).toBe(0)
+    expect(tercera.conTope).toBe(true)
+    expect((await db().metas.get(ids[2]))!.estado).toBe('cumplida')
+    expect(await xpTotal()).toBe(base + 30)
+    // Si se desmarca una con XP, la tercera puede dar XP al volver a marcarla
     await desmarcarMeta(ids[0])
-    await desmarcarMeta(ids[3])
-    expect((await cumplirMeta(ids[3])).xp).toBe(15)
-    expect(await xpTotal()).toBe(base + 45)
+    await desmarcarMeta(ids[2])
+    expect((await cumplirMeta(ids[2])).xp).toBe(15)
+    expect(await xpTotal()).toBe(base + 30)
+  })
+
+  it('el tope vale también para las metas del calendario (15 XP por defecto)', async () => {
+    const base = await xpTotal()
+    const a = await crearMetaRapida('2026-11-02', 'Rápida', '2026-11-02')
+    const b = await crearMeta({ titulo: 'Del calendario 1', fecha: '2026-11-02' })
+    const c = await crearMeta({ titulo: 'Del calendario 2', fecha: '2026-11-02' })
+    expect(b.xp).toBe(15)
+    expect((await cumplirMeta(a.id)).xp).toBe(15)
+    expect((await resolverMeta(b.id, true)).xp).toBe(15)
+    const r = await resolverMeta(c.id, true)
+    expect(r.xp).toBe(0)
+    expect(r.conTope).toBe(true)
+    expect(r.meta.estado).toBe('cumplida')
+    expect(await xpTotal()).toBe(base + 30)
   })
 
   it('un día que pasa sin marcar queda no cumplida, y se puede marcar después', async () => {

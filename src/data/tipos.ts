@@ -193,6 +193,8 @@ export type Ajustes = {
   id: 'unicos'
   /** Ya se cargaron las reglas de ejemplo de «Mi código» (para no volver a cargarlas si se borran). */
   codigoSembrado?: boolean
+  /** Ya se aplicó el equilibrio de XP del 2 nov 2026 (extra de series +5, metas pendientes de 30 a 15). */
+  xpEquilibrado?: boolean
   zonaHoraria: string
   baseNivel: number
   /** Límite de juego de lunes a viernes, en minutos. */

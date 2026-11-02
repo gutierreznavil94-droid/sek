@@ -28,7 +28,7 @@ beforeEach(async () => {
 })
 
 describe('series con cuota y extra', () => {
-  it('la cuota da +10 y el extra (1,5 × cuota) da +10 más, cada uno una sola vez por día', async () => {
+  it('la cuota da +10 y el extra (1,5 × cuota) da +5 más, cada uno una sola vez por día', async () => {
     const antes = await xpTotal()
     let r = await tocar(5) // 70
     expect(r.metaLograda).toBe(true)
@@ -38,21 +38,21 @@ describe('series con cuota y extra', () => {
     expect(r.xp).toBe(0)
     r = await tocar(1) // 112 ≥ 105
     expect(r.extraLogrado).toBe(true)
-    expect(r.xpExtra).toBe(10)
-    expect(await xpTotal()).toBe(antes + 20)
+    expect(r.xpExtra).toBe(5)
+    expect(await xpTotal()).toBe(antes + 15)
     r = await tocar(2) // 140: sigue sumando para el récord, sin más XP
     expect(r.xp).toBe(0)
-    expect(await xpTotal()).toBe(antes + 20)
+    expect(await xpTotal()).toBe(antes + 15)
   })
 
   it('deshacer por debajo del extra quita ese XP y volver a llegar no lo duplica', async () => {
     const antes = await xpTotal()
     await tocar(8) // 112
-    expect(await xpTotal()).toBe(antes + 20)
+    expect(await xpTotal()).toBe(antes + 15)
     await deshacerUltimoToque('flexiones') // 98
     expect(await xpTotal()).toBe(antes + 10)
     await tocar(1) // 112 otra vez
-    expect(await xpTotal()).toBe(antes + 20)
+    expect(await xpTotal()).toBe(antes + 15)
     for (let i = 0; i < 3; i++) await deshacerUltimoToque('flexiones') // 70
     expect(await xpTotal()).toBe(antes + 10)
     await deshacerUltimoToque('flexiones') // 56

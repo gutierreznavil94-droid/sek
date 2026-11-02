@@ -467,7 +467,7 @@ function BotonContador({ r, destello, onToque, onDeshacer }: { r: ResumenContado
     <button type="button" className={`contador-boton ${r.metaLogradaHoy ? 'logrado' : ''} ${r.extraLogradoHoy ? 'extra' : ''} ${destello ? 'destello-extra' : ''}`} onClick={onToque} aria-label={`Sumar ${c.cantidadPorToque} ${c.nombre.toLowerCase()}. Hoy ${r.hoy}, cuota ${r.cuotaHoy}, extra ${r.extraHoy}`}>
       <span className="mas-n">+{c.cantidadPorToque}</span>
       <span className="nombre">{c.nombre}</span>
-      {destello ? <span className="detalle mono texto-extra">Extra +{c.xpExtra ?? 10} XP</span> : <span className="detalle mono">{detalle}</span>}
+      {destello ? <span className="detalle mono texto-extra">Extra +{c.xpExtra ?? 5} XP</span> : <span className="detalle mono">{detalle}</span>}
       <span className="barrita dos-topes">
         <i style={{ width: `${capa1}%` }} />
         <i className="capa-extra" style={{ left: `${marca}%`, width: `${capa2}%` }} />

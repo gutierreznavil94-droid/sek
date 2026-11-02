@@ -12,7 +12,7 @@ import { obtenerAjustes, registrarEvento } from './base'
 import { ahora, nuevoId } from './reloj'
 import { anularXp, concederXp } from './xp'
 
-export const XP_META_POR_DEFECTO = 30
+export const XP_META_POR_DEFECTO = 15
 
 export function estadoDeMeta(m: Meta): EstadoMeta {
   if (m.estado) return m.estado
@@ -52,7 +52,7 @@ export async function editarMeta(id: string, cambios: Partial<Pick<Meta, 'titulo
  * (no cumplida). Se puede corregir después; el XP se anula o se reconcede con
  * historial, nunca se duplica.
  */
-export async function resolverMeta(id: string, lograda: boolean, motivo?: string): Promise<{ meta: Meta; xp: number; nuevoNivel: number | null }> {
+export async function resolverMeta(id: string, lograda: boolean, motivo?: string): Promise<{ meta: Meta; xp: number; nuevoNivel: number | null; conTope: boolean }> {
   const d = db()
   const antes = await d.metas.get(id)
   if (!antes) throw new Error(`Meta ${id} no existe`)
@@ -65,12 +65,19 @@ export async function resolverMeta(id: string, lograda: boolean, motivo?: string
   const clave = claveXp('meta', [id])
   if (lograda) {
     const cantidad = antes.xp ?? XP_META_POR_DEFECTO
-    if (cantidad <= 0) return { meta: despues, xp: 0, nuevoNivel: null }
+    if (cantidad <= 0) return { meta: despues, xp: 0, nuevoNivel: null, conTope: false }
+    // Tope para todas las metas (rápidas y del calendario): solo 2 por día dan XP; las demás quedan cumplidas sin XP.
+    const delDia = await d.xp.where('fecha').equals(antes.fecha).toArray()
+    const otrasConXp = delDia.filter((r) => r.origen === 'meta' && !r.anulado && r.clave !== clave).length
+    if (otrasConXp >= TOPE_METAS_CON_XP) {
+      await registrarEvento({ tipo: 'editar', entidad: 'meta', entidadId: id, motivo: `Cumplida sin XP (tope de ${TOPE_METAS_CON_XP} por día)` })
+      return { meta: despues, xp: 0, nuevoNivel: null, conTope: true }
+    }
     const r = await concederXp({ clave, cantidad, origen: 'meta', fecha: antes.fecha, descripcion: `Meta: ${antes.titulo}` })
-    return { meta: despues, xp: r.concedido ? r.cantidad : 0, nuevoNivel: r.nuevoNivel }
+    return { meta: despues, xp: r.concedido ? r.cantidad : 0, nuevoNivel: r.nuevoNivel, conTope: false }
   }
   await anularXp(clave, motivo ?? 'Meta marcada como no cumplida')
-  return { meta: despues, xp: 0, nuevoNivel: null }
+  return { meta: despues, xp: 0, nuevoNivel: null, conTope: false }
 }
 
 /** Vuelve una meta a pendiente (por ejemplo, si se marcó por error). */
@@ -126,7 +133,7 @@ export async function zonaHoraria(): Promise<string> {
 
 /** XP por meta cumplida (igual que un pilar) y cuántas por día dan XP. */
 export const XP_META_RAPIDA = 15
-export const TOPE_METAS_CON_XP = 3
+export const TOPE_METAS_CON_XP = 2
 
 export type EstadoVisibleMeta = 'pendiente' | 'cumplida' | 'no_cumplida'
 
@@ -165,26 +172,12 @@ export async function crearMetaRapida(fecha: FechaDia, titulo: string, hoy: Fech
 }
 
 /**
- * Marcar una meta como cumplida: verde y +XP, con un tope de 3 metas con XP por
- * día. Si ya hay 3 con XP ese día, queda cumplida sin XP.
+ * Marcar una meta como cumplida: verde y +XP, con un tope de 2 metas con XP por
+ * día (el tope vive en resolverMeta y vale para todas). Pasado el tope, queda cumplida sin XP.
  */
 export async function cumplirMeta(id: string): Promise<{ xp: number; nuevoNivel: number | null; conTope: boolean }> {
-  const d = db()
-  const meta = await d.metas.get(id)
-  if (!meta) throw new Error(`Meta ${id} no existe`)
-  const clave = claveXp('meta', [id])
-  const delDia = await d.xp.where('fecha').equals(meta.fecha).toArray()
-  const otrasConXp = delDia.filter((r) => r.origen === 'meta' && !r.anulado && r.clave !== clave).length
-  if (otrasConXp >= TOPE_METAS_CON_XP) {
-    const despues: Meta = { ...meta, estado: 'cumplida', cumplida: true, resueltaEn: ahora() }
-    await d.transaction('rw', [d.metas, d.eventos], async () => {
-      await d.metas.put(despues)
-      await registrarEvento({ tipo: 'editar', entidad: 'meta', entidadId: id, antes: meta, despues, motivo: 'Cumplida sin XP (tope de 3 por día)' })
-    })
-    return { xp: 0, nuevoNivel: null, conTope: true }
-  }
   const r = await resolverMeta(id, true)
-  return { xp: r.xp, nuevoNivel: r.nuevoNivel, conTope: false }
+  return { xp: r.xp, nuevoNivel: r.nuevoNivel, conTope: r.conTope }
 }
 
 /** Desmarcar: vuelve a pendiente y quita el XP (sin duplicar nunca). */

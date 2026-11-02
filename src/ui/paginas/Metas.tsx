@@ -31,7 +31,7 @@ export function Metas({ hoy }: { hoy: string }) {
         </div>
         {clase === 'vencida' && (
           <div className="col" style={{ gap: 4 }}>
-            <button className="boton chico ok" onClick={() => mutar(() => resolverMeta(m.id, true)).then((r) => avisar(`Meta cumplida: +${r.xp} XP`, { tipo: 'ok' }))}>Lo logré</button>
+            <button className="boton chico ok" onClick={() => mutar(() => resolverMeta(m.id, true)).then((r) => avisar(r.xp > 0 ? `Meta cumplida: +${r.xp} XP` : r.conTope ? 'Meta cumplida (ya sumaste XP de 2 metas hoy)' : 'Meta cumplida', { tipo: 'ok' }))}>Lo logré</button>
             <button className="boton chico peligro" onClick={() => mutar(() => resolverMeta(m.id, false))}>No llegué</button>
           </div>
         )}

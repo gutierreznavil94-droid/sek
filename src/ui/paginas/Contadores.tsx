@@ -37,7 +37,7 @@ export function Contadores({ hoy }: { hoy: string }) {
             <div className="fila entre">
               <div className="col" style={{ gap: 0 }}>
                 <b>{c.nombre}{!c.activo && <span className="etiqueta" style={{ marginLeft: 6 }}>inactivo</span>}</b>
-                <span className="chico texto-3">{c.cantidadPorToque} por serie × {seriesDe(c)} series · cuota {c.metaDiaria} (+{c.xpMetaDiaria} XP) · extra {c.metaExtra ?? extraPorDefecto(c.metaDiaria)} (+{c.xpExtra ?? 10} XP){c.metaSemanal ? ` · semanal ${c.metaSemanal}` : ''}</span>
+                <span className="chico texto-3">{c.cantidadPorToque} por serie × {seriesDe(c)} series · cuota {c.metaDiaria} (+{c.xpMetaDiaria} XP) · extra {c.metaExtra ?? extraPorDefecto(c.metaDiaria)} (+{c.xpExtra ?? 5} XP){c.metaSemanal ? ` · semanal ${c.metaSemanal}` : ''}</span>
                 {subidasDeReps(c).length > 1 && <span className="linea-cuota">Reps por serie: {subidasDeReps(c).map((x, i) => (i === 0 ? `${x.reps}` : `${x.reps} (${fechaLegible(x.desde)})`)).join(' → ')}</span>}
                 {r && <span className="chico texto-2">Hoy {r.hoy} · semana {r.semana} · ciclo {r.ciclo}{r.record ? ` · récord ${r.record.total}` : ''}</span>}
               </div>
@@ -76,7 +76,7 @@ function EditarContador({ contador, atributos, onCerrar }: { contador: Contador 
   const metaDiaria = porToque * series
   const [extraManual, setExtraManual] = useState<number | null>(contador?.metaExtra !== undefined && contador.metaExtra !== extraPorDefecto(contador.metaDiaria) ? contador.metaExtra : null)
   const extra = extraManual ?? extraPorDefecto(metaDiaria)
-  const [xpExtra, setXpExtra] = useState(contador?.xpExtra ?? 10)
+  const [xpExtra, setXpExtra] = useState(contador?.xpExtra ?? 5)
   const [metaSemanal, setMetaSemanal] = useState(contador?.metaSemanal ?? 0)
   const [xp, setXp] = useState(contador?.xpMetaDiaria ?? 10)
   const [atributoIds, setAtributoIds] = useState<string[]>(contador?.atributoIds ?? ['fisico'])

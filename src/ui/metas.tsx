@@ -16,7 +16,7 @@ export async function alternarMeta(m: Meta, hoy: string): Promise<void> {
   const r = await mutar(() => cumplirMeta(m.id))
   animar({ tipo: 'ejecucion', pilar: 'meta', estilo: 'vertical' })
   if (r.nuevoNivel) celebrarNivel(r.nuevoNivel)
-  avisar(r.xp > 0 ? `Meta cumplida: +${r.xp} XP` : r.conTope ? 'Meta cumplida (ya sumaste XP de 3 metas hoy)' : 'Meta cumplida', { tipo: 'ok' })
+  avisar(r.xp > 0 ? `Meta cumplida: +${r.xp} XP` : r.conTope ? 'Meta cumplida (ya sumaste XP de 2 metas hoy)' : 'Meta cumplida', { tipo: 'ok' })
 }
 
 /** Una meta con su casilla. En verde suave con brillo al cumplirla; gris tachada si pasó sin cumplir. */
