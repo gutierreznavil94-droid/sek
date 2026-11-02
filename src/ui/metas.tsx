@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Meta } from '../data/tipos'
 import { cumplirMeta, crearMetaRapida, borrarMetaPropia, desmarcarMeta, editarMeta, estadoVisible } from '../services/metas'
 import { celebrarNivel } from './animaciones/logros'
 import { animar } from './animaciones/motor'
 import { avisar, mutar } from './estado'
+import { MenuFlotante } from './MenuFlotante'
 
 /** Marcar / desmarcar una meta: XP, animación corta del shinobi y aviso. */
 export async function alternarMeta(m: Meta, hoy: string): Promise<void> {
@@ -24,6 +25,8 @@ export function FilaMeta({ m, hoy, menu = true, chica = false }: { m: Meta; hoy:
   const [abierto, setAbierto] = useState(false)
   const [editando, setEditando] = useState<string | null>(null)
   const largo = useRef<number | null>(null)
+  const boton = useRef<HTMLButtonElement>(null)
+  const cerrar = useCallback(() => setAbierto(false), [])
   const guardar = async () => {
     const t = editando?.trim()
     if (t && t !== m.titulo) await mutar(() => editarMeta(m.id, { titulo: t }))
@@ -43,14 +46,14 @@ export function FilaMeta({ m, hoy, menu = true, chica = false }: { m: Meta; hoy:
         <span className="meta-titulo" onClick={() => alternarMeta(m, hoy)}>{m.titulo}</span>
       )}
       {menu && editando === null && (
-        <button className="meta-menu" aria-label="Opciones de la meta" onClick={() => setAbierto(!abierto)}>…</button>
+        <button ref={boton} className="meta-menu" aria-label="Opciones de la meta" aria-haspopup="menu" aria-expanded={abierto} onClick={() => setAbierto(!abierto)}>…</button>
       )}
       {abierto && (
-        <div className="meta-opciones" role="menu">
+        <MenuFlotante ancla={boton} onCerrar={cerrar} etiqueta={`Opciones de «${m.titulo}»`}>
           {m.fecha >= hoy && <button role="menuitem" onClick={() => { setAbierto(false); setEditando(m.titulo) }}>Editar</button>}
           <button role="menuitem" className="peligro" onClick={async () => { setAbierto(false); await mutar(() => borrarMetaPropia(m.id)); avisar('Meta borrada') }}>Borrar</button>
           <button role="menuitem" onClick={() => setAbierto(false)}>Cerrar</button>
-        </div>
+        </MenuFlotante>
       )}
     </div>
   )

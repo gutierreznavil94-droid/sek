@@ -48,7 +48,7 @@ export function Progreso({ hoy }: { hoy: string }) {
     for (const c of await db().contadores.toArray()) acciones.set(`contador:${c.id}`, `${c.nombre} (meta diaria)`)
     const contadores = await resumenContadores(hoy)
     const sueno = await resumenSuenio(hoy, 14)
-    let pilares: { nombre: string; hechos: number; programados: number }[] = []
+    let pilares: { id: string; nombre: string; hechos: number; programados: number }[] = []
     let diasCumplidos = 0
     let diasContados = 0
     // Serie del gráfico: desde el Día 1 hasta hoy.
@@ -64,11 +64,13 @@ export function Progreso({ hoy }: { hoy: string }) {
         acumulado += xp
         serie.push({ fecha: f, dia, xp, acumulado, pilares: (pil.get(f) ?? []).map((p) => ({ nombre: p.nombre, estado: p.estado })) })
       }
-      const porPilar = new Map<string, { nombre: string; hechos: number; programados: number }>()
-      for (const [, lista] of await pilaresPorDia(inicio, hasta, hoy)) {
+      // Siempre los 4 pilares, en su orden fijo, aunque alguno todavía no haya tenido días (por ejemplo, entrenamiento si el Día 1 fue descanso).
+      const porPilar = new Map<string, { id: string; nombre: string; hechos: number; programados: number }>()
+      for (const p of pil.values().next().value ?? []) porPilar.set(p.accionId, { id: p.accionId, nombre: p.nombre, hechos: 0, programados: 0 })
+      for (const [, lista] of pil) {
         for (const p of lista) {
           if (p.estado === 'pendiente' || p.estado === 'descanso') continue
-          const x = porPilar.get(p.accionId) ?? { nombre: p.nombre, hechos: 0, programados: 0 }
+          const x = porPilar.get(p.accionId) ?? { id: p.accionId, nombre: p.nombre, hechos: 0, programados: 0 }
           x.programados++
           if (p.estado === 'cumplido' || p.estado === 'tarde') x.hechos++
           porPilar.set(p.accionId, x)
@@ -157,7 +159,7 @@ export function Progreso({ hoy }: { hoy: string }) {
               <section className="av-tarjeta">
                 <div className="av-tarjeta-titulo"><span>Pilares en el ciclo</span><span className="av-nota">{d.diasCumplidos} de {d.diasContados} días cumplidos</span></div>
                 <div className="av-pilares">
-                  {d.pilares.map((p) => <Anillo key={p.nombre} nombre={p.nombre} valor={p.programados ? p.hechos / p.programados : 0} texto={`${p.hechos} de ${p.programados}`} />)}
+                  {d.pilares.map((p) => <Anillo key={p.id} nombre={p.nombre} valor={p.programados ? p.hechos / p.programados : null} texto={p.programados ? `${p.hechos} de ${p.programados}` : `0 de 0 · sin días de ${p.id === 'entrenamiento' ? 'entreno' : 'este pilar'} todavía`} />)}
                 </div>
               </section>
             )}
@@ -365,16 +367,16 @@ function Dato({ grande, chico, sub, rojo }: { grande: string; chico: string; sub
 }
 
 /** Anillo de tinta: el arco lleno es lo cumplido. */
-function Anillo({ nombre, valor, texto }: { nombre: string; valor: number; texto: string }) {
+function Anillo({ nombre, valor, texto }: { nombre: string; valor: number | null; texto: string }) {
   const r = 26
   const c = 2 * Math.PI * r
-  const v = Math.max(0, Math.min(1, valor))
+  const v = Math.max(0, Math.min(1, valor ?? 0))
   return (
-    <div className="av-anillo" role="img" aria-label={`${nombre}: ${Math.round(v * 100)} %`}>
+    <div className={`av-anillo ${valor === null ? 'sin-dias' : ''}`} role="img" aria-label={valor === null ? `${nombre}: ${texto}` : `${nombre}: ${Math.round(v * 100)} %`}>
       <svg viewBox="0 0 64 64">
         <circle className="enso-fondo" cx={32} cy={32} r={r} fill="none" strokeWidth={4.5} strokeDasharray={`${c * 0.94} ${c}`} transform="rotate(-80 32 32)" strokeLinecap="round" />
         <circle className={`enso-valor ${v < 0.75 ? "bajo" : ""}`} cx={32} cy={32} r={r} fill="none" strokeWidth={5.5} strokeLinecap="round" strokeDasharray={`${c * v * 0.94} ${c}`} transform="rotate(-80 32 32)" />
-        <text x={32} y={36} textAnchor="middle" fontSize={13} fontWeight={700} fill="#f3efe6">{Math.round(v * 100)}</text>
+        <text x={32} y={36} textAnchor="middle" fontSize={13} fontWeight={700} fill="#f3efe6">{valor === null ? '—' : Math.round(v * 100)}</text>
       </svg>
       <span className="av-anillo-nombre">{nombre}</span>
       <span className="av-nota">{texto}</span>
