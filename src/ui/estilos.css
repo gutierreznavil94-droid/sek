@@ -1355,3 +1355,6 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 @keyframes tinta-arma { 0%, 62% { opacity: 0; filter: blur(3px); } 100% { opacity: 1; filter: none; } }
 @media (prefers-reduced-motion: reduce) { :root:not(.movimiento-siempre) .entreno-titulo.tinta-arma { animation: tinta-funde 0.35s ease-out both; } }
 @keyframes tinta-funde { from { opacity: 0; } to { opacity: 1; } }
+/* Aguada blanca del fondo (ronda 6): detrás de todo */
+.aguada-fondo { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.contenido.entreno { position: relative; z-index: 1; }

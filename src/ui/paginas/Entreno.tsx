@@ -48,7 +48,7 @@ import {
 import { ahora } from '../../services/reloj'
 import { celebrarNivel, celebrarRecord } from '../animaciones/logros'
 import { Avisos, Confirmar, Hoja } from '../componentes'
-import { TintaPolvo } from '../TintaPolvo'
+import { AguadaFondo, TintaPolvo } from '../TintaPolvo'
 import { avisar, mutar, useDatos, useTic } from '../estado'
 
 function vibrar(patron: number | number[]) {
@@ -220,6 +220,7 @@ function EnCurso({ s, r, ctx, onTerminado }: { s: SesionEntreno; r: Rutina; ctx:
         {s.orden.map((id, i) => { const b = r.bloques.find((x) => x.id === id); return <span key={id} className={`${b && bloqueTerminado(s, b) ? (s.saltados.includes(id) ? 'saltado' : 'hecho') : ''} ${i === s.paso ? 'actual' : ''}`} /> })}
       </div>
       <div className="texto-3 chico">{r.nombre}</div>
+      <AguadaFondo tenue={!!(s.descanso && fase)} />
       <TintaPolvo bloque={bloque?.id ?? null} visible={!(s.descanso && fase)} tenue={!!(s.descanso && fase)} />
 
       {s.descanso && fase ? (

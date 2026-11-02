@@ -4,7 +4,7 @@
  * - Entrada (~0,9 s): al llegar a un bloque nuevo, su título se arma con polvo
  *   que llega desde arriba y desde abajo; el título real aparece al final.
  * - Salida: al terminar el bloque, el título se deshace en polvo que se va.
- * - Ambiente: 10 motas que flotan lento por los bordes (más tenues en el descanso).
+ * - El fondo (aguada blanca que pasa) está en `AguadaFondo`, detrás de todo.
  *
  * Es un canvas fijo sin eventos de puntero: nunca frena un toque. Con «reducir
  * movimiento» no dibuja nada y el título solo aparece con un fundido (CSS).
@@ -14,7 +14,6 @@ import { movimientoReducido } from './componentes'
 
 type Punto = { x: number; y: number }
 type Grano = { x0: number; y0: number; x1: number; y1: number; inicio: number; dur: number; r: number; tipo: 'llega' | 'se-va' }
-type Mota = { x: number; y: number; vy: number; fase: number; r: number; lado: number }
 
 const DUR_ENTRADA = 900
 const DUR_SALIDA = 650
@@ -68,11 +67,9 @@ const easeIn = (t: number) => t * t
 export function TintaPolvo({ bloque, visible, tenue }: { bloque: string | null; visible: boolean; tenue: boolean }) {
   const lienzo = useRef<HTMLCanvasElement>(null)
   const granos = useRef<Grano[]>([])
-  const motas = useRef<Mota[]>([])
   const puntosActuales = useRef<Punto[]>([])
   const armado = useRef<string | null>(null)
-  const tenueRef = useRef(tenue)
-  tenueRef.current = tenue
+  void tenue
   const reducido = movimientoReducido()
 
   // Bucle de dibujo: solo con la pantalla visible.
@@ -93,36 +90,13 @@ export function TintaPolvo({ bloque, visible, tenue }: { bloque: string | null; 
       g.setTransform(dpr, 0, 0, dpr, 0, 0)
     }
     tam()
-    if (!motas.current.length) {
-      motas.current = Array.from({ length: 10 }, (_, i) => ({
-        lado: i % 2,
-        x: 0,
-        y: Math.random() * window.innerHeight,
-        vy: (Math.random() < 0.5 ? -1 : 1) * (8 + Math.random() * 10),
-        fase: Math.random() * Math.PI * 2,
-        r: 1.4 + Math.random() * 2.2,
-      }))
-    }
     const tinta = getComputedStyle(document.documentElement).getPropertyValue('--papel').trim() || '#ECEAE5'
     const cuadro = (ahora: number) => {
-      const dt = Math.min(0.05, (ahora - antes) / 1000)
+      void (ahora - antes)
       antes = ahora
       const w = window.innerWidth
       const h = window.innerHeight
       g.clearRect(0, 0, w, h)
-      // Motas del ambiente, por los bordes.
-      g.fillStyle = '#8E8A84'
-      for (const m of motas.current) {
-        m.y += m.vy * dt
-        m.fase += dt * 0.8
-        if (m.y < -10) m.y = h + 10
-        if (m.y > h + 10) m.y = -10
-        const x = (m.lado ? w - 14 : 14) + Math.sin(m.fase) * 8
-        g.globalAlpha = tenueRef.current ? 0.12 : 0.32
-        g.beginPath()
-        g.ellipse(x, m.y, m.r * 0.7, m.r * 1.8, 0, 0, Math.PI * 2)
-        g.fill()
-      }
       // Polvo del título.
       const vivos: Grano[] = []
       g.fillStyle = tinta
@@ -196,4 +170,144 @@ export function TintaPolvo({ bloque, visible, tenue }: { bloque: string | null; 
 
   if (reducido) return null
   return <canvas ref={lienzo} className="tinta-polvo" aria-hidden="true" />
+}
+
+// ---------- Aguada blanca del fondo (ronda 6) ----------
+
+type Trazo = { img: HTMLCanvasElement; x: number; y: number; vx: number; vy: number; ang: number; alfa: number; gotas: { dx: number; dy: number; r: number }[] }
+
+/** Un trazo ancho de pincel seco, dibujado una sola vez en un canvas aparte (blanco; la opacidad se da al pintarlo). */
+function pintarTrazo(largo: number, ancho: number): HTMLCanvasElement {
+  const c = document.createElement('canvas')
+  c.width = largo
+  c.height = ancho
+  const g = c.getContext('2d')
+  if (!g) return c
+  g.lineCap = 'round'
+  // Cuerpo de la aguada: una banda suave con puntas afinadas (lo que se ve de lejos).
+  const grad = g.createLinearGradient(0, 0, largo, 0)
+  grad.addColorStop(0, 'rgba(255,255,255,0)')
+  grad.addColorStop(0.12, 'rgba(255,255,255,0.55)')
+  grad.addColorStop(0.7, 'rgba(255,255,255,0.6)')
+  grad.addColorStop(1, 'rgba(255,255,255,0)')
+  g.fillStyle = grad
+  g.beginPath()
+  g.moveTo(0, ancho / 2)
+  g.bezierCurveTo(largo * 0.2, ancho * 0.08, largo * 0.8, ancho * 0.12, largo, ancho * 0.45)
+  g.bezierCurveTo(largo * 0.8, ancho * 0.9, largo * 0.2, ancho * 0.95, 0, ancho / 2)
+  g.fill()
+  // Muchas cerdas: líneas finas a lo largo, con cortes (pincel seco) y puntas afinadas.
+  const cerdas = Math.round(ancho / 2.2)
+  for (let i = 0; i < cerdas; i++) {
+    const y0 = (i + Math.random()) * (ancho / cerdas)
+    const centro = 1 - Math.abs(y0 / ancho - 0.5) * 2 // más carga en el medio
+    const inicio = Math.random() * largo * 0.18 * (1 - centro + 0.3)
+    const fin = largo - Math.random() * largo * 0.25 * (1 - centro + 0.3)
+    g.strokeStyle = `rgba(255,255,255,${0.55 + centro * 0.45})`
+    g.lineWidth = 0.8 + Math.random() * 2.2
+    let x = inicio
+    g.beginPath()
+    g.moveTo(x, y0)
+    while (x < fin) {
+      const paso = 12 + Math.random() * 30
+      x = Math.min(fin, x + paso)
+      const y = y0 + Math.sin(x / 90 + i) * 2.5
+      // Cortes del pincel seco.
+      if (Math.random() < 0.12 * (1.2 - centro)) g.moveTo(x, y)
+      else g.lineTo(x, y)
+    }
+    g.stroke()
+  }
+  return c
+}
+
+export function AguadaFondo({ tenue }: { tenue: boolean }) {
+  const lienzo = useRef<HTMLCanvasElement>(null)
+  const tenueRef = useRef(tenue)
+  tenueRef.current = tenue
+  const reducido = movimientoReducido()
+
+  useEffect(() => {
+    const c = lienzo.current
+    if (!c) return
+    const g = c.getContext('2d')
+    if (!g) return
+    let w = window.innerWidth
+    let h = window.innerHeight
+    const tam = () => {
+      const dpr = Math.min(2, window.devicePixelRatio || 1)
+      w = window.innerWidth
+      h = window.innerHeight
+      c.width = Math.round(w * dpr)
+      c.height = Math.round(h * dpr)
+      c.style.width = `${w}px`
+      c.style.height = `${h}px`
+      g.setTransform(dpr, 0, 0, dpr, 0, 0)
+    }
+    tam()
+    const nuevo = (i: number, desdeAfuera: boolean): Trazo => {
+      const largo = Math.round(w * (0.9 + Math.random() * 0.7))
+      const ancho = Math.round(50 + Math.random() * 70)
+      const segundos = 8 + Math.random() * 7 // cruza la pantalla en 8 a 15 s
+      const vx = (w + largo) / segundos
+      const sube = i % 2 === 0
+      const vy = (sube ? -1 : 1) * vx * (0.12 + Math.random() * 0.12)
+      return {
+        img: pintarTrazo(largo, ancho),
+        x: desdeAfuera ? -largo : -largo + Math.random() * (w + largo),
+        y: h * (0.12 + ((i * 0.23 + Math.random() * 0.15) % 0.8)),
+        vx, vy,
+        ang: Math.atan2(vy, vx),
+        alfa: 0.09 + Math.random() * 0.03, // 9 a 12 %
+        gotas: Array.from({ length: 2 + Math.floor(Math.random() * 4) }, () => ({ dx: Math.random() * largo, dy: (Math.random() < 0.5 ? -1 : 1) * (ancho * 0.6 + Math.random() * 30), r: 1 + Math.random() * 2.5 })),
+      }
+    }
+    const trazos: Trazo[] = Array.from({ length: 4 }, (_, i) => nuevo(i, false))
+    const dibujar = () => {
+      g.clearRect(0, 0, w, h)
+      const factor = tenueRef.current ? 0.6 : 1
+      for (const t of trazos) {
+        g.save()
+        g.translate(t.x, t.y)
+        g.rotate(t.ang)
+        g.globalAlpha = t.alfa * factor
+        g.drawImage(t.img, 0, -t.img.height / 2)
+        g.fillStyle = '#fff'
+        g.globalAlpha = Math.min(0.35, t.alfa * 2.2) * factor
+        for (const d of t.gotas) { g.beginPath(); g.arc(d.dx, d.dy, d.r, 0, Math.PI * 2); g.fill() }
+        g.restore()
+      }
+      g.globalAlpha = 1
+    }
+    if (reducido) {
+      dibujar()
+      return
+    }
+    let id = 0
+    let antes = performance.now()
+    const cuadro = (ahora: number) => {
+      const dt = Math.min(0.05, (ahora - antes) / 1000)
+      antes = ahora
+      const vel = tenueRef.current ? 0.6 : 1
+      trazos.forEach((t, i) => {
+        t.x += t.vx * dt * vel
+        t.y += t.vy * dt * vel
+        if (t.x > w + 40 || t.y < -200 || t.y > h + 200) trazos[i] = nuevo(i, true)
+      })
+      dibujar()
+      id = requestAnimationFrame(cuadro)
+    }
+    const arrancar = () => { cancelAnimationFrame(id); antes = performance.now(); id = requestAnimationFrame(cuadro) }
+    const alCambiar = () => (document.visibilityState === 'visible' ? arrancar() : cancelAnimationFrame(id))
+    arrancar()
+    window.addEventListener('resize', tam)
+    document.addEventListener('visibilitychange', alCambiar)
+    return () => {
+      cancelAnimationFrame(id)
+      window.removeEventListener('resize', tam)
+      document.removeEventListener('visibilitychange', alCambiar)
+    }
+  }, [reducido])
+
+  return <canvas ref={lienzo} className="aguada-fondo" aria-hidden="true" />
 }
