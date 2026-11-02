@@ -14,7 +14,7 @@ import { duracionSuenio, resumenSuenio, type ResumenSuenio } from '../../service
 import { kg, resumenFuerza, type ResumenFuerza } from '../../services/entreno'
 import { Hoja, clasePorcentaje, elegirMovimiento, movimientoReducido } from '../componentes'
 import { useDatos } from '../estado'
-import { graficoMetas } from '../../services/metas'
+import { graficoMetas, metasPorDia } from '../../services/metas'
 import { FilaMeta } from '../metas'
 import { VERSION_APP } from '../../version'
 import { VIDEOS, VIDRIO_EN_DESTELLO, intensidadDestello, type VideoFondo, elegirVideo, useModoFondo, usePantallaHorizontal, VIDEO_PC, video as datosVideo } from '../../fondos/elegir'
@@ -28,6 +28,29 @@ const BASE = import.meta.env.BASE_URL
  * El día del ciclo y las fases ya van en la cabecera, así que acá no se repiten.
  */
 type Rango = 'semana' | 'mes' | 'ciclo'
+
+/** Secciones de Progreso: el resumen arriba y cada sección a un toque, a pantalla completa sobre el mismo video. */
+type Seccion = 'xp' | 'pilares' | 'metas' | 'sueno' | 'fuerza' | 'series' | 'codigo'
+const SECCIONES: { id: Seccion; kanji: string; nombre: string }[] = [
+  { id: 'xp', kanji: '昇', nombre: 'XP' },
+  { id: 'metas', kanji: '目', nombre: 'Metas' },
+  { id: 'sueno', kanji: '眠', nombre: 'Sueño' },
+  { id: 'fuerza', kanji: '力', nombre: 'Fuerza' },
+  { id: 'series', kanji: '連', nombre: 'Series' },
+  { id: 'codigo', kanji: '掟', nombre: 'Mi código' },
+]
+const NOMBRE_SECCION: Record<Seccion, string> = { xp: 'XP', pilares: 'Pilares', metas: 'Metas', sueno: 'Sueño', fuerza: 'Fuerza', series: 'Series rápidas', codigo: 'Mi código' }
+/** La última sección abierta se recuerda solo durante la misma visita y el mismo día. */
+const CLAVE_SECCION = 'progreso-seccion'
+function seccionRecordada(hoy: string): Seccion | null {
+  try {
+    const [f, s] = (sessionStorage.getItem(CLAVE_SECCION) ?? '').split('|')
+    return f === hoy && s in NOMBRE_SECCION ? (s as Seccion) : null
+  } catch { return null }
+}
+function recordarSeccion(hoy: string, s: Seccion | null) {
+  try { if (s) sessionStorage.setItem(CLAVE_SECCION, `${hoy}|${s}`); else sessionStorage.removeItem(CLAVE_SECCION) } catch { /* sin almacenamiento */ }
+}
 
 export function Progreso({ hoy }: { hoy: string }) {
   const [verNiveles, setVerNiveles] = useState(false)
@@ -99,7 +122,8 @@ export function Progreso({ hoy }: { hoy: string }) {
         if (c.porcentaje >= ajustes.umbralRacha) diasCumplidos++
       }
     }
-    return { ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados, conExtra, reglasCodigo: await db().codigo.count() }
+    const metasSemana = [...(await metasPorDia(lunes, sumarDias(lunes, 6))).values()].flat()
+    return { ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados, conExtra, reglasCodigo: await db().codigo.count(), metasSemana: { cumplidas: metasSemana.filter((m) => m.cumplida).length, total: metasSemana.length } }
   }, [hoy])
   const reducido = useMemo(() => movimientoReducido(), [])
   const modo = useModoFondo()
@@ -115,7 +139,20 @@ export function Progreso({ hoy }: { hoy: string }) {
     return () => ro?.disconnect()
   }, [])
   const d = datos.datos
-  const enCodigo = useLocation().pathname.startsWith('/progreso/codigo')
+  const ruta = useLocation().pathname
+  const navegar = useNavigate()
+  const parte = ruta.replace(/^\/progreso\/?/, '').split('/')[0]
+  const seccion: Seccion | null = parte in NOMBRE_SECCION ? (parte as Seccion) : null
+  const enCodigo = seccion === 'codigo'
+  // Al volver a Progreso en la misma visita (y el mismo día), vuelve a la última sección abierta.
+  useEffect(() => {
+    if (seccion) recordarSeccion(hoy, seccion)
+    else {
+      const r = seccionRecordada(hoy)
+      if (r) navegar(`/progreso/${r}`, { replace: true })
+    }
+  }, [seccion, hoy, navegar])
+  useEffect(() => { window.scrollTo(0, 0) }, [seccion])
   const sel = d?.atributos.find((a) => a.atributoId === atributoSel)
   const fechaNivel = (n: number) => d?.niveles.find((x) => x.nivel === n)
   // Video del día: se decide con la fecha de Córdoba y el Día 1 del ciclo.
@@ -127,21 +164,84 @@ export function Progreso({ hoy }: { hoy: string }) {
     <div className="progreso-tinta" data-fondo={fondo?.tipo ?? 'oscuro'} data-vidrio={vidrioClaro() && fondo?.tipo === 'claro' ? 'claro' : undefined} style={{ '--av-arriba': `${arriba}px` } as React.CSSProperties}>
       {/* Fondo fijo: el video vertical cubre toda la pantalla y no se mueve al desplazar */}
       {createPortal(
-        <div className="av-fondo" aria-hidden="true" data-orientacion={horizontal ? 'horizontal' : undefined} data-vista={enCodigo ? 'codigo' : undefined}>
+        <div className="av-fondo" aria-hidden="true" data-orientacion={horizontal ? 'horizontal' : undefined} data-vista={seccion ? 'codigo' : undefined}>
           {fondo && <VideoDeFondo key={fondo.id} fondo={fondo} quieto={reducido} pausado={verNiveles || !!sel} />}
         </div>,
         document.body,
       )}
 
       <div className="av-contenido">
-        {enCodigo ? <MiCodigo /> : <>
-        {/* Hueco para que el video se vea entero antes de las tarjetas */}
-        <div className="av-hueco" />
+        {enCodigo ? <MiCodigo /> : seccion ? (
+          <div className="av-seccion" key={seccion}>
+            <Link to="/progreso" className="codigo-volver" onClick={() => recordarSeccion(hoy, null)}>‹ Progreso</Link>
+            <h1 className="av-seccion-titulo">{NOMBRE_SECCION[seccion]}</h1>
+            {!d ? <p className="av-cargando">Cargando…</p> : (
+              <div className="av-tarjetas">
+                {seccion === 'xp' && (
+                  <section className="av-tarjeta">
+                    <div className="av-tarjeta-titulo">
+                      <span>XP</span>
+                      <div className="seg oscuro" role="tablist" aria-label="Rango del gráfico">
+                        {(['semana', 'mes', 'ciclo'] as Rango[]).map((r) => (
+                          <button key={r} role="tab" aria-selected={rango === r} className={rango === r ? 'activo' : ''} onClick={() => setRango(r)}>{r === 'semana' ? 'Semana' : r === 'mes' ? 'Mes' : 'Ciclo'}</button>
+                        ))}
+                      </div>
+                    </div>
+                    {d.estado && !d.estado.noEmpezado ? (
+                      <GraficoXp serie={d.serie} rango={rango} hoy={hoy} ciclo={d.estado.ciclo} base={d.ajustes.baseNivel} total={d.total} xpSemana={d.xpSemana} xpHoy={d.xpHoy} />
+                    ) : (
+                      <div className="av-nota" style={{ textAlign: 'center', padding: '18px 0' }}>El gráfico empieza el Día 1{d.estado ? ` (${fechaLegible(d.estado.ciclo.inicio)})` : ''}.</div>
+                    )}
+                  </section>
+                )}
+
+                {seccion === 'metas' && <TarjetaMetas hoy={hoy} inicio={d.estado && !d.estado.noEmpezado ? d.estado.ciclo.inicio : hoy} fin={d.estado ? d.estado.fechaFin : sumarDias(hoy, 89)} />}
+
+                {seccion === 'sueno' && <TarjetaSueno r={d.sueno} />}
+
+                {seccion === 'fuerza' && <TarjetaFuerza f={d.fuerza} />}
+
+                {seccion === 'pilares' && (
+                  <>
+                    <section className="av-tarjeta">
+                      <div className="av-tarjeta-titulo"><span>Pilares en el ciclo</span><span className="av-nota">{d.diasCumplidos} de {d.diasContados} días cumplidos</span></div>
+                      <div className="av-pilares">
+                        {d.pilares.map((p) => <Anillo key={p.id} nombre={p.nombre} valor={p.programados ? p.hechos / p.programados : null} texto={p.programados ? `${p.hechos} de ${p.programados}` : `0 de 0 · sin días de ${p.id === 'entrenamiento' ? 'entreno' : 'este pilar'} todavía`} />)}
+                      </div>
+                      {d.conExtra.map((x) => <TiraExtra key={x.id} x={x} hoy={hoy} />)}
+                    </section>
+                    {/* Atributos: salen de cómo cumplís los pilares. Tocar uno abre el desglose. */}
+                    {d.atributos.length > 0 && (
+                      <section className="av-tarjeta">
+                        <div className="av-tarjeta-titulo"><span>Atributos</span><span className="av-nota">tocá uno para el detalle</span></div>
+                        {d.atributos.map((a) => (
+                          <div key={a.atributoId} className="av-atributo av-tocable" role="button" tabIndex={0} onClick={() => setAtributoSel(a.atributoId)} onKeyDown={(e) => e.key === 'Enter' && setAtributoSel(a.atributoId)}>
+                            <div className="av-atributo-fila"><span>{a.nombre}</span><span className="av-mono">{a.valor ?? '—'}{a.tendencia ? <span className={a.tendencia > 0 ? 'av-sube' : 'av-baja'}> {a.tendencia > 0 ? '▲' : '▼'}{Math.abs(a.tendencia)}</span> : null}</span></div>
+                            <div className="av-barra fina" aria-hidden="true"><div style={{ width: `${a.valor ?? 0}%` }} /></div>
+                          </div>
+                        ))}
+                      </section>
+                    )}
+                  </>
+                )}
+
+                {seccion === 'series' && (
+                  <section className="av-tarjeta">
+                    <div className="av-tarjeta-titulo"><span>Series rápidas</span><span className="av-nota">hoy · semana · récord</span></div>
+                    {d.contadores.length ? d.contadores.map((c) => <SerieRapida key={c.contador.id} c={c} hoy={hoy} />) : <div className="av-nota">Todavía no tenés series rápidas.</div>}
+                  </section>
+                )}
+              </div>
+            )}
+          </div>
+        ) : <>
+        {/* Hueco para que el video se vea antes del resumen */}
+        <div className="av-hueco resumen" />
         {!d ? (
           <p className="av-cargando">Cargando…</p>
         ) : (
           <div className="av-tarjetas">
-            {/* Nivel, XP y racha: tocar abre la tabla de niveles */}
+            {/* Resumen: nivel, XP y racha. Tocar abre la tabla de niveles */}
             <section className="av-tarjeta av-fila-3 av-tocable" role="button" tabIndex={0} onClick={() => setVerNiveles(true)} onKeyDown={(e) => e.key === 'Enter' && setVerNiveles(true)} aria-label="Nivel, XP y racha. Tocá para ver la tabla de niveles">
               <Dato grande={String(d.nivel.nivel)} chico="NIVEL" sub={etapaDeNivel(d.nivel.nivel)} />
               <Dato grande={String(d.total)} chico="XP TOTAL" sub={`${d.nivel.xpEnNivel} / ${d.nivel.xpParaSiguiente} al nivel ${d.nivel.nivel + 1}`} />
@@ -149,70 +249,26 @@ export function Progreso({ hoy }: { hoy: string }) {
               <div className="av-barra" aria-hidden="true"><div style={{ width: `${Math.round(100 * d.nivel.progreso)}%` }} /></div>
             </section>
 
-            {/* 掟 Mi código: abre su propia pantalla sobre el mismo video */}
-            <Link to="/progreso/codigo" className="av-tarjeta av-codigo-boton" aria-label="Mi código: tus reglas y principios">
-              <span className="codigo-kanji chico" aria-hidden>掟</span>
-              <span className="crece"><b>Mi código</b><span className="av-nota"> · {d.reglasCodigo} {d.reglasCodigo === 1 ? 'regla' : 'reglas'}</span><br /><span className="av-nota">Lo que un shinobi no rompe</span></span>
-              <span aria-hidden>›</span>
-            </Link>
-
-            {/* Gráfico de XP: semana, mes o ciclo */}
-            <section className="av-tarjeta">
-              <div className="av-tarjeta-titulo">
-                <span>XP</span>
-                <div className="seg oscuro" role="tablist" aria-label="Rango del gráfico">
-                  {(['semana', 'mes', 'ciclo'] as Rango[]).map((r) => (
-                    <button key={r} role="tab" aria-selected={rango === r} className={rango === r ? 'activo' : ''} onClick={() => setRango(r)}>{r === 'semana' ? 'Semana' : r === 'mes' ? 'Mes' : 'Ciclo'}</button>
-                  ))}
-                </div>
-              </div>
-              {d.estado && !d.estado.noEmpezado ? (
-                <GraficoXp serie={d.serie} rango={rango} hoy={hoy} ciclo={d.estado.ciclo} base={d.ajustes.baseNivel} total={d.total} xpSemana={d.xpSemana} xpHoy={d.xpHoy} />
-              ) : (
-                <div className="av-nota" style={{ textAlign: 'center', padding: '18px 0' }}>El gráfico empieza el Día 1{d.estado ? ` (${fechaLegible(d.estado.ciclo.inicio)})` : ''}.</div>
-              )}
-            </section>
-
-            {/* Metas: cumplidas y no cumplidas */}
-            <TarjetaMetas hoy={hoy} inicio={d.estado && !d.estado.noEmpezado ? d.estado.ciclo.inicio : hoy} fin={d.estado ? d.estado.fechaFin : sumarDias(hoy, 89)} />
-
-            {/* Sueño: una variable más de mejora. Tocar abre la pantalla Sueño. */}
-            <TarjetaSueno r={d.sueno} />
-
-            {/* Fuerza: récords del ciclo, mejoras del mes y volumen por semana. Tocar abre las rutinas. */}
-            <TarjetaFuerza f={d.fuerza} />
-
-            {/* Pilares del ciclo */}
+            {/* Los 4 pilares en una fila compacta; tocar abre el detalle con la tira del manga y los atributos */}
             {d.pilares.length > 0 && (
-              <section className="av-tarjeta">
-                <div className="av-tarjeta-titulo"><span>Pilares en el ciclo</span><span className="av-nota">{d.diasCumplidos} de {d.diasContados} días cumplidos</span></div>
-                <div className="av-pilares">
-                  {d.pilares.map((p) => <Anillo key={p.id} nombre={p.nombre} valor={p.programados ? p.hechos / p.programados : null} texto={p.programados ? `${p.hechos} de ${p.programados}` : `0 de 0 · sin días de ${p.id === 'entrenamiento' ? 'entreno' : 'este pilar'} todavía`} />)}
+              <Link to="/progreso/pilares" className="av-tarjeta av-pilares-mini" aria-label={`Pilares en el ciclo: ${d.diasCumplidos} de ${d.diasContados} días cumplidos. Tocá para ver el detalle`}>
+                <div className="av-tarjeta-titulo"><span>Pilares</span><span className="av-nota">{d.diasCumplidos} de {d.diasContados} días ›</span></div>
+                <div className="av-pilares chicos">
+                  {d.pilares.map((p) => <Anillo key={p.id} nombre={p.nombre} valor={p.programados ? p.hechos / p.programados : null} texto="" />)}
                 </div>
-                {d.conExtra.map((x) => <TiraExtra key={x.id} x={x} hoy={hoy} />)}
-              </section>
+              </Link>
             )}
 
-            {/* Series rápidas: reps por serie (escalones) y cumplimiento por día */}
-            {d.contadores.length > 0 && (
-              <section className="av-tarjeta">
-                <div className="av-tarjeta-titulo"><span>Series rápidas</span><span className="av-nota">hoy · semana · récord</span></div>
-                {d.contadores.map((c) => <SerieRapida key={c.contador.id} c={c} hoy={hoy} />)}
-              </section>
-            )}
-
-            {/* Atributos: tocar uno abre el desglose */}
-            {d.atributos.length > 0 && (
-              <section className="av-tarjeta">
-                <div className="av-tarjeta-titulo"><span>Atributos</span><span className="av-nota">tocá uno para el detalle</span></div>
-                {d.atributos.map((a) => (
-                  <div key={a.atributoId} className="av-atributo av-tocable" role="button" tabIndex={0} onClick={() => setAtributoSel(a.atributoId)} onKeyDown={(e) => e.key === 'Enter' && setAtributoSel(a.atributoId)}>
-                    <div className="av-atributo-fila"><span>{a.nombre}</span><span className="av-mono">{a.valor ?? '—'}{a.tendencia ? <span className={a.tendencia > 0 ? 'av-sube' : 'av-baja'}> {a.tendencia > 0 ? '▲' : '▼'}{Math.abs(a.tendencia)}</span> : null}</span></div>
-                    <div className="av-barra fina" aria-hidden="true"><div style={{ width: `${a.valor ?? 0}%` }} /></div>
-                  </div>
-                ))}
-              </section>
-            )}
+            {/* Un toque y se abre cada sección; cada botón muestra su dato clave */}
+            <nav className="av-secciones" aria-label="Secciones de Progreso">
+              {SECCIONES.filter((x) => x.id !== 'series' || d.contadores.length > 0).map((x) => (
+                <Link key={x.id} to={`/progreso/${x.id}`} className="av-tarjeta av-seccion-boton">
+                  <span className="av-seccion-kanji" aria-hidden>{x.kanji}</span>
+                  <b>{x.nombre}</b>
+                  <span className="av-nota">{datoClave(x.id, d)}</span>
+                </Link>
+              ))}
+            </nav>
           </div>
         )}
         </>}
@@ -256,6 +312,22 @@ export function Progreso({ hoy }: { hoy: string }) {
       </Hoja>
     </div>
   )
+}
+
+/** El dato que muestra cada botón del resumen, para no tener que entrar. */
+function datoClave(s: Seccion, d: { xpSemana: number; metasSemana: { cumplidas: number; total: number }; sueno: ResumenSuenio; fuerza: ResumenFuerza; contadores: ResumenContador[]; reglasCodigo: number }): string {
+  switch (s) {
+    case 'xp': return `+${d.xpSemana} esta semana`
+    case 'metas': return d.metasSemana.total ? `${d.metasSemana.cumplidas}/${d.metasSemana.total} esta semana` : 'sin metas esta semana'
+    case 'sueno': return d.sueno.mejora.semana !== null ? `${duracionSuenio(d.sueno.mejora.semana)} por noche` : 'sin noches aún'
+    case 'fuerza': return `${d.fuerza.entrenos} ${d.fuerza.entrenos === 1 ? 'entreno' : 'entrenos'}`
+    case 'series': {
+      const listas = d.contadores.filter((c) => c.metaLogradaHoy).length
+      return listas === d.contadores.length ? 'cuota ✓' : d.contadores.length === 1 ? `${d.contadores[0].hoy}/${d.contadores[0].cuotaHoy} hoy` : `${listas}/${d.contadores.length} cuotas`
+    }
+    case 'codigo': return `${d.reglasCodigo} ${d.reglasCodigo === 1 ? 'regla' : 'reglas'}`
+    default: return ''
+  }
 }
 
 type PuntoSerie = { fecha: string; dia: number; xp: number; acumulado: number; pilares: { nombre: string; estado: EstadoPilar }[] }

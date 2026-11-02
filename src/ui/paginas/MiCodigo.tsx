@@ -53,7 +53,7 @@ export function MiCodigo() {
   const grupoDeEditar = editar ? reglasDelGrupo(reglas, vista, vista === 'area' ? editar.grupo : momentoDe(editar)) : []
   return (
     <div className={`codigo ${jurada ? 'jurando' : ''}`}>
-      <Link to="/progreso" className="codigo-volver">‹ Progreso</Link>
+      <Link to="/progreso" className="codigo-volver" onClick={() => { try { sessionStorage.removeItem('progreso-seccion') } catch { /* sin almacenamiento */ } }}>‹ Progreso</Link>
       <header className="codigo-cabeza">
         <span className="codigo-kanji" aria-hidden>掟</span>
         <div>

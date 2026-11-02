@@ -1528,10 +1528,35 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 /* Fechas clave (印): sello violeta tipo hanko. Violeta y no rojo: no es «no cumplido». */
 :root { --violeta: #9b7bd4; --violeta-rgb: 155, 123, 212; }
 .sello-clave { font-family: 'Pincel', serif; font-size: 0.62rem; line-height: 1; color: #f4eefc; background: rgba(var(--violeta-rgb), 0.92); border-radius: 2px 3px 2px 3px; padding: 1px 1.5px; box-shadow: 0 0 0 1px rgba(var(--violeta-rgb), 0.5), 0 0 6px rgba(var(--violeta-rgb), 0.45); transform: rotate(-6deg); display: inline-block; }
-.cal-dia .sello-clave { position: absolute; top: 3px; left: 3px; }
+.cal-dia .sello-clave { position: absolute; top: -4px; left: -4px; font-size: 0.55rem; z-index: 1; }
 .cal-dia.fuera:has(.sello-clave) { opacity: 0.6; }
 .sello-clave.muestra { position: static; margin-right: 4px; font-size: 0.7rem; }
 .sello-clave.grande { font-size: 1rem; padding: 3px 4px; flex: none; }
 .claves-del-dia { display: flex; flex-direction: column; gap: 6px; padding: 8px 0; border-bottom: 1px solid var(--borde); }
 .clave-fila { display: flex; align-items: center; gap: 10px; text-align: left; width: 100%; padding: 8px 10px; background: rgba(var(--violeta-rgb), 0.08); border: 1px solid rgba(var(--violeta-rgb), 0.35); border-radius: 9px 11px 8px 12px / 12px 8px 11px 9px; color: var(--texto); cursor: pointer; font: inherit; }
 .clave-nueva { align-self: flex-start; color: var(--violeta); border-color: rgba(var(--violeta-rgb), 0.45); }
+
+/* ===== v0.37: Progreso más corto. Resumen arriba y cada sección a un toque, a pantalla completa ===== */
+.av-hueco.resumen { height: max(150px, calc(34svh - var(--av-arriba, 0px))); }
+.av-pilares-mini { text-decoration: none; color: inherit; gap: 6px; }
+.av-pilares.chicos { grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.av-pilares.chicos .av-anillo svg { width: 46px; height: 46px; }
+.av-pilares.chicos .av-anillo-nombre { font-size: 11px; line-height: 1.15; }
+.av-pilares.chicos .av-nota:empty { display: none; }
+.av-secciones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.av-tarjeta.av-seccion-boton { align-items: center; text-align: center; gap: 1px; padding: 10px 6px 9px; text-decoration: none; color: inherit; transition: transform .12s; }
+.av-seccion-boton:active { transform: scale(.97); }
+.av-seccion-boton b { font-size: 13px; }
+.av-seccion-boton .av-nota { font-size: 11px; line-height: 1.2; }
+.av-seccion-kanji { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 26px; line-height: 1.1; color: #f3efe6; }
+.progreso-tinta:not([data-vidrio="claro"]) .av-seccion-kanji { text-shadow: var(--halo-texto), 2px 2px 0 rgba(200, 16, 46, 0.55); }
+.av-seccion { padding: 14px 0 24px; display: flex; flex-direction: column; animation: av-tinta-abre .3s cubic-bezier(.2, .7, .2, 1) both; }
+.av-seccion > .codigo-volver { margin: 0 14px; }
+.av-seccion-titulo { margin: 10px 14px 0; font-size: 1.6rem; text-shadow: var(--halo-texto); }
+.av-seccion .av-tarjetas { padding-top: 10px; }
+/* La sección se abre como una mancha de tinta que se expande */
+@keyframes av-tinta-abre {
+  from { opacity: 0; clip-path: circle(12% at 50% 30%); filter: blur(6px); }
+  to { opacity: 1; clip-path: circle(150% at 50% 30%); filter: blur(0); }
+}
+@media (prefers-reduced-motion: reduce) { :root:not(.movimiento-siempre) .av-seccion { animation: none; } }
