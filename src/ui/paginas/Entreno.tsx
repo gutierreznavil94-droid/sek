@@ -10,7 +10,9 @@ import {
   TOPE_XP_EXTRA,
   alargarDescanso,
   bloqueTerminado,
+  corregirSerie,
   descartarEntreno,
+  fijarPeso,
   deshacerSerie,
   faseActual,
   iniciarEntreno,
@@ -20,6 +22,8 @@ import {
   listarRutinas,
   marcarBloque,
   moverBloque,
+  objetivoSerie,
+  pesoInicial,
   pararReloj,
   reabrirEntreno,
   registrarSerie,
@@ -28,6 +32,7 @@ import {
   saltarBloque,
   seriesDe,
   sesionEnCurso,
+  siguienteDistinto,
   sugerencia,
   terminarDescanso,
   terminarEntreno,
@@ -67,15 +72,44 @@ function usePantallaDespierta(activo: boolean) {
   }, [activo])
 }
 
+type Siguiente = { bloque: BloqueRutina; peso: number; reps: number }
+export type Contexto = {
+  /** La vez pasada del ejercicio actual. */
+  anterior: SerieHecha[]
+  /** La última serie anotada y la vez pasada de su ejercicio (para «¿Cuántas hiciste?» en el descanso). */
+  ultima?: { serie: SerieHecha; bloque: BloqueEjercicio; anterior: SerieHecha[] }
+  /** Lo que sigue después del ejercicio de la última serie (descanso) y del bloque actual. */
+  sigueDescanso?: Siguiente
+  sigueActual?: Siguiente
+}
+
+async function siguiente(s: SesionEntreno, r: Rutina, desdeId?: string): Promise<Siguiente | undefined> {
+  const b = siguienteDistinto(s, r, desdeId)
+  if (!b) return undefined
+  if (b.tipo !== 'ejercicio') return { bloque: b, peso: 0, reps: 0 }
+  const ult = await ultimaVez(s.rutinaId, b.id, s.id)
+  const peso = s.pesos?.[b.id] ?? pesoInicial(b, ult)
+  return { bloque: b, peso, reps: objetivoSerie(b, ult, 1, peso) }
+}
+
 async function cargar(hoy: string) {
   const sesion = await sesionEnCurso()
   const rutinas = await listarRutinas()
   const delDia = await rutinaDelDia(hoy)
   const rutina = sesion ? rutinas.find((r) => r.id === sesion.rutinaId) ?? null : null
-  let anterior: SerieHecha[] = []
-  const bloque = sesion && rutina ? rutina.bloques.find((b) => b.id === sesion.orden[sesion.paso]) : undefined
-  if (sesion && bloque?.tipo === 'ejercicio') anterior = await ultimaVez(sesion.rutinaId, bloque.id, sesion.id)
-  return { sesion: sesion ?? null, rutinas, delDia: delDia ?? null, rutina, anterior }
+  const ctx: Contexto = { anterior: [] }
+  if (sesion && rutina) {
+    const bloque = rutina.bloques.find((b) => b.id === sesion.orden[sesion.paso])
+    if (bloque?.tipo === 'ejercicio') ctx.anterior = await ultimaVez(sesion.rutinaId, bloque.id, sesion.id)
+    const serie = sesion.series[sesion.series.length - 1]
+    const bu = serie && rutina.bloques.find((b) => b.id === serie.bloqueId)
+    if (serie && bu?.tipo === 'ejercicio') {
+      ctx.ultima = { serie, bloque: bu, anterior: await ultimaVez(sesion.rutinaId, bu.id, sesion.id) }
+      ctx.sigueDescanso = await siguiente(sesion, rutina, bu.id)
+    }
+    if (bloque) ctx.sigueActual = await siguiente(sesion, rutina, bloque.id)
+  }
+  return { sesion: sesion ?? null, rutinas, delDia: delDia ?? null, rutina, ctx }
 }
 
 export function Entreno({ hoy }: { hoy: string }) {
@@ -88,7 +122,7 @@ export function Entreno({ hoy }: { hoy: string }) {
       <main className="contenido entreno">
         {resultado ? <Resumen r={resultado} rutina={d?.rutinas.find((x) => x.id === resultado.sesion.rutinaId)} onReabrir={async () => { await mutar(() => reabrirEntreno(resultado.sesion.id!)); setResultado(null) }} />
           : !d ? <p className="vacio">Cargando…</p>
-          : d.sesion && d.rutina ? <EnCurso s={d.sesion} r={d.rutina} anterior={d.anterior} onTerminado={setResultado} />
+          : d.sesion && d.rutina ? <EnCurso s={d.sesion} r={d.rutina} ctx={d.ctx} onTerminado={setResultado} />
           : <Empezar hoy={hoy} rutinas={d.rutinas} delDia={d.delDia} />}
       </main>
       <Avisos />
@@ -139,7 +173,7 @@ function resumenBloque(b: BloqueRutina): string {
 
 // ---------- En curso ----------
 
-function EnCurso({ s, r, anterior, onTerminado }: { s: SesionEntreno; r: Rutina; anterior: SerieHecha[]; onTerminado: (x: ResultadoTerminar) => void }) {
+function EnCurso({ s, r, ctx, onTerminado }: { s: SesionEntreno; r: Rutina; ctx: Contexto; onTerminado: (x: ResultadoTerminar) => void }) {
   const tic = useTic(250)
   const t = Math.max(tic, ahora())
   const [bloques, setBloques] = useState(false)
@@ -178,7 +212,7 @@ function EnCurso({ s, r, anterior, onTerminado }: { s: SesionEntreno; r: Rutina;
       <div className="texto-3 chico">{r.nombre}</div>
 
       {s.descanso && fase ? (
-        <Descanso s={s} fase={fase} r={r} />
+        <Descanso key={s.descanso.inicio} s={s} fase={fase} r={r} ctx={ctx} />
       ) : !bloque ? (
         <section className="entreno-fin col">
           <span className="entreno-k" aria-hidden>鍛</span>
@@ -188,7 +222,7 @@ function EnCurso({ s, r, anterior, onTerminado }: { s: SesionEntreno; r: Rutina;
           {s.series.length > 0 && <button className="boton suave" onClick={() => mutar(() => deshacerSerie(s.id!))}>Deshacer la última serie</button>}
         </section>
       ) : bloque.tipo === 'ejercicio' ? (
-        <Ejercicio key={`${bloque.id}:${seriesDe(s, bloque.id).length}`} s={s} b={bloque} anterior={anterior} />
+        <Ejercicio key={`${bloque.id}:${seriesDe(s, bloque.id).length}`} s={s} b={bloque} anterior={ctx.anterior} sigue={ctx.sigueActual} />
       ) : bloque.tipo === 'casilla' ? (
         <section className="col entreno-bloque">
           <span className="seccion-titulo">Para cerrar</span>
@@ -236,97 +270,144 @@ function EnCurso({ s, r, anterior, onTerminado }: { s: SesionEntreno; r: Rutina;
   )
 }
 
-function Stepper({ etiqueta, valor, paso, min = 0, formato, onCambio, marca }: { etiqueta: string; valor: number; paso: number; min?: number; formato?: (v: number) => string; onCambio: (v: number) => void; marca?: 'mejor' | 'igual' | null }) {
+function Stepper({ etiqueta, valor, paso, min = 0, formato, onCambio, marca, escribible, compacto }: { etiqueta: string; valor: number; paso: number; min?: number; formato?: (v: number) => string; onCambio: (v: number) => void; marca?: 'mejor' | 'igual' | null; escribible?: boolean; compacto?: boolean }) {
   const redondear = (v: number) => Math.round(v * 100) / 100
+  const [escribiendo, setEscribiendo] = useState(false)
   return (
-    <div className={`stepper ${marca ?? ''}`}>
+    <div className={`stepper ${marca ?? ''} ${compacto ? 'compacto' : ''}`}>
       <span className="etiqueta">{etiqueta}</span>
       <div className="fila">
         <button className="boton grande" aria-label={`Menos ${etiqueta}`} onClick={() => onCambio(Math.max(min, redondear(valor - paso)))}>−</button>
-        <span className="valor mono">{formato ? formato(valor) : valor}</span>
+        {escribiendo ? (
+          <input className="valor mono" type="number" inputMode="decimal" step="0.5" autoFocus defaultValue={valor} aria-label={etiqueta}
+            onBlur={(e) => { const v = Number(e.target.value.replace(',', '.')); if (Number.isFinite(v) && v >= min) onCambio(redondear(v)); setEscribiendo(false) }}
+            onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} />
+        ) : (
+          <button className="valor mono" onClick={() => escribible && setEscribiendo(true)} aria-label={escribible ? `${etiqueta}: tocá para escribir` : etiqueta}>{formato ? formato(valor) : valor}</button>
+        )}
         <button className="boton grande" aria-label={`Más ${etiqueta}`} onClick={() => onCambio(redondear(valor + paso))}>+</button>
       </div>
     </div>
   )
 }
 
+const tot = (y: SerieHecha) => y.reps + (y.repsExtra ?? 0)
+const reps = (x: SerieHecha) => `${x.reps}${x.repsExtra ? `+${x.repsExtra}` : ''}`
+
 function textoSeries(series: SerieHecha[]): string {
   if (!series.length) return ''
   const peso = series[0].peso
   const mismoPeso = series.every((x) => x.peso === peso)
-  const reps = series.map((x) => `${x.reps}${x.repsExtra ? `+${x.repsExtra}` : ''}`).join(' · ')
-  return mismoPeso ? `${reps} reps · ${kg(peso)}` : series.map((x) => `${x.reps} × ${kg(x.peso)}`).join(' · ')
+  return mismoPeso ? `${series.map((x) => `S${x.n} ${reps(x)}`).join(' · ')} · ${kg(peso)}` : series.map((x) => `S${x.n} ${reps(x)} × ${kg(x.peso)}`).join(' · ')
 }
 
-function Ejercicio({ s, b, anterior }: { s: SesionEntreno; b: BloqueEjercicio; anterior: SerieHecha[] }) {
+/** Verde si superó la misma serie de la vez pasada (mismo peso), gris si la igualó. Más peso también es verde. */
+function marcaSerie(x: Pick<SerieHecha, 'reps' | 'repsExtra' | 'peso'>, ref?: SerieHecha): 'mejor' | 'igual' | null {
+  if (!ref) return null
+  if (x.peso > ref.peso) return 'mejor'
+  if (x.peso < ref.peso) return null
+  const a = x.reps + (x.repsExtra ?? 0)
+  return a > tot(ref) ? 'mejor' : a === tot(ref) ? 'igual' : null
+}
+
+function textoSigue(x: Siguiente): string {
+  const b = x.bloque
+  if (b.tipo === 'ejercicio') return `${kg(x.peso)} · ${b.series} × ${x.reps}${b.repsExtra ? `+${b.repsExtra}` : ''}`
+  return resumenBloque(b)
+}
+
+function TarjetaSigue({ x, grande }: { x?: Siguiente; grande?: boolean }) {
+  if (!x) return <div className="entreno-sigue"><span className="seccion-titulo">Sigue</span><b>Terminar el entreno</b></div>
+  const nota = 'nota' in x.bloque ? x.bloque.nota : undefined
+  return (
+    <div className={`entreno-sigue ${grande ? 'grande' : ''}`} aria-label="Lo que sigue">
+      <span className="seccion-titulo">{grande ? 'Acomodá para' : 'Sigue'}</span>
+      <b className="nombre">{x.bloque.nombre}</b>
+      <span className="mono datos">{textoSigue(x)}</span>
+      {nota && <span className="entreno-nota">«{nota}»</span>}
+    </div>
+  )
+}
+
+function Ejercicio({ s, b, anterior, sigue }: { s: SesionEntreno; b: BloqueEjercicio; anterior: SerieHecha[]; sigue?: Siguiente }) {
   const hechas = seriesDe(s, b.id)
   const n = hechas.length + 1
   const sug = sugerencia(b, anterior)
-  const previaHoy = hechas[hechas.length - 1]
-  const laVezPasada = anterior.find((x) => x.n === n) ?? anterior[anterior.length - 1]
-  const [reps, setReps] = useState(previaHoy?.reps ?? sug.reps)
-  const [extra, setExtra] = useState(previaHoy?.repsExtra ?? laVezPasada?.repsExtra ?? b.repsExtra ?? 0)
-  const [peso, setPeso] = useState(previaHoy?.peso ?? laVezPasada?.peso ?? b.peso)
-  const pasoPeso = b.incremento > 0 ? b.incremento : 1
-  const comparar = (a: number, ref: number | undefined) => (ref === undefined ? null : a > ref ? 'mejor' : a === ref ? 'igual' : null)
+  const [peso, setPeso] = useState(s.pesos?.[b.id] ?? hechas[hechas.length - 1]?.peso ?? pesoInicial(b, anterior))
+  const [corregir, setCorregir] = useState<SerieHecha | null>(null)
+  const objetivo = objetivoSerie(b, anterior, n, peso)
+  const pesoAntes = pesoInicial(b, anterior)
+  const cambiarPeso = (v: number) => { setPeso(v); void mutar(() => fijarPeso(s.id!, b.id, v)) }
   const guardar = async () => {
-    await mutar(() => registrarSerie(s.id!, b.id, { reps, repsExtra: b.repsExtra !== undefined ? extra : undefined, peso }))
+    await mutar(() => registrarSerie(s.id!, b.id, { reps: objetivo, repsExtra: b.repsExtra, peso }))
     vibrar(60)
   }
+  const primera = hechas.length === 0
   return (
     <section className="col entreno-bloque">
       <span className="seccion-titulo">{b.grupo ?? 'Ejercicio'}</span>
       <h1 className="entreno-titulo">{b.nombre}</h1>
       {b.nota && <p className="entreno-nota">«{b.nota}»</p>}
-      <div className="fila entre">
+      <p className="texto-2 chico">{anterior.length ? <>La vez pasada: <b>{textoSeries(anterior)}</b></> : 'Primera vez con la app: arrancá con lo de tu planilla.'}</p>
+      {primera && sug?.subirPeso && <div className="entreno-sugerencia peso"><span>▲ {sug.texto}</span><span className="chico">Si subís, poné el peso nuevo con − / + o tocando el número. El objetivo vuelve a {b.reps}.</span></div>}
+      <Stepper etiqueta={primera ? 'Peso de hoy' : 'Peso'} valor={peso} paso={0.5} escribible compacto={!primera} formato={(v) => (v === 0 ? 'corporal' : `${String(v).replace('.', ',')} kg`)} onCambio={cambiarPeso} marca={anterior.length ? (peso > pesoAntes ? 'mejor' : peso === pesoAntes ? 'igual' : null) : null} />
+      <div className="entreno-objetivo">
         <span className="entreno-serie">Serie {Math.min(n, b.series)} de {b.series}</span>
-        <span className="texto-2 mono">Objetivo {sug.reps}{b.repsExtra ? `+${b.repsExtra}` : ''} · {kg(sug.peso)}</span>
+        <span className="mono"><b>{objetivo}{b.repsExtra ? `+${b.repsExtra}` : ''}</b> reps</span>
       </div>
-      <p className="texto-2 chico">{anterior.length ? <>La vez pasada: <b>{textoSeries(anterior)}</b></> : 'Primera vez con la app: arranca con lo de tu planilla.'}</p>
-      {sug.sube !== 'nada' && (
-        <button className={`entreno-sugerencia ${sug.sube}`} onClick={() => { setReps(sug.reps); setPeso(sug.peso) }}>
-          <span>{sug.sube === 'peso' ? '▲ Subí peso' : '▲ +1 rep'}</span><span className="chico">{sug.texto}</span>
-        </button>
-      )}
-      <Stepper etiqueta="Repeticiones" valor={reps} paso={1} onCambio={setReps} marca={comparar(reps, laVezPasada?.reps)} />
-      {b.repsExtra !== undefined && <Stepper etiqueta="Extra" valor={extra} paso={1} formato={(v) => `+${v}`} onCambio={setExtra} marca={comparar(extra, laVezPasada?.repsExtra)} />}
-      <Stepper etiqueta="Peso" valor={peso} paso={pasoPeso} formato={(v) => (v === 0 ? 'corporal' : `${String(v).replace('.', ',')} kg`)} onCambio={setPeso} marca={comparar(peso, laVezPasada?.peso)} />
+      {n === 1 && sug && !sug.subirPeso && <p className="ayuda">{sug.texto}</p>}
+      {n > 1 && anterior.find((x) => x.n === n) && <p className="ayuda">Objetivo de la serie {n}: lo que hiciste en la serie {n} la vez pasada. Si sale un poco menos, no resta.</p>}
       <button className="boton primario grande ancho entreno-hecha" onClick={guardar}>Serie hecha</button>
+      <p className="ayuda centro">Las repeticiones las anotás en el descanso.</p>
       {hechas.length > 0 && (
         <div className="entreno-hoy chico">
-          {hechas.map((x) => {
-            const ref = anterior.find((a) => a.n === x.n)
-            const tot = (y: SerieHecha) => y.reps + (y.repsExtra ?? 0)
-            const m = !ref ? '' : x.peso > ref.peso || (x.peso === ref.peso && tot(x) > tot(ref)) ? 'mejor' : x.peso === ref.peso && tot(x) === tot(ref) ? 'igual' : ''
-            return <span key={x.n} className={`marca ${m}`}>S{x.n}: {x.reps}{x.repsExtra ? `+${x.repsExtra}` : ''} × {kg(x.peso)}</span>
-          })}
+          {hechas.map((x) => <button key={x.n} className={`marca ${marcaSerie(x, anterior.find((a) => a.n === x.n)) ?? ''}`} onClick={() => setCorregir(x)}>S{x.n}: {reps(x)} × {kg(x.peso)} ✎</button>)}
         </div>
       )}
+      {sigue && <p className="texto-3 chico">Después: <b className="texto-2">{sigue.bloque.nombre}</b></p>}
+      <Hoja abierta={!!corregir} onCerrar={() => setCorregir(null)} titulo={corregir ? `Corregir serie ${corregir.n}` : ''}>
+        {corregir && <CorregirSerie s={s} b={b} x={corregir} ref_={anterior.find((a) => a.n === corregir.n)} />}
+      </Hoja>
     </section>
   )
 }
 
-function Descanso({ s, fase, r }: { s: SesionEntreno; fase: NonNullable<ReturnType<typeof faseActual>>; r: Rutina }) {
+/** «¿Cuántas hiciste?»: se guarda solo con cada toque. */
+function CorregirSerie({ s, b, x, ref_, conPeso = true }: { s: SesionEntreno; b: BloqueEjercicio; x: SerieHecha; ref_?: SerieHecha; conPeso?: boolean }) {
+  const [r, setR] = useState(x.reps)
+  const [e, setE] = useState(x.repsExtra ?? 0)
+  const [p, setP] = useState(x.peso)
+  const guardar = (c: { reps?: number; repsExtra?: number; peso?: number }) => void mutar(() => corregirSerie(s.id!, b.id, x.n, c))
+  return (
+    <div className="col" style={{ gap: 10 }}>
+      <Stepper etiqueta={`¿Cuántas hiciste? · serie ${x.n}`} valor={r} paso={1} onCambio={(v) => { setR(v); guardar({ reps: v }) }} marca={marcaSerie({ reps: r, repsExtra: e, peso: p }, ref_)} />
+      {b.repsExtra !== undefined && <Stepper etiqueta="Extra" valor={e} paso={1} formato={(v) => `+${v}`} onCambio={(v) => { setE(v); guardar({ repsExtra: v }) }} />}
+      {conPeso && <Stepper etiqueta="Peso" valor={p} paso={0.5} escribible compacto formato={(v) => (v === 0 ? 'corporal' : `${String(v).replace('.', ',')} kg`)} onCambio={(v) => { setP(v); guardar({ peso: v }) }} />}
+      {ref_ && <p className="ayuda">La vez pasada en la serie {x.n}: {reps(ref_)} × {kg(ref_.peso)}. Se guarda solo.</p>}
+    </div>
+  )
+}
+
+function Descanso({ s, fase, r, ctx }: { s: SesionEntreno; fase: NonNullable<ReturnType<typeof faseActual>>; r: Rutina; ctx: Contexto }) {
   const f = fase.fase
-  const proximo = r.bloques.find((b) => b.id === s.orden[s.paso])
-  const n = proximo?.tipo === 'ejercicio' ? seriesDe(s, proximo.id).length + 1 : 0
+  void r
   const pct = Math.max(0, Math.min(100, (fase.restante / f.segundos) * 100))
+  const u = ctx.ultima
   return (
     <section className={`col entreno-descanso ${f.tipo}`} aria-live="polite">
-      <span className="seccion-titulo">{f.tipo === 'sombra' ? 'Descanso · primero sombra' : f.tipo === 'acomodar' ? 'Descanso · ejercicio terminado' : 'Descanso'}</span>
-      <h1 className="entreno-fase">{f.tipo === 'acomodar' ? 'Acomodá para el siguiente' : f.texto}</h1>
-      {f.tipo === 'acomodar' && <p className="entreno-nota grande">{f.texto.replace('Acomodá para el siguiente: ', '')}</p>}
-      <div className="entreno-reloj mono">{reloj(fase.restante)}</div>
+      <span className="seccion-titulo">{u ? `${u.bloque.nombre} · serie ${u.serie.n} de ${u.bloque.series} hecha` : 'Descanso'}</span>
+      <div className="fila entre entreno-fase-fila"><h1 className="entreno-fase">{f.tipo === 'acomodar' ? 'Acomodá' : f.texto}</h1><span className="entreno-reloj mono">{reloj(fase.restante)}</span></div>
+      <div hidden className="entreno-reloj mono">{reloj(fase.restante)}</div>
       <div className="entreno-barra"><div style={{ width: `${pct}%` }} /></div>
       <div className="entreno-fases">
         {s.descanso!.fases.map((x, i) => <span key={i} className={`${x.tipo} ${i === fase.indice ? 'actual' : i < fase.indice ? 'paso' : ''}`} style={{ flex: x.segundos }}>{x.tipo === 'sombra' ? 'Sombra' : x.tipo === 'acomodar' ? 'Acomodar' : 'Descansá'} {reloj(x.segundos)}</span>)}
       </div>
-      <p className="texto-2 centro">Descanso total: {reloj(fase.totalRestante)}{proximo ? <> · después: <b>{proximo.nombre}{n ? ` · serie ${n}` : ''}</b></> : null}</p>
+      <TarjetaSigue x={ctx.sigueDescanso} grande={f.tipo === 'acomodar'} />
+      {u && <div className="entreno-cuantas"><CorregirSerie s={s} b={u.bloque} x={u.serie} ref_={u.anterior.find((a) => a.n === u.serie.n)} conPeso={false} /><button className="enlace texto-3 chico" onClick={() => mutar(() => deshacerSerie(s.id!))}>Deshacer esta serie</button></div>}
       <div className="botonera">
         <button className="boton grande" onClick={() => mutar(() => alargarDescanso(s.id!, 30))}>+30 s</button>
         <button className="boton grande primario" onClick={() => mutar(() => terminarDescanso(s.id!))}>Saltar descanso</button>
       </div>
-      <button className="enlace texto-3" onClick={() => mutar(() => deshacerSerie(s.id!))}>Deshacer la serie</button>
     </section>
   )
 }
@@ -401,11 +482,15 @@ function Resumen({ r, rutina, onReabrir }: { r: ResultadoTerminar; rutina?: Ruti
         {x.xpSinTope > x.xpExtra && <p className="ayuda">Llegaste al tope de {TOPE_XP_EXTRA} XP extra por entreno (sumabas {x.xpSinTope}).</p>}
         {r.motivoSinXp && <p className="ayuda">{r.motivoSinXp}</p>}
       </div>
-      <ul className="entreno-lista">
+      <ul className="entreno-lista resumen">
         {x.ejercicios.map((e) => (
           <li key={e.bloqueId} className={e.mejora || e.record ? 'mejor' : e.igual ? 'igual' : ''}>
-            <span className="crece">{e.record ? '★ ' : e.mejora ? '▲ ' : e.igual ? '= ' : ''}{e.nombre}</span>
-            <span className="mono chico">{e.marca.repsTotal} reps · {kg(e.marca.peso)}</span>
+            <div className="fila entre" style={{ width: '100%' }}>
+              <span className="crece">{e.record ? '★ ' : e.mejora ? '▲ ' : e.igual ? '= ' : ''}{e.nombre}</span>
+              <b className="mono">{e.xp ? `+${e.xp} XP` : ''}</b>
+            </div>
+            <span className="chico texto-3 mono">S1 {e.marca.reps} × {kg(e.marca.peso)}{e.antes ? ` · antes ${e.antes.reps} × ${kg(e.antes.peso)}` : ''}</span>
+            <span className="chico xp-detalle">{[e.mejora ? `+5 mejora (${e.motivo})` : null, e.record ? '+10 récord de serie 1' : null].filter(Boolean).join(' · ') || (e.igual ? 'Igual que la vez pasada' : 'Sin mejora esta vez (no resta)')}</span>
           </li>
         ))}
       </ul>

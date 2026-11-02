@@ -6,20 +6,27 @@ import { inicializarSiHaceFalta } from './base'
 import { iniciarCiclo } from './ciclo'
 import {
   TOPE_XP_EXTRA,
+  corregirSerie,
   deshacerSerie,
   ejercicios,
   fasesDescanso,
   faseActual,
+  fijarPeso,
   historialEjercicio,
   iniciarEntreno,
   listarRutinas,
   marcarBloque,
+  mejoraDe,
+  objetivoSerie,
   obtenerRutina,
+  pesoInicial,
   reabrirEntreno,
   registrarSerie,
   resumenFuerza,
   rutinaDelDia,
+  seriesDe,
   sesionEnCurso,
+  siguienteDistinto,
   sugerencia,
   terminarEntreno,
   ultimaVez,
@@ -129,21 +136,80 @@ describe('reanudar', () => {
   })
 })
 
-describe('progresión sugerida (doble progresión)', () => {
-  const b: BloqueEjercicio = { id: 'x', tipo: 'ejercicio', nombre: 'Press banca', series: 2, reps: 8, repsTope: 11, peso: 53, incremento: 2.5, descanso: 90, sombra: 30 }
-  const serie = (reps: number, peso = 53) => ({ bloqueId: 'x', n: 1, reps, peso, instante: 0 })
-  it('sin historial: lo de la planilla', () => {
-    expect(sugerencia(b, [])).toMatchObject({ reps: 8, peso: 53, sube: 'nada' })
+describe('peso antes de la serie y progresión basada en la serie 1', () => {
+  const b: BloqueEjercicio = { id: 'x', tipo: 'ejercicio', nombre: 'Press banca', series: 2, reps: 8, repsTope: 12, peso: 53, descanso: 90, sombra: 30 }
+  const serie = (n: number, reps: number, peso = 53) => ({ bloqueId: 'x', n, reps, peso, instante: 0 })
+  it('sin historial: el peso y las reps de la planilla, sin sugerencia', () => {
+    expect(sugerencia(b, [])).toBeNull()
+    expect(pesoInicial(b, [])).toBe(53)
+    expect(objetivoSerie(b, [], 1, 53)).toBe(8)
   })
-  it('sin llegar al tope: +1 repetición con el mismo peso', () => {
-    expect(sugerencia(b, [serie(9), serie(8)])).toMatchObject({ reps: 9, peso: 53, sube: 'reps' })
+  it('serie 1 sin llegar al tope: +1 rep; la serie 2 apunta a lo que hizo en la serie 2', () => {
+    const antes = [serie(1, 10), serie(2, 8)]
+    expect(sugerencia(b, antes)).toMatchObject({ subirPeso: false })
+    expect(objetivoSerie(b, antes, 1, 53)).toBe(11)
+    expect(objetivoSerie(b, antes, 2, 53)).toBe(8)
   })
-  it('todas las series en el tope: sube el peso y vuelve al mínimo', () => {
-    expect(sugerencia(b, [serie(11), serie(11)])).toMatchObject({ reps: 8, peso: 55.5, sube: 'peso' })
+  it('serie 1 en el tope: pregunta si sube peso sin proponer un número', () => {
+    const antes = [serie(1, 12), serie(2, 9)]
+    const s = sugerencia(b, antes)!
+    expect(s.subirPeso).toBe(true)
+    expect(s.texto).toBe('La vez pasada llegaste a 12: ¿subís peso?')
+    expect(s).not.toHaveProperty('peso')
+    // El peso arranca en el de la vez pasada; si Navil lo sube, el objetivo vuelve al mínimo.
+    expect(pesoInicial(b, antes)).toBe(53)
+    expect(objetivoSerie(b, antes, 1, 55)).toBe(8)
+    expect(objetivoSerie(b, antes, 2, 55)).toBe(8)
   })
-  it('peso corporal: más repeticiones', () => {
-    const abd = { ...b, peso: 0, incremento: 0, reps: 18, repsTope: 21 }
-    expect(sugerencia(abd, [serie(21, 0), serie(21, 0)])).toMatchObject({ reps: 22, peso: 0, sube: 'reps' })
+  it('el tope por defecto es 12 (mínimo = la planilla)', async () => {
+    const a = (await obtenerRutina('rutina-a'))!
+    expect(ejercicios(a).find((e) => e.id === 'a-press-banca')).toMatchObject({ reps: 8, repsTope: 12 })
+    expect(ejercicios(a).some((e) => 'incremento' in e)).toBe(false)
+  })
+  it('el «peso de hoy» se guarda antes de la primera serie y se usa en todas', async () => {
+    let s = await iniciarEntreno('rutina-a')
+    s = await fijarPeso(s.id!, 'a-press-banca', 55.5)
+    expect((await sesionEnCurso())!.pesos!['a-press-banca']).toBe(55.5)
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8 })
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 7 })
+    expect(seriesDe(s, 'a-press-banca').map((x) => x.peso)).toEqual([55.5, 55.5])
+  })
+})
+
+describe('repeticiones anotadas en el descanso', () => {
+  it('«Serie hecha» arranca el descanso al instante y lo que se marca en el descanso queda guardado', async () => {
+    let s = await iniciarEntreno('rutina-a')
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
+    expect(s.descanso!.inicio).toBe(s.series[0].instante)
+    s = await corregirSerie(s.id!, 'a-press-banca', 1, { reps: 10 })
+    expect((await sesionEnCurso())!.series[0].reps).toBe(10)
+    expect((await sesionEnCurso())!.descanso).toBeDefined() // el descanso sigue
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
+    s = await corregirSerie(s.id!, 'a-press-banca', 2, { reps: 7 })
+    expect(seriesDe(s, 'a-press-banca').map((x) => x.reps)).toEqual([10, 7])
+  })
+
+  it('en el descanso se sabe qué sigue: el próximo ejercicio aunque falte una serie', async () => {
+    const r = (await obtenerRutina('rutina-a'))!
+    let s = await iniciarEntreno('rutina-a')
+    s = await marcarBloque(s.id!, 'a-calentar')
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
+    expect(siguienteDistinto(s, r, 'a-press-banca')!.nombre).toBe('Press inclinado')
+    s = await registrarSerie(s.id!, 'a-press-inclinado', { reps: 7, peso: 48 })
+    s = await registrarSerie(s.id!, 'a-press-inclinado', { reps: 7, peso: 48 })
+    // Después de inclinado sigue hombro (press banca quedó con una serie pendiente, ya pasó).
+    expect(siguienteDistinto(s, r, 'a-press-inclinado')!.nombre).toBe('Press mancuerna hombro')
+  })
+})
+
+describe('comparación serie con serie', () => {
+  const v = (n: number, reps: number, peso = 53) => ({ bloqueId: 'x', n, reps, peso, instante: 0 })
+  it('la serie 2 más baja no resta; más reps en cualquier serie con el mismo peso es mejora', () => {
+    expect(mejoraDe([v(1, 10), v(2, 7)], [v(1, 10), v(2, 9)])).toMatchObject({ mejora: false })
+    expect(mejoraDe([v(1, 11), v(2, 7)], [v(1, 10), v(2, 9)])).toMatchObject({ mejora: true, motivo: 'más reps' })
+    expect(mejoraDe([v(1, 10), v(2, 10)], [v(1, 10), v(2, 9)])).toMatchObject({ mejora: true, motivo: 'más reps' })
+    expect(mejoraDe([v(1, 8, 55), v(2, 6, 55)], [v(1, 12), v(2, 10)])).toMatchObject({ mejora: true, motivo: 'más peso' })
+    expect(mejoraDe([v(1, 10), v(2, 9)], [v(1, 10), v(2, 9)])).toMatchObject({ mejora: false, igual: true })
   })
 })
 
@@ -181,6 +247,25 @@ describe('XP del entreno', () => {
     const banca = r.resumen.ejercicios.find((e) => e.bloqueId === 'a-press-banca')!
     expect(banca).toMatchObject({ mejora: true, record: false })
     expect(r.resumen.xpExtra).toBe(5)
+  })
+
+  it('hacer menos en la serie 2 no quita nada; corregir en el descanso recalcula sin duplicar', async () => {
+    await hacerRutinaA('2026-11-02')
+    // Serie 1 igual, serie 2 dos menos: sin mejora, sin récord, 0 XP extra (pero nada negativo).
+    dia('2026-11-05')
+    let s = await iniciarEntreno('rutina-a', '2026-11-05')
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
+    s = await corregirSerie(s.id!, 'a-press-banca', 2, { reps: 6 })
+    let r = await terminarEntreno(s.id!)
+    expect(r.resumen.xpExtra).toBe(0)
+    expect(r.resumen.ejercicios[0]).toMatchObject({ mejora: false, record: false, xp: 0 })
+    // Corrige: la serie 1 fueron 9 → mejora + récord de serie 1.
+    await reabrirEntreno(s.id!)
+    await corregirSerie(s.id!, 'a-press-banca', 1, { reps: 9 })
+    r = await terminarEntreno(s.id!)
+    expect(r.resumen.ejercicios[0]).toMatchObject({ mejora: true, motivo: 'más reps', record: true, xp: 15 })
+    expect(r.resumen.xpExtra).toBe(15)
   })
 
   it('reabrir para deshacer una serie quita el XP y al terminar de nuevo no se duplica', async () => {

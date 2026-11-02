@@ -1312,3 +1312,27 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 .av-fuerza-records, .av-fuerza > .av-nota { grid-column: 1 / -1; }
 .av-fuerza-records { display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; }
 .entreno-ronda .mono { white-space: nowrap; }
+
+/* Cambios 27: correcciones del entreno (peso antes, reps en el descanso, «Sigue») */
+.stepper .valor { font: inherit; font-size: 2.3rem; font-weight: 800; color: inherit; }
+.stepper input.valor { width: 100%; min-width: 0; text-align: center; }
+.stepper.compacto .boton.grande { min-width: 52px; min-height: 48px; font-size: 1.4rem; }
+.stepper.compacto .valor { min-height: 48px; font-size: 1.5rem; }
+.entreno-objetivo { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 14px; border: 1px solid var(--borde); border-radius: 14px; background: var(--fondo-2); }
+.entreno-objetivo .mono { font-size: 1.15rem; color: var(--texto-2); }
+.entreno-objetivo .mono b { font-size: 1.8rem; color: var(--texto); }
+.entreno-sugerencia.peso { cursor: default; border-style: solid; }
+.marca { background: none; font: inherit; cursor: pointer; }
+.entreno-cuantas { border: 1px solid var(--borde); border-radius: 16px; padding: 10px 12px; background: var(--fondo-2); }
+.entreno-sigue { position: sticky; bottom: calc(8px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--borde); background: color-mix(in srgb, var(--fondo-3) 92%, transparent); backdrop-filter: blur(8px); z-index: 2; }
+.entreno-sigue .nombre { font-size: 1.1rem; }
+.entreno-sigue .datos { color: var(--texto-2); }
+.entreno-sigue.grande { border: 2px solid var(--papel); padding: 14px 16px; }
+.entreno-sigue.grande .nombre { font-size: 1.6rem; font-weight: 800; }
+.entreno-sigue.grande .datos { font-size: 1.25rem; color: var(--texto); font-weight: 700; }
+.entreno-lista.resumen li { flex-direction: column; align-items: flex-start; gap: 2px; }
+.xp-detalle { color: inherit; }
+.entreno-sigue { position: static; }
+.entreno-fase-fila { align-items: center; }
+.entreno-fase-fila .entreno-reloj { font-size: 4rem; margin: 0; }
+.entreno-descanso.sombra .entreno-fase-fila .entreno-reloj { color: var(--sombra-color); }

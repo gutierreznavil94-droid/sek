@@ -418,11 +418,11 @@ export type BloqueEjercicio = {
   reps: number
   /** Repeticiones extra, como el «+3» de «12 + 3». */
   repsExtra?: number
-  /** Tope de repeticiones: al llegar en todas las series, se propone subir peso. */
+  /** Tope de repeticiones: si la serie 1 llega, se sugiere subir peso (sin proponer cuánto). */
   repsTope: number
   peso: number
-  /** Cuánto subir el peso cuando toca (kg). */
-  incremento: number
+  /** v0.36 (primera prueba): ya no se usa. El peso nuevo lo pone Navil (la app no conoce sus discos). */
+  incremento?: number
   /** Descanso entre series, en segundos. */
   descanso: number
   /** Sombra al principio del descanso (segundos) después de las series que no son la última. 0 = sin sombra. */
@@ -472,6 +472,8 @@ export type SesionEntreno = {
   /** Bloques hechos o saltados que no son ejercicios (calentamiento, kick boxing…). */
   hechos: string[]
   saltados: string[]
+  /** «Peso de hoy» elegido antes de la primera serie de cada ejercicio. */
+  pesos?: Record<string, number>
   /** Descanso en marcha: para retomarlo si la app se cierra. */
   descanso?: { inicio: number; fases: FaseDescanso[] }
   /** Temporizador en marcha (calentamiento, colgarse, rondas). */

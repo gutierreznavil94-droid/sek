@@ -199,11 +199,12 @@ export const CONTADORES_INICIALES: Omit<Contador, 'creado'>[] = [
 
 // ---------- Rutinas de entrenamiento (planilla «HORARIO FINAL 2026» de Navil) ----------
 
-/** Ejercicio con los valores de la planilla. Tope de la doble progresión: 3 repeticiones arriba del objetivo. */
+/**
+ * Ejercicio con los valores de la planilla. Rango de repeticiones: mínimo = la
+ * planilla y tope = 12 (si la planilla ya pide 12 o más, tope = planilla + 3).
+ */
 function ej(id: string, nombre: string, grupo: string | undefined, series: number, reps: number, peso: number, extra: Partial<BloqueEjercicio> = {}): BloqueEjercicio {
-  // Mancuernas y discos chicos suben de a 1 kg; la barra, de a 2,5 kg; peso corporal, más repeticiones.
-  const incremento = peso === 0 ? 0 : /mancuerna|vuelos|martillo|zancadas|sentado|tríceps polea/i.test(nombre) ? 1 : 2.5
-  return { id, tipo: 'ejercicio', nombre, grupo, series, reps, repsTope: reps + 3, peso, incremento, descanso: 90, sombra: 30, ...extra }
+  return { id, tipo: 'ejercicio', nombre, grupo, series, reps, repsTope: reps < 12 ? 12 : reps + 3, peso, descanso: 90, sombra: 30, ...extra }
 }
 
 const calentamiento = (r: string): BloqueRutina => ({ id: `${r}-calentar`, tipo: 'calentamiento', nombre: 'Calentamiento', segundos: 180, nota: 'Banda elástica' })

@@ -31,7 +31,20 @@ export const TOPE_XP_EXTRA = 20
 /** Carga las 3 rutinas de la planilla la primera vez y deja el entrenamiento de lunes a sábado. Idempotente. */
 export async function cargarRutinasIniciales(): Promise<void> {
   const d = db()
-  if ((await d.rutinas.count()) > 0) return
+  if ((await d.rutinas.count()) > 0) {
+    // Primera prueba de la v0.36: tenía incrementos automáticos y tope = planilla + 3. Ahora tope 12 y sin incrementos.
+    for (const r of await d.rutinas.toArray()) {
+      if (!r.bloques.some((b) => b.tipo === 'ejercicio' && b.incremento !== undefined)) continue
+      const bloques = r.bloques.map((b) => {
+        if (b.tipo !== 'ejercicio' || b.incremento === undefined) return b
+        const { incremento, ...resto } = b
+        void incremento
+        return { ...resto, repsTope: resto.repsTope === resto.reps + 3 ? (resto.reps < 12 ? 12 : resto.reps + 3) : resto.repsTope }
+      })
+      await d.rutinas.put({ ...r, bloques })
+    }
+    return
+  }
   const t = ahora()
   await d.rutinas.bulkPut(RUTINAS_INICIALES.map((r) => ({ ...r, creado: t })))
   const entreno = await d.acciones.get('entrenamiento')
@@ -175,20 +188,51 @@ function nombreSiguiente(s: SesionEntreno, r: Rutina): string | undefined {
   return b?.nombre
 }
 
-/** Anota una serie y arranca el descanso con sus fases. */
-export async function registrarSerie(id: number, bloqueId: string, hecho: { reps: number; repsExtra?: number; peso: number }): Promise<SesionEntreno> {
+/**
+ * «Serie hecha»: anota la serie con el objetivo (las repeticiones reales se
+ * corrigen en el descanso con `corregirSerie`) y arranca el descanso al instante.
+ */
+export async function registrarSerie(id: number, bloqueId: string, hecho: { reps: number; repsExtra?: number; peso?: number }): Promise<SesionEntreno> {
   const s = await sesion(id)
   const r = await obtenerRutina(s.rutinaId)
   const b = r && bloqueDe(r, bloqueId)
   if (!r || !b || b.tipo !== 'ejercicio') throw new Error('Ese ejercicio no está en la rutina')
   const n = seriesDe(s, bloqueId).length + 1
   const t = ahora()
-  const nueva: SesionEntreno = { ...s, series: [...s.series, { bloqueId, n, reps: Math.max(0, Math.round(hecho.reps)), repsExtra: hecho.repsExtra, peso: Math.max(0, hecho.peso), instante: t }], reloj: undefined }
+  const peso = hecho.peso ?? s.pesos?.[bloqueId] ?? b.peso
+  const nueva: SesionEntreno = { ...s, pesos: { ...s.pesos, [bloqueId]: peso }, series: [...s.series, { bloqueId, n, reps: Math.max(0, Math.round(hecho.reps)), repsExtra: hecho.repsExtra, peso: Math.max(0, peso), instante: t }], reloj: undefined }
   // Si terminó el ejercicio, el paso pasa al siguiente y el descanso es para acomodar.
   if (n >= b.series) nueva.paso = siguientePaso(nueva, r, s.paso)
   const fases = fasesDescanso(b, n, n >= b.series ? nombreSiguiente(nueva, r) : undefined)
   nueva.descanso = fases.length ? { inicio: t, fases } : undefined
   return guardarSesion(nueva)
+}
+
+/** «Peso de hoy» de un ejercicio (antes de la primera serie; se puede cambiar entre series). */
+export async function fijarPeso(id: number, bloqueId: string, peso: number): Promise<SesionEntreno> {
+  const s = await sesion(id)
+  return guardarSesion({ ...s, pesos: { ...s.pesos, [bloqueId]: Math.max(0, Math.round(peso * 100) / 100) } })
+}
+
+/** Corrige una serie ya anotada (lo que se marca en el descanso, o tocándola en la lista). */
+export async function corregirSerie(id: number, bloqueId: string, n: number, cambios: { reps?: number; repsExtra?: number; peso?: number }): Promise<SesionEntreno> {
+  const s = await sesion(id)
+  const series = s.series.map((x) =>
+    x.bloqueId === bloqueId && x.n === n
+      ? { ...x, ...(cambios.reps !== undefined ? { reps: Math.max(0, Math.round(cambios.reps)) } : {}), ...(cambios.repsExtra !== undefined ? { repsExtra: Math.max(0, Math.round(cambios.repsExtra)) } : {}), ...(cambios.peso !== undefined ? { peso: Math.max(0, cambios.peso) } : {}) }
+      : x,
+  )
+  return guardarSesion({ ...s, series })
+}
+
+/** Lo que sigue después del ejercicio actual (para alistar las cosas en el descanso). */
+export function siguienteDistinto(s: SesionEntreno, r: Rutina, actualId?: string): BloqueRutina | undefined {
+  const desde = actualId ? s.orden.indexOf(actualId) : s.paso
+  for (let i = Math.max(0, desde + (actualId ? 1 : 0)); i < s.orden.length; i++) {
+    const b = bloqueDe(r, s.orden[i])
+    if (b && b.id !== actualId && !bloqueTerminado(s, b)) return b
+  }
+  return undefined
 }
 
 /** Deshace la última serie anotada (y su descanso). */
@@ -294,25 +338,48 @@ export async function descartarEntreno(id: number): Promise<void> {
 
 // ---------- Marcas, progresión y XP ----------
 
-/** Mejor marca de un ejercicio en una sesión: el peso más alto y las repeticiones con ese peso (suma de series). */
+/**
+ * Marca de un ejercicio en una sesión: la serie 1 (peso y repeticiones), que es
+ * la que Navil lleva al fallo. La serie 2 suele salir más baja y no resta.
+ */
 export type Marca = { peso: number; reps: number; repsTotal: number; volumen: number }
+
+const total = (x: SerieHecha) => x.reps + (x.repsExtra ?? 0)
 
 export function marcaDe(series: SerieHecha[]): Marca | null {
   if (!series.length) return null
-  const peso = Math.max(...series.map((s) => s.peso))
-  const conPeso = series.filter((s) => s.peso === peso)
+  const s1 = series.find((x) => x.n === 1) ?? series[0]
   return {
-    peso,
-    reps: Math.max(...conPeso.map((s) => s.reps)),
-    repsTotal: series.reduce((t, s) => t + s.reps + (s.repsExtra ?? 0), 0),
-    volumen: series.reduce((t, s) => t + (s.reps + (s.repsExtra ?? 0)) * s.peso, 0),
+    peso: s1.peso,
+    reps: total(s1),
+    repsTotal: series.reduce((t, x) => t + total(x), 0),
+    volumen: series.reduce((t, x) => t + total(x) * x.peso, 0),
   }
 }
 
-/** Compara dos marcas: >0 si `a` es mejor (más peso, o mismo peso y más repeticiones totales). */
+/** Compara dos marcas de serie 1: >0 si `a` es mejor (más peso, o mismo peso y más repeticiones). */
 export function compararMarcas(a: Marca, b: Marca): number {
   if (a.peso !== b.peso) return a.peso - b.peso
-  return a.repsTotal - b.repsTotal
+  return a.reps - b.reps
+}
+
+/**
+ * Mejora frente a la vez pasada (serie con serie): subió el peso, o con el
+ * mismo peso hizo más repeticiones en alguna serie. Hacer menos no resta.
+ */
+export function mejoraDe(hoy: SerieHecha[], antes: SerieHecha[]): { mejora: boolean; motivo?: 'más peso' | 'más reps'; igual: boolean } {
+  if (!hoy.length || !antes.length) return { mejora: false, igual: false }
+  const pesoHoy = Math.max(...hoy.map((x) => x.peso))
+  const pesoAntes = Math.max(...antes.map((x) => x.peso))
+  if (pesoHoy > pesoAntes) return { mejora: true, motivo: 'más peso', igual: false }
+  let igual = pesoHoy === pesoAntes
+  for (const x of hoy) {
+    const a = antes.find((y) => y.n === x.n)
+    if (!a || a.peso !== x.peso) continue
+    if (total(x) > total(a)) return { mejora: true, motivo: 'más reps', igual: false }
+    if (total(x) < total(a)) igual = false
+  }
+  return { mejora: false, igual }
 }
 
 /** Sesiones terminadas de una rutina, más nuevas primero. */
@@ -331,25 +398,37 @@ export async function ultimaVez(rutinaId: string, bloqueId: string, excepto?: nu
   return []
 }
 
-export type Sugerencia = { reps: number; peso: number; texto: string; sube: 'peso' | 'reps' | 'nada' }
+/** Peso con el que arranca el ejercicio: el de la vez pasada (serie 1) o el de la planilla. */
+export function pesoInicial(b: BloqueEjercicio, ultima: SerieHecha[]): number {
+  return (ultima.find((x) => x.n === 1) ?? ultima[0])?.peso ?? b.peso
+}
 
 /**
- * Doble progresión: si en todas las series llegaste al tope, subí peso y volvé
- * al mínimo de repeticiones (peso corporal: +1 repetición); si no, +1 repetición.
+ * Sugerencia basada en la serie 1 de la vez pasada: si llegó al tope, pregunta
+ * si sube el peso (sin proponer cuánto: la app no conoce sus discos); si no, +1 rep.
  */
+export type Sugerencia = { subirPeso: boolean; texto: string } | null
+
 export function sugerencia(b: BloqueEjercicio, ultima: SerieHecha[]): Sugerencia {
-  if (!ultima.length) return { reps: b.reps, peso: b.peso, texto: 'Primera vez: lo de la planilla', sube: 'nada' }
-  const peso = Math.max(...ultima.map((s) => s.peso))
-  const conPeso = ultima.filter((s) => s.peso === peso)
-  const minReps = Math.min(...conPeso.map((s) => s.reps))
-  const todasAlTope = conPeso.length >= b.series && conPeso.every((s) => s.reps >= b.repsTope)
-  if (todasAlTope && b.incremento > 0 && peso > 0) {
-    const nuevo = Math.round((peso + b.incremento) * 100) / 100
-    return { reps: b.reps, peso: nuevo, texto: `Llegaste al tope: subí a ${kg(nuevo)} y volvé a ${b.reps} reps`, sube: 'peso' }
-  }
-  if (todasAlTope) return { reps: minReps + 1, peso, texto: `Llegaste al tope: probá ${minReps + 1} reps`, sube: 'reps' }
-  const reps = Math.min(b.repsTope, minReps + 1)
-  return { reps, peso, texto: `Probá ${reps} reps con ${kg(peso)}`, sube: 'reps' }
+  const s1 = ultima.find((x) => x.n === 1) ?? ultima[0]
+  if (!s1) return null
+  if (s1.reps >= b.repsTope) return { subirPeso: true, texto: `La vez pasada llegaste a ${s1.reps}: ¿subís peso?` }
+  return { subirPeso: false, texto: `La vez pasada: ${s1.reps} en la serie 1. Hoy, ${Math.min(b.repsTope, s1.reps + 1)}.` }
+}
+
+/**
+ * Objetivo de repeticiones de la serie `n` con el peso de hoy.
+ * - Peso nuevo (más que la vez pasada) o primera vez: el mínimo del rango.
+ * - Serie 1: una más que la vez pasada (hasta el tope).
+ * - Serie 2 en adelante: lo que hizo en esa serie la vez pasada.
+ */
+export function objetivoSerie(b: BloqueEjercicio, ultima: SerieHecha[], n: number, pesoHoy: number): number {
+  const misma = ultima.find((x) => x.n === n)
+  const s1 = ultima.find((x) => x.n === 1)
+  if (!s1 || pesoHoy > s1.peso) return b.reps
+  if (pesoHoy < s1.peso) return misma?.reps ?? b.reps
+  if (n === 1) return Math.min(b.repsTope, s1.reps + 1)
+  return misma?.reps ?? b.reps
 }
 
 export function kg(peso: number): string {
@@ -357,7 +436,7 @@ export function kg(peso: number): string {
   return `${String(peso).replace('.', ',')} kg`
 }
 
-export type ResultadoEjercicio = { bloqueId: string; nombre: string; marca: Marca; antes: Marca | null; mejora: boolean; igual: boolean; record: boolean }
+export type ResultadoEjercicio = { bloqueId: string; nombre: string; marca: Marca; antes: Marca | null; mejora: boolean; motivo?: 'más peso' | 'más reps'; igual: boolean; record: boolean; xp: number }
 export type ResumenEntreno = {
   minutos: number
   series: number
@@ -368,7 +447,7 @@ export type ResumenEntreno = {
   xpSinTope: number
 }
 
-/** Mejor marca de cada ejercicio en todo el historial anterior a la sesión (todas las rutinas, por id de bloque). */
+/** Mejor marca (serie 1) de cada ejercicio en todo el historial anterior a la sesión. */
 async function mejoresAnteriores(s: SesionEntreno): Promise<Map<string, Marca>> {
   const previas = (await db().sesionesEntreno.filter((x) => x.estado === 'terminada' && x.id !== s.id && (x.fin ?? x.inicio) < (s.fin ?? ahora())).toArray())
   const mejores = new Map<string, Marca>()
@@ -391,18 +470,21 @@ export async function calcularResumen(s: SesionEntreno): Promise<ResumenEntreno>
   const ejerciciosHechos: ResultadoEjercicio[] = []
   for (const id of s.orden) {
     const b = r && bloqueDe(r, id)
-    const marca = marcaDe(seriesDe(s, id))
+    const hoy = seriesDe(s, id)
+    const marca = marcaDe(hoy)
     if (!b || !marca) continue
-    const antes = previa ? marcaDe(seriesDe(previa, id)) : null
+    const antesSeries = previa ? seriesDe(previa, id) : []
+    const m = mejoraDe(hoy, antesSeries)
     const mejor = mejores.get(id)
-    const c = antes ? compararMarcas(marca, antes) : 0
-    ejerciciosHechos.push({ bloqueId: id, nombre: b.nombre, marca, antes, mejora: !!antes && c > 0, igual: !!antes && c === 0, record: !!mejor && compararMarcas(marca, mejor) > 0 })
+    const record = !!mejor && compararMarcas(marca, mejor) > 0
+    const xp = (m.mejora ? XP_MEJORA : 0) + (record ? XP_RECORD : 0)
+    ejerciciosHechos.push({ bloqueId: id, nombre: b.nombre, marca, antes: marcaDe(antesSeries), mejora: m.mejora, motivo: m.motivo, igual: m.igual, record, xp })
   }
-  const xpSinTope = ejerciciosHechos.reduce((t, e) => t + (e.mejora ? XP_MEJORA : 0) + (e.record ? XP_RECORD : 0), 0)
+  const xpSinTope = ejerciciosHechos.reduce((t, e) => t + e.xp, 0)
   return {
     minutos: Math.max(1, Math.round(((s.fin ?? ahora()) - s.inicio) / 60_000)),
     series: s.series.length,
-    volumen: Math.round(s.series.reduce((t, x) => t + (x.reps + (x.repsExtra ?? 0)) * x.peso, 0)),
+    volumen: Math.round(s.series.reduce((t, x) => t + total(x) * x.peso, 0)),
     ejercicios: ejerciciosHechos,
     xpExtra: Math.min(TOPE_XP_EXTRA, xpSinTope),
     xpSinTope,
@@ -501,7 +583,7 @@ export async function resumenFuerza(hoy: FechaDia, inicioCiclo: FechaDia, semana
   const mejor = new Map<string, Marca>()
   const records = new Map<string, { nombre: string; marca: Marca; fecha: FechaDia }>()
   const mejoraron = new Set<string>()
-  const ultimaPorEj = new Map<string, Marca>()
+  const ultimaPorEj = new Map<string, SerieHecha[]>()
   const mes = hoy.slice(0, 7)
   for (const s of todas) {
     for (const id of new Set(s.series.map((x) => x.bloqueId))) {
@@ -510,8 +592,8 @@ export async function resumenFuerza(hoy: FechaDia, inicioCiclo: FechaDia, semana
       if (previo && compararMarcas(m, previo) > 0 && s.fecha >= inicioCiclo) records.set(id, { nombre: nombre(s, id), marca: m, fecha: s.fecha })
       if (!previo || compararMarcas(m, previo) > 0) mejor.set(id, m)
       const ultima = ultimaPorEj.get(id)
-      if (ultima && compararMarcas(m, ultima) > 0 && s.fecha.slice(0, 7) === mes) mejoraron.add(nombre(s, id))
-      ultimaPorEj.set(id, m)
+      if (ultima && mejoraDe(seriesDe(s, id), ultima).mejora && s.fecha.slice(0, 7) === mes) mejoraron.add(nombre(s, id))
+      ultimaPorEj.set(id, seriesDe(s, id))
     }
   }
   const lunes = lunesDe(hoy)

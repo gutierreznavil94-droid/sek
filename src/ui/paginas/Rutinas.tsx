@@ -59,7 +59,7 @@ export function EditarRutina() {
   }
   const quitar = (bid: string) => setR({ ...r, bloques: r.bloques.filter((b) => b.id !== bid) })
   const agregar = () => {
-    const nuevo: BloqueEjercicio = { id: nuevoId('ej'), tipo: 'ejercicio', nombre: 'Nuevo ejercicio', series: 2, reps: 8, repsTope: 11, peso: 0, incremento: 2.5, descanso: 90, sombra: 30 }
+    const nuevo: BloqueEjercicio = { id: nuevoId('ej'), tipo: 'ejercicio', nombre: 'Nuevo ejercicio', series: 2, reps: 8, repsTope: 12, peso: 0, descanso: 90, sombra: 30 }
     const iKick = r.bloques.findIndex((b) => b.tipo === 'temporizador' || b.tipo === 'rondas')
     const b = [...r.bloques]
     b.splice(iKick >= 0 ? iKick : b.length, 0, nuevo)
@@ -132,16 +132,15 @@ function EditorBloque({ b, onCambio, onQuitar, onGrafico }: { b: BloqueRutina; o
           <div className="rejilla-2">
             <div className="campo"><label>Grupo</label><input value={b.grupo ?? ''} onChange={(e) => onCambio({ grupo: e.target.value || undefined })} /></div>
             <Num etiqueta="Series" valor={b.series} onCambio={(v) => onCambio({ series: v })} />
-            <Num etiqueta="Repeticiones" valor={b.reps} onCambio={(v) => onCambio({ reps: v })} />
+            <Num etiqueta="Reps mínimo" valor={b.reps} onCambio={(v) => onCambio({ reps: v })} />
             <Num etiqueta="Extra (+)" valor={b.repsExtra} onCambio={(v) => onCambio({ repsExtra: v > 0 ? v : undefined })} />
-            <Num etiqueta="Tope de reps" valor={b.repsTope} onCambio={(v) => onCambio({ repsTope: v })} />
+            <Num etiqueta="Reps tope" valor={b.repsTope} onCambio={(v) => onCambio({ repsTope: v })} />
             <Num etiqueta="Peso (kg, 0 = corporal)" valor={b.peso} paso={0.5} onCambio={(v) => onCambio({ peso: v })} />
-            <Num etiqueta="Subir de a (kg)" valor={b.incremento} paso={0.5} onCambio={(v) => onCambio({ incremento: v })} />
             <Num etiqueta="Descanso (s)" valor={b.descanso} paso={15} onCambio={(v) => onCambio({ descanso: v })} />
             <Num etiqueta="Sombra (s)" valor={b.sombra} paso={5} onCambio={(v) => onCambio({ sombra: v })} />
           </div>
           <div className="campo"><label>Nota</label><input value={b.nota ?? ''} onChange={(e) => onCambio({ nota: e.target.value || undefined })} /></div>
-          <p className="ayuda">Al llegar al tope en todas las series, la app te propone subir {b.incremento ? `${String(b.incremento).replace('.', ',')} kg` : 'repeticiones'} y volver a {b.reps}.</p>
+          <p className="ayuda">Cuando en la serie 1 llegás a {b.repsTope}, la app te pregunta si subís peso (el peso lo ponés vos) y el objetivo vuelve a {b.reps}.</p>
         </>
       )}
       {(b.tipo === 'calentamiento' || b.tipo === 'temporizador') && (
