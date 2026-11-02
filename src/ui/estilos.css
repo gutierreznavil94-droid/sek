@@ -1393,8 +1393,7 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
   animation: sh-pv-revela calc(var(--dur) * .08) ease-out both;
 }
 /* Escena grande como las demás; al final, ya en guardia, se va rápido (0,15 s). */
-.sh-capa.parry-video { animation: sh-entrar 160ms ease-out both, sh-pv-sale calc(var(--dur) * .07) linear calc(var(--dur) * .93) forwards; }
+.sh-capa.parry-video { animation: sh-entrar 160ms ease-out both, sh-pv-sale calc(var(--dur) * .08) ease-in calc(var(--dur) * .92) forwards; }
 .sh-kanji.sh-pv-kanji { animation-name: sh-pv-kanji; }
-.sh-pv-estela { opacity: 0; animation: sh-pv-estela var(--dur) ease-out forwards; }
 @keyframes sh-pv-revela { from { -webkit-mask-position: 100% 0; mask-position: 100% 0 } to { -webkit-mask-position: 0 0; mask-position: 0 0 } }
 @keyframes sh-pv-sale { to { opacity: 0 } }

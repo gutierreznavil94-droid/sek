@@ -455,12 +455,13 @@ function Parry({ dur }: { dur: number }) {
 
 /**
  * Parry hecho con el video de Luma de Navil (scripts/parry-sprites.py), todos los cuadros seguidos a 24 fps:
- * el rival salta y ataca, choque (pausa de impacto, destello, chispas, estela y el kanji 忍), tres cuadros
- * intermedios generados (minterpolate) hacia el rebote, se separan, el rival sale despedido y vuelven a guardia.
+ * el rival salta y ataca, choque (pausa de impacto, destello, chispas y el kanji 忍 con su aura), tres cuadros
+ * intermedios generados (minterpolate) hacia el rebote, se separan, el rival sale despedido y vuelven a guardia
+ * hasta que la tela se asienta (sin cortar el movimiento: así no se traba al final).
  */
-const PARRY_HOJA = { w: 452, h: 208, cols: 8, filas: 7 }
+const PARRY_HOJA = { w: 452, h: 208, cols: 8, filas: 9 }
 /** Cuántos cuadros de 24 fps se muestra cada celda de la hoja, en orden (velocidad natural del video). */
-const PARRY_TIEMPOS = [...Array(16).fill(1), 3, ...Array(32).fill(1), 4]
+const PARRY_TIEMPOS = [...Array(16).fill(1), 3, ...Array(48).fill(1), 2]
 const PARRY_CELDA_CHOQUE = 16
 const PARRY_TICKS = PARRY_TIEMPOS.reduce((a, b) => a + b, 0)
 const PARRY_INICIOS = PARRY_TIEMPOS.map((_, i) => PARRY_TIEMPOS.slice(0, i).reduce((a, b) => a + b, 0) / PARRY_TICKS)
@@ -503,8 +504,7 @@ function ParryVideo({ dur, oscuro }: { dur: number; oscuro: boolean }) {
     @keyframes sh-pv-destello { 0%, ${pct(PARRY_CHOQUE - 0.001)} { opacity: 0; transform: scale(.5) } ${pct(PARRY_CHOQUE)} { opacity: .95; transform: scale(1.25) } ${pct(PARRY_CHOQUE + 0.025)} { opacity: .95; transform: scale(1.25) } ${pct(PARRY_CHOQUE + 0.026)}, 100% { opacity: 0; transform: scale(1) } }
     @keyframes sh-pv-brillo { 0%, ${pct(PARRY_CHOQUE - 0.001)} { opacity: 0; transform: scale(.4) } ${pct(PARRY_CHOQUE)} { opacity: 1; transform: scale(1.6) } ${pct(PARRY_REBOTE + 0.06)} { opacity: .4; transform: scale(1) } ${pct(PARRY_REBOTE + 0.12)}, 100% { opacity: 0 } }
     @keyframes sh-pv-chispas { 0%, ${pct(PARRY_CHOQUE - 0.001)} { opacity: 0; transform: scale(.2) } ${pct(PARRY_CHOQUE + 0.01)} { opacity: 1; transform: scale(.6) } ${pct(PARRY_REBOTE + 0.14)}, 100% { opacity: 0; transform: scale(1.8) } }
-    @keyframes sh-pv-kanji { 0%, ${pct(PARRY_CHOQUE - 0.001)} { opacity: 0; transform: scale(1.8) } ${pct(PARRY_CHOQUE + 0.04)} { opacity: 1; transform: scale(.96) } ${pct(PARRY_CHOQUE + 0.08)}, 100% { opacity: 1; transform: scale(1) } }
-    @keyframes sh-pv-estela { 0%, ${pct(PARRY_CHOQUE - 0.001)} { opacity: 0; stroke-dashoffset: 100 } ${pct(PARRY_CHOQUE + 0.02)} { opacity: .9 } ${pct(PARRY_REBOTE + 0.04)} { opacity: .8; stroke-dashoffset: 0 } ${pct(PARRY_REBOTE + 0.16)}, 100% { opacity: 0; stroke-dashoffset: 0 } }
+    @keyframes sh-pv-kanji { 0%, ${pct(PARRY_CHOQUE - 0.001)} { opacity: 0; transform: scale(1.8); filter: drop-shadow(0 0 0 rgba(232,50,60,0)) } ${pct(PARRY_CHOQUE + 0.03)} { opacity: 1; transform: scale(.96); filter: drop-shadow(0 0 14px rgba(232,50,60,.95)) drop-shadow(0 0 4px #ffb347) } ${pct(PARRY_CHOQUE + 0.07)} { transform: scale(1); filter: drop-shadow(0 0 7px rgba(232,50,60,.7)) } ${pct(0.75)} { filter: drop-shadow(0 0 11px rgba(232,50,60,.85)) } 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 7px rgba(232,50,60,.7)) } }
     @keyframes sh-pv-rebote { 0%, ${pct(PARRY_REBOTE - 0.001)} { transform: none } ${pct(PARRY_REBOTE + 0.01)} { transform: translate(-3px, 1px) } ${pct(PARRY_REBOTE + 0.035)} { transform: translate(2.5px, -1px) } ${pct(PARRY_REBOTE + 0.06)} { transform: translate(-1px, 0) } ${pct(PARRY_REBOTE + 0.085)}, 100% { transform: none } }`
   return (
     <g className="sh-parry-video">
@@ -514,8 +514,6 @@ function ParryVideo({ dur, oscuro }: { dur: number; oscuro: boolean }) {
           <image href={hoja} x={0} y={0} width={PARRY_HOJA.w * PARRY_HOJA.cols} height={PARRY_HOJA.h * PARRY_HOJA.filas} />
         </svg>
       </g>
-      {/* Estela de pincel del choque al rebote: tapa el salto entre tramos */}
-      <path className="sh-pv-estela" d={`M${cx - 46},${cy + 26} Q${cx - 6},${cy - 4} ${cx + 52},${cy - 30}`} fill="none" stroke={ROJO} strokeWidth={5} strokeLinecap="round" pathLength={100} strokeDasharray="100" />
       <circle className="sh-pv-destello" cx={cx} cy={cy} r={22} fill="#fff6d6" />
       <g className="sh-pv-chispas" style={{ transformOrigin: `${cx}px ${cy}px` }}>
         {Array.from({ length: 14 }, (_, i) => {

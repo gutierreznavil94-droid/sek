@@ -13,7 +13,7 @@ from PIL import Image
 # (cuadro del video, cuántos cuadros de 24 fps se muestra). Todos los cuadros seguidos de cada tramo.
 # 1001–1003: cuadros intermedios del choque (29) al rebote (55), generados con
 #   ffmpeg minterpolate (mci, aobmc, bidir) sobre 28, 29, 55, 56, 57 -> o06, o07, o08.
-TIRA = [(n, 1) for n in range(13, 29)] + [(29, 3)] + [(1001, 1), (1002, 1), (1003, 1)] + [(n, 1) for n in range(55, 84)] + [(84, 4)]
+TIRA = [(n, 1) for n in range(13, 29)] + [(29, 3)] + [(1001, 1), (1002, 1), (1003, 1)] + [(n, 1) for n in range(55, 100)] + [(100, 2)]
 CUADROS = [n for n, _ in TIRA]
 CAJA = (40, 30, 945, 445)                           # x0, y0, x1, y1 en el video (sin la marca de Luma)
 ESCALA = 0.5                                         # 905 px de ancho -> 452 (escena grande)
@@ -83,6 +83,6 @@ for tema in TEMAS:
     hoja = Image.new('RGBA', (w * cols, h * filas), (0, 0, 0, 0))
     for i, c in enumerate(celdas):
         hoja.paste(c, ((i % cols) * w, (i // cols) * h))
-    hoja.save(f'{salida}/parry-{tema}.webp', 'WEBP', quality=74, method=6, alpha_quality=80)
+    hoja.save(f'{salida}/parry-{tema}.webp', 'WEBP', quality=70, method=6, alpha_quality=78)
 
 print(json.dumps({'celda': [w, h], 'columnas': cols, 'filas': filas, 'cuadros': len(CUADROS), 'pies': round((432 - CAJA[1]) * ESCALA), 'tiempos': [t for _, t in TIRA], 'choque': CUADROS.index(29), 'contacto': [round((CONTACTO[0] - CAJA[0]) * ESCALA), round((CONTACTO[1] - CAJA[1]) * ESCALA)]}))
