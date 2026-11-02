@@ -285,11 +285,11 @@ export const RUTINAS_INICIALES: Omit<Rutina, 'creado'>[] = [
 ]
 
 /** «Mi código» (掟): ejemplos para empezar. Navil los puede editar o borrar. */
-export const CODIGO_INICIAL: { texto: string; grupo: 'cuerpo' | 'mente' | 'comida' | 'cuidado' }[] = [
-  { grupo: 'cuerpo', texto: 'Flexiones al despertar' },
-  { grupo: 'cuerpo', texto: 'Dominadas al subir y bajar la escalera' },
-  { grupo: 'cuerpo', texto: 'Ejercicios de postura' },
-  { grupo: 'mente', texto: 'Flexiones cada vez que pierdo el foco o me despisto' },
-  { grupo: 'comida', texto: 'No acepto ultraprocesados de otros; solo en casa, con mi familia o en eventos' },
-  { grupo: 'cuidado', texto: 'Rutina de skincare' },
+export const CODIGO_INICIAL: { texto: string; grupo: 'cuerpo' | 'mente' | 'comida' | 'cuidado'; momento: 'manana' | 'tarde' | 'noche' | 'siempre' }[] = [
+  { grupo: 'cuerpo', momento: 'manana', texto: 'Flexiones al despertar' },
+  { grupo: 'cuerpo', momento: 'siempre', texto: 'Dominadas al subir y bajar la escalera' },
+  { grupo: 'cuerpo', momento: 'siempre', texto: 'Ejercicios de postura' },
+  { grupo: 'mente', momento: 'siempre', texto: 'Flexiones cada vez que pierdo el foco o me despisto' },
+  { grupo: 'comida', momento: 'siempre', texto: 'No acepto ultraprocesados de otros; solo en casa, con mi familia o en eventos' },
+  { grupo: 'cuidado', momento: 'noche', texto: 'Rutina de skincare' },
 ]

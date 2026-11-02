@@ -181,11 +181,19 @@ export type RegistroContador = {
 
 /** Regla de «Mi código» (掟): solo se lee, no se marca ni da XP. */
 export type GrupoCodigo = 'cuerpo' | 'mente' | 'comida' | 'cuidado'
+/** Momento del día de una regla: mañana, tarde, noche o siempre (costumbres que valen todo el día). */
+export type MomentoCodigo = 'manana' | 'tarde' | 'noche' | 'siempre'
 export type ReglaCodigo = {
   id: string
   texto: string
+  /** Área (vista «Por área»). */
   grupo: GrupoCodigo
+  /** Orden dentro de su área. */
   orden: number
+  /** Momento (vista «Por momento»). Si falta, «siempre». */
+  momento?: MomentoCodigo
+  /** Orden dentro de su momento. Si falta, se usa `orden`. */
+  ordenMomento?: number
   creado: number
 }
 

@@ -3,7 +3,7 @@ import { db, usarBaseDePruebas } from '../data/db'
 import { instanteDe } from '../domain/fechas'
 import { inicializarSiHaceFalta } from './base'
 import { iniciarCiclo } from './ciclo'
-import { agregarRegla, borrarRegla, listarCodigo, moverRegla, sembrarCodigo } from './codigo'
+import { agregarRegla, borrarRegla, listarCodigo, momentoDe, moverRegla, reglasDelGrupo, sembrarCodigo } from './codigo'
 import { completarCompromiso, deshacerCompromiso, deshacerExtra, generarCompromisosDelDia, marcarExtra } from './dia'
 import { exportarTodo, importarTodo } from './exportar'
 import { fijarAhora, reiniciarReloj } from './reloj'
@@ -69,11 +69,31 @@ describe('Mi código', () => {
     await expect(agregarRegla('  ', 'mente')).rejects.toThrow()
   })
 
+  it('dos vistas: los ejemplos tienen su momento y el orden se guarda por vista', async () => {
+    const r = await listarCodigo()
+    expect(r.map((x) => momentoDe(x))).toEqual(['manana', 'siempre', 'siempre', 'siempre', 'siempre', 'noche'])
+    const siempre = reglasDelGrupo(r, 'momento', 'siempre').map((x) => x.id)
+    expect(siempre).toHaveLength(4)
+    // Mover en «por momento» no cambia el orden «por área»
+    await moverRegla(siempre[1], -1, 'momento')
+    const r2 = await listarCodigo()
+    expect(reglasDelGrupo(r2, 'momento', 'siempre').map((x) => x.id)).toEqual([siempre[1], siempre[0], ...siempre.slice(2)])
+    expect(reglasDelGrupo(r2, 'area', 'cuerpo').map((x) => x.id)).toEqual(reglasDelGrupo(r, 'area', 'cuerpo').map((x) => x.id))
+  })
+
+  it('reglas viejas sin momento pasan a «siempre» (los ejemplos toman el suyo)', async () => {
+    for (const x of await listarCodigo()) await db().codigo.put({ ...x, momento: undefined, ordenMomento: undefined })
+    await sembrarCodigo()
+    const r = await listarCodigo()
+    expect(r.find((x) => x.texto === 'Rutina de skincare')!.momento).toBe('noche')
+    expect(r.every((x) => x.momento && x.ordenMomento)).toBe(true)
+  })
+
   it('exportar e importar incluye el código', async () => {
-    await agregarRegla('Agua antes del café', 'cuidado')
+    await agregarRegla('Agua antes del café', 'cuidado', 'manana')
     const copia = await exportarTodo()
     await usarBaseDePruebas(`manga-imp-${n}`)
     await importarTodo(JSON.parse(JSON.stringify(copia)))
-    expect((await listarCodigo()).map((x) => x.texto)).toContain('Agua antes del café')
+    expect((await listarCodigo()).find((x) => x.texto === 'Agua antes del café')).toMatchObject({ grupo: 'cuidado', momento: 'manana' })
   })
 })
