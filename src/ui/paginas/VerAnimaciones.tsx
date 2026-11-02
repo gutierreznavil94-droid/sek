@@ -49,6 +49,7 @@ export function VerAnimaciones() {
       <Tarjeta titulo="Series y concentración">
         <div className="anim-grilla">
           <button className="boton" onClick={() => ver({ tipo: 'parry' })}><span className="k">弾</span><span className="chico">Parry (sumar serie)</span></button>
+          <button className="boton" onClick={() => ver({ tipo: 'parry', vieja: true })}><span className="k">弾</span><span className="chico">Parry anterior (muñeco)</span></button>
           <button className="boton" onClick={() => { for (let i = 0; i < 3; i++) window.setTimeout(() => ver({ tipo: 'parry' }), i * 280) }}><span className="k">弾弾</span><span className="chico">Tres series seguidas</span></button>
           <button className="boton" onClick={() => ver({ tipo: 'postura', modo: '321' })}><span className="k">{KANJI['321'].k}</span><span className="chico">3-2-1</span></button>
           <button className="boton" onClick={() => ver({ tipo: 'postura', modo: 'siguiente' })}><span className="k">{KANJI.siguiente.k}</span><span className="chico">Siguiente acción</span></button>

@@ -1378,3 +1378,13 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 .entreno-reiniciar { display: flex; justify-content: flex-end; margin-top: 28px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
 .boton.contorno-papel { background: transparent; border: 1px solid color-mix(in srgb, var(--papel, #EEECE7) 35%, transparent); color: var(--texto-3); font-weight: 500; font-size: 0.8rem; min-height: 32px; padding: 5px 10px; }
 .contenido.entreno .boton.contorno-papel { background: transparent; }
+/* Parry con el video de Luma: destello de un cuadro y chispas en el choque; al final se desvanece */
+.sh-pv-destello, .sh-pv-brillo { transform-box: fill-box; transform-origin: center; }
+.sh-parry-video { animation: sh-pv-salida var(--dur) linear forwards; }
+@keyframes sh-pv-salida { 0%, 84% { opacity: 1 } 100% { opacity: 0 } }
+.sh-pv-destello { opacity: 0; animation: sh-pv-destello var(--dur) linear forwards; }
+@keyframes sh-pv-destello { 0%, 51.9% { opacity: 0; transform: scale(.5) } 52% { opacity: .95; transform: scale(1.25) } 58% { opacity: .95; transform: scale(1.25) } 58.1%, 100% { opacity: 0; transform: scale(1) } }
+.sh-pv-brillo { opacity: 0; animation: sh-pv-brillo var(--dur) ease-out forwards; }
+@keyframes sh-pv-brillo { 0%, 51.9% { opacity: 0; transform: scale(.4) } 52% { opacity: 1; transform: scale(1.6) } 80% { opacity: .5; transform: scale(1) } 100% { opacity: 0 } }
+.sh-pv-chispas { opacity: 0; animation: sh-pv-chispas var(--dur) ease-out forwards; }
+@keyframes sh-pv-chispas { 0%, 51.9% { opacity: 0; transform: scale(.2) } 53% { opacity: 1; transform: scale(.6) } 90%, 100% { opacity: 0; transform: scale(1.7) } }

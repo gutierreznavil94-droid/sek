@@ -11,7 +11,7 @@ export type EstiloCorte = 'horizontal' | 'diagonal' | 'ascendente' | 'estocada' 
 
 export type Animacion =
   | { tipo: 'ejecucion'; pilar: string; estilo?: EstiloCorte }
-  | { tipo: 'parry'; nombre?: string }
+  | { tipo: 'parry'; nombre?: string; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
   | { tipo: 'postura'; modo: '321' | 'siguiente' }
   | { tipo: 'logro'; clase: 'nivel' | 'racha' | 'fase' | 'record'; texto: string; sub?: string }
 
