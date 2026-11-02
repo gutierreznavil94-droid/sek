@@ -6,7 +6,10 @@
  */
 
 import { db } from '../data/db'
-import type { ModoSuenio, RegistroSuenio } from '../data/tipos'
+import type { EtapaSuenio, FuenteSuenio, ModoSuenio, RegistroSuenio } from '../data/tipos'
+import { dormidoEstimado, latenciaValida, levantadoEstimado, minutosDormidos, rangoDormido } from '../sueno/estimar'
+import { nocheDesdeRegistro } from '../sueno/fuentes/estimada'
+import { nochesEntre } from '../sueno/fuentes'
 import { fechaDe, instanteDe, sumarDias, type FechaDia } from '../domain/fechas'
 import { obtenerAjustes, registrarEvento } from './base'
 import { pilaresDelDia, rachaActual } from './dia'
@@ -75,7 +78,7 @@ export async function terminarModoSuenioSiCorresponde(instante = ahora()): Promi
     await d.modoSuenio.delete('activo')
     await registrarEvento({ tipo: 'modo_suenio', entidad: 'modo_suenio', entidadId: estado.noche, antes: estado, motivo: instante < estado.hasta ? 'Terminó al abrir la app poco antes de la hora de levantarse' : 'Terminó solo a la hora de fin', instante })
   })
-  // Esta es la primera apertura de la mañana: cierra el registro de la noche (hora de levantarse = ahora − unos minutos).
+  // Esta es la primera apertura de la mañana: solo cierra la noche (levantado = centro de la ventana habitual).
   await registrarDespertar(estado.noche, instante)
   return estado
 }
@@ -103,102 +106,135 @@ export async function aperturasEnSuenioEntre(desde: number, hasta: number): Prom
   return eventos.map((e) => e.instante)
 }
 
-// ---------- Registro de sueño y ritmo circadiano (cambios 11) ----------
+// ---------- Registro de sueño (v0.34: estimación simple, fuentes y correcciones) ----------
 
-const MAX_LATENCIA = 90
-/** Una apertura de la app dentro de este tiempo desde «Dejo celu» cuenta como «todavía no me dormí». */
-const VENTANA_APERTURA_TEMPRANA_MS = 90 * 60_000
-
-function mediana(xs: number[]): number | null {
-  if (!xs.length) return null
-  const o = [...xs].sort((a, b) => a - b)
-  const m = Math.floor(o.length / 2)
-  return o.length % 2 ? o[m] : (o[m - 1] + o[m]) / 2
-}
-
-/**
- * Minutos que se tarda en dormirse, aprendidos: si en noches anteriores abrió
- * la app poco después de «Dejo celu», la app asume que se durmió después de
- * la última apertura temprana. Mediana de las últimas 14 noches con datos.
- */
-export async function latenciaAprendida(): Promise<number> {
-  const a = await obtenerAjustes()
-  const base = a.latenciaSuenioMinutos
-  const noches = await db().suenio.orderBy('noche').reverse().limit(14).toArray()
-  // Solo aprende de noches con evidencia real (una apertura temprana que corrió la hora de dormirse);
-  // las estimadas no cuentan, para no alimentar la estimación con ella misma.
-  const muestras = noches.filter((n) => n.latenciaReal !== undefined).map((n) => n.latenciaReal!)
-  // Hacen falta al menos tres noches observadas para cambiar la base.
-  const m = muestras.length >= 3 ? mediana(muestras) : null
-  if (m === null) return base
-  return Math.min(MAX_LATENCIA, Math.max(base, m))
-}
-
-/** Al entrar en modo sueño: estima la hora de dormirse y anota el despertar previsto en el registro de la noche. */
+/** Al entrar en modo sueño: dormido = «Dejo celu» + latencia (15 min por defecto) y la mañana prevista. */
 export async function abrirRegistroDeSuenio(noche: FechaDia, inicio: number, hasta: number): Promise<void> {
   const d = db()
   const reg = await d.suenio.where('noche').equals(noche).first()
   if (!reg || reg.levantado) return
-  const latencia = await latenciaAprendida()
-  await d.suenio.update(reg.id!, { dormido: inicio + latencia * 60_000, latenciaMinutos: latencia, despertarPrevisto: hasta, aperturas: 0 })
+  const a = await obtenerAjustes()
+  const latencia = latenciaValida(a.latenciaDormirseMinutos)
+  const cambios: Partial<RegistroSuenio> = { despertarPrevisto: hasta, aperturas: reg.aperturas ?? 0 }
+  if (reg.fuenteDormido !== 'corregido' && reg.fuenteDormido !== 'reloj') Object.assign(cambios, { dormido: dormidoEstimado(reg.acostadoManual ?? inicio, latencia), latenciaMinutos: latencia, fuenteDormido: 'estimado' })
+  if (!reg.fuenteAcostado) cambios.fuenteAcostado = 'estimado'
+  await d.suenio.update(reg.id!, cambios)
 }
 
-/** Una apertura temprana corre la hora estimada de dormirse (todavía estaba despierto). */
-export async function anotarAperturaEnRegistro(noche: FechaDia, inicioModo: number, instante: number): Promise<void> {
+/** Una apertura durante la noche solo se cuenta; ya no corre la hora de dormirse. */
+export async function anotarAperturaEnRegistro(noche: FechaDia, _inicioModo: number, instante: number): Promise<void> {
   const d = db()
-  const a = await obtenerAjustes()
   const reg = await d.suenio.where('noche').equals(noche).first()
   if (!reg || reg.levantado) return
   // Abrir el celu en la última media hora antes de la hora de levantarse no es una apertura de la noche.
   if (reg.despertarPrevisto && instante >= reg.despertarPrevisto - MARGEN_MANIANA_MS) return
-  const cambios: Partial<RegistroSuenio> = { aperturas: (reg.aperturas ?? 0) + 1 }
-  if (instante - inicioModo <= VENTANA_APERTURA_TEMPRANA_MS) {
-    cambios.dormido = instante + a.latenciaSuenioMinutos * 60_000
-    cambios.latenciaReal = Math.round((cambios.dormido - reg.horaReal) / 60_000)
-  }
-  await d.suenio.update(reg.id!, cambios)
+  await d.suenio.update(reg.id!, { aperturas: (reg.aperturas ?? 0) + 1 })
 }
 
 /**
- * Cierra el registro de la noche al levantarse. `instante` es cuando abrió
- * la app a la mañana o tocó «Ya me levanté»; si es mucho después del
- * despertar previsto (ya pasó la mañana), se usa el previsto.
+ * Cierra el registro de la noche (al abrir la app a la mañana o salir del modo sueño).
+ * La hora de levantarse es siempre el centro de la ventana habitual de 15 min:
+ * la apertura del celu no se usa, porque se agarra unos minutos después de levantarse.
  */
 export async function registrarDespertar(noche: FechaDia, instante = ahora()): Promise<RegistroSuenio | null> {
   const d = db()
   const reg = await d.suenio.where('noche').equals(noche).first()
   if (!reg || reg.levantado) return reg ?? null
   const a = await obtenerAjustes()
-  const previsto = reg.despertarPrevisto ?? instante
-  // Sin alarma: la persona se levanta y recién después agarra el celu, así que
-  // la hora de levantarse es la primera apertura menos unos minutos. Si abre
-  // muy tarde (más de 3 h después de lo previsto), se usa la hora prevista.
-  const antes = (a.minutosAntesDelCelu ?? 5) * 60_000
-  const dormido = reg.dormido ?? reg.horaReal
-  const levantado = instante > previsto + 3 * 60 * 60_000 ? previsto : Math.max(dormido + 60_000, instante - antes)
-  const minutosDormido = Math.max(0, Math.round((levantado - dormido) / 60_000))
-  const cambios: Partial<RegistroSuenio> = { levantado, minutosDormido }
+  const n = nocheDesdeRegistro(reg, a)
+  const levantado = levantadoEstimado(noche, a.horaFinSuenio, a.zonaHoraria)
+  const cambios: Partial<RegistroSuenio> = { levantado, fuenteLevantado: 'estimado', minutosDormido: minutosDormidos(n.dormido!.valor, levantado) }
   await d.transaction('rw', [d.suenio, d.eventos], async () => {
     await d.suenio.update(reg.id!, cambios)
-    await registrarEvento({ tipo: 'corregir', entidad: 'suenio', entidadId: noche, antes: reg, despues: { ...reg, ...cambios }, motivo: 'Registro de sueño cerrado al levantarse', instante })
+    await registrarEvento({ tipo: 'corregir', entidad: 'suenio', entidadId: noche, antes: reg, despues: { ...reg, ...cambios }, motivo: 'Noche cerrada: levantado = centro de la ventana habitual', instante })
   })
   return { ...reg, ...cambios }
 }
 
-/** Corrige a mano la hora de levantarse de una noche («HH:MM» de la mañana siguiente). */
-export async function corregirLevantado(noche: FechaDia, hm: string): Promise<RegistroSuenio | null> {
+export type CorreccionNoche = { acostado?: string; dormido?: string; levantado?: string }
+
+/** «HH:MM» de una noche a instante: de 12:00 a 23:59 es el día de la noche; de 00:00 a 11:59, la mañana siguiente. */
+export function instanteDeNoche(noche: FechaDia, hm: string, zona: string): number {
+  const h = Number(hm.split(':')[0])
+  return instanteDe(h >= 12 ? noche : sumarDias(noche, 1), hm, zona)
+}
+
+/**
+ * Corrige a mano una noche (cualquiera de los tres datos). Lo corregido queda
+ * marcado y gana sobre lo estimado. Si la noche no tiene registro (no se tocó
+ * «Dejo celu»), se crea a mano: no da XP ni cuenta como «Dormir a horario».
+ */
+export async function corregirNoche(noche: FechaDia, c: CorreccionNoche): Promise<RegistroSuenio> {
+  const d = db()
+  const a = await obtenerAjustes()
+  const z = a.zonaHoraria
+  let reg = await d.suenio.where('noche').equals(noche).first()
+  const antes = reg ? { ...reg } : undefined
+  if (!reg) {
+    if (!c.acostado) throw new Error('Para cargar una noche a mano, poné a qué hora te acostaste')
+    const t = instanteDeNoche(noche, c.acostado, z)
+    reg = { noche, horaPrevista: a.horaDejarCelu, horaReal: t, retrasoMinutos: 0, cumplido: false, rutinaRegistrada: false, creado: ahora(), sinDejoCelu: true, fuenteAcostado: 'corregido', acostadoManual: t }
+    reg.id = (await d.suenio.add(reg)) as number
+  }
+  const cambios: Partial<RegistroSuenio> = {}
+  if (c.acostado) {
+    cambios.acostadoManual = instanteDeNoche(noche, c.acostado, z)
+    cambios.fuenteAcostado = 'corregido'
+  }
+  if (c.dormido) {
+    cambios.dormido = instanteDeNoche(noche, c.dormido, z)
+    cambios.fuenteDormido = 'corregido'
+  } else if (c.acostado && reg.fuenteDormido !== 'corregido' && reg.fuenteDormido !== 'reloj') {
+    // Si cambió la hora de acostarse y el dormido era estimado, se recalcula con la latencia.
+    cambios.dormido = dormidoEstimado(cambios.acostadoManual!, latenciaValida(a.latenciaDormirseMinutos))
+    cambios.fuenteDormido = 'estimado'
+  }
+  if (c.levantado) {
+    cambios.levantado = instanteDeNoche(noche, c.levantado, z)
+    cambios.fuenteLevantado = 'corregido'
+    cambios.levantadoCorregido = true
+  }
+  const despues = { ...reg, ...cambios }
+  const n = nocheDesdeRegistro(despues, a)
+  if (n.dormido!.valor < n.acostado!.valor) throw new Error('Te dormiste antes de acostarte: revisá las horas')
+  if (n.levantado!.valor <= n.dormido!.valor) throw new Error('La hora de levantarte tiene que ser después de la de dormirte')
+  if (despues.levantado !== undefined) cambios.minutosDormido = minutosDormidos(n.dormido!.valor, n.levantado!.valor)
+  await d.transaction('rw', [d.suenio, d.eventos], async () => {
+    await d.suenio.update(reg!.id!, cambios)
+    await registrarEvento({ tipo: antes ? 'corregir' : 'crear', entidad: 'suenio', entidadId: noche, antes, despues: { ...despues, ...cambios }, motivo: 'Noche corregida a mano' })
+  })
+  return { ...despues, ...cambios }
+}
+
+/** Vuelve un dato corregido a lo estimado. */
+export async function volverAEstimado(noche: FechaDia, campo: 'acostado' | 'dormido' | 'levantado'): Promise<void> {
   const d = db()
   const a = await obtenerAjustes()
   const reg = await d.suenio.where('noche').equals(noche).first()
-  if (!reg) return null
-  const levantado = instanteDe(sumarDias(noche, 1), hm, a.zonaHoraria)
-  const dormido = reg.dormido ?? reg.horaReal
-  const cambios: Partial<RegistroSuenio> = { levantado, minutosDormido: Math.max(0, Math.round((levantado - dormido) / 60_000)), levantadoCorregido: true }
+  if (!reg) return
+  const cambios: Partial<RegistroSuenio> = {}
+  const acostado = campo === 'acostado' ? reg.horaReal : (reg.acostadoManual ?? reg.horaReal)
+  if (campo === 'acostado') { cambios.acostadoManual = undefined; cambios.fuenteAcostado = 'estimado' }
+  if (campo === 'dormido' || (campo === 'acostado' && reg.fuenteDormido !== 'corregido')) {
+    cambios.dormido = dormidoEstimado(acostado, latenciaValida(a.latenciaDormirseMinutos))
+    cambios.fuenteDormido = 'estimado'
+  }
+  if (campo === 'levantado') {
+    cambios.levantado = reg.levantado !== undefined ? levantadoEstimado(noche, a.horaFinSuenio, a.zonaHoraria) : undefined
+    cambios.fuenteLevantado = 'estimado'
+    cambios.levantadoCorregido = false
+  }
+  const n = nocheDesdeRegistro({ ...reg, ...cambios }, a)
+  if (reg.levantado !== undefined || cambios.levantado !== undefined) cambios.minutosDormido = minutosDormidos(n.dormido!.valor, n.levantado!.valor)
   await d.transaction('rw', [d.suenio, d.eventos], async () => {
     await d.suenio.update(reg.id!, cambios)
-    await registrarEvento({ tipo: 'corregir', entidad: 'suenio', entidadId: noche, antes: reg, despues: { ...reg, ...cambios }, motivo: 'Hora de levantarse corregida a mano' })
+    await registrarEvento({ tipo: 'corregir', entidad: 'suenio', entidadId: noche, antes: reg, despues: { ...reg, ...cambios }, motivo: `Volver a lo estimado: ${campo}` })
   })
-  return { ...reg, ...cambios }
+}
+
+/** Compatibilidad: corrige solo la hora de levantarse. */
+export async function corregirLevantado(noche: FechaDia, hm: string): Promise<RegistroSuenio | null> {
+  return corregirNoche(noche, { levantado: hm })
 }
 
 export type NocheDeSuenio = {
@@ -206,14 +242,22 @@ export type NocheDeSuenio = {
   /** Minutos desde las 00:00 del día de la noche (puede pasar de 1440 si es después de medianoche). */
   acostado: number
   dormido: number
+  /** «Dormido entre … y …» cuando es estimado (latencia ± 5). */
+  dormidoRango: [number, number] | null
   levantado: number
   minutos: number
-  /** Sin apertura a la mañana: se usó la hora prevista. */
+  fuentes: { acostado: FuenteSuenio; dormido: FuenteSuenio; levantado: FuenteSuenio }
+  /** Algún dato es estimado. */
   estimado: boolean
-  /** La hora de levantarse se corrigió a mano. */
+  /** Algún dato fue corregido a mano. */
   corregido: boolean
+  /** Algún dato viene del reloj. */
+  reloj: boolean
+  /** «Dejo celu» a tiempo (cuenta para Dormir a horario). */
   cumplido: boolean
+  sinDejoCelu: boolean
   aperturas: number
+  etapas?: EtapaSuenio[]
 }
 
 export type ResumenSuenio = {
@@ -221,58 +265,102 @@ export type ResumenSuenio = {
   anoche: NocheDeSuenio | null
   /** Promedios en minutos desde las 00:00 de la noche (acostado y dormido pueden pasar de 1440). */
   promedio: { acostado: number; dormido: number; levantado: number; minutos: number } | null
-  /** Desvío típico de la hora de acostarse, en minutos: cuanto más bajo, más regular. */
+  /** Desvío típico de la hora de dormirse, en minutos: cuanto más bajo, más regular. */
   regularidadMinutos: number | null
   /** Minutos por noche por encima (+) o por debajo (−) del objetivo. */
   diferenciaObjetivo: number | null
-  latenciaAprendida: number
+  latencia: number
   objetivoMinutos: number
+  /** Cómo vas mejorando: esta semana (últimas 7 noches) contra la anterior. */
+  mejora: {
+    semana: number | null
+    semanaAnterior: number | null
+    regularidad: number | null
+    regularidadAnterior: number | null
+    /** Noches seguidas con «Dejo celu» a tiempo, hasta anoche. */
+    racha: number
+  }
 }
 
 function minutosDesdeNoche(instante: number, noche: FechaDia, zona: string): number {
   return Math.round((instante - instanteDe(noche, '00:00', zona)) / 60_000)
 }
 
-/** Las últimas `dias` noches con registro, para la pantalla de sueño y «Buenos días». */
+const promedioDe = (xs: number[]) => (xs.length ? Math.round(xs.reduce((s, x) => s + x, 0) / xs.length) : null)
+function desvio(xs: number[]): number | null {
+  if (xs.length < 2) return null
+  const m = xs.reduce((s, x) => s + x, 0) / xs.length
+  return Math.round(Math.sqrt(xs.reduce((s, x) => s + (x - m) ** 2, 0) / xs.length))
+}
+
+/** Noches entre dos fechas, combinando las fuentes (reloj > corregido > estimado). */
+export async function nochesDeSuenio(desde: FechaDia, hasta: FechaDia, hoy: FechaDia): Promise<NocheDeSuenio[]> {
+  const a = await obtenerAjustes()
+  const regs = new Map((await db().suenio.where('noche').between(desde, hasta, true, true).toArray()).map((r) => [r.noche, r]))
+  const latencia = latenciaValida(a.latenciaDormirseMinutos)
+  const r: NocheDeSuenio[] = []
+  for (const n of await nochesEntre(desde, hasta)) {
+    const reg = regs.get(n.noche)
+    // La noche de hoy todavía no terminó: no entra en el gráfico ni en los promedios.
+    if (n.noche >= hoy && !reg?.levantado && n.levantado?.fuente !== 'reloj') continue
+    if (!n.acostado || !n.dormido || !n.levantado) continue
+    const fuentes = { acostado: n.acostado.fuente, dormido: n.dormido.fuente, levantado: n.levantado.fuente }
+    const lista = Object.values(fuentes)
+    const z = a.zonaHoraria
+    r.push({
+      noche: n.noche,
+      acostado: minutosDesdeNoche(n.acostado.valor, n.noche, z),
+      dormido: minutosDesdeNoche(n.dormido.valor, n.noche, z),
+      dormidoRango: fuentes.dormido === 'estimado' ? (rangoDormido(n.acostado.valor, reg?.latenciaMinutos ?? latencia).map((x) => minutosDesdeNoche(x, n.noche, z)) as [number, number]) : null,
+      levantado: minutosDesdeNoche(n.levantado.valor, n.noche, z),
+      minutos: minutosDormidos(n.dormido.valor, n.levantado.valor),
+      fuentes,
+      estimado: lista.includes('estimado'),
+      corregido: lista.includes('corregido'),
+      reloj: lista.includes('reloj'),
+      cumplido: !!reg?.cumplido,
+      sinDejoCelu: !!reg?.sinDejoCelu,
+      aperturas: reg?.aperturas ?? 0,
+      etapas: n.etapas,
+    })
+  }
+  return r
+}
+
+/** Las últimas `dias` noches, para la pantalla Sueño, la tarjeta de Progreso y «Buenos días». */
 export async function resumenSuenio(hoy: FechaDia, dias = 14): Promise<ResumenSuenio> {
   const a = await obtenerAjustes()
-  const desde = sumarDias(hoy, -dias)
-  const regs = (await db().suenio.where('noche').between(desde, hoy, true, true).toArray()).sort((x, y) => x.noche.localeCompare(y.noche))
-  const noches: NocheDeSuenio[] = regs.map((r) => {
-    const dormido = r.dormido ?? r.horaReal + a.latenciaSuenioMinutos * 60_000
-    const levantado = r.levantado ?? r.despertarPrevisto ?? instanteDe(sumarDias(r.noche, 1), a.horaFinSuenio, a.zonaHoraria)
-    return {
-      noche: r.noche,
-      acostado: minutosDesdeNoche(r.horaReal, r.noche, a.zonaHoraria),
-      dormido: minutosDesdeNoche(dormido, r.noche, a.zonaHoraria),
-      levantado: minutosDesdeNoche(levantado, r.noche, a.zonaHoraria),
-      minutos: r.minutosDormido ?? Math.max(0, Math.round((levantado - dormido) / 60_000)),
-      estimado: !r.levantado,
-      corregido: !!r.levantadoCorregido,
-      cumplido: r.cumplido,
-      aperturas: r.aperturas ?? 0,
-    }
-  })
-  const prom = (xs: number[]) => Math.round(xs.reduce((s, x) => s + x, 0) / xs.length)
-  const cerradas = noches.filter((n) => !n.estimado || n.noche < hoy)
-  const promedio = cerradas.length
-    ? { acostado: prom(cerradas.map((n) => n.acostado)), dormido: prom(cerradas.map((n) => n.dormido)), levantado: prom(cerradas.map((n) => n.levantado)), minutos: prom(cerradas.map((n) => n.minutos)) }
+  const desde = sumarDias(hoy, -Math.max(dias, 14))
+  const todas = await nochesDeSuenio(desde, hoy, hoy)
+  const noches = todas.filter((n) => n.noche >= sumarDias(hoy, -dias))
+  const promedio = noches.length
+    ? { acostado: promedioDe(noches.map((n) => n.acostado))!, dormido: promedioDe(noches.map((n) => n.dormido))!, levantado: promedioDe(noches.map((n) => n.levantado))!, minutos: promedioDe(noches.map((n) => n.minutos))! }
     : null
-  let regularidadMinutos: number | null = null
-  if (promedio && cerradas.length >= 2) {
-    const v = cerradas.reduce((s, n) => s + (n.acostado - promedio.acostado) ** 2, 0) / cerradas.length
-    regularidadMinutos = Math.round(Math.sqrt(v))
-  }
   const objetivoMinutos = Math.round(a.objetivoSuenioHoras * 60)
   const ultima = noches[noches.length - 1] ?? null
+  // Semana: las 7 noches hasta anoche; la anterior, las 7 de antes.
+  const semana = todas.filter((n) => n.noche >= sumarDias(hoy, -7))
+  const anterior = todas.filter((n) => n.noche >= sumarDias(hoy, -14) && n.noche < sumarDias(hoy, -7))
+  // Racha: noches seguidas con «Dejo celu» a tiempo, hacia atrás desde anoche (o esta noche, si ya se tocó a tiempo).
+  const regs = new Map((await db().suenio.where('noche').between(sumarDias(hoy, -400), hoy, true, true).toArray()).map((r) => [r.noche, r]))
+  let racha = 0
+  let f = regs.get(hoy)?.cumplido ? hoy : sumarDias(hoy, -1)
+  while (regs.get(f)?.cumplido) { racha++; f = sumarDias(f, -1) }
   return {
     noches,
     anoche: ultima && (ultima.noche === sumarDias(hoy, -1) || ultima.noche === hoy) ? ultima : null,
     promedio,
-    regularidadMinutos,
+    regularidadMinutos: desvio(noches.map((n) => n.dormido)),
     diferenciaObjetivo: promedio ? promedio.minutos - objetivoMinutos : null,
-    latenciaAprendida: await latenciaAprendida(),
+    latencia: latenciaValida(a.latenciaDormirseMinutos),
     objetivoMinutos,
+    mejora: {
+      semana: promedioDe(semana.map((n) => n.minutos)),
+      semanaAnterior: promedioDe(anterior.map((n) => n.minutos)),
+      regularidad: desvio(semana.map((n) => n.dormido)),
+      regularidadAnterior: desvio(anterior.map((n) => n.dormido)),
+      racha,
+    },
   }
 }
 
@@ -285,6 +373,6 @@ export function duracionSuenio(minutos: number): string {
 
 /** Minutos desde las 00:00 (pueden pasar de 1440) como «HH:MM». */
 export function horaDeMinutos(min: number): string {
-  const m = ((min % 1440) + 1440) % 1440
+  const m = ((Math.round(min) % 1440) + 1440) % 1440
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
 }

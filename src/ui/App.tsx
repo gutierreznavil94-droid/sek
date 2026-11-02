@@ -16,7 +16,7 @@ import { avisar, mutar, notificarCambio, useDatos, useVersion } from './estado'
 import { Layout } from './Layout'
 import { Acciones } from './paginas/Acciones'
 import { Ajustes } from './paginas/Ajustes'
-import { Suenio } from './paginas/Suenio'
+import { Sueno } from './paginas/Sueno'
 import { AlarmasTelefono } from './paginas/AlarmasTelefono'
 import { Atributos } from './paginas/Atributos'
 import { Calendario } from './paginas/Calendario'
@@ -195,7 +195,8 @@ function Rutas() {
         <Route path="/mas/copia" element={<Copia />} />
         <Route path="/mas/sincronizar" element={<Sincronizar />} />
         <Route path="/mas/ajustes" element={<Ajustes />} />
-        <Route path="/mas/suenio" element={<Suenio hoy={hoy} />} />
+        <Route path="/sueno" element={<Sueno hoy={hoy} />} />
+        <Route path="/mas/suenio" element={<Navigate to="/sueno" replace />} />
         <Route path="/mas/animaciones" element={<Suspense fallback={<Cargando />}><VerAnimaciones /></Suspense>} />
         <Route path="/mas/historial" element={<Historial />} />
         <Route path="/mas/avances" element={<Navigate to="/progreso" replace />} />

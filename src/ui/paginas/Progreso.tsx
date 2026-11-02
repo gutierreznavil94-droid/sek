@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { db } from '../../data/db'
@@ -8,6 +9,7 @@ import { estadoDelCiclo } from '../../services/ciclo'
 import { atributosHoy, cumplimientoPorDia, pilaresPorDia, rachaActual, type EstadoPilar } from '../../services/dia'
 import { xpAntesDe, xpPorDia, xpTotal } from '../../services/xp'
 import { resumenContadores } from '../../services/contadores'
+import { duracionSuenio, resumenSuenio, type ResumenSuenio } from '../../services/suenio'
 import { Hoja, clasePorcentaje, elegirMovimiento, movimientoReducido } from '../componentes'
 import { useDatos } from '../estado'
 import { graficoMetas } from '../../services/metas'
@@ -45,6 +47,7 @@ export function Progreso({ hoy }: { hoy: string }) {
     const acciones = new Map((await db().acciones.toArray()).map((a) => [a.id, a.nombre]))
     for (const c of await db().contadores.toArray()) acciones.set(`contador:${c.id}`, `${c.nombre} (meta diaria)`)
     const contadores = await resumenContadores(hoy)
+    const sueno = await resumenSuenio(hoy, 14)
     let pilares: { nombre: string; hechos: number; programados: number }[] = []
     let diasCumplidos = 0
     let diasContados = 0
@@ -78,7 +81,7 @@ export function Progreso({ hoy }: { hoy: string }) {
         if (c.porcentaje >= ajustes.umbralRacha) diasCumplidos++
       }
     }
-    return { ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, pilares, diasCumplidos, diasContados }
+    return { ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, pilares, diasCumplidos, diasContados }
   }, [hoy])
   const reducido = useMemo(() => movimientoReducido(), [])
   const modo = useModoFondo()
@@ -145,6 +148,9 @@ export function Progreso({ hoy }: { hoy: string }) {
 
             {/* Metas: cumplidas y no cumplidas */}
             <TarjetaMetas hoy={hoy} inicio={d.estado && !d.estado.noEmpezado ? d.estado.ciclo.inicio : hoy} fin={d.estado ? d.estado.fechaFin : sumarDias(hoy, 89)} />
+
+            {/* Sueño: una variable más de mejora. Tocar abre la pantalla Sueño. */}
+            <TarjetaSueno r={d.sueno} />
 
             {/* Pilares del ciclo */}
             {d.pilares.length > 0 && (
@@ -595,6 +601,44 @@ function TarjetaMetas({ hoy, inicio, fin }: { hoy: string; inicio: string; fin: 
             </div>
           )}
         </>
+      )}
+    </section>
+  )
+}
+
+/** Resumen del sueño en Progreso: horas por noche de la semana con su tendencia, regularidad, racha y las últimas noches. */
+function TarjetaSueno({ r }: { r: ResumenSuenio }) {
+  const navegar = useNavigate()
+  const m = r.mejora
+  const ultimas = r.noches.slice(-7)
+  const tope = Math.max(r.objetivoMinutos + 60, ...ultimas.map((n) => n.minutos))
+  const flecha = (a: number | null, b: number | null, mejorEsMas: boolean) => {
+    if (a === null || b === null || Math.abs(a - b) < 5) return null
+    const sube = a > b
+    return <span className={sube === mejorEsMas ? 'av-verde' : 'av-rojo'}>{sube ? ' ↑' : ' ↓'}</span>
+  }
+  const abrir = () => navegar('/sueno')
+  return (
+    <section className="av-tarjeta av-tocable" role="button" tabIndex={0} onClick={abrir} onKeyDown={(e) => e.key === 'Enter' && abrir()} aria-label="Sueño. Tocá para abrir la pantalla Sueño">
+      <div className="av-tarjeta-titulo"><span>Sueño</span><span className="av-nota">esta semana ›</span></div>
+      {ultimas.length ? (
+        <div className="av-sueno">
+          <div className="av-sueno-cifras">
+            <div><b className="av-mono">{m.semana !== null ? duracionSuenio(m.semana) : '—'}{flecha(m.semana, m.semanaAnterior, true)}</b><span className="av-nota">por noche</span></div>
+            <div><b className="av-mono">{m.regularidad !== null ? `±${m.regularidad}′` : '—'}{flecha(m.regularidad, m.regularidadAnterior, false)}</b><span className="av-nota">regularidad</span></div>
+            <div><b className="av-mono">{m.racha}</b><span className="av-nota">a horario</span></div>
+          </div>
+          <svg className="av-sueno-mini" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">
+            <line x1="0" x2="100" y1={40 - (r.objetivoMinutos / tope) * 38} y2={40 - (r.objetivoMinutos / tope) * 38} className="av-sueno-objetivo" />
+            {ultimas.map((n, i) => {
+              const w = 100 / 7
+              const h = (n.minutos / tope) * 38
+              return <rect key={n.noche} x={i * w + w * 0.2} y={40 - h} width={w * 0.6} height={h} rx={1.5} className={n.minutos >= r.objetivoMinutos - 15 ? 'ok' : ''} />
+            })}
+          </svg>
+        </div>
+      ) : (
+        <div className="av-nota">Con la primera noche registrada aparece acá cómo dormís.</div>
       )}
     </section>
   )

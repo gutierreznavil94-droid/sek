@@ -10,6 +10,7 @@ import { VERSION_APP } from '../version'
 import { enModoPrueba, salirModoPrueba } from '../data/modoPrueba'
 
 const ICONOS = {
+  sueno: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" /></svg>,
   hoy: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" /></svg>,
   calendario: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" /></svg>,
   juego: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 2.5M9 2h6" /></svg>,
@@ -79,6 +80,7 @@ export function Layout({ hoy }: { hoy: string }) {
         <NavLink to="/" end className={({ isActive }) => (isActive ? 'activo' : '')}>{ICONOS.hoy}Hoy</NavLink>
         <NavLink to="/calendario" className={({ isActive }) => (isActive ? 'activo' : '')}>{ICONOS.calendario}Calendario</NavLink>
         <NavLink to="/juego" className={({ isActive }) => (isActive ? 'activo' : '')}>{ICONOS.juego}Juego</NavLink>
+        <NavLink to="/sueno" className={({ isActive }) => (isActive ? 'activo' : '')}>{ICONOS.sueno}Sueño</NavLink>
         <NavLink to="/progreso" className={({ isActive }) => (isActive ? 'activo' : '')}>{ICONOS.progreso}Progreso</NavLink>
         <NavLink to="/mas" className={({ isActive }) => (isActive ? 'activo' : '')}>{ICONOS.mas}Más</NavLink>
       </nav>

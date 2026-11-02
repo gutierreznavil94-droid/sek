@@ -17,7 +17,6 @@ const SECCIONES = [
   { a: '/mas/objetivos', t: 'Objetivos y fases', d: 'Qué buscás en cada etapa de 30 días' },
   { a: '/mas/acciones', t: 'Pilares y acciones', d: 'Nombre, hora límite, mínimo, atributo y XP de cada pilar y compromiso' },
   { a: '/mas/entrenamiento', t: 'Entrenamiento y descanso', d: 'Días y horas, hora de acostarse, objetivo de sueño' },
-  { a: '/mas/suenio', t: 'Sueño y ritmo', d: 'Cuánto dormís, a qué hora te dormís y te levantás; la app lo aprende sola' },
   { a: '/mas/alarmas', t: 'Alarmas del teléfono', d: 'Qué cargar en el reloj de Android' },
   { a: '/mas/sincronizar', t: 'Sincronizar', d: 'Los mismos datos en el celu y en la compu' },
   { a: '/mas/copia', t: 'Copia de seguridad', d: 'Exportar e importar (JSON, CSV)' },

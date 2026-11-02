@@ -256,7 +256,7 @@ export function Hoy({ hoy }: { hoy: string }) {
         <div className="buenos-dias" role="status">
           <div className="col" style={{ gap: 2 }}>
             <b>Buenos días · Día {d.estado?.dia} de {d.estado?.ciclo.duracionDias}</b>
-            {d.anoche && <span className="chico"><Link to="/mas/suenio" className="texto-2">Dormiste {duracionSuenio(d.anoche.minutos)}{d.anoche.estimado ? ' (estimado)' : ''} · celu {horaDeMinutos(d.anoche.acostado)} · arriba {horaDeMinutos(d.anoche.levantado)} ›</Link></span>}
+            {d.anoche && <span className="chico"><Link to="/sueno" className="texto-2">Dormiste {duracionSuenio(d.anoche.minutos)}{d.anoche.estimado ? ' aprox.' : ''} · celu {horaDeMinutos(d.anoche.acostado)} · arriba {horaDeMinutos(d.anoche.levantado)} ›</Link></span>}
             <span className="chico texto-2">{d.ajusteDeAyer ? `Tu ajuste para hoy: ${d.ajusteDeAyer}` : 'Hoy, de nuevo, los 4 pilares.'}</span>
           </div>
           <button className="boton chico suave" aria-label="Cerrar" onClick={() => { try { localStorage.removeItem('buenos-dias') } catch { /* nada */ } panel.recargar() }}>✕</button>

@@ -107,9 +107,8 @@ export function Entrenamiento({ hoy }: { hoy: string }) {
         <div className="campo"><label>3 · Estar dormido</label><input type="time" value={horaDormido} onChange={(e) => setHoraDormido(e.target.value)} /></div>
         <div className="rejilla-2">
           <div className="campo"><label>«Dejo celu» tarde hasta</label><input type="time" value={limiteCelu} onChange={(e) => setLimiteCelu(e.target.value)} /><span className="ayuda">Después, el botón desaparece y la noche queda sin cumplir.</span></div>
-          <div className="campo"><label>Hora de levantarse</label><input type="time" value={finSuenio} onChange={(e) => setFinSuenio(e.target.value)} /><span className="ayuda">Termina el modo sueño con «Buenos días» y cierra el registro de la noche. El despertar suena unos minutos antes (Más → Sueño).</span></div>
         </div>
-        <div className="campo"><label>Objetivo de sueño (h)</label><input type="number" inputMode="decimal" step={0.5} min={4} max={12} value={objetivoSuenio} onChange={(e) => setObjetivoSuenio(Number(e.target.value))} /></div>
+        <p className="ayuda">La hora de levantarte, los minutos hasta dormirte y el objetivo de horas están en la pestaña <Link to="/sueno">Sueño</Link>.</p>
         <div className="campo"><label>Hasta qué hora un registro cuenta para la noche anterior</label><input type="time" value={corte} onChange={(e) => setCorte(e.target.value)} /><span className="ayuda">Si dejás el celu a las 00:40, cuenta para la noche anterior (con el retraso). Antes de esta hora, el día anterior no se cierra.</span></div>
         <button className="boton primario ancho" onClick={guardarDescanso}>Guardar descanso</button>
         {d.noches.length > 0 && (

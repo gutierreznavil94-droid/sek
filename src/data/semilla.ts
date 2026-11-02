@@ -22,6 +22,8 @@ export const AJUSTES_INICIALES: Ajustes = {
   horaFinSuenio: '05:00',
   latenciaSuenioMinutos: 25,
   minutosAntesDelCelu: 5,
+  latenciaDormirseMinutos: 15,
+  relojInteligente: false,
   objetivoSuenioHoras: 7.5,
   umbralRacha: 75,
   xpRacha7: 20,

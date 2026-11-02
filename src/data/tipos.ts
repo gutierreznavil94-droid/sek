@@ -193,8 +193,12 @@ export type Ajustes = {
   horaFinSuenio: string
   /** Minutos que se tarda en dormirse después de «Dejo celu» (la app lo ajusta sola con las aperturas de la noche). */
   latenciaSuenioMinutos: number
-  /** Minutos que pasan entre levantarse y agarrar el celu: la hora de levantarse = primera apertura − esto. */
+  /** Ya no se usa (v0.34): la hora de levantarse sale de la ventana habitual, no de la apertura del celu. */
   minutosAntesDelCelu: number
+  /** Minutos que se tarda en dormirse después de «Dejo celu» (10 a 30, por defecto 15). Reemplaza la latencia aprendida. */
+  latenciaDormirseMinutos: number
+  /** Reloj inteligente conectado (todavía no hay ninguno: próximamente). */
+  relojInteligente: boolean
   objetivoSuenioHoras: number
   umbralRacha: number
   xpRacha7: number
@@ -240,6 +244,11 @@ export type Compromiso = {
   actualizado: number
 }
 
+/** De dónde sale un dato del sueño. Prioridad: reloj > corregido > estimado. */
+export type FuenteSuenio = 'estimado' | 'corregido' | 'reloj'
+
+export type EtapaSuenio = { tipo: 'ligero' | 'profundo' | 'rem' | 'despierto'; inicio: number; fin: number }
+
 /** Registro de «Dejo celu»: la hora real de dejar el celular. También deja registrada la rutina nocturna. */
 export type RegistroSuenio = {
   id?: number
@@ -267,6 +276,16 @@ export type RegistroSuenio = {
   levantado?: number
   /** Minutos dormido: de `dormido` a `levantado` (o al despertar previsto si no abrió la app). */
   minutosDormido?: number
+  /** De dónde sale cada dato (v0.34). Sin el campo, cuenta como «estimado» (o «corregido» si levantadoCorregido). */
+  fuenteAcostado?: FuenteSuenio
+  fuenteDormido?: FuenteSuenio
+  fuenteLevantado?: FuenteSuenio
+  /** Hora de acostarse corregida a mano (no cambia «Dejo celu» ni el XP de la noche). */
+  acostadoManual?: number
+  /** La noche se cargó a mano, sin tocar «Dejo celu». */
+  sinDejoCelu?: boolean
+  /** Etapas del sueño, si las da un reloj (todavía no se muestran). */
+  etapas?: EtapaSuenio[]
   /** Aperturas de la app durante la noche (cantidad). */
   aperturas?: number
 }
