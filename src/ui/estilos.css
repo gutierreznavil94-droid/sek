@@ -1501,3 +1501,23 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 .codigo-etiquetas button.activa { border-color: #c8102e; box-shadow: inset 0 0 0 1px #c8102e; }
 .codigo-etiqueta-kanji { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 24px; line-height: 1.1; }
 @media (prefers-reduced-motion: reduce) { :root:not(.movimiento-siempre) .codigo-lista .codigo-grupo { animation: none !important; } :root:not(.movimiento-siempre) .codigo-vistas-trazo path { transition: none; } }
+
+/* ===== v0.36: vidrio más transparente en Progreso y Mi código (para que se luzca el video) =====
+   Ajustar acá: --tarjeta-transparencia multiplica el tinte de cada video (1 = como antes, 0.62 = 38 % más transparente)
+   y --tarjeta-blur es el desenfoque (antes 16px). La lectura la sostiene el halo del texto: con él, el peor cuadro
+   medido da 6,3:1 (pc), 7:1 (rayos en relámpago) y 8,9:1 (lluvia). */
+.progreso-tinta { --tarjeta-transparencia: 0.62; --tarjeta-blur: 8px; --halo-texto: 0 0 1px rgba(0, 0, 0, .9), 0 0 3px rgba(0, 0, 0, .75), 0 0 10px rgba(0, 0, 0, .5); }
+.progreso-tinta:not([data-vidrio="claro"]) .av-tarjeta,
+.progreso-tinta:not([data-vidrio="claro"]) .codigo-cabeza,
+.progreso-tinta:not([data-vidrio="claro"]) .codigo-regla {
+  background: rgba(18, 17, 16, calc(var(--vidrio) * var(--tarjeta-transparencia)));
+  -webkit-backdrop-filter: blur(var(--tarjeta-blur)) saturate(1.1);
+  backdrop-filter: blur(var(--tarjeta-blur)) saturate(1.1);
+  border: 1px solid rgba(var(--papel-rgb), 0.22);
+  text-shadow: var(--halo-texto);
+}
+.progreso-tinta:not([data-vidrio="claro"]) .av-tarjeta *, .progreso-tinta:not([data-vidrio="claro"]) .codigo-regla *, .progreso-tinta:not([data-vidrio="claro"]) .codigo-cabeza * { text-shadow: inherit; }
+.progreso-tinta:not([data-vidrio="claro"]) .codigo-kanji { text-shadow: var(--halo-texto), 2px 2px 0 rgba(200, 16, 46, 0.55); }
+/* Debajo de la cabecera el video es más claro (cielo y relámpagos): un degradado suave solo en esa franja */
+body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: calc(var(--av-arriba, 120px) + 90px); background: linear-gradient(to bottom, rgba(0, 0, 0, .28), rgba(0, 0, 0, 0)); pointer-events: none; z-index: 1; }
+.av-tarjeta.av-codigo-boton { flex-direction: row; align-items: center; text-align: left; }
