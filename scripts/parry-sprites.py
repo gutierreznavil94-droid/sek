@@ -2,14 +2,19 @@
 
 Uso: python3 -I scripts/parry-sprites.py <dir_cuadros_png> <dir_salida>
 Los cuadros son los PNG del video a 24 fps (0001.png = primer cuadro).
-Solo se usa del salto del rival hasta el choque; los cuadros con hojas deformadas quedan afuera
-(el choque usa el cuadro 29, el más limpio, y la app dibuja encima el destello y las chispas).
+Tira: el rival se prepara (7–11), salta y ataca (13–24), choque (29, el más limpio; la app dibuja
+destello y chispas), se saltea el forcejeo y sigue el rebote: se separan, el rival sale despedido y
+vuelven a guardia (55–88). Los cuadros con hojas borrosas, dobles o dobladas (25–28, 30–54) quedan afuera.
 """
 import sys, json
 import numpy as np
 from PIL import Image
 
-CUADROS = [13, 15, 17, 19, 20, 21, 22, 23, 24, 29]   # el último es el contacto
+# (cuadro del video, cuántos cuadros de 24 fps se muestra). El choque es el 29.
+TIRA = [(7, 2), (9, 2), (11, 2), (13, 2), (15, 2), (17, 2), (19, 2), (20, 1), (21, 1), (22, 1), (23, 1), (24, 1),
+        (29, 3),
+        (55, 1), (57, 1), (59, 1), (61, 1), (63, 1), (65, 1), (67, 1), (69, 1), (71, 1), (73, 1), (76, 2), (82, 2), (88, 4)]
+CUADROS = [n for n, _ in TIRA]
 CAJA = (40, 30, 945, 445)                           # x0, y0, x1, y1 en el video (sin la marca de Luma)
 ESCALA = 0.4                                         # 905 px de ancho -> 362
 TEMAS = {
@@ -72,11 +77,11 @@ def cuadro(n, tema):
 for tema in TEMAS:
     celdas = [cuadro(n, tema) for n in CUADROS]
     w, h = celdas[0].size
-    cols = 5
+    cols = 6
     filas = (len(celdas) + cols - 1) // cols
     hoja = Image.new('RGBA', (w * cols, h * filas), (0, 0, 0, 0))
     for i, c in enumerate(celdas):
         hoja.paste(c, ((i % cols) * w, (i // cols) * h))
     hoja.save(f'{salida}/parry-{tema}.webp', 'WEBP', quality=82, method=6, alpha_quality=85)
 
-print(json.dumps({'celda': [w, h], 'columnas': cols, 'filas': filas, 'cuadros': len(CUADROS), 'pies': round((432 - CAJA[1]) * ESCALA)}))
+print(json.dumps({'celda': [w, h], 'columnas': cols, 'filas': filas, 'cuadros': len(CUADROS), 'pies': round((432 - CAJA[1]) * ESCALA), 'tiempos': [t for _, t in TIRA], 'choque': CUADROS.index(29)}))

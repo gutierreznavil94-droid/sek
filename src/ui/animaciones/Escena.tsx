@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { movimientoReducido } from '../componentes'
-import { DURACION, KANJI, elegirCorte, nombreDePilar, useAnimacionActual, type EnCurso, type EstiloCorte } from './motor'
+import { KANJI, duracionDe, elegirCorte, nombreDePilar, useAnimacionActual, type EnCurso, type EstiloCorte } from './motor'
 import { Munieco, Sombrero, poseEn, puntoBoca, puntoMano, puntosKatana, useSecuenciaDOM, type Clave } from './munieco'
 
 const ROJO = '#c8102e'
@@ -454,16 +454,23 @@ function Parry({ dur }: { dur: number }) {
 }
 
 /**
- * Parry hecho con el video de Luma de Navil (scripts/parry-sprites.py): del salto del rival al choque,
- * 10 cuadros limpios (los de hojas deformadas quedan afuera). La app dibuja el destello y las chispas.
+ * Parry hecho con el video de Luma de Navil (scripts/parry-sprites.py): el rival se prepara, salta y ataca,
+ * choque (pausa de impacto, destello y chispas que dibuja la app), rebote: se separan, el rival sale
+ * despedido y vuelven a guardia. Los cuadros con hojas deformadas quedan afuera.
  */
-const PARRY_HOJA = { w: 362, h: 166, cols: 5, filas: 2, cuadros: 10 }
+const PARRY_HOJA = { w: 362, h: 166, cols: 6, filas: 5 }
+/** Cuántos cuadros de 24 fps se muestra cada celda de la hoja, en orden (velocidad natural del video). */
+const PARRY_TIEMPOS = [2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 4]
+const PARRY_CELDA_CHOQUE = 12
+const PARRY_TICKS = PARRY_TIEMPOS.reduce((a, b) => a + b, 0)
+const PARRY_INICIOS = PARRY_TIEMPOS.map((_, i) => PARRY_TIEMPOS.slice(0, i).reduce((a, b) => a + b, 0) / PARRY_TICKS)
+/** Momento del choque y del rebote (fracción de la duración). */
+const PARRY_CHOQUE = PARRY_INICIOS[PARRY_CELDA_CHOQUE]
+const PARRY_REBOTE = PARRY_INICIOS[PARRY_CELDA_CHOQUE + 1]
 const PARRY_CAJA = { x: 30, ancho: 300 }
 const PARRY_ALTO = (PARRY_CAJA.ancho * PARRY_HOJA.h) / PARRY_HOJA.w
 const PARRY_Y = SUELO_Y - (161 / PARRY_HOJA.h) * PARRY_ALTO
 const PARRY_CONTACTO = { x: PARRY_CAJA.x + (169 / PARRY_HOJA.w) * PARRY_CAJA.ancho, y: PARRY_Y + (75 / PARRY_HOJA.h) * PARRY_ALTO }
-/** Momento del choque (fracción de la duración): hasta acá van los 9 cuadros del salto; después, la pausa de impacto. */
-export const PARRY_CHOQUE = 0.52
 // Las hojas se cargan de antemano para que el primer parry no salga vacío.
 if (typeof Image !== 'undefined') for (const t of ['claro', 'oscuro']) new Image().src = `${import.meta.env.BASE_URL}animaciones/parry/parry-${t}.webp`
 
@@ -477,7 +484,8 @@ function ParryVideo({ dur, oscuro }: { dur: number; oscuro: boolean }) {
     let ultimo = -1
     const paso = (ahora: number) => {
       const f = Math.min(1, (ahora - t0) / dur)
-      const n = f < PARRY_CHOQUE ? Math.min(PARRY_HOJA.cuadros - 2, Math.floor((f / PARRY_CHOQUE) * (PARRY_HOJA.cuadros - 1))) : PARRY_HOJA.cuadros - 1
+      let n = 0
+      while (n + 1 < PARRY_INICIOS.length && PARRY_INICIOS[n + 1] <= f) n++
       if (n !== ultimo) {
         ultimo = n
         el.setAttribute('viewBox', `${(n % PARRY_HOJA.cols) * PARRY_HOJA.w} ${Math.floor(n / PARRY_HOJA.cols) * PARRY_HOJA.h} ${PARRY_HOJA.w} ${PARRY_HOJA.h}`)
@@ -489,11 +497,21 @@ function ParryVideo({ dur, oscuro }: { dur: number; oscuro: boolean }) {
   }, [dur])
   const { x: cx, y: cy } = PARRY_CONTACTO
   const hoja = `${import.meta.env.BASE_URL}animaciones/parry/parry-${oscuro ? 'oscuro' : 'claro'}.webp`
+  const pct = (x: number) => `${(x * 100).toFixed(2)}%`
+  // Tiempos del choque y del rebote, como porcentajes de la duración (para las animaciones CSS).
+  const tiempos = `
+    @keyframes sh-pv-destello { 0%, ${pct(PARRY_CHOQUE - 0.001)} { opacity: 0; transform: scale(.5) } ${pct(PARRY_CHOQUE)} { opacity: .95; transform: scale(1.25) } ${pct(PARRY_CHOQUE + 0.025)} { opacity: .95; transform: scale(1.25) } ${pct(PARRY_CHOQUE + 0.026)}, 100% { opacity: 0; transform: scale(1) } }
+    @keyframes sh-pv-brillo { 0%, ${pct(PARRY_CHOQUE - 0.001)} { opacity: 0; transform: scale(.4) } ${pct(PARRY_CHOQUE)} { opacity: 1; transform: scale(1.6) } ${pct(PARRY_REBOTE + 0.06)} { opacity: .4; transform: scale(1) } ${pct(PARRY_REBOTE + 0.12)}, 100% { opacity: 0 } }
+    @keyframes sh-pv-chispas { 0%, ${pct(PARRY_CHOQUE - 0.001)} { opacity: 0; transform: scale(.2) } ${pct(PARRY_CHOQUE + 0.01)} { opacity: 1; transform: scale(.6) } ${pct(PARRY_REBOTE + 0.14)}, 100% { opacity: 0; transform: scale(1.8) } }
+    @keyframes sh-pv-rebote { 0%, ${pct(PARRY_REBOTE - 0.001)} { transform: none } ${pct(PARRY_REBOTE + 0.01)} { transform: translate(-3px, 1px) } ${pct(PARRY_REBOTE + 0.035)} { transform: translate(2.5px, -1px) } ${pct(PARRY_REBOTE + 0.06)} { transform: translate(-1px, 0) } ${pct(PARRY_REBOTE + 0.085)}, 100% { transform: none } }`
   return (
-    <g className="sh-parry-video" style={{ '--choque': PARRY_CHOQUE } as CSSProperties}>
-      <svg ref={vista} className="sh-parry-cuadros" x={PARRY_CAJA.x} y={PARRY_Y} width={PARRY_CAJA.ancho} height={PARRY_ALTO} viewBox={`0 0 ${PARRY_HOJA.w} ${PARRY_HOJA.h}`} preserveAspectRatio="none">
-        <image href={hoja} x={0} y={0} width={PARRY_HOJA.w * PARRY_HOJA.cols} height={PARRY_HOJA.h * PARRY_HOJA.filas} />
-      </svg>
+    <g className="sh-parry-video">
+      <style>{tiempos}</style>
+      <g className="sh-pv-sacudida">
+        <svg ref={vista} className="sh-parry-cuadros" x={PARRY_CAJA.x} y={PARRY_Y} width={PARRY_CAJA.ancho} height={PARRY_ALTO} viewBox={`0 0 ${PARRY_HOJA.w} ${PARRY_HOJA.h}`} preserveAspectRatio="none">
+          <image href={hoja} x={0} y={0} width={PARRY_HOJA.w * PARRY_HOJA.cols} height={PARRY_HOJA.h * PARRY_HOJA.filas} />
+        </svg>
+      </g>
       <circle className="sh-pv-destello" cx={cx} cy={cy} r={22} fill="#fff6d6" />
       <g className="sh-pv-chispas" style={{ transformOrigin: `${cx}px ${cy}px` }}>
         {Array.from({ length: 14 }, (_, i) => {
@@ -558,7 +576,7 @@ function Logro({ clase, dur, enemigo }: { clase: 'nivel' | 'racha' | 'fase' | 'r
 // ---------- Capa: superpone la escena actual sobre toda la app ----------
 
 export function Escena({ a, nombre, lento = 1, tema = 'claro', tinta = true, onSaltar }: { a: EnCurso; nombre: string; lento?: number; tema?: 'claro' | 'oscuro'; tinta?: boolean; onSaltar: () => void }) {
-  const dur = DURACION[a.tipo] * lento
+  const dur = duracionDe(a) * lento
   const reducido = movimientoReducido()
   const estilo = useMemo<EstiloCorte>(() => (a.tipo === 'ejecucion' ? a.estilo ?? elegirCorte(a.pilar) : 'diagonal'), [a])
   const enemigo = useMemo<VarianteEnemigo>(() => VARIANTES_ENEMIGO[Math.floor(Math.random() * VARIANTES_ENEMIGO.length) % VARIANTES_ENEMIGO.length], [a])
@@ -601,7 +619,7 @@ export function Escena({ a, nombre, lento = 1, tema = 'claro', tinta = true, onS
 
   const parry = a.tipo === 'parry'
   return (
-    <div className={`sh-capa ${parry ? 'parry' : ''} ${a.tipo} ${temaClase}`} style={{ '--dur': `${dur}ms` } as CSSProperties} onPointerDown={parry ? undefined : onSaltar} role="status" aria-label={a.tipo === 'parry' ? 'Parry' : typeof titulo === 'string' ? titulo : 'Animación de logro'}>
+    <div className={`sh-capa ${parry ? 'parry' : ''} ${parry && !a.vieja ? 'parry-video' : ''} ${a.tipo} ${temaClase}`} style={{ '--dur': `${dur}ms` } as CSSProperties} onPointerDown={parry ? undefined : onSaltar} role="status" aria-label={a.tipo === 'parry' ? 'Parry' : typeof titulo === 'string' ? titulo : 'Animación de logro'}>
       <svg className="sh-escenario" viewBox="0 0 360 240" aria-hidden>
         <Fondo tinte={a.tipo === 'postura' ? color : undefined} lluvia={a.tipo === 'logro'} />
         {a.tipo === 'ejecucion' && <Ejecucion estilo={estilo} kanji={kanji} dur={dur} enemigo={enemigo} />}

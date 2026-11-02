@@ -20,9 +20,15 @@ export type ModoAnimaciones = 'todas' | 'logros' | 'ninguna'
 /** Duración máxima de cada animación (ms), según lo pedido. */
 export const DURACION: Record<Animacion['tipo'], number> = {
   ejecucion: 1500,
-  parry: 600,
+  parry: 1667, // parry hecho con el video de Luma (40 cuadros a 24 fps)
   postura: 1200,
   logro: 2000,
+}
+
+/** Duración de una animación en particular (el parry anterior, de muñeco, dura 600 ms). */
+export function duracionDe(a: Animacion): number {
+  if (a.tipo === 'parry' && a.vieja) return 600
+  return DURACION[a.tipo]
 }
 
 /** Kanji de cada momento (con su significado, para mostrarlo al lado). */
@@ -260,7 +266,7 @@ export function sonar(a: Animacion): void {
   const l = config.lento
   try {
     if (a.tipo === 'ejecucion') corte(ac, t + 0.42 * l)
-    else if (a.tipo === 'parry') choque(ac, t + 0.12 * l)
+    else if (a.tipo === 'parry') choque(ac, t + (a.vieja ? 0.12 : 0.79) * l)
     else if (a.tipo === 'postura') aura(ac, t + 0.5 * l, a.modo === 'siguiente')
     else {
       corte(ac, t + 0.3 * l)
