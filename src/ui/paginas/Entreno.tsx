@@ -32,6 +32,7 @@ import {
   pesoInicial,
   pararReloj,
   reabrirEntreno,
+  reiniciarEntreno,
   registrarSerie,
   rondaActual,
   rutinaDelDia,
@@ -196,6 +197,7 @@ function EnCurso({ s, r, ctx, onTerminado }: { s: SesionEntreno; r: Rutina; ctx:
   // Vibración suave al cambiar de fase del descanso y al terminarlo.
   const clave = s.descanso ? `${s.descanso.inicio}:${fase?.indice ?? 'fin'}` : null
   const barra = useRef<HTMLDivElement>(null)
+  const [reiniciar, setReiniciar] = useState(false)
   const previa = useRef<string | null>(null)
   useEffect(() => {
     if (previa.current && clave && previa.current !== clave && previa.current.split(':')[0] === clave.split(':')[0]) vibrar(clave.endsWith('fin') ? [200, 100, 200] : 200)
@@ -219,7 +221,7 @@ function EnCurso({ s, r, ctx, onTerminado }: { s: SesionEntreno; r: Rutina; ctx:
         <button className="boton chico suave" onClick={() => setBloques(true)}>Bloques {hechos}/{s.orden.length}</button>
       </div>
       <div className="entreno-camino">
-        <ShinobiBarra indice={bloque ? s.paso : s.orden.length} total={s.orden.length} barra={barra} />
+        <ShinobiBarra key={s.inicio} indice={bloque ? s.paso : s.orden.length} total={s.orden.length} barra={barra} />
         <div className="entreno-puntos" aria-hidden ref={barra}>
           {s.orden.map((id, i) => { const b = r.bloques.find((x) => x.id === id); return <span key={id} className={`${b && bloqueTerminado(s, b) ? (s.saltados.includes(id) ? 'saltado' : 'hecho') : ''} ${i === s.paso ? 'actual' : ''}`} /> })}
         </div>
@@ -284,6 +286,10 @@ function EnCurso({ s, r, ctx, onTerminado }: { s: SesionEntreno; r: Rutina; ctx:
           <button className="boton peligro" onClick={() => setDescartar(true)}>Descartar</button>
         </div>
       </Hoja>
+      <div className="entreno-reiniciar">
+        <button className="boton chico contorno-papel" onClick={() => setReiniciar(true)}>↺ Reiniciar</button>
+      </div>
+      <Confirmar abierta={reiniciar} titulo="¿Reiniciar la rutina desde cero?" texto="Se borra lo de hoy: series, pesos, tiempos y el XP de este entreno. Lo de días anteriores no se toca." confirmar="Reiniciar" peligro onCancelar={() => setReiniciar(false)} onConfirmar={() => { setReiniciar(false); void mutar(() => reiniciarEntreno(s.id!)) }} />
       <Confirmar abierta={descartar} titulo="¿Descartar el entreno?" texto="Se borran las series de hoy y el pilar vuelve a pendiente." confirmar="Descartar" peligro onCancelar={() => setDescartar(false)} onConfirmar={() => { setDescartar(false); setBloques(false); void mutar(() => descartarEntreno(s.id!)) }} />
     </>
   )

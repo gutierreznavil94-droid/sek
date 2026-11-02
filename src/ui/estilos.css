@@ -1374,3 +1374,7 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 .entreno-camino { position: relative; padding-top: 36px; }
 .shinobi-barra { position: absolute; left: 0; bottom: 4px; width: 48px; height: 35px; pointer-events: none; z-index: 2; will-change: transform; }
 .shinobi-capa { position: absolute; inset: 0; background-repeat: no-repeat; image-rendering: auto; }
+/* Botón «Reiniciar» del entreno: chico, en la esquina, contorno gris papel */
+.entreno-reiniciar { display: flex; justify-content: flex-end; margin-top: 28px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+.boton.contorno-papel { background: transparent; border: 1px solid color-mix(in srgb, var(--papel, #EEECE7) 35%, transparent); color: var(--texto-3); font-weight: 500; font-size: 0.8rem; min-height: 32px; padding: 5px 10px; }
+.contenido.entreno .boton.contorno-papel { background: transparent; }

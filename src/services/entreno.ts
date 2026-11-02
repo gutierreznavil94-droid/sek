@@ -342,6 +342,29 @@ export async function descartarEntreno(id: number): Promise<void> {
   await registrarEvento({ tipo: 'borrar', entidad: 'sesionEntreno', entidadId: String(id), antes: s, motivo: 'Entreno descartado' })
 }
 
+/**
+ * Reinicia el entreno de hoy desde cero: mismo registro (así el XP de mejoras usa la misma clave y no se
+ * duplica), sin series, pesos, tiempos ni XP, en el bloque 1 y con el reloj en 0. Si el pilar se había
+ * marcado por este entreno, se desmarca y vuelve a «iniciado». No toca días anteriores ni sus récords.
+ */
+export async function reiniciarEntreno(id: number): Promise<SesionEntreno> {
+  const antes = await sesion(id)
+  await anularXp(claveXpExtra(id), 'Entreno reiniciado')
+  const c = await db().compromisos.get(idCompromiso('entrenamiento', antes.fecha))
+  if (c && (c.estado === 'completado' || c.estado === 'tarde')) await deshacerCompromiso(c.id, 'Entreno reiniciado')
+  const r = await obtenerRutina(antes.rutinaId)
+  const t = ahora()
+  const nueva: SesionEntreno = {
+    id, rutinaId: antes.rutinaId, fecha: antes.fecha, inicio: t, estado: 'en_curso', paso: 0,
+    orden: r ? r.bloques.map((b) => b.id) : antes.orden, series: [], hechos: [], saltados: [],
+  }
+  await db().sesionesEntreno.put(nueva)
+  const c2 = await db().compromisos.get(idCompromiso('entrenamiento', antes.fecha))
+  if (c2 && c2.estado === 'pendiente') await db().compromisos.put({ ...c2, estado: 'iniciado', inicioReal: t, actualizado: t })
+  await registrarEvento({ tipo: 'editar', entidad: 'sesionEntreno', entidadId: String(id), antes, motivo: 'Entreno reiniciado desde cero' })
+  return nueva
+}
+
 // ---------- Marcas, progresión y XP ----------
 
 /**

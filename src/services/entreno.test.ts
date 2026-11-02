@@ -8,6 +8,7 @@ import {
   TOPE_XP_EXTRA,
   corregirSerie,
   deshacerSerie,
+  duracionEntreno,
   ejercicios,
   fasesDescanso,
   faseActual,
@@ -21,6 +22,7 @@ import {
   obtenerRutina,
   pesoInicial,
   reabrirEntreno,
+  reiniciarEntreno,
   registrarSerie,
   resumenFuerza,
   rutinaDelDia,
@@ -32,7 +34,7 @@ import {
   ultimaVez,
 } from './entreno'
 import { DESCUENTO_S, PREPARACION_S, estadoCronometro, historialTiempo, iniciarReloj, terminarCronometro } from './entreno'
-import { avanzar, fijarAhora, reiniciarReloj } from './reloj'
+import { ahora, avanzar, fijarAhora, reiniciarReloj } from './reloj'
 import { xpTotal } from './xp'
 
 const Z = 'America/Argentina/Cordoba'
@@ -282,6 +284,43 @@ describe('XP del entreno', () => {
     const otra = await terminarEntreno(r.sesion.id!)
     expect(otra.resumen.xpExtra).toBe(15)
     expect(await xpTotal()).toBe(base + 45)
+  })
+
+  it('reiniciar desde cero borra lo de hoy, desmarca el pilar y no duplica el XP; no toca días anteriores', async () => {
+    await hacerRutinaA('2026-11-02')
+    const base = await xpTotal()
+    const r = await hacerRutinaA('2026-11-05', { 'a-press-banca': { reps: 9 } })
+    expect(await xpTotal()).toBe(base + 45)
+    avanzar(5 * 60_000)
+    const s = await reiniciarEntreno(r.sesion.id!)
+    expect(s).toMatchObject({ estado: 'en_curso', paso: 0, series: [], hechos: [], saltados: [] })
+    expect(s.pesos).toBeUndefined()
+    expect(s.tiempos).toBeUndefined()
+    expect(s.primerMovimiento).toBeUndefined()
+    expect(await xpTotal()).toBe(base)
+    expect((await db().compromisos.get('entrenamiento:2026-11-05'))!.estado).toBe('iniciado')
+    expect((await sesionEnCurso())!.id).toBe(r.sesion.id)
+    // Lo de días anteriores sigue: la vez pasada de press banca es la del 2 de noviembre.
+    expect((await historialEjercicio('a-press-banca')).puntos).toHaveLength(1)
+    // Rehacer la rutina igual da el mismo XP, una sola vez.
+    const otra = await hacerRutinaA('2026-11-05', { 'a-press-banca': { reps: 9 } })
+    expect(otra.sesion.id).toBe(r.sesion.id)
+    expect(otra.resumen.xpExtra).toBe(15)
+    expect(await xpTotal()).toBe(base + 45)
+  })
+
+  it('reiniciar en medio del entreno vuelve al bloque 1 con el reloj en 0', async () => {
+    let s = await iniciarEntreno('rutina-a', '2026-11-02')
+    s = await marcarBloque(s.id!, 'a-calentamiento')
+    s = await fijarPeso(s.id!, 'a-press-banca', 55)
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 55 })
+    avanzar(60_000)
+    s = await reiniciarEntreno(s.id!)
+    expect(s.paso).toBe(0)
+    expect(s.series).toEqual([])
+    expect(s.descanso).toBeUndefined()
+    expect(s.inicio).toBe(ahora())
+    expect(duracionEntreno(s, ahora())).toBe(0)
   })
 
   it('balance: 6 entrenos por semana con el tope no superan a los otros pilares juntos', () => {
