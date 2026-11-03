@@ -329,7 +329,7 @@ function geometria(estilo: EstiloCorte): Geo {
   return { a: l.a, b: l.b, mitadA, mitadB, varA: v(l.da), varB: v(l.db), centro: [(x1 + x2) / 2, (y1 + y2) / 2] }
 }
 
-function Sangre({ cx, cy, semilla }: { cx: number; cy: number; semilla: number }) {
+function Sangre({ cx, cy, semilla, sinMancha }: { cx: number; cy: number; semilla: number; sinMancha?: boolean }) {
   // Manchas fijas (no aleatorias en cada render) para que el dibujo sea estable.
   const gotas = useMemo(() => {
     const r: { dx: number; dy: number; r: number; d: number }[] = []
@@ -340,7 +340,7 @@ function Sangre({ cx, cy, semilla }: { cx: number; cy: number; semilla: number }
   }, [semilla])
   return (
     <g>
-      <path className="sh-mancha" style={{ transformOrigin: `${cx}px ${cy}px` }} d={`M${cx - 30},${cy + 2} C${cx - 20},${cy - 16} ${cx - 2},${cy - 8} ${cx + 8},${cy - 20} C${cx + 16},${cy - 8} ${cx + 34},${cy - 10} ${cx + 40},${cy + 2} C${cx + 20},${cy + 8} ${cx + 4},${cy + 16} ${cx - 10},${cy + 10} C${cx - 18},${cy + 14} ${cx - 28},${cy + 8} ${cx - 30},${cy + 2} Z`} fill={ROJO} />
+      {!sinMancha && <path className="sh-mancha" style={{ transformOrigin: `${cx}px ${cy}px` }} d={`M${cx - 30},${cy + 2} C${cx - 20},${cy - 16} ${cx - 2},${cy - 8} ${cx + 8},${cy - 20} C${cx + 16},${cy - 8} ${cx + 34},${cy - 10} ${cx + 40},${cy + 2} C${cx + 20},${cy + 8} ${cx + 4},${cy + 16} ${cx - 10},${cy + 10} C${cx - 18},${cy + 14} ${cx - 28},${cy + 8} ${cx - 30},${cy + 2} Z`} fill={ROJO} />}
       {/* Arco grande de sangre de tinta que sale del corte */}
       <path className="sh-arco" d={`M${cx - 20},${cy + 6} C${cx + 10},${cy - 50} ${cx + 50},${cy - 70} ${cx + 86},${cy - 92}`} fill="none" stroke={ROJO} strokeWidth={5} strokeLinecap="round" pathLength={100} />
       {gotas.map((g, i) => (
@@ -530,6 +530,55 @@ function ParryVideo({ dur, oscuro }: { dur: number; oscuro: boolean }) {
   )
 }
 
+/**
+ * Ejecución hecha con los dos videos de Luma de Navil (scripts/ejecucion-sprites.py): el ronin da el paso, carga y
+ * corta mientras el rival espera en guardia; en el cuadro en que la hoja queda extendida (46 %, el mismo instante
+ * que los efectos de la app) arranca la caída del rival, que termina disolviéndose en tinta. 80 cuadros a 40 fps.
+ */
+const EJ_HOJA = { w: 436, h: 158, cols: 10, filas: 8, cuadros: 80 }
+const EJ_CAJA = { x: 0, ancho: 360 }
+const EJ_ALTO = (EJ_CAJA.ancho * EJ_HOJA.h) / EJ_HOJA.w
+const EJ_Y = SUELO_Y - (153 / EJ_HOJA.h) * EJ_ALTO
+const aEscena = (x: number, y: number) => ({ x: EJ_CAJA.x + (x / EJ_HOJA.w) * EJ_CAJA.ancho, y: EJ_Y + (y / EJ_HOJA.h) * EJ_ALTO })
+const EJ_PUNTA = aEscena(247, 41)
+const EJ_TORSO = aEscena(223, 46)
+if (typeof Image !== 'undefined') for (const t of ['claro', 'oscuro']) { const im = new Image(); im.src = `${import.meta.env.BASE_URL}animaciones/ejecucion/ejecucion-${t}.webp`; im.decode?.().catch(() => undefined) }
+if (typeof document !== 'undefined') document.fonts?.load('64px Pincel', '鍛進描静斬').catch(() => undefined)
+
+function EjecucionVideo({ kanji, dur, oscuro }: { kanji: string; dur: number; oscuro: boolean }) {
+  const vista = useRef<SVGSVGElement>(null)
+  useEffect(() => {
+    const el = vista.current
+    if (!el) return
+    const t0 = performance.now()
+    let id = 0
+    let ultimo = -1
+    const paso = (ahora: number) => {
+      const f = Math.min(1, (ahora - t0) / dur)
+      const n = Math.min(EJ_HOJA.cuadros - 1, Math.floor(f * EJ_HOJA.cuadros))
+      if (n !== ultimo) {
+        ultimo = n
+        el.setAttribute('viewBox', `${(n % EJ_HOJA.cols) * EJ_HOJA.w} ${Math.floor(n / EJ_HOJA.cols) * EJ_HOJA.h} ${EJ_HOJA.w} ${EJ_HOJA.h}`)
+      }
+      if (f < 1) id = requestAnimationFrame(paso)
+    }
+    id = requestAnimationFrame(paso)
+    return () => cancelAnimationFrame(id)
+  }, [dur])
+  const hoja = `${import.meta.env.BASE_URL}animaciones/ejecucion/ejecucion-${oscuro ? 'oscuro' : 'claro'}.webp`
+  return (
+    <g className="sh-ej-video">
+      <svg ref={vista} className="sh-parry-cuadros" x={EJ_CAJA.x} y={EJ_Y} width={EJ_CAJA.ancho} height={EJ_ALTO} viewBox={`0 0 ${EJ_HOJA.w} ${EJ_HOJA.h}`} preserveAspectRatio="none">
+        <image href={hoja} x={0} y={0} width={EJ_HOJA.w * EJ_HOJA.cols} height={EJ_HOJA.h * EJ_HOJA.filas} />
+      </svg>
+      <Sangre cx={EJ_TORSO.x} cy={EJ_TORSO.y} semilla={131} sinMancha />
+      <circle className="sh-destello" cx={EJ_PUNTA.x} cy={EJ_PUNTA.y} r={70} fill={ROJO} filter="url(#shBorron)" />
+      <circle className="sh-ejv-flash" cx={EJ_PUNTA.x} cy={EJ_PUNTA.y} r={26} fill="#fffbe8" />
+      <Kanji k={kanji} x={312} y={70} />
+    </g>
+  )
+}
+
 function Postura({ modo, dur }: { modo: '321' | 'siguiente'; dur: number }) {
   const color = modo === '321' ? '#e8323c' : '#8b6cf0'
   const k = KANJI[modo].k
@@ -631,7 +680,7 @@ export function Escena({ a, nombre, lento = 1, tema = 'claro', tinta = true, onS
     <div className={`sh-capa ${parry ? 'parry-chico' : ''} ${parryVideo ? 'parry-video' : ''} ${a.tipo} ${temaClase}`} style={{ '--dur': `${dur}ms` } as CSSProperties} onPointerDown={parry ? undefined : onSaltar} role="status" aria-label={a.tipo === 'parry' ? 'Parry' : typeof titulo === 'string' ? titulo : 'Animación de logro'}>
       <svg className="sh-escenario" viewBox="0 0 360 240" aria-hidden>
         <Fondo tinte={a.tipo === 'postura' ? color : undefined} lluvia={a.tipo === 'logro'} />
-        {a.tipo === 'ejecucion' && <Ejecucion estilo={estilo} kanji={kanji} dur={dur} enemigo={enemigo} />}
+        {a.tipo === 'ejecucion' && (a.vieja ? <Ejecucion estilo={estilo} kanji={kanji} dur={dur} enemigo={enemigo} /> : <EjecucionVideo kanji={kanji} dur={dur} oscuro={tema === 'oscuro'} />)}
         {a.tipo === 'parry' && (a.vieja ? <Parry dur={dur} /> : <ParryVideo dur={dur} oscuro={tema === 'oscuro'} />)}
         {a.tipo === 'postura' && <Postura modo={a.modo} dur={dur} />}
         {a.tipo === 'logro' && <Logro clase={a.clase} dur={dur} enemigo={enemigo} />}

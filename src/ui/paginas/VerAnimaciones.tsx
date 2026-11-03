@@ -43,7 +43,11 @@ export function VerAnimaciones() {
             </button>
           ))}
         </div>
-        <p className="ayuda">Cada pilar tiene su corte; a veces sale otro al azar para que no se repita.</p>
+        <div className="anim-grilla" style={{ marginTop: 8 }}>
+          <button className="boton" onClick={() => { configurarAnimaciones({ lento: 4 }); ver({ tipo: 'ejecucion', pilar: 'entrenamiento' }); window.setTimeout(() => configurarAnimaciones({ lento: 1 }), 8600) }}><span className="k">斬</span><span className="chico">Ejecución (Luma) · cámara lenta</span></button>
+          <button className="boton" onClick={() => ver({ tipo: 'ejecucion', pilar: 'entrenamiento', vieja: true })}><span className="k">斬</span><span className="chico">Ejecución anterior (muñeco)</span></button>
+        </div>
+        <p className="ayuda">El ronin corta y el rival cae (videos de Luma). La anterior, con el muñeco, queda guardada acá.</p>
       </Tarjeta>
 
       <Tarjeta titulo="Series y concentración">

@@ -1764,3 +1764,8 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .co-punto.k { background: var(--verde); }
 .co-punto.p { background: var(--texto-2); }
 .co-item-num { white-space: nowrap; }
+
+/* Ejecución de Luma: destello blanco de un cuadro en el impacto (46 %) */
+.sh-ejv-flash { opacity: 0; pointer-events: none; animation: sh-ejv-flash var(--dur) linear forwards; }
+@keyframes sh-ejv-flash { 0%, 46% { opacity: 0; transform: scale(.6) } 46.3% { opacity: .95 } 48.5% { opacity: .9 } 49%, 100% { opacity: 0 } }
+.sh-ej-video .sh-ejv-flash { transform-box: fill-box; transform-origin: center; }

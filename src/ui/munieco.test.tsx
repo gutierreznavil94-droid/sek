@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { Escena } from './animaciones/Escena'
+import { duracionDe } from './animaciones/motor'
 import { NOMBRES_POSE, guardarPosePropia, mezclar, origenDePose, pose, poseBase, poseEn, restaurarPose } from './animaciones/munieco'
 
 describe('shinobi articulado', () => {
@@ -38,11 +39,21 @@ describe('shinobi articulado', () => {
 
   it('el sombrero vuela solo en los logros grandes', () => {
     const nada = () => {}
-    const { container: ej } = render(<Escena a={{ id: 1, inicio: 0, tipo: 'ejecucion', pilar: 'manga' }} nombre="Shinobi" onSaltar={nada} />)
+    const { container: ej } = render(<Escena a={{ id: 1, inicio: 0, tipo: 'ejecucion', pilar: 'manga', vieja: true }} nombre="Shinobi" onSaltar={nada} />)
     expect(ej.querySelector('.sh-kasa')).not.toBeNull()
     expect(ej.querySelector('.sh-kasa-vuela')).toBeNull()
     const { container: lo } = render(<Escena a={{ id: 2, inicio: 0, tipo: 'logro', clase: 'nivel', texto: 'Nivel 3' }} nombre="Shinobi" onSaltar={nada} />)
     expect(lo.querySelector('.sh-kasa-vuela')).not.toBeNull()
     expect(lo.querySelector('.sh-actor-logro')).not.toBeNull()
+  })
+
+  it('la ejecución usa los videos de Luma (2 s) con el kanji del pilar; la del muñeco queda guardada', () => {
+    const nada = () => {}
+    const { container } = render(<Escena a={{ id: 3, inicio: 0, tipo: 'ejecucion', pilar: 'entrenamiento' }} nombre="Shinobi" onSaltar={nada} />)
+    expect(container.querySelector('.sh-ej-video image')?.getAttribute('href')).toMatch(/animaciones\/ejecucion\/ejecucion-claro\.webp$/)
+    expect(container.querySelector('.sh-ej-video .sh-kanji')?.textContent).toBe('鍛')
+    expect(container.querySelector('.sh-mancha')).toBeNull()
+    expect(duracionDe({ tipo: 'ejecucion', pilar: 'manga' })).toBe(2000)
+    expect(duracionDe({ tipo: 'ejecucion', pilar: 'manga', vieja: true })).toBe(1500)
   })
 })

@@ -10,7 +10,7 @@ export type PilarAnim = 'entrenamiento' | 'empresa' | 'manga' | 'acostarse'
 export type EstiloCorte = 'horizontal' | 'diagonal' | 'ascendente' | 'estocada' | 'vertical'
 
 export type Animacion =
-  | { tipo: 'ejecucion'; pilar: string; estilo?: EstiloCorte }
+  | { tipo: 'ejecucion'; pilar: string; estilo?: EstiloCorte; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
   | { tipo: 'parry'; nombre?: string; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
   | { tipo: 'postura'; modo: '321' | 'siguiente' }
   | { tipo: 'logro'; clase: 'nivel' | 'racha' | 'fase' | 'record'; texto: string; sub?: string }
@@ -19,7 +19,7 @@ export type ModoAnimaciones = 'todas' | 'logros' | 'ninguna'
 
 /** Duración máxima de cada animación (ms), según lo pedido. */
 export const DURACION: Record<Animacion['tipo'], number> = {
-  ejecucion: 1500,
+  ejecucion: 2000, // ejecución hecha con los dos videos de Luma (ronin corta, rival cae): 80 cuadros a 40 fps
   parry: 1900, // parry hecho con el video de Luma (88 cuadros seguidos a ~46 fps: casi el doble de rápido que el video)
   postura: 1200,
   logro: 2000,
@@ -28,6 +28,7 @@ export const DURACION: Record<Animacion['tipo'], number> = {
 /** Duración de una animación en particular (el parry anterior, de muñeco, dura 600 ms). */
 export function duracionDe(a: Animacion): number {
   if (a.tipo === 'parry' && a.vieja) return 600
+  if (a.tipo === 'ejecucion' && a.vieja) return 1500
   return DURACION[a.tipo]
 }
 
