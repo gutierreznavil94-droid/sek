@@ -14,7 +14,7 @@ import { duracionSuenio, resumenSuenio, type ResumenSuenio } from '../../service
 import { kg, resumenFuerza, type ResumenFuerza } from '../../services/entreno'
 import { Hoja, clasePorcentaje, elegirMovimiento, movimientoReducido } from '../componentes'
 import { useDatos } from '../estado'
-import { graficoMetas, metasPorDia } from '../../services/metas'
+import { graficoMetas, lineaDeMetas, metasPorDia } from '../../services/metas'
 import { FilaMeta } from '../metas'
 import { VERSION_APP } from '../../version'
 import { VIDEOS, VIDRIO_EN_DESTELLO, intensidadDestello, type VideoFondo, elegirVideo, useModoFondo, usePantallaHorizontal, VIDEO_PC, video as datosVideo } from '../../fondos/elegir'
@@ -47,6 +47,10 @@ function seccionRecordada(hoy: string): Seccion | null {
     const [f, s] = (sessionStorage.getItem(CLAVE_SECCION) ?? '').split('|')
     return f === hoy && s in NOMBRE_SECCION ? (s as Seccion) : null
   } catch { return null }
+}
+const CLAVE_SCROLL = 'progreso-scroll'
+function guardarScroll() {
+  try { sessionStorage.setItem(CLAVE_SCROLL, String(Math.round(window.scrollY))) } catch { /* sin almacenamiento */ }
 }
 function recordarSeccion(hoy: string, s: Seccion | null) {
   try { if (s) sessionStorage.setItem(CLAVE_SECCION, `${hoy}|${s}`); else sessionStorage.removeItem(CLAVE_SECCION) } catch { /* sin almacenamiento */ }
@@ -122,8 +126,18 @@ export function Progreso({ hoy }: { hoy: string }) {
         if (c.porcentaje >= ajustes.umbralRacha) diasCumplidos++
       }
     }
-    const metasSemana = [...(await metasPorDia(lunes, sumarDias(lunes, 6))).values()].flat()
-    return { ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados, conExtra, reglasCodigo: await db().codigo.count(), metasSemana: { cumplidas: metasSemana.filter((m) => m.cumplida).length, total: metasSemana.length } }
+    const metasPorDiaSemana = await metasPorDia(lunes, sumarDias(lunes, 6))
+    const metasSemana = [...metasPorDiaSemana.values()].flat()
+    // Miniaturas de los botones del resumen (solo para mirar: no cambian ningún cálculo).
+    const xpUltimos = await xpPorDia(sumarDias(hoy, -6), hoy)
+    const mini = {
+      xp: Array.from({ length: 7 }, (_, i) => xpUltimos.get(sumarDias(hoy, i - 6)) ?? 0),
+      metas: Array.from({ length: 7 }, (_, i) => { const f = sumarDias(lunes, i); return lineaDeMetas(metasPorDiaSemana.get(f) ?? [], hoy) }),
+      sueno: sueno.noches.slice(-7).map((n) => n.minutos),
+      fuerza: fuerza.volumenPorSemana.slice(-6).map((v) => v.volumen),
+      series: contadores[0]?.escalonesReps.map((e) => e.reps) ?? [],
+    }
+    return { ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados, conExtra, reglasCodigo: await db().codigo.count(), metasSemana: { cumplidas: metasSemana.filter((m) => m.cumplida).length, total: metasSemana.length }, mini }
   }, [hoy])
   const reducido = useMemo(() => movimientoReducido(), [])
   const modo = useModoFondo()
@@ -152,7 +166,30 @@ export function Progreso({ hoy }: { hoy: string }) {
       if (r) navegar(`/progreso/${r}`, { replace: true })
     }
   }, [seccion, hoy, navegar])
-  useEffect(() => { window.scrollTo(0, 0) }, [seccion])
+  // Al abrir una sección, arriba; al volver al resumen, a la posición donde estaba.
+  const hayDatos = !!datos.datos
+  useEffect(() => {
+    if (seccion) { window.scrollTo(0, 0); return }
+    if (!hayDatos) return
+    let y: number | null = null
+    try { const v = sessionStorage.getItem(CLAVE_SCROLL); y = v ? Number(v) : null; sessionStorage.removeItem(CLAVE_SCROLL) } catch { /* sin almacenamiento */ }
+    if (y) requestAnimationFrame(() => window.scrollTo(0, y!))
+  }, [seccion, hayDatos])
+  // Al bajar hacia el resumen, el video se oscurece suave (hasta 30 %) para que se lean las tarjetas.
+  const [oscuro, setOscuro] = useState(0)
+  useEffect(() => {
+    if (seccion) { setOscuro(0); return }
+    let pendiente = 0
+    const medir = () => {
+      pendiente = 0
+      const h = (document.querySelector('.av-hueco.resumen') as HTMLElement | null)?.offsetHeight ?? 400
+      setOscuro(Math.round(Math.min(1, Math.max(0, window.scrollY / (h * 0.75))) * 30) / 100)
+    }
+    const alScroll = () => { if (!pendiente) pendiente = requestAnimationFrame(medir) }
+    medir()
+    window.addEventListener('scroll', alScroll, { passive: true })
+    return () => { window.removeEventListener('scroll', alScroll); if (pendiente) cancelAnimationFrame(pendiente) }
+  }, [seccion])
   const sel = d?.atributos.find((a) => a.atributoId === atributoSel)
   const fechaNivel = (n: number) => d?.niveles.find((x) => x.nivel === n)
   // Video del día: se decide con la fecha de Córdoba y el Día 1 del ciclo.
@@ -164,8 +201,9 @@ export function Progreso({ hoy }: { hoy: string }) {
     <div className="progreso-tinta" data-fondo={fondo?.tipo ?? 'oscuro'} data-vidrio={vidrioClaro() && fondo?.tipo === 'claro' ? 'claro' : undefined} style={{ '--av-arriba': `${arriba}px` } as React.CSSProperties}>
       {/* Fondo fijo: el video vertical cubre toda la pantalla y no se mueve al desplazar */}
       {createPortal(
-        <div className="av-fondo" aria-hidden="true" data-orientacion={horizontal ? 'horizontal' : undefined} data-vista={seccion ? 'codigo' : undefined}>
+        <div className="av-fondo" aria-hidden="true" data-orientacion={horizontal ? 'horizontal' : undefined} data-vista="codigo">
           {fondo && <VideoDeFondo key={fondo.id} fondo={fondo} quieto={reducido} pausado={verNiveles || !!sel} />}
+          {!seccion && <div className="av-oscuro" style={{ opacity: oscuro }} />}
         </div>,
         document.body,
       )}
@@ -236,7 +274,9 @@ export function Progreso({ hoy }: { hoy: string }) {
           </div>
         ) : <>
         {/* Hueco para que el video se vea antes del resumen */}
-        <div className="av-hueco resumen" />
+        <div className="av-hueco resumen">
+          {d && <span className="av-dato-flotante">Nivel {d.nivel.nivel} · {d.nivel.xpEnNivel} / {d.nivel.xpParaSiguiente} XP</span>}
+        </div>
         {!d ? (
           <p className="av-cargando">Cargando…</p>
         ) : (
@@ -251,7 +291,7 @@ export function Progreso({ hoy }: { hoy: string }) {
 
             {/* Los 4 pilares en una fila compacta; tocar abre el detalle con la tira del manga y los atributos */}
             {d.pilares.length > 0 && (
-              <Link to="/progreso/pilares" className="av-tarjeta av-pilares-mini" aria-label={`Pilares en el ciclo: ${d.diasCumplidos} de ${d.diasContados} días cumplidos. Tocá para ver el detalle`}>
+              <Link to="/progreso/pilares" onClick={guardarScroll} className="av-tarjeta av-pilares-mini" aria-label={`Pilares en el ciclo: ${d.diasCumplidos} de ${d.diasContados} días cumplidos. Tocá para ver el detalle`}>
                 <div className="av-tarjeta-titulo"><span>Pilares</span><span className="av-nota">{d.diasCumplidos} de {d.diasContados} días ›</span></div>
                 <div className="av-pilares chicos">
                   {d.pilares.map((p) => <Anillo key={p.id} nombre={p.nombre} valor={p.programados ? p.hechos / p.programados : null} texto="" />)}
@@ -262,9 +302,10 @@ export function Progreso({ hoy }: { hoy: string }) {
             {/* Un toque y se abre cada sección; cada botón muestra su dato clave */}
             <nav className="av-secciones" aria-label="Secciones de Progreso">
               {SECCIONES.filter((x) => x.id !== 'series' || d.contadores.length > 0).map((x) => (
-                <Link key={x.id} to={`/progreso/${x.id}`} className="av-tarjeta av-seccion-boton">
+                <Link key={x.id} to={`/progreso/${x.id}`} onClick={guardarScroll} className="av-tarjeta av-seccion-boton">
                   <span className="av-seccion-kanji" aria-hidden>{x.kanji}</span>
                   <b>{x.nombre}</b>
+                  <Miniatura s={x.id} m={d.mini} />
                   <span className="av-nota">{datoClave(x.id, d)}</span>
                 </Link>
               ))}
@@ -312,6 +353,37 @@ export function Progreso({ hoy }: { hoy: string }) {
       </Hoja>
     </div>
   )
+}
+
+type Mini = { xp: number[]; metas: ('verde' | 'gris' | 'roja' | null)[]; sueno: number[]; fuerza: number[]; series: number[] }
+/** Miniatura del gráfico de cada sección, bien chica, al lado del dato clave. */
+function Miniatura({ s, m }: { s: Seccion; m: Mini }) {
+  const W = 64
+  const H = 18
+  const linea = (v: number[]) => {
+    if (v.length < 2) return null
+    const max = Math.max(1, ...v)
+    return v.map((y, i) => `${i ? 'L' : 'M'}${((i / (v.length - 1)) * (W - 4) + 2).toFixed(1)},${(H - 2 - (y / max) * (H - 5)).toFixed(1)}`).join(' ')
+  }
+  const barras = (v: number[]) => {
+    const max = Math.max(1, ...v)
+    const a = W / Math.max(1, v.length)
+    return v.map((y, i) => <rect key={i} x={i * a + a * 0.18} width={a * 0.64} y={H - 1 - Math.max(1.5, (y / max) * (H - 3))} height={Math.max(1.5, (y / max) * (H - 3))} rx={1} />)
+  }
+  let cuerpo: React.ReactNode = null
+  if (s === 'xp') cuerpo = m.xp.some((x) => x > 0) ? <path d={linea(m.xp) ?? ''} className="mini-linea" /> : <line x1={2} x2={W - 2} y1={H - 2} y2={H - 2} className="mini-vacio" />
+  else if (s === 'metas') cuerpo = m.metas.map((e, i) => <circle key={i} cx={4 + i * ((W - 8) / 6)} cy={H / 2} r={3} className={`mini-punto ${e ?? 'vacio'}`} />)
+  else if (s === 'sueno') cuerpo = m.sueno.length ? barras(m.sueno) : <line x1={2} x2={W - 2} y1={H - 2} y2={H - 2} className="mini-vacio" />
+  else if (s === 'fuerza') cuerpo = m.fuerza.some((x) => x > 0) ? barras(m.fuerza) : <line x1={2} x2={W - 2} y1={H - 2} y2={H - 2} className="mini-vacio" />
+  else if (s === 'series') {
+    // Escalera de reps por serie: cada escalón un poco más alto.
+    if (m.series.length < 2) return <svg className="mini-grafico series" viewBox={`0 0 ${W} ${H}`} aria-hidden><path d={`M2,${H - 3} H${W / 2} V${H - 8} H${W - 2}`} className="mini-vacio" fill="none" /></svg>
+    const v = m.series
+    const max = Math.max(1, ...v)
+    const a = (W - 4) / v.length
+    cuerpo = <path d={v.map((y, i) => `${i ? 'L' : 'M'}${(2 + i * a).toFixed(1)},${(H - 2 - (y / max) * (H - 5)).toFixed(1)} H${(2 + (i + 1) * a).toFixed(1)}`).join(' ')} className="mini-linea" />
+  } else if (s === 'codigo') return <span className="mini-sello" aria-hidden>誓</span>
+  return <svg className={`mini-grafico ${s}`} viewBox={`0 0 ${W} ${H}`} aria-hidden>{cuerpo}</svg>
 }
 
 /** El dato que muestra cada botón del resumen, para no tener que entrar. */

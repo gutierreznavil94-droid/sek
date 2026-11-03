@@ -1587,3 +1587,21 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .sh-321 { display: flex; align-items: baseline; gap: 12px; color: #c8102e; font-weight: 800; font-size: 1.4rem; letter-spacing: .02em; pointer-events: none; }
 .sh-321 b { font-size: 4.2rem; line-height: 1; font-weight: 900; animation: entreno-321 1s ease-out both; text-shadow: 0 0 18px rgba(200, 16, 46, .25); }
 .sh-321 { order: 1; } .sh-capa:has(.sh-321) .sh-saltar { order: 2; }
+
+/* ===== v0.37: Progreso con el video protagonista. Arriba solo el video; el resumen abajo ===== */
+.av-hueco.resumen { position: relative; height: max(300px, calc(68svh - var(--av-arriba, 0px))); }
+@supports not (height: 1svh) { .av-hueco.resumen { height: max(300px, calc(68vh - var(--av-arriba, 0px))); } }
+.av-dato-flotante { position: absolute; right: 16px; bottom: 14px; font-size: 13px; font-weight: 700; letter-spacing: .02em; color: #f3efe6; text-shadow: 0 0 2px rgba(0,0,0,.9), 0 1px 8px rgba(0,0,0,.75); }
+.av-oscuro { position: absolute; inset: 0; background: #000; pointer-events: none; z-index: 2; transition: opacity .2s linear; }
+@media (prefers-reduced-motion: reduce) { :root:not(.movimiento-siempre) .av-oscuro { transition: none; } }
+.av-tarjeta.av-seccion-boton { padding: 10px 6px 10px; gap: 3px; }
+.mini-grafico { width: 64px; height: 18px; display: block; margin: 2px 0 1px; overflow: visible; }
+.mini-grafico rect { fill: rgba(var(--papel-rgb), .55); }
+.mini-grafico.fuerza rect { fill: rgba(200, 16, 46, .75); }
+.mini-linea { fill: none; stroke: #c8102e; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 2px rgba(0,0,0,.8)); }
+.mini-punto { stroke: rgba(var(--papel-rgb), .55); stroke-width: 1; fill: transparent; }
+.mini-punto.verde { fill: var(--verde); stroke: none; }
+.mini-punto.roja { fill: #c8102e; stroke: none; }
+.mini-punto.gris { fill: rgba(var(--papel-rgb), .45); stroke: none; }
+.mini-vacio { stroke: rgba(var(--papel-rgb), .35); stroke-width: 1.2; stroke-dasharray: 2 3; }
+.mini-sello { display: inline-grid; place-items: center; width: 22px; height: 20px; margin: 1px 0; font-family: 'Pincel', serif; font-size: 13px; color: #f4eee6; background: #c8102e; border-radius: 2px 3px 2px 3px; transform: rotate(-5deg); box-shadow: 0 0 6px rgba(200, 16, 46, .4); }
