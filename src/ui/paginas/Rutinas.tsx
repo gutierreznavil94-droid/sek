@@ -152,7 +152,7 @@ function EditorBloque({ b, onCambio, onQuitar, onGrafico }: { b: BloqueRutina; o
           <div className="rejilla-2">
             <div className="campo"><label>Grupo</label><input value={b.grupo ?? ''} onChange={(e) => onCambio({ grupo: e.target.value || undefined })} /></div>
             <Num etiqueta="Series" valor={b.series} onCambio={(v) => onCambio({ series: v })} />
-            <Num etiqueta="Reps mínimo" valor={b.reps} onCambio={(v) => onCambio({ reps: v })} />
+            <Num etiqueta="Reps actuales" valor={b.reps} onCambio={(v) => onCambio({ reps: v })} />
             <Num etiqueta={b.admiteAyuda ? 'Con ayuda (+)' : 'Extra (+)'} valor={b.repsExtra} onCambio={(v) => onCambio({ repsExtra: v > 0 ? v : undefined })} />
             <Num etiqueta="Reps tope" valor={b.repsTope} onCambio={(v) => onCambio({ repsTope: v })} />
             <Num etiqueta="Peso (kg, 0 = corporal)" valor={b.peso} paso={0.5} onCambio={(v) => onCambio({ peso: v })} />
@@ -164,7 +164,7 @@ function EditorBloque({ b, onCambio, onQuitar, onGrafico }: { b: BloqueRutina; o
             <input type="checkbox" checked={!!b.admiteAyuda} onChange={(e) => onCambio({ admiteAyuda: e.target.checked || undefined })} />
             <span>Admite reps con ayuda <span className="texto-3 chico">(se anotan aparte: «8 +3 ayuda»; no cuentan para récord ni para subir peso, sí para el volumen)</span></span>
           </label>
-          <p className="ayuda">Cuando en la serie 1 llegás a {b.repsTope}, la app te pregunta si subís peso (el peso lo ponés vos) y el objetivo vuelve a {b.reps}.</p>
+          <p className="ayuda"><b>Reps actuales</b>: las que hiciste la vez pasada en la serie 1 con {kg(b.peso)}{b.tramoDesde ? ` (desde el ${b.tramoDesde.slice(8)}/${b.tramoDesde.slice(5, 7)})` : ''}; cada vez que las superás es récord y quedan las nuevas. Al llegar a {b.repsTope}, subís el peso: ahí empieza un tramo nuevo y la primera sesión fija las reps actuales.</p>
         </>
       )}
       {(b.tipo === 'calentamiento' || b.tipo === 'temporizador') && (

@@ -403,13 +403,14 @@ function Ejercicio({ s, b, anterior, record }: { s: SesionEntreno; b: BloqueEjer
       <h1 className="entreno-titulo">{b.nombre}</h1>
       {b.nota && <p className="entreno-nota">«{b.nota}»</p>}
       <p className="texto-2 chico">{anterior.length ? <>La vez pasada: <b>{textoSeries(anterior)}</b></> : 'Primera vez con la app: arrancá con lo de tu planilla.'}{record && <> · <span className="entreno-record">Récord: <b>{record.reps} × {kg(record.peso)}</b></span></>}</p>
-      {primera && sug?.subirPeso && <div className="entreno-sugerencia peso"><span>▲ {sug.texto}</span><span className="chico">Si subís, poné el peso nuevo con − / + o tocando el número. El objetivo vuelve a {b.reps}.</span></div>}
+      {primera && sug?.subirPeso && <div className="entreno-sugerencia peso"><span>▲ {sug.texto}</span><span className="chico">Si subís, poné el peso nuevo con − / + o tocando el número. Lo que hagas hoy con el peso nuevo queda como tus reps actuales.</span></div>}
       <Stepper etiqueta={primera ? 'Peso de hoy' : 'Peso'} valor={peso} paso={0.5} escribible compacto={!primera} formato={(v) => (v === 0 ? 'corporal' : `${String(v).replace('.', ',')} kg`)} onCambio={cambiarPeso} marca={anterior.length ? (peso > pesoAntes ? 'mejor' : peso === pesoAntes ? 'igual' : null) : null} />
       <div className="entreno-objetivo">
         <span className="entreno-serie">Serie {Math.min(n, b.series)} de {b.series}</span>
         <span className="mono"><b>{objetivo}</b>{b.repsExtra ? (b.admiteAyuda ? <b className="entreno-ayuda"> +{b.repsExtra} ayuda</b> : <b>+{b.repsExtra}</b>) : null} reps</span>
       </div>
-      {n === 1 && sug && !sug.subirPeso && <p className="ayuda">{sug.texto}</p>}
+      {n === 1 && sug && !sug.subirPeso && <p className="ayuda">{sug.texto} Una más que las actuales ya es récord.</p>}
+      {n === 1 && anterior.length > 0 && peso !== b.peso && <p className="ayuda">Peso nuevo: tramo nuevo. Lo que hagas hoy en la serie 1 queda como tus reps actuales con {kg(peso)}.</p>}
       {n > 1 && anterior.find((x) => x.n === n) && <p className="ayuda">Objetivo de la serie {n}: lo que hiciste en la serie {n} la vez pasada. Si sale un poco menos, no resta.</p>}
       <button className="boton primario grande ancho entreno-hecha" onClick={guardar}>Serie hecha</button>
       <p className="ayuda centro">Las repeticiones las anotás en el descanso.</p>
@@ -692,26 +693,26 @@ function Resumen({ r, rutina, onReabrir }: { r: ResultadoTerminar; rutina?: Ruti
       </div>
       <div className="tarjeta compacta col">
         <div className="fila entre"><span>Pilar Entrenamiento</span><b className="mono">{r.xpPilar > 0 ? `+${r.xpPilar} XP` : '—'}</b></div>
-        <div className="fila entre"><span>Por mejorar <span className="texto-3 chico">(+5 mejora · +10 récord)</span></span><b className="mono">{x.xpExtra > 0 ? `+${x.xpExtra} XP` : '—'}</b></div>
+        <div className="fila entre"><span>Por mejorar <span className="texto-3 chico">(+5 récord · +10 subir peso)</span></span><b className="mono">{x.xpExtra > 0 ? `+${x.xpExtra} XP` : '—'}</b></div>
         {x.xpSinTope > x.xpExtra && <p className="ayuda">Llegaste al tope de {TOPE_XP_EXTRA} XP extra por entreno (sumabas {x.xpSinTope}).</p>}
         {r.motivoSinXp && <p className="ayuda">{r.motivoSinXp}</p>}
       </div>
       <ul className="entreno-lista resumen">
         {x.ejercicios.map((e) => (
-          <li key={e.bloqueId} className={e.mejora || e.record ? 'mejor' : e.igual ? 'igual' : ''}>
+          <li key={e.bloqueId} className={e.record || e.subioPeso ? 'mejor' : e.igual ? 'igual' : ''}>
             <div className="fila entre" style={{ width: '100%' }}>
-              <span className="crece">{e.record ? '★ ' : e.mejora ? '▲ ' : e.igual ? '= ' : ''}{e.nombre}</span>
+              <span className="crece">{e.record ? '★ ' : e.subioPeso ? '▲ ' : e.igual ? '= ' : ''}{e.nombre}</span>
               <b className="mono">{e.xp ? `+${e.xp} XP` : ''}</b>
             </div>
             <span className="chico texto-3 mono">S1 {e.marca.reps} × {kg(e.marca.peso)}{e.antes ? ` · antes ${e.antes.reps} × ${kg(e.antes.peso)}` : ''}</span>
-            <span className="chico xp-detalle">{[e.mejora ? `+5 mejora (${e.motivo})` : null, e.record ? '+10 récord de serie 1' : null].filter(Boolean).join(' · ') || (e.igual ? 'Igual que la vez pasada' : 'Sin mejora esta vez (no resta)')}</span>
+            <span className="chico xp-detalle">{[e.record ? `+5 récord: superaste tus ${e.actuales} actuales` : null, e.subioPeso ? '+10 subiste el peso: tramo nuevo' : null].filter(Boolean).join(' · ') || (e.antes ? (e.marca.peso === e.antes.peso && e.marca.reps >= e.actuales ? `Igual que tus ${e.actuales} actuales` : 'Sin récord esta vez (no resta)') : 'Primera vez: queda como tus reps actuales')}</span>
           </li>
         ))}
       </ul>
       {(r.sesion.tiempos ?? []).map((x) => (
         <div key={x.bloqueId} className="fila entre entreno-tiempo"><span>{x.nombre}</span><b className="mono">{reloj(x.segundos)} · {kg(x.peso)}</b></div>
       ))}
-      <p className="ayuda centro">Verde: superaste la vez pasada · gris: igualaste · ★ récord personal.</p>
+      <p className="ayuda centro">★ récord: superaste tus reps actuales · ▲ subiste el peso · gris: igualaste.</p>
       <button className="boton primario grande ancho" onClick={() => navegar('/')}>Volver a Hoy</button>
       <button className="enlace texto-3 centro" onClick={onReabrir}>Reabrir para corregir una serie</button>
     </section>

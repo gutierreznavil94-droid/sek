@@ -11,7 +11,7 @@ import { atributosHoy, cumplimientoPorDia, pilaresPorDia, rachaActual, type Esta
 import { xpAntesDe, xpPorDia, xpTotal } from '../../services/xp'
 import { resumenContadores, type ResumenContador } from '../../services/contadores'
 import { duracionSuenio, resumenSuenio, type ResumenSuenio } from '../../services/suenio'
-import { kg, resumenFuerza, type ResumenFuerza } from '../../services/entreno'
+import { kg, progresionEjercicio, resumenFuerza, type ResumenFuerza } from '../../services/entreno'
 import { Hoja, clasePorcentaje, elegirMovimiento, movimientoReducido } from '../componentes'
 import { useDatos } from '../estado'
 import { graficoMetas, lineaDeMetas, metasPorDia } from '../../services/metas'
@@ -245,7 +245,7 @@ export function Progreso({ hoy }: { hoy: string }) {
 
                 {seccion === 'sueno' && <TarjetaSueno r={d.sueno} />}
 
-                {seccion === 'fuerza' && <TarjetaFuerza f={d.fuerza} />}
+                {seccion === 'fuerza' && <TarjetaFuerza f={d.fuerza} hoy={hoy} />}
 
                 {seccion === 'pilares' && (
                   <>
@@ -847,38 +847,120 @@ function TarjetaSueno({ r }: { r: ResumenSuenio }) {
   )
 }
 
-function TarjetaFuerza({ f }: { f: ResumenFuerza }) {
+function TarjetaFuerza({ f, hoy }: { f: ResumenFuerza; hoy: string }) {
   const navegar = useNavigate()
-  const abrir = () => navegar('/mas/rutinas')
-  const tope = Math.max(1, ...f.volumenPorSemana.map((v) => v.volumen))
+  const [ejSel, setEjSel] = useState<string | null>(null)
+  const [diaSel, setDiaSel] = useState<string | null>(null)
+  const ej = f.ejercicios.find((e) => e.id === ejSel) ?? f.ejercicios[0]
+  const hechos = f.diasCiclo.filter((d) => d.hecho).length
+  const elegido = diaSel ? f.diasCiclo.find((d) => d.fecha === diaSel) : undefined
   return (
-    <section className="av-tarjeta av-tocable" role="button" tabIndex={0} onClick={abrir} onKeyDown={(e) => e.key === 'Enter' && abrir()} aria-label="Fuerza. Tocá para ver las rutinas">
-      <div className="av-tarjeta-titulo"><span>Fuerza</span><span className="av-nota">{f.entrenos} entrenos en el ciclo ›</span></div>
-      {f.entrenos ? (
-        <div className="av-fuerza">
-          <div className="av-sueno-cifras">
-            <div><b className="av-mono">{f.records.length}</b><span className="av-nota">récords del ciclo</span></div>
-            <div><b className="av-mono av-verde">{f.mejoraronEsteMes.length}</b><span className="av-nota">mejoraron este mes</span></div>
-            <div><b className="av-mono">{(f.volumenPorSemana.at(-1)?.volumen ?? 0).toLocaleString('es-AR')}</b><span className="av-nota">kg esta semana</span></div>
-          </div>
-          <svg className="av-sueno-mini" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">
-            {f.volumenPorSemana.map((v, i) => {
-              const w = 100 / f.volumenPorSemana.length
-              const h = Math.max(1, (v.volumen / tope) * 38)
-              return <rect key={v.semana} x={i * w + w * 0.2} y={40 - h} width={w * 0.6} height={h} rx={1.5} className={i === f.volumenPorSemana.length - 1 ? 'ok' : ''} />
-            })}
-          </svg>
-          {f.records.length > 0 && (
-            <div className="av-fuerza-records">
-              {f.records.slice(0, 4).map((r) => <span key={r.nombre}>★ {r.nombre} · <span className="av-mono">{r.marca.reps} × {kg(r.marca.peso)}</span></span>)}
+    <>
+      <section className="av-tarjeta">
+        <div className="av-tarjeta-titulo"><span>Entrenos cumplidos</span><span className="av-nota">{hechos} de {f.programados} programados</span></div>
+        {f.diasCiclo.length ? (
+          <>
+            <div className="sr-dias" role="list" aria-label="Entrenos por día del ciclo">
+              {f.diasCiclo.map((d) => {
+                const estado = d.hecho ? 'cuota' : d.programado ? 'no' : 'libre'
+                return <button key={d.fecha} type="button" role="listitem" className={`sr-dia ${estado} ${d.fecha === hoy ? 'hoy' : ''} ${diaSel === d.fecha ? 'sel' : ''}`} onClick={() => setDiaSel(diaSel === d.fecha ? null : d.fecha)} aria-label={`${fechaLegible(d.fecha, false)}: ${d.hecho ? 'entrenaste' : d.programado ? 'tocaba y no hubo entreno' : 'día libre'}`} />
+              })}
             </div>
-          )}
-          <div className="av-nota">Volumen por semana (últimas {f.volumenPorSemana.length})</div>
-        </div>
-      ) : (
-        <div className="av-nota">Con tu primer entreno en modo juego aparecen acá tus récords y tu volumen.</div>
-      )}
-    </section>
+            <div className="sr-leyenda" aria-hidden="true"><span><i className="sr-dia no" />tocaba</span><span><i className="sr-dia cuota" />entrenaste</span><span><i className="sr-dia libre" />libre</span></div>
+            <div className="av-nota sr-detalle">
+              {elegido
+                ? <><b>{fechaLegible(elegido.fecha)}</b> · {elegido.hecho ? 'entrenaste ✓' : elegido.programado ? 'tocaba y no hubo entreno' : 'día libre'}</>
+                : <>Récords del ciclo <b>{f.records.length}</b>{f.ultimaSubida ? <> · última subida: <b>{f.ultimaSubida.nombre}</b> {kg(f.ultimaSubida.de)} → {kg(f.ultimaSubida.a)}, {diaMes(f.ultimaSubida.fecha)}</> : ' · todavía sin subidas de peso'}</>}
+            </div>
+          </>
+        ) : <div className="av-nota">Empieza el Día 1.</div>}
+      </section>
+
+      <section className="av-tarjeta">
+        <div className="av-tarjeta-titulo"><span>Peso y reps por ejercicio</span><button type="button" className="enlace av-nota" onClick={() => navegar('/mas/rutinas')}>Mis rutinas ›</button></div>
+        {f.ejercicios.length ? (
+          <>
+            <div className="av-chips" role="tablist" aria-label="Ejercicio">
+              {f.ejercicios.map((e) => <button key={e.id} type="button" role="tab" aria-selected={ej?.id === e.id} className={`av-chip ${ej?.id === e.id ? 'activa' : ''}`} onClick={() => setEjSel(e.id)}>{e.nombre}</button>)}
+            </div>
+            {ej && <GraficosEjercicio key={ej.id} id={ej.id} nombre={ej.nombre} hoy={hoy} />}
+          </>
+        ) : <div className="av-nota">Con tu primer entreno en modo juego aparecen acá el peso y las reps de cada ejercicio.</div>}
+      </section>
+    </>
+  )
+}
+
+/**
+ * Dos gráficos alineados en el tiempo: arriba la escalera del peso (un escalón por subida) y abajo las reps
+ * de la serie 1, que arrancan de nuevo en cada tramo de peso (color alternado, ★ en los récords).
+ */
+function GraficosEjercicio({ id, nombre, hoy }: { id: string; nombre: string; hoy: string }) {
+  const datos = useDatos(() => progresionEjercicio(id), [id])
+  const [sel, setSel] = useState<number | null>(null)
+  if (!datos.datos) return <div className="av-nota">Cargando…</div>
+  const { puntos, tramos } = datos.datos
+  if (!puntos.length) return <div className="av-nota">Todavía no hay entrenos con {nombre}.</div>
+  const W = 320
+  const HP = 74
+  const HR = 96
+  const mi = { izq: 10, der: 34, arriba: 18, abajo: 16 }
+  const inicio = puntos[0].fecha
+  const total = Math.max(1, diferenciaDias(inicio, hoy))
+  const x = (f: string) => mi.izq + (Math.min(total, Math.max(0, diferenciaDias(inicio, f))) / total) * (W - mi.izq - mi.der)
+  const pesos = tramos.map((t) => t.peso)
+  const pMin = Math.min(...pesos)
+  const pMax = Math.max(...pesos)
+  const yP = (p: number) => mi.arriba + (1 - (pMax === pMin ? 0.5 : (p - pMin) / (pMax - pMin))) * (HP - mi.arriba - mi.abajo)
+  const rMin = Math.max(0, Math.min(...puntos.map((p) => p.reps)) - 1)
+  const rMax = Math.max(...puntos.map((p) => p.reps)) + 1
+  const yR = (r: number) => mi.arriba + (1 - (r - rMin) / Math.max(1, rMax - rMin)) * (HR - mi.arriba - mi.abajo)
+  let escalera = ''
+  tramos.forEach((t, i) => {
+    const x0 = x(t.desde)
+    const x1 = i + 1 < tramos.length ? x(tramos[i + 1].desde) : x(hoy)
+    escalera += `${i ? ' L' : 'M'}${x0.toFixed(1)},${yP(t.peso).toFixed(1)} L${x1.toFixed(1)},${yP(t.peso).toFixed(1)}`
+  })
+  const p = sel !== null ? puntos[sel] : null
+  return (
+    <div className="av-progresion">
+      <div className="sr-sub">Peso</div>
+      <svg className="sr-escalones av-prog-peso" viewBox={`0 0 ${W} ${HP}`} role="img" aria-label={`Peso de ${nombre}: ${tramos.map((t) => `${kg(t.peso)} desde el ${fechaLegible(t.desde, false)}`).join(', ')}`}>
+        <line className="sr-base" x1={mi.izq} x2={W - mi.der} y1={HP - mi.abajo} y2={HP - mi.abajo} />
+        <path className="sr-linea" d={escalera} />
+        {tramos.map((t, i) => (
+          <g key={t.desde + i}>
+            <circle cx={x(t.desde)} cy={yP(t.peso)} r={i ? 4.5 : 3.5} className={i ? 'sr-punto subida' : 'sr-punto'} />
+            <text x={x(t.desde)} y={yP(t.peso) - 8} textAnchor={i === 0 ? 'start' : 'middle'} className="sr-valor">{kg(t.peso).replace(' kg', '')}</text>
+            {i > 0 && <text x={x(t.desde)} y={HP - 3} textAnchor="middle" className="sr-fecha">{diaMes(t.desde)}</text>}
+          </g>
+        ))}
+        <text x={W - mi.der + 4} y={yP(tramos[tramos.length - 1].peso) + 4} className="sr-valor fin">kg</text>
+      </svg>
+      <div className="sr-sub">Reps · serie 1</div>
+      <svg className="sr-escalones av-prog-reps" viewBox={`0 0 ${W} ${HR}`} role="img" aria-label={`Reps de la serie 1 de ${nombre}: ${puntos.map((q) => `${q.reps} el ${fechaLegible(q.fecha, false)}${q.record ? ', récord' : ''}`).join(', ')}`}>
+        <line className="sr-base" x1={mi.izq} x2={W - mi.der} y1={HR - mi.abajo} y2={HR - mi.abajo} />
+        {tramos.slice(1).map((t) => <line key={t.desde} className="av-prog-corte" x1={x(t.desde)} x2={x(t.desde)} y1={mi.arriba - 10} y2={HR - mi.abajo} />)}
+        {tramos.map((t) => {
+          const del = puntos.filter((q) => q.tramo === t.indice)
+          const d = del.map((q, i) => `${i ? 'L' : 'M'}${x(q.fecha).toFixed(1)},${yR(q.reps).toFixed(1)}`).join(' ')
+          return <path key={t.desde} className={`sr-linea av-prog-tramo ${t.indice % 2 ? 'alt' : ''}`} d={d} />
+        })}
+        {puntos.map((q, i) => (
+          <g key={q.fecha + i} className={`sr-paso ${sel === i ? 'sel' : ''}`} onClick={() => setSel(sel === i ? null : i)}>
+            <rect x={x(q.fecha) - 12} y={yR(q.reps) - 18} width={24} height={34} fill="transparent" />
+            <circle cx={x(q.fecha)} cy={yR(q.reps)} r={q.record ? 4.5 : 3} className={`sr-punto ${q.tramo % 2 ? 'alt' : ''} ${q.record ? 'subida' : ''}`} />
+            {q.record && <text x={x(q.fecha)} y={yR(q.reps) - 8} textAnchor="middle" className="av-prog-estrella">★</text>}
+          </g>
+        ))}
+        <text x={W - mi.der + 4} y={yR(puntos[puntos.length - 1].reps) + 4} className="sr-valor fin">{puntos[puntos.length - 1].reps}</text>
+      </svg>
+      <div className="av-nota">
+        {p
+          ? <><b>{fechaLegible(p.fecha)}</b> · {kg(p.peso)} · {p.series.map((q) => `S${q.n} ${q.reps}${q.ayuda ? `+${q.ayuda}` : ''}`).join(' · ')}{p.record ? ' · ★ récord' : ''}</>
+          : <>{puntos.length} {puntos.length === 1 ? 'entreno' : 'entrenos'} · {tramos.length === 1 ? 'un solo peso' : `${tramos.length - 1} ${tramos.length === 2 ? 'subida' : 'subidas'} de peso`} · {puntos.filter((q) => q.record).length} récords · tocá un punto</>}
+      </div>
+    </div>
   )
 }
 

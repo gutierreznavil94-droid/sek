@@ -475,13 +475,19 @@ export type BloqueEjercicio = {
   /** Músculo o grupo (Pecho, Hombro…). */
   grupo?: string
   series: number
-  /** Repeticiones objetivo (mínimo de la doble progresión). */
+  /**
+   * Reps actuales: las que hizo la vez pasada en la serie 1 con el peso actual (o las que cargó a mano).
+   * La app las sube sola cada vez que las supera (récord). Al cambiar el peso empieza un tramo nuevo y la
+   * primera sesión con ese peso las fija.
+   */
   reps: number
   /** Repeticiones extra, como el «+3» de «12 + 3». */
   repsExtra?: number
   /** Tope de repeticiones: si la serie 1 llega, se sugiere subir peso (sin proponer cuánto). */
   repsTope: number
   peso: number
+  /** Desde qué día vale el peso actual (tramo). Si falta, desde el primer entreno. */
+  tramoDesde?: FechaDia
   /** v0.36 (primera prueba): ya no se usa. El peso nuevo lo pone Navil (la app no conoce sus discos). */
   incremento?: number
   /** Descanso entre series, en segundos. */
@@ -555,6 +561,8 @@ export type SesionEntreno = {
   /** Temporizador en marcha (calentamiento, colgarse, rondas). */
   reloj?: { bloqueId: string; ronda: number; inicio: number; segundos: number }
   xpExtra?: number
+  /** Reps actuales y peso de cada ejercicio al terminar (para que reabrir y volver a terminar compare contra lo mismo). */
+  base?: Record<string, { reps: number; peso: number; tramoDesde?: FechaDia }>
 }
 
 // ---------- Comidas ----------
