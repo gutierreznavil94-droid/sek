@@ -491,13 +491,14 @@ function Descanso({ s, fase, r, ctx }: { s: SesionEntreno; fase: NonNullable<Ret
   }, [f.tipo, fase.restante, fase.totalRestante, s.descanso])
   const despuesDeBarra = !!s.descanso!.origen
   const total = s.descanso!.fases.reduce((t, x) => t + x.segundos, 0)
+  const capaParry = useCapaParry(f.tipo === 'preparar')
   if (f.tipo === 'preparar') {
     return (
       <section className="col entreno-descanso preparar" aria-live="assertive">
         <p className="entreno-fase centro">Sombra en</p>
-        <div className="entreno-321-hueco" aria-hidden />
-        {/* El número va en una capa propia, por encima del parry: así se ve el 3-2-1 completo aunque la animación siga. */}
-        {createPortal(<div className="entreno-321-capa" aria-label={`Sombra en ${fase.restante}`}><span key={fase.restante} className="entreno-321 mono">{fase.restante}</span></div>, document.body)}
+        <div key={fase.restante} className="entreno-321 mono" aria-label={`Sombra en ${fase.restante}`}>{fase.restante}</div>
+        {/* Mientras se ve el parry, la cuenta va debajo del dibujo (sin taparlo): así se ve el 3-2-1 completo. */}
+        {capaParry && createPortal(<div className="sh-321" aria-hidden><span>Sombra en</span><b key={fase.restante} className="mono">{fase.restante}</b></div>, capaParry)}
         <p className="ayuda centro">Estos 3 s ya cuentan dentro del descanso de {reloj(total)}.</p>
         <button className="enlace texto-3 chico centro" onClick={() => mutar(() => deshacerSerie(s.id!))}>Deshacer la serie</button>
       </section>
@@ -528,6 +529,19 @@ function Descanso({ s, fase, r, ctx }: { s: SesionEntreno; fase: NonNullable<Ret
       {!despuesDeBarra && <button className="enlace texto-3 chico centro" onClick={() => mutar(() => deshacerSerie(s.id!))}>Deshacer la serie</button>}
     </section>
   )
+}
+
+/** La capa del parry si está en pantalla (se busca mientras dura la cuenta 3-2-1). */
+function useCapaParry(activo: boolean): HTMLElement | null {
+  const [capa, setCapa] = useState<HTMLElement | null>(null)
+  useEffect(() => {
+    if (!activo) { setCapa(null); return }
+    const buscar = () => setCapa((document.querySelector('.sh-capa') as HTMLElement | null) ?? null)
+    buscar()
+    const id = window.setInterval(buscar, 100)
+    return () => clearInterval(id)
+  }, [activo])
+  return capa
 }
 
 /** Colgarse en barra: cronómetro que cuenta para arriba, con peso. 5 s para colgarse; al tocar Listo se descuentan 3 s. */

@@ -1582,6 +1582,8 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 @media (prefers-reduced-motion: reduce) { :root:not(.movimiento-siempre) .entreno-321 { animation: none; } }
 .hist-ejercicio { display: flex; flex-direction: column; gap: 4px; padding: 6px 0; border-top: 1px solid var(--borde); }
 .hist-serie { font: inherit; font-size: 12px; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--borde); background: var(--fondo); color: var(--texto); cursor: pointer; }
-.entreno-321-hueco { height: 9.5rem; }
-.entreno-321-capa { position: fixed; left: 0; right: 0; top: 30svh; z-index: 205; display: flex; justify-content: center; pointer-events: none; }
-.entreno-321-capa .entreno-321 { margin: 0; -webkit-text-stroke: 2px rgba(20, 20, 20, .35); }
+.entreno-descanso.preparar .entreno-321 { font-size: 8rem; margin: 18px 0 22px; }
+/* 3-2-1 sobre el papel del parry: debajo del dibujo, sin taparlo */
+.sh-321 { display: flex; align-items: baseline; gap: 12px; color: #c8102e; font-weight: 800; font-size: 1.4rem; letter-spacing: .02em; pointer-events: none; }
+.sh-321 b { font-size: 4.2rem; line-height: 1; font-weight: 900; animation: entreno-321 1s ease-out both; text-shadow: 0 0 18px rgba(200, 16, 46, .25); }
+.sh-321 { order: 1; } .sh-capa:has(.sh-321) .sh-saltar { order: 2; }
