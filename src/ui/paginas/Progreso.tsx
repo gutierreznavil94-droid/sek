@@ -311,7 +311,7 @@ export function Progreso({ hoy }: { hoy: string }) {
 
             {/* Un toque y se abre cada sección; cada botón muestra su dato clave */}
             <nav className="av-secciones" aria-label="Secciones de Progreso">
-              {SECCIONES.filter((x) => x.id !== 'series' || d.contadores.length > 0).map((x) => (
+              {SECCIONES.filter((x) => x.id !== 'codigo' && (x.id !== 'series' || d.contadores.length > 0)).map((x) => (
                 <Link key={x.id} to={`/progreso/${x.id}`} onClick={guardarScroll} className="av-tarjeta av-seccion-boton">
                   <span className="av-seccion-kanji" aria-hidden>{x.kanji}</span>
                   <b>{x.nombre}</b>
@@ -319,6 +319,17 @@ export function Progreso({ hoy }: { hoy: string }) {
                   <span className="av-nota">{datoClave(x.id, d)}</span>
                 </Link>
               ))}
+              {/* Mi código va aparte: una franja ancha, como un pergamino sellado, distinta de las demás */}
+              <Link to="/progreso/codigo" onClick={guardarScroll} className="av-tarjeta av-seccion-boton av-codigo-banner" aria-label={`Mi código, ${datoClave('codigo', d)}`}>
+                <span className="av-codigo-fondo" aria-hidden>掟</span>
+                <span className="av-codigo-kanji" aria-hidden>掟</span>
+                <span className="av-codigo-textos">
+                  <b>Mi código</b>
+                  <span className="av-nota">Okite · lo que un shinobi no rompe</span>
+                </span>
+                <span className="av-codigo-sello" aria-hidden><span>誓</span><em>{d.reglasCodigo}</em></span>
+                <svg className="av-codigo-trazo" viewBox="0 0 300 8" preserveAspectRatio="none" aria-hidden><path d="M3,5 C50,2 110,7 170,4 C220,2 265,6 297,4" /></svg>
+              </Link>
             </nav>
           </div>
         )}
