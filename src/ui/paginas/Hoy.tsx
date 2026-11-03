@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import type { Compromiso } from '../../data/tipos'
+import { NOMBRES_FASES_INICIALES } from '../../data/semilla'
 import { db } from '../../data/db'
 import { entrarModoPrueba } from '../../data/modoPrueba'
 import { diaSemanaDe, duracionLegible, fechaLegible, formatoHora, instanteDe, lunesDe, minutosDe, partesLocales, sumarDias } from '../../domain/fechas'
@@ -170,7 +171,7 @@ export function Hoy({ hoy }: { hoy: string }) {
   // Primer día de una fase nueva: logro grande (una sola vez).
   useEffect(() => {
     if (!d || d.antes || !d.estado?.fase) return
-    if (d.estado.dia === d.estado.fase.diaInicio) celebrarFase(d.estado.faseNumero, ['Disciplina', 'Constancia', 'Mi yo ideal'][d.estado.faseNumero - 1], d.estado.ciclo.id)
+    if (d.estado.dia === d.estado.fase.diaInicio) celebrarFase(d.estado.faseNumero, (d.ajustes.nombresFases ?? NOMBRES_FASES_INICIALES)[d.estado.faseNumero - 1], d.estado.ciclo.id)
   }, [d])
 
 
@@ -324,7 +325,7 @@ export function Hoy({ hoy }: { hoy: string }) {
           <div className="col" style={{ gap: 2 }}>
             <b>Buenos días · Día {d.estado?.dia} de {d.estado?.ciclo.duracionDias}</b>
             {d.anoche && <span className="chico"><Link to="/sueno" className="texto-2">Dormiste {duracionSuenio(d.anoche.minutos)}{d.anoche.estimado ? ' aprox.' : ''} · celu {horaDeMinutos(d.anoche.acostado)} · arriba {horaDeMinutos(d.anoche.levantado)} ›</Link></span>}
-            <span className="chico texto-2">{d.ajusteDeAyer ? `Tu ajuste para hoy: ${d.ajusteDeAyer}` : 'Hoy, de nuevo, los 4 pilares.'}</span>
+            <span className="chico texto-2">{d.ajusteDeAyer ? `Tu ajuste para hoy: ${d.ajusteDeAyer}` : `Hoy, de nuevo, los ${d.pilares.pilares.length || 4} pilares.`}</span>
           </div>
           <button className="boton chico suave" aria-label="Cerrar" onClick={() => { try { localStorage.removeItem('buenos-dias') } catch { /* nada */ } panel.recargar() }}>✕</button>
         </div>

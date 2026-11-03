@@ -30,6 +30,10 @@ import { Historial } from './paginas/Historial'
 import { Hoy } from './paginas/Hoy'
 import { Identidad } from './paginas/Identidad'
 import { Inicio } from './paginas/Inicio'
+import { PrimeraVez } from './paginas/PrimeraVez'
+import { TemaYNombres } from './paginas/TemaYNombres'
+import { necesitaPrimeraVez } from '../services/primeraVez'
+import { aplicarTema } from '../temas/temas'
 import { Juego } from './paginas/Juego'
 import { Mas } from './paginas/Mas'
 import { Metas } from './paginas/Metas'
@@ -54,6 +58,7 @@ export function App() {
       try {
         await limpiarRestosDePrueba()
         await inicializarSiHaceFalta()
+        { const a = await obtenerAjustes(); aplicarTema(a.tema, a.nombreApp) }
         if (enModoPrueba() && !(await cicloActivo())) {
           // Prueba: el Día 1 es hoy, con la configuración real copiada.
           const a = await obtenerAjustes()
@@ -168,8 +173,18 @@ function ConSuenio() {
 function Rutas() {
   const ciclo = useDatos(() => cicloActivo(), [])
   const ajustes = useDatos(() => obtenerAjustes(), [])
-  if (ciclo.cargando || ajustes.cargando) return <div className="contenido"><Cargando /></div>
+  const primeraVez = useDatos(() => necesitaPrimeraVez(), [])
+  if (ciclo.cargando || ajustes.cargando || primeraVez.cargando) return <div className="contenido"><Cargando /></div>
   const hoy = fechaDe(ahora(), ajustes.datos!.zonaHoraria)
+  if (!ciclo.datos && primeraVez.datos) {
+    return (
+      <Routes>
+        <Route path="/bienvenida" element={<PrimeraVez hoy={hoy} />} />
+        <Route path="/copia" element={<div className="app"><div className="contenido" style={{ paddingTop: 24 }}><Copia /></div></div>} />
+        <Route path="*" element={<Navigate to="/bienvenida" replace />} />
+      </Routes>
+    )
+  }
   if (!ciclo.datos) {
     return (
       <Routes>
@@ -200,6 +215,7 @@ function Rutas() {
         <Route path="/mas/copia" element={<Copia />} />
         <Route path="/mas/sincronizar" element={<Sincronizar />} />
         <Route path="/mas/ajustes" element={<Ajustes />} />
+        <Route path="/mas/tema" element={<TemaYNombres />} />
         <Route path="/sueno" element={<Sueno hoy={hoy} />} />
         <Route path="/mas/suenio" element={<Navigate to="/sueno" replace />} />
         <Route path="/mas/animaciones" element={<Suspense fallback={<Cargando />}><VerAnimaciones /></Suspense>} />
@@ -216,6 +232,7 @@ function Rutas() {
       <Route path="/321" element={<Protocolo321 hoy={hoy} />} />
       <Route path="/siguiente" element={<SiguienteAccion hoy={hoy} />} />
       <Route path="/inicio" element={<Navigate to="/" replace />} />
+      <Route path="/bienvenida" element={<Navigate to="/" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

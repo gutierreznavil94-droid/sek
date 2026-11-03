@@ -1,0 +1,15 @@
+{
+  "id": "shinobi",
+  "nombre": "Shinobi",
+  "descripcion": "Tinta y papel, lluvia y rayos, y un shinobi que avanza con vos.",
+  "personaje": "Shinobi",
+  "saludo": "Soy {personaje}. Desde hoy entrenamos juntos: un día a la vez.",
+  "nombreApp": "SEK",
+  "acento": "#C8102E",
+  "kanjis": true,
+  "carpetaFondos": "fondos/",
+  "sprite": "shinobi/camina.webp",
+  "vistaPrevia": { "video": "fondos/lluvia.mp4", "imagen": "fondos/lluvia.jpg" },
+  "icono": "icono-192.png",
+  "orden": 1
+}

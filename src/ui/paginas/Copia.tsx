@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react'
 import { fechaDe, fechaLegible } from '../../domain/fechas'
 import { obtenerAjustes } from '../../services/base'
-import { borrarTodo, exportarCsv, exportarTodo, importarTodo, validarExportacion, type Exportacion } from '../../services/exportar'
+import { exportarCsv, exportarTodo, importarTodo, validarExportacion, type Exportacion } from '../../services/exportar'
 import { ahora } from '../../services/reloj'
+import { empezarDeCero } from '../../services/primeraVez'
 import { Atras, Confirmar, Tarjeta } from '../componentes'
 import { avisar, mutar, useDatos } from '../estado'
 
@@ -21,7 +22,7 @@ function descargar(nombre: string, contenido: string, tipo: string) {
 export function Copia() {
   const ajustes = useDatos(() => obtenerAjustes(), [])
   const [pendiente, setPendiente] = useState<Exportacion | null>(null)
-  const [confirmarBorrar, setConfirmarBorrar] = useState(false)
+  const [confirmarBorrar, setConfirmarBorrar] = useState<0 | 1 | 2>(0)
   const [error, setError] = useState('')
   const [texto, setTexto] = useState('')
   const [pegado, setPegado] = useState('')
@@ -100,11 +101,16 @@ export function Copia() {
         <button className="boton ancho" disabled={!pegado.trim()} onClick={() => leerTexto(pegado)}>Importar texto pegado</button>
         {error && <p className="error">{error}</p>}
       </Tarjeta>
-      <Tarjeta titulo="Zona peligrosa">
-        <button className="boton peligro ancho" onClick={() => setConfirmarBorrar(true)}>Borrar todos los datos</button>
-      </Tarjeta>
+      <details className="zona-escondida">
+        <summary>Opciones avanzadas</summary>
+        <Tarjeta titulo="Zona peligrosa">
+          <p className="chico texto-2">Borra todo lo de este teléfono y vuelve a la pantalla de primera vez, como si recién instalaras la app.</p>
+          <button className="boton peligro ancho" onClick={() => setConfirmarBorrar(1)}>Borrar todo y empezar de cero</button>
+        </Tarjeta>
+      </details>
       <Confirmar abierta={!!pendiente} titulo="¿Reemplazar todos los datos?" texto={pendiente ? `Copia del ${fechaLegible(fechaDe(pendiente.exportado), false)} con ${Object.values(pendiente.tablas).reduce((s, t) => s + (Array.isArray(t) ? t.length : 0), 0)} filas. Lo que hay ahora se pierde.` : ''} confirmar="Reemplazar" peligro onConfirmar={importar} onCancelar={() => setPendiente(null)} />
-      <Confirmar abierta={confirmarBorrar} titulo="¿Borrar todo?" texto="Se borra todo el historial, el XP y la configuración. No se puede deshacer. Exportá una copia antes." confirmar="Borrar todo" peligro onConfirmar={async () => { await mutar(borrarTodo); setConfirmarBorrar(false); location.reload() }} onCancelar={() => setConfirmarBorrar(false)} />
+      <Confirmar abierta={confirmarBorrar === 1} titulo="¿Borrar todo y empezar de cero?" texto="Se borra todo el historial, el XP, los pilares y la configuración de este teléfono. Exportá una copia antes." confirmar="Sí, seguir" peligro onConfirmar={() => setConfirmarBorrar(2)} onCancelar={() => setConfirmarBorrar(0)} />
+      <Confirmar abierta={confirmarBorrar === 2} titulo="Última confirmación" texto="No se puede deshacer. ¿Borrar todo ahora?" confirmar="Borrar todo" peligro onConfirmar={async () => { await mutar(empezarDeCero); setConfirmarBorrar(0); location.replace(location.pathname) }} onCancelar={() => setConfirmarBorrar(0)} />
     </>
   )
 }

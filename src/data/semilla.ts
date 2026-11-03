@@ -38,7 +38,14 @@ export const AJUSTES_INICIALES: Ajustes = {
   nombrePersonaje: 'Shinobi',
   temaAnimaciones: 'claro',
   diaInicioSemana: 1,
+  tema: 'shinobi',
+  nombrePersona: '',
+  nombreApp: 'SEK',
+  nombresFases: ['Disciplina', 'Constancia', 'Mi yo ideal'],
 }
+
+/** Nombres por defecto de las fases (se editan en Más → Tema y nombres). */
+export const NOMBRES_FASES_INICIALES = ['Disciplina', 'Constancia', 'Mi yo ideal']
 
 export const IDENTIDAD_INICIAL: Omit<Identidad, 'actualizado'> = {
   id: 'unica',
@@ -295,3 +302,22 @@ export const CODIGO_INICIAL: { texto: string; grupo: 'cuerpo' | 'mente' | 'comid
   { grupo: 'comida', momento: 'siempre', texto: 'No acepto ultraprocesados de otros; solo en casa, con mi familia o en eventos' },
   { grupo: 'cuidado', momento: 'noche', texto: 'Rutina de skincare' },
 ]
+
+/** Rutina de ejemplo para quien arranca de cero (primera vez): calentamiento + 4 ejercicios, editable en «Mis rutinas». */
+export function rutinaDeEjemplo(dias: number[]): Omit<Rutina, 'creado'> {
+  return {
+    id: 'rutina-ejemplo',
+    nombre: 'Rutina de ejemplo · Cuerpo completo',
+    dias,
+    minutos: 30,
+    orden: 1,
+    activa: true,
+    bloques: [
+      { id: 'e-calentar', tipo: 'calentamiento', nombre: 'Calentamiento', segundos: 180, nota: 'Movilidad suave' },
+      ej('e-sentadillas', 'Sentadillas', 'Pierna', 3, 10, 0, { nota: 'Con el peso del cuerpo' }),
+      ej('e-flexiones', 'Flexiones', 'Pecho', 3, 8, 0, { nota: 'Apoyando rodillas si hace falta' }),
+      ej('e-remo', 'Remo con mancuerna', 'Espalda', 3, 10, 5),
+      ej('e-zancadas', 'Zancadas', 'Pierna', 3, 8, 0, { nota: 'Por pierna' }),
+    ],
+  }
+}

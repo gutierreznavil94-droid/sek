@@ -18,7 +18,8 @@ const ICONOS = {
   mas: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>,
 }
 
-const NOMBRES_FASE = ['Disciplina', 'Constancia', 'Mi yo ideal']
+import { obtenerAjustes } from '../services/base'
+import { NOMBRES_FASES_INICIALES } from '../data/semilla'
 
 export function Layout({ hoy }: { hoy: string }) {
   const estado = useDatos(async () => {
@@ -26,7 +27,8 @@ export function Layout({ hoy }: { hoy: string }) {
     if (!e) return null
     const fases = await fasesDelCiclo(e.ciclo.id)
     const objetivos = await objetivosDelCiclo(e.ciclo.id)
-    return { e, fases, objetivos }
+    const nombres = (await obtenerAjustes()).nombresFases ?? NOMBRES_FASES_INICIALES
+    return { e, fases, objetivos, nombres }
   }, [hoy])
   const [detalle, setDetalle] = useState(false)
   const cabRef = useRef<HTMLElement>(null)
@@ -63,7 +65,7 @@ export function Layout({ hoy }: { hoy: string }) {
               return (
                 <div key={f.id} className={`tramo ${actual ? 'actual' : ''} ${f.numero === d.fases.length ? 'final' : ''}`} style={{ flex: total }}>
                   <div className="lleno" style={{ width: `${(100 * hechos) / total}%` }} />
-                  <span className="etq">{f.numero} · {NOMBRES_FASE[f.numero - 1] ?? f.foco}</span>
+                  <span className="etq">{f.numero} · {d.nombres[f.numero - 1] || NOMBRES_FASES_INICIALES[f.numero - 1] || f.foco}</span>
                 </div>
               )
             })}
@@ -95,7 +97,7 @@ export function Layout({ hoy }: { hoy: string }) {
             return (
               <div key={f.id} className="col" style={{ gap: 4, borderTop: '1px solid var(--borde)', paddingTop: 8 }}>
                 <div className="fila entre">
-                  <b className={actual ? 'acento' : ''}>Fase {f.numero} · {NOMBRES_FASE[f.numero - 1] ?? f.foco}</b>
+                  <b className={actual ? 'acento' : ''}>Fase {f.numero} · {d.nombres[f.numero - 1] || NOMBRES_FASES_INICIALES[f.numero - 1] || f.foco}</b>
                   <span className="chico texto-3">días {f.diaInicio}–{f.diaFin}</span>
                 </div>
                 <span className="chico texto-2">{f.foco}. {f.queSeMide}</span>

@@ -3,7 +3,7 @@
  */
 
 import { db } from '../data/db'
-import { ACCIONES_INICIALES, AJUSTES_INICIALES, ATRIBUTOS_INICIALES, IDENTIDAD_INICIAL, reglasIniciales } from '../data/semilla'
+import { ACCIONES_INICIALES, AJUSTES_INICIALES, NOMBRES_FASES_INICIALES, ATRIBUTOS_INICIALES, IDENTIDAD_INICIAL, reglasIniciales } from '../data/semilla'
 import type { Ajustes, Evento, Identidad, TipoEvento } from '../data/tipos'
 import { fechaDe } from '../domain/fechas'
 import { cargarContadoresIniciales } from './contadores'
@@ -107,10 +107,14 @@ async function equilibrarXp(): Promise<void> {
 async function migrar(): Promise<void> {
   const d = db()
   const t = ahora()
-  const hoy = fechaDe(t, (await obtenerAjustes()).zonaHoraria)
+  const ajustesAntes = await obtenerAjustes()
+  const hoy = fechaDe(t, ajustesAntes.zonaHoraria)
+  // Si la app se armó en la primera vez, los pilares son de esa persona: no se les aplican los ajustes de Navil.
+  const aMedida = !!ajustesAntes.aMedida
   await d.transaction('rw', [d.acciones, d.reglasXp, d.ajustes, d.eventos], async () => {
     for (const base of ACCIONES_INICIALES) {
       let existente = await d.acciones.get(base.id)
+      if (aMedida) continue
       if (!existente) {
         await d.acciones.put({ ...base, creado: t })
         const regla = reglasIniciales(hoy).find((r) => r.accionId === base.id)
@@ -171,6 +175,24 @@ async function migrar(): Promise<void> {
       await d.ajustes.put({ ...AJUSTES_INICIALES, ...resto } as Ajustes)
     }
   })
+  // Temas (v0.38): solo se agregan los campos nuevos; nada se borra. Con ciclo creado, la primera vez no aparece.
+  const guardado = (await d.ajustes.get('unicos')) as (Partial<Ajustes> & { id: 'unicos' }) | undefined
+  if (guardado && (guardado.tema === undefined || guardado.nombresFases === undefined || guardado.nombrePersona === undefined)) {
+    const yaUso = (await d.ciclos.count()) > 0
+    const despues = {
+      ...AJUSTES_INICIALES,
+      ...guardado,
+      tema: guardado.tema ?? 'shinobi',
+      nombrePersona: guardado.nombrePersona ?? '',
+      nombreApp: guardado.nombreApp ?? 'SEK',
+      nombresFases: guardado.nombresFases ?? [...NOMBRES_FASES_INICIALES],
+      primeraVezHecha: guardado.primeraVezHecha ?? (yaUso || undefined),
+    } as Ajustes
+    await d.transaction('rw', d.ajustes, d.eventos, async () => {
+      await d.ajustes.put(despues)
+      await registrarEvento({ tipo: 'editar', entidad: 'ajustes', entidadId: 'unicos', motivo: 'Migración: tema y nombres de fases' })
+    })
+  }
   await cargarFeriadosIniciales()
   await cargarContadoresIniciales()
   await cargarRutinasIniciales()

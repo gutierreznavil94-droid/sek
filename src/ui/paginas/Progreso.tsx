@@ -17,6 +17,7 @@ import { useDatos } from '../estado'
 import { graficoMetas, lineaDeMetas, metasPorDia } from '../../services/metas'
 import { FilaMeta } from '../metas'
 import { VERSION_APP } from '../../version'
+import { rutaTema } from '../../temas/temas'
 import { VIDEOS, VIDRIO_EN_DESTELLO, intensidadDestello, type VideoFondo, elegirVideo, useModoFondo, usePantallaHorizontal, VIDEO_PC, video as datosVideo } from '../../fondos/elegir'
 
 const BASE = import.meta.env.BASE_URL
@@ -568,8 +569,8 @@ function vidrioClaro(): boolean {
  */
 function VideoDeFondo({ fondo, quieto, pausado }: { fondo: VideoFondo; quieto: boolean; pausado: boolean }) {
   const ref = useRef<HTMLVideoElement>(null)
-  const archivo = BASE + fondo.archivo
-  const cuadro = BASE + fondo.cuadroFijo
+  const archivo = BASE + rutaTema(fondo.archivo)
+  const cuadro = BASE + rutaTema(fondo.cuadroFijo)
   const [conMovimiento, setConMovimiento] = useState(false)
   const fijo = quieto && !conMovimiento
   const [frenado, setFrenado] = useState(false)
@@ -634,7 +635,7 @@ function VideoDeFondo({ fondo, quieto, pausado }: { fondo: VideoFondo; quieto: b
   }, [fondo, fijo])
   // Guardar los otros videos enteros para usarlos sin conexión (una sola vez, sin apuro).
   useEffect(() => {
-    const t = setTimeout(() => { for (const v of [...VIDEOS, VIDEO_PC]) guardarVideo(BASE + v.archivo).catch(() => {}) }, 6000)
+    const t = setTimeout(() => { for (const v of [...VIDEOS, VIDEO_PC]) guardarVideo(BASE + rutaTema(v.archivo)).catch(() => {}) }, 6000)
     return () => clearTimeout(t)
   }, [])
   const mover = () => {

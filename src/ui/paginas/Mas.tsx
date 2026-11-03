@@ -22,6 +22,7 @@ const SECCIONES = [
   { a: '/mas/sincronizar', t: 'Sincronizar', d: 'Los mismos datos en el celu y en la compu' },
   { a: '/mas/copia', t: 'Copia de seguridad', d: 'Exportar e importar (JSON, CSV)' },
   { a: '/mas/historial', t: 'Historial de cambios', d: 'Todo lo que se registró o corrigió' },
+  { a: '/mas/tema', t: 'Tema y nombres', d: 'Tema de la app, su nombre, el tuyo y los nombres de las fases' },
   { a: '/mas/animaciones', t: 'Ver animaciones', d: 'El shinobi: vista previa, cuándo se muestran, sonido y nombre' },
   { a: '/mas/ajustes', t: 'Ajustes', d: 'Límite de juego, racha, niveles, zona horaria' },
   { a: '/mas/nuevo-ciclo', t: 'Fecha de inicio y nuevo ciclo', d: 'Cambiar el Día 1 o empezar otros 90 días conservando el historial' },

@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { movimientoReducido } from './componentes'
+import { temaActivo } from '../temas/temas'
 
 /**
  * Shinobi que camina por la barra de bloques del entreno (videos de Luma pasados a tinta papel).
  * Sprite armado con scripts/shinobi-sprites.py: caminata de 2 pasos, frenado y quieto respirando.
  */
-const HOJA = `${import.meta.env.BASE_URL}shinobi/camina.webp`
+/** La hoja sale del tema activo (Shinobi: shinobi/camina.webp). */
+const hoja = () => `${import.meta.env.BASE_URL}${temaActivo().sprite}`
 const CELDA = { w: 48, h: 35 } // px CSS (la hoja está a 2x)
 const COLUMNAS = 16
 const FILAS = 13
@@ -163,7 +165,7 @@ export function ShinobiBarra({ indice, total, barra }: { indice: number; total: 
 
   useEffect(() => { if (reducido) window.dispatchEvent(new Event('shinobi-mover')) }, [indice, reducido])
 
-  const estilo = { backgroundImage: `url(${HOJA})`, backgroundSize: `${COLUMNAS * CELDA.w}px ${FILAS * CELDA.h}px`, width: CELDA.w, height: CELDA.h, transformOrigin: `${ANCLA}px 50%` }
+  const estilo = { backgroundImage: `url(${hoja()})`, backgroundSize: `${COLUMNAS * CELDA.w}px ${FILAS * CELDA.h}px`, width: CELDA.w, height: CELDA.h, transformOrigin: `${ANCLA}px 50%` }
   return (
     <div ref={caja} className="shinobi-barra" aria-hidden="true" style={{ visibility: 'hidden' }}>
       <div ref={capaA} className="shinobi-capa" style={estilo} />

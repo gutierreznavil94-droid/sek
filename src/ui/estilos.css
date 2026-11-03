@@ -1607,3 +1607,71 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .mini-sello { display: inline-grid; place-items: center; width: 22px; height: 20px; margin: 1px 0; font-family: 'Pincel', serif; font-size: 13px; color: #f4eee6; background: #c8102e; border-radius: 2px 3px 2px 3px; transform: rotate(-5deg); box-shadow: 0 0 6px rgba(200, 16, 46, .4); }
 .av-tapa-arriba { position: absolute; left: 0; right: 0; top: 0; height: 170px; background: linear-gradient(to bottom, var(--fondo) 0, var(--fondo) 105px, rgba(18, 17, 16, 0)); pointer-events: none; z-index: 3; transition: opacity .2s linear; }
 @media (prefers-reduced-motion: reduce) { :root:not(.movimiento-siempre) .av-tapa-arriba { transition: none; } }
+
+/* Copia de seguridad: lo peligroso queda escondido */
+.zona-escondida { margin-top: 18px; }
+.zona-escondida > summary { color: var(--texto-3); font-size: 0.85rem; text-align: center; cursor: pointer; list-style: none; padding: 8px; }
+.zona-escondida > summary::-webkit-details-marker { display: none; }
+.zona-escondida[open] > summary { margin-bottom: 8px; }
+
+/* ---------- Primera vez: papel arriba, tinta abajo, un paso por pantalla ---------- */
+.pv { min-height: 100svh; display: flex; flex-direction: column; background: var(--fondo); }
+.pv-cabeza { position: relative; background: var(--papel); color: var(--tinta); padding: calc(14px + env(safe-area-inset-top)) 16px 10px; }
+.pv-cabeza > * { max-width: 560px; margin-left: auto; margin-right: auto; }
+.pv-trazos { display: flex; gap: 6px; }
+.pv-trazos span { flex: 1; height: 7px; background: #d6d2cb; border-radius: 3px 6px 4px 7px / 5px 3px 6px 4px; transition: background 0.3s; }
+.pv-trazos span.hecho { background: #4a4743; }
+.pv-trazos span.actual { background: var(--acento); }
+.pv-titulo { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.pv-kanji { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 52px; line-height: 1; color: var(--tinta); }
+.pv-titulo h1 { margin: 0; font-size: 1.7rem; font-weight: 900; letter-spacing: -0.02em; color: var(--tinta); }
+.pv-num { font-size: 0.8rem; color: #6f6a64; font-weight: 600; }
+.pv-cuerpo { flex: 1; width: 100%; max-width: 560px; margin: 0 auto; padding: 46px 16px 16px; display: flex; flex-direction: column; gap: 16px; animation: pv-entra 0.35s ease-out; }
+@keyframes pv-entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .pv-cuerpo { animation: none; } }
+.pv-lead { margin: 0; color: var(--texto-2); font-size: 1.02rem; }
+.pv-cuenta { color: var(--acento); margin-left: 4px; }
+.pv-pie { position: sticky; bottom: 0; display: flex; justify-content: space-between; gap: 10px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: linear-gradient(transparent, var(--fondo) 30%); max-width: 560px; width: 100%; margin: 0 auto; }
+.pv-pie .boton { min-width: 120px; }
+
+/* Temas */
+.pv-temas { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.pv-tema { position: relative; display: flex; flex-direction: column; text-align: left; padding: 0; overflow: hidden; border-radius: 14px; border: 1.5px solid var(--borde); background: var(--fondo-2); color: var(--texto); cursor: pointer; }
+.pv-tema.elegido { border-color: var(--tema-acento, var(--acento)); box-shadow: 0 0 0 1px var(--tema-acento, var(--acento)); }
+.pv-tema-vista { position: relative; display: block; aspect-ratio: 3 / 4; background: #0c0b0a; overflow: hidden; }
+.pv-tema-vista video, .pv-tema-vista img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pv-tema-sprite { position: absolute; left: 50%; bottom: 10%; width: 48px; height: 35px; margin-left: -24px; background-size: 768px 455px; background-position: -336px -210px; filter: invert(1); opacity: 0.85; }
+.pv-tema-texto { display: flex; flex-direction: column; gap: 2px; padding: 10px 10px 12px; }
+.pv-tema-sello { position: absolute; top: 8px; right: 8px; font-family: 'Pincel', serif; font-size: 20px; color: #fff; background: var(--tema-acento, var(--acento)); width: 32px; height: 32px; border-radius: 6px 9px 7px 10px; display: grid; place-items: center; transform: rotate(-6deg); }
+.pv-tema.apagado { opacity: 0.45; cursor: default; filter: grayscale(1); }
+.pv-tema-pronto { position: absolute; inset: 0; display: grid; place-items: center; font-size: 46px; font-weight: 900; color: var(--texto-3); background: repeating-linear-gradient(135deg, #191716 0 10px, #1d1b19 10px 20px); }
+
+/* Pilares */
+.pv-pilares { display: flex; flex-direction: column; gap: 8px; }
+.pv-pilar { border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo-2); overflow: hidden; }
+.pv-pilar.elegido { border-color: var(--acento); }
+.pv-pilar.apagado { opacity: 0.5; }
+.pv-pilar-tilde { appearance: none; width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 14px; min-height: 50px; background: none; border: 0; color: var(--texto); font-size: 1rem; font-weight: 600; text-align: left; cursor: pointer; }
+.pv-casilla { width: 24px; height: 24px; border: 2px solid var(--texto-3); border-radius: 5px 7px 6px 8px; display: grid; place-items: center; font-size: 15px; font-weight: 900; color: #fff; flex: none; }
+.pv-pilar.elegido .pv-casilla { background: var(--acento); border-color: var(--acento); }
+.pv-pilar-detalle { display: flex; flex-direction: column; gap: 10px; padding: 0 14px 14px; }
+.pv-pilar-detalle input { background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 8px 10px; min-height: 42px; width: 100%; }
+.pv-pilar-fila { display: flex; gap: 10px; }
+.pv-pilar-fila label { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+
+/* Horarios */
+.pv-hora { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo-2); }
+.pv-hora > span { display: flex; flex-direction: column; }
+.pv-hora input { background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 8px 10px; min-height: 44px; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+
+/* Listo */
+.pv-saludo { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.pv-personaje { width: 200px; }
+.pv-personaje-vacio { aspect-ratio: 1; background: var(--papel); }
+.pv-globo { position: relative; margin: 0; background: var(--papel); color: var(--tinta); padding: 12px 14px; border-radius: 14px 18px 16px 20px / 16px 14px 20px 16px; font-size: 1.02rem; max-width: 420px; }
+.pv-globo::before { content: ''; position: absolute; top: -9px; left: 50%; margin-left: -9px; border: 9px solid transparent; border-top: 0; border-bottom-color: var(--papel); }
+.pv-resumen { display: flex; flex-direction: column; gap: 8px; }
+.pv-resumen > div { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-left: 3px solid var(--acento); background: var(--fondo-2); border-radius: 4px 12px 12px 4px; }
+
+/* Temas sin kanjis decorativos */
+:root[data-kanjis="no"] .av-seccion-kanji { display: none; }

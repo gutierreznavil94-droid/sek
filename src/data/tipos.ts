@@ -263,6 +263,18 @@ export type Ajustes = {
   temaAnimaciones: 'claro' | 'oscuro'
   ultimaExportacion?: number
   diaInicioSemana: 1
+  /** Tema elegido (carpeta de src/temas). Por defecto «shinobi». */
+  tema: string
+  /** Nombre de la persona (primera vez). Vacío si nunca se pidió. */
+  nombrePersona: string
+  /** Nombre que la persona le dio a su app (por defecto SEK). */
+  nombreApp: string
+  /** Nombres de las fases del ciclo, en orden (Disciplina, Constancia, Mi yo ideal). */
+  nombresFases: string[]
+  /** Se completó la pantalla de primera vez (las bases viejas no la tienen: no les aparece). */
+  primeraVezHecha?: boolean
+  /** La app se armó en la primera vez: las migraciones de los pilares de Navil no se aplican. */
+  aMedida?: boolean
 }
 
 // ---------- Registros ----------

@@ -1,3 +1,3 @@
 /** Versión visible arriba y en «Más», para saber si el teléfono ya tiene la última. Subila en cada entrega. */
-export const VERSION_APP = '0.37'
-export const FECHA_VERSION = '2 nov 2026'
+export const VERSION_APP = '0.38'
+export const FECHA_VERSION = '3 nov 2026'
