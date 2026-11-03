@@ -23,6 +23,15 @@ function vistaGuardada(): VistaCodigo {
   }
 }
 
+const NUMERALES = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
+/** Número de la regla con numerales a pincel: 一, 二 … 十, 十一 … 二十. Más de 20 vuelve a los números comunes. */
+export function numeral(n: number): string {
+  if (n <= 10) return NUMERALES[n - 1]
+  if (n < 20) return `十${NUMERALES[n - 11]}`
+  if (n === 20) return '二十'
+  return String(n)
+}
+
 const areaDe = (r: ReglaCodigo) => GRUPOS_CODIGO.find((g) => g.id === r.grupo)!
 const momentoInfo = (r: ReglaCodigo) => MOMENTOS_CODIGO.find((m) => m.id === momentoDe(r))!
 
@@ -56,10 +65,12 @@ export function MiCodigo() {
       <Link to="/progreso" className="codigo-volver" onClick={() => { try { sessionStorage.removeItem('progreso-seccion') } catch { /* sin almacenamiento */ } }}>‹ Progreso</Link>
       <header className="codigo-cabeza">
         <span className="codigo-kanji" aria-hidden>掟</span>
-        <div>
+        <div className="codigo-cabeza-texto">
           <h1>Mi código</h1>
           <p className="av-nota">Okite: el código que un shinobi no rompe. No son tareas del día: es tu forma de vivir.</p>
         </div>
+        {reglas.length > 0 && <span className="codigo-cabeza-sello" aria-label={`${reglas.length} ${reglas.length === 1 ? 'regla jurada' : 'reglas juradas'}`}><span aria-hidden>誓</span><b>{reglas.length}</b></span>}
+        <svg className="codigo-cabeza-trazo" viewBox="0 0 300 10" preserveAspectRatio="none" aria-hidden><path d="M3,6 C50,2 110,9 170,5 C220,2 265,7 297,4" /></svg>
       </header>
 
       <div className="codigo-vistas" role="tablist" aria-label="Ordenar el código">
@@ -77,16 +88,15 @@ export function MiCodigo() {
           if (!lista.length) return null
           return (
             <section key={g.id} className="codigo-grupo" aria-label={g.nombre}>
-              <div className="codigo-grupo-titulo"><span className="codigo-grupo-kanji" aria-hidden>{g.kanji}</span>{g.nombre}</div>
+              <div className="codigo-grupo-titulo"><span className="codigo-grupo-kanji" aria-hidden>{g.kanji}</span><span className="codigo-grupo-nombre">{g.nombre}</span><svg className="codigo-grupo-trazo" viewBox="0 0 200 8" preserveAspectRatio="none" aria-hidden><path d="M2,5 C40,2 90,7 140,4 C170,2 190,5 198,4" /></svg></div>
               {lista.map((r, i) => {
                 const otra = vista === 'area' ? momentoInfo(r) : areaDe(r)
                 return (
-                  <button key={r.id} type="button" className="codigo-regla" onClick={() => setEditar(r)} aria-label={`${r.texto} (${otra.nombre}). Tocá para editar`}>
-                    <svg className="codigo-pincel" viewBox="0 0 12 100" preserveAspectRatio="none" aria-hidden>
-                      <path d={i % 2 ? 'M6,2 C3,30 8,60 5,98' : 'M5,2 C8,28 3,64 6,98'} />
-                    </svg>
+                  <button key={r.id} type="button" className="codigo-regla" onClick={() => setEditar(r)} aria-label={`Regla ${i + 1}: ${r.texto} (${otra.nombre}). Tocá para editar`}>
+                    <span className="codigo-marca" aria-hidden>{otra.kanji}</span>
+                    <span className="codigo-numero" aria-hidden>{numeral(i + 1)}</span>
                     <span className="codigo-texto">{r.texto}</span>
-                    <span className="codigo-otra" aria-hidden title={otra.nombre}>{otra.kanji}</span>
+                    <span className="codigo-otra" aria-hidden title={otra.nombre}>{otra.kanji} · {otra.nombre}</span>
                   </button>
                 )
               })}

@@ -1,4 +1,4 @@
-/* Kanji a pincel (Yuji Syuku, licencia OFL), solo con los kanji que usa la app: ~12 KB, sin conexión. */
+/* Kanji a pincel (Yuji Syuku, licencia OFL), solo con los kanji que usa la app (más los numerales 一〜十 de Mi código): ~17 KB, sin conexión. */
 @font-face { font-family: 'Pincel'; src: url('../assets/fuentes/pincel.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
 /* Sistema de progreso: tema oscuro sobrio, un color de acento, letra grande. */
 
@@ -1441,18 +1441,20 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 .codigo-kanji.chico { font-size: 34px; }
 .codigo { padding: calc(var(--av-arriba, 60px) + 12px) 14px 32px; display: flex; flex-direction: column; gap: 14px; }
 .codigo-volver { align-self: flex-start; color: inherit; text-decoration: none; font-size: 14px; opacity: .85; padding: 6px 10px; border-radius: 999px; background: rgba(var(--papel-rgb), 0.08); border: 1px solid rgba(var(--papel-rgb), 0.18); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
-.codigo-cabeza { display: flex; gap: 14px; align-items: center; padding: 14px 16px; border-radius: 16px; background: rgba(18, 17, 16, var(--vidrio, .55)); -webkit-backdrop-filter: blur(var(--vidrio-blur, 16px)); backdrop-filter: blur(var(--vidrio-blur, 16px)); border: 1px solid var(--vidrio-borde, rgba(238, 236, 231, .16)); }
+.codigo-cabeza { position: relative; overflow: hidden; display: flex; gap: 14px; align-items: center; padding: 16px 16px 20px; border-radius: 16px; background: rgba(18, 17, 16, var(--vidrio, .55)); -webkit-backdrop-filter: blur(var(--vidrio-blur, 16px)); backdrop-filter: blur(var(--vidrio-blur, 16px)); border: 1px solid var(--vidrio-borde, rgba(238, 236, 231, .16)); }
 .codigo-cabeza h1 { margin: 0 0 4px; font-size: 1.6rem; letter-spacing: .02em; }
 .codigo-grupo { display: flex; flex-direction: column; gap: 8px; }
-.codigo-grupo-titulo { display: flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; text-shadow: 0 1px 3px rgba(0, 0, 0, .6); }
-.codigo-grupo-kanji { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 18px; letter-spacing: 0; color: #e8a0ab; }
-.codigo-grupo-titulo::after { content: ''; flex: 1; height: 2px; border-radius: 2px; background: linear-gradient(90deg, rgba(200, 16, 46, .7), rgba(200, 16, 46, 0)); }
-.codigo-regla { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 14px 16px 14px 12px; border-radius: 14px; color: inherit; font: inherit; cursor: pointer; background: rgba(18, 17, 16, var(--vidrio, .55)); -webkit-backdrop-filter: blur(var(--vidrio-blur, 16px)); backdrop-filter: blur(var(--vidrio-blur, 16px)); border: 1px solid var(--vidrio-borde, rgba(238, 236, 231, .16)); }
-.codigo-regla:active { transform: scale(.99); }
-.codigo-pincel { flex: none; width: 10px; align-self: stretch; height: auto; min-height: 30px; }
-.codigo-pincel path { fill: none; stroke: #c8102e; stroke-width: 4; stroke-linecap: round; opacity: .85; }
-.codigo-texto { font-family: var(--fuente); font-size: 1.05rem; font-weight: 650; line-height: 1.35; }
-.codigo-nueva { border-color: rgba(200, 16, 46, .7) !important; box-shadow: 0 0 12px rgba(200, 16, 46, .2); }
+.codigo-grupo-titulo { display: flex; align-items: center; gap: 10px; font-size: 12px; letter-spacing: .2em; text-transform: uppercase; text-shadow: 0 1px 3px rgba(0, 0, 0, .6); }
+.codigo-grupo-kanji { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 30px; line-height: 1; letter-spacing: 0; color: #e8323c; text-shadow: 0 0 1px currentColor, 0 0 10px rgba(232, 50, 60, .55), 0 1px 3px rgba(0, 0, 0, .8); }
+.codigo-grupo-nombre { color: rgba(var(--papel-rgb), .85); }
+.codigo-grupo-trazo { flex: 1; height: 8px; overflow: visible; opacity: .8; }
+.codigo-grupo-trazo path { fill: none; stroke: #c8102e; stroke-width: 2.6; stroke-linecap: round; }
+.codigo-regla { position: relative; overflow: hidden; display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 16px 16px 18px 14px; border-radius: 4px 14px 4px 14px; color: inherit; font: inherit; cursor: pointer; background: rgba(18, 17, 16, var(--vidrio, .55)); -webkit-backdrop-filter: blur(var(--vidrio-blur, 16px)); backdrop-filter: blur(var(--vidrio-blur, 16px)); border: 1px solid var(--vidrio-borde, rgba(238, 236, 231, .16)); }
+.codigo-regla::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: linear-gradient(180deg, #e8323c, #8a0b1f); box-shadow: 0 0 10px rgba(232, 50, 60, .55); }
+.codigo-numero { flex: none; width: 40px; font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 34px; line-height: 1; text-align: center; color: #e8323c; text-shadow: 0 0 1px currentColor, 0 0 12px rgba(232, 50, 60, .6), 0 2px 4px rgba(0, 0, 0, .8); }
+.codigo-marca { position: absolute; right: -6px; top: -14px; font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 92px; line-height: 1; color: rgba(var(--papel-rgb), .09); transform: rotate(-8deg); pointer-events: none; text-shadow: none !important; }
+.codigo-texto { position: relative; font-family: var(--fuente); font-size: 1.1rem; font-weight: 700; line-height: 1.32; letter-spacing: .005em; }
+.codigo-nueva { border-color: rgba(232, 50, 60, .85) !important; background: linear-gradient(180deg, rgba(200, 16, 46, .28), rgba(200, 16, 46, .12)) !important; box-shadow: 0 0 18px rgba(200, 16, 46, .3), inset 0 1px 0 rgba(255, 255, 255, .08); font-weight: 700; }
 .progreso-tinta[data-vidrio="claro"] .codigo-cabeza, .progreso-tinta[data-vidrio="claro"] .codigo-regla { background: rgba(243, 239, 230, var(--vidrio, .6)); }
 .progreso-tinta[data-vidrio="claro"] .codigo-kanji { color: #121110; }
 
@@ -1493,9 +1495,11 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 .codigo-lista.entra .codigo-grupo { animation: codigo-formar 200ms ease-out both; }
 @keyframes codigo-disolver { to { opacity: 0; filter: blur(5px) contrast(1.4); transform: scale(.985) translateY(3px); } }
 @keyframes codigo-formar { from { opacity: 0; filter: blur(5px) contrast(1.4); transform: scale(.985) translateY(-3px); } }
-.codigo-regla { padding-right: 38px; }
-.codigo-otra { position: absolute; top: 8px; right: 12px; font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 17px; line-height: 1; color: rgba(var(--papel-rgb), .5); }
-.progreso-tinta[data-vidrio="claro"] .codigo-otra { color: rgba(18, 17, 16, .45); }
+.codigo-regla { padding-right: 16px; }
+.codigo-otra { position: absolute; bottom: 5px; right: 12px; font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; line-height: 1; color: rgba(var(--papel-rgb), .55); }
+.progreso-tinta[data-vidrio="claro"] .codigo-otra { color: rgba(18, 17, 16, .5); }
+.progreso-tinta[data-vidrio="claro"] .codigo-marca { color: rgba(18, 17, 16, .08); }
+.progreso-tinta[data-vidrio="claro"] .codigo-grupo-nombre { color: rgba(18, 17, 16, .8); }
 .codigo-etiquetas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .codigo-etiquetas button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border-radius: 12px; border: 1px solid var(--borde); background: var(--fondo); color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
 .codigo-etiquetas button.activa { border-color: #c8102e; box-shadow: inset 0 0 0 1px #c8102e; }
@@ -1794,3 +1798,14 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .sh-capa.logro.luma .sh-sub-texto { animation-delay: calc(var(--dur) * .64); }
 .sh-capa.logro.luma .sh-escenario { animation-name: sh-sacudida-logro-v; }
 @keyframes sh-sacudida-logro-v { 0%, 9% { transform: none } 10% { transform: translate(-2px, 1px) } 11.5% { transform: translate(2px, -1px) } 13%, 54% { transform: none } 55% { transform: translate(-3px, 2px) } 56.5% { transform: translate(3px, -2px) } 58% { transform: translate(-2px, -1px) } 59.5%, 100% { transform: none } }
+
+/* Mi código, más picante: sello con la cuenta de reglas en la cabecera, trazo de pincel abajo, kanji de marca de agua en cada regla */
+.codigo-kanji { font-size: 76px; text-shadow: 0 0 1px currentColor, 3px 3px 0 rgba(200, 16, 46, 0.7), 0 0 18px rgba(200, 16, 46, .35); }
+.codigo-cabeza-texto { flex: 1; min-width: 0; }
+.codigo-cabeza-sello { flex: none; align-self: flex-start; display: grid; place-items: center; gap: 0; width: 46px; height: 50px; margin-top: -2px; border-radius: 4px 6px 4px 7px; background: #c8102e; color: #fff3ee; transform: rotate(-7deg); box-shadow: inset 0 0 0 2px rgba(255, 240, 235, .35), 0 4px 16px rgba(200, 16, 46, .45); text-shadow: none !important; }
+.codigo-cabeza-sello span { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 24px; line-height: 1; }
+.codigo-cabeza-sello b { font-size: 12px; line-height: 1; margin-top: -2px; }
+.codigo-cabeza-trazo { position: absolute; left: 6%; right: 6%; bottom: 6px; width: 88%; height: 8px; overflow: visible; opacity: .9; }
+.codigo-cabeza-trazo path { fill: none; stroke: #c8102e; stroke-width: 3; stroke-linecap: round; }
+.codigo-regla:active { transform: scale(.985); }
+.codigo-regla:active .codigo-numero { text-shadow: 0 0 1px currentColor, 0 0 18px rgba(232, 50, 60, .95); }

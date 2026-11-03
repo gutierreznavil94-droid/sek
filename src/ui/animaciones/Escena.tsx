@@ -533,9 +533,10 @@ function ParryVideo({ dur, oscuro }: { dur: number; oscuro: boolean }) {
 /**
  * Ejecución hecha con los dos videos de Luma de Navil (scripts/ejecucion-sprites.py): el ronin da el paso, carga y
  * corta mientras el rival espera en guardia; en el cuadro en que la hoja queda extendida (46 %, el mismo instante
- * que los efectos de la app) arranca la caída del rival, que termina disolviéndose en tinta. 80 cuadros a 40 fps.
+ * que los efectos de la app) arranca la caída del rival, que termina disolviéndose en tinta. 84 cuadros a 40 fps (2,1 s):
+ * antes del impacto el rival respira y se agacha apenas en guardia; la caída dura 0,8 s.
  */
-const EJ_HOJA = { w: 436, h: 158, cols: 10, filas: 8, cuadros: 80 }
+const EJ_HOJA = { w: 436, h: 158, cols: 10, filas: 9, cuadros: 84 }
 const EJ_CAJA = { x: 0, ancho: 360 }
 const EJ_ALTO = (EJ_CAJA.ancho * EJ_HOJA.h) / EJ_HOJA.w
 const EJ_Y = SUELO_Y - (153 / EJ_HOJA.h) * EJ_ALTO

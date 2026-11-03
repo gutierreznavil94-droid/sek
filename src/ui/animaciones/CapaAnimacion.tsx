@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect } from 'react'
 import { obtenerAjustes } from '../../services/base'
 import { useDatos } from '../estado'
 import { cargarPoses } from './munieco'
-import { configurarAnimaciones, duracionDe, saltar, terminar, useAnimacionActual, useConfigAnimaciones } from './motor'
+import { configurarAnimaciones, duracionDe, lentoDe, saltar, terminar, useAnimacionActual, useConfigAnimaciones } from './motor'
 
 // La escena (SVG y poses) se carga recién la primera vez que hace falta: no suma al arranque.
 const Escena = lazy(() => import('./Escena').then((m) => ({ default: m.Escena })))
@@ -24,13 +24,13 @@ export function CapaAnimacion() {
   }, [])
   useEffect(() => {
     if (!a) return
-    const id = window.setTimeout(() => terminar(a.id), duracionDe(a) * config.lento + 250)
+    const id = window.setTimeout(() => terminar(a.id), duracionDe(a) * lentoDe(a) + 250)
     return () => window.clearTimeout(id)
   }, [a, config.lento])
   if (!a) return null
   return (
     <Suspense fallback={null}>
-      <Escena key={a.id} a={a} nombre={config.nombre} lento={config.lento} tema={config.tema} tinta={config.tinta} onSaltar={saltar} />
+      <Escena key={a.id} a={a} nombre={config.nombre} lento={lentoDe(a)} tema={config.tema} tinta={config.tinta} onSaltar={saltar} />
     </Suspense>
   )
 }

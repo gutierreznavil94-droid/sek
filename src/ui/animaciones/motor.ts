@@ -9,17 +9,18 @@ import { useSyncExternalStore } from 'react'
 export type PilarAnim = 'entrenamiento' | 'empresa' | 'manga' | 'acostarse'
 export type EstiloCorte = 'horizontal' | 'diagonal' | 'ascendente' | 'estocada' | 'vertical'
 
-export type Animacion =
+export type Animacion = (
   | { tipo: 'ejecucion'; pilar: string; estilo?: EstiloCorte; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
   | { tipo: 'parry'; nombre?: string; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
   | { tipo: 'postura'; modo: '321' | 'siguiente'; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
   | { tipo: 'logro'; clase: 'nivel' | 'racha' | 'fase' | 'record'; texto: string; sub?: string; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
+) & { /** Cámara lenta solo para esta animación (x4 en Ver animaciones); si no, vale la casilla general. */ lento?: number }
 
 export type ModoAnimaciones = 'todas' | 'logros' | 'ninguna'
 
 /** Duración máxima de cada animación (ms), según lo pedido. */
 export const DURACION: Record<Animacion['tipo'], number> = {
-  ejecucion: 2000, // ejecución hecha con los dos videos de Luma (ronin corta, rival cae): 80 cuadros a 40 fps
+  ejecucion: 2100, // ejecución hecha con los dos videos de Luma (ronin corta, rival cae): 84 cuadros a 40 fps
   parry: 1900, // parry hecho con el video de Luma (88 cuadros seguidos a ~46 fps: casi el doble de rápido que el video)
   postura: 1400, // caramelo hecho con el video de Luma (56 cuadros a 40 fps)
   logro: 2600, // logro hecho con el video de Luma: 2 s de movimiento + 0,6 s de pose de victoria con el sello
@@ -263,13 +264,18 @@ function tambor(ac: AudioContext, t: number) {
   o.stop(t + 0.5)
 }
 
+/** Cámara lenta que corresponde a una animación: la suya o la general. */
+export function lentoDe(a: Animacion): number {
+  return a.lento ?? config.lento
+}
+
 export function sonar(a: Animacion): void {
   const ac = audio()
   if (!ac) return
   const t = ac.currentTime + 0.01
-  const l = config.lento
+  const l = lentoDe(a)
   try {
-    if (a.tipo === 'ejecucion') corte(ac, t + 0.42 * l)
+    if (a.tipo === 'ejecucion') corte(ac, t + (a.vieja ? 0.42 : 0.95) * l)
     else if (a.tipo === 'parry') choque(ac, t + (a.vieja ? 0.12 : 0.67) * l)
     else if (a.tipo === 'postura') aura(ac, t + (a.vieja ? 0.5 : 0.72) * l, a.modo === 'siguiente')
     else {

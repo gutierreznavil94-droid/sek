@@ -5,21 +5,21 @@ Uso: python3 -I scripts/ejecucion-sprites.py <cuadros_ronin> <cuadros_rival> <di
 Los cuadros son PNG a 24 fps (0001.png = primer cuadro) de:
   - ejecucion-2a-borrador-540p.mp4 (ronin, 960x540): se usa del cuadro 29 (1,2 s) al 120 (5 s).
     En el 76 la hoja queda extendida: es el impacto.
-  - ejecucion-2b-rival-cae.mp4 (rival gris, 1280x720): guardia congelada (cuadro 1) hasta el impacto;
-    desde ahí, del 13 (freno) al 72 (3 s, ya en el piso con la espada al costado).
+  - ejecucion-2b-rival-cae.mp4 (rival gris, 1280x720): antes del impacto va muy despacio del cuadro 1 al 13
+    (se agacha apenas en guardia, más una respiración leve); desde el impacto, del 16 al 72 (3 s, ya en el piso).
 La marca de Luma (gris claro) se borra con un umbral de luminancia: todo lo más claro que 120 es papel.
-La escena dura 2 s a 40 cuadros por segundo; al final el rival se disuelve en tinta (0,4 s).
+La escena dura 2,1 s a 40 cuadros por segundo: carga 0,975 s, caída 0,825 s, disolución del rival 0,3 s.
 """
 import sys, json
 import numpy as np
 from PIL import Image
 
 FPS = 40
-TOTAL = 80                     # 2,0 s
-IMPACTO = 37                   # 0,925 s (46 %: el mismo instante que los efectos de la app)
-FIN_CAIDA = 64                 # 1,6 s: después, disolución del rival
+TOTAL = 84                     # 2,1 s
+IMPACTO = 39                   # 0,975 s (46 %: el mismo instante que los efectos de la app)
+FIN_CAIDA = 72                 # 1,8 s: después, disolución del rival
 RONIN = (29, 76, 120)          # inicio, impacto, fin (cuadros del video)
-RIVAL = (1, 13, 72)            # guardia congelada, freno, en el piso
+RIVAL = (1, 16, 72)            # guardia, freno (impacto), en el piso
 PISO_RONIN, PISO_RIVAL = 456, 564
 ALTO_RONIN, ALTO_RIVAL = 321, 400   # alto de pie (sin la espada levantada)
 ESCALA_RIVAL = 0.92 * ALTO_RONIN / ALTO_RIVAL
@@ -67,12 +67,19 @@ def tira(tema):
     celdas = []
     for f in range(TOTAL):
         if f < IMPACTO:
-            na, nb = cuadro_en(f / IMPACTO, RONIN[0], RONIN[1]), RIVAL[0]
+            na, nb = cuadro_en(f / IMPACTO, RONIN[0], RONIN[1]), cuadro_en(f / IMPACTO, RIVAL[0], RIVAL[1])
         else:
             t = (f - IMPACTO) / (FIN_CAIDA - IMPACTO)
             na, nb = cuadro_en(t, RONIN[1], RONIN[2]), cuadro_en(t, RIVAL[1], RIVAL[2])
         lienzo = Image.new('RGBA', (W, H), (0, 0, 0, 0))
         rv = rival(nb)
+        if f < IMPACTO:
+            # Respira: el torso sube y baja apenas (1 %), con los pies fijos en el piso.
+            resp = 1 + 0.01 * np.sin(f / FPS * 2 * np.pi / 1.3)
+            rv = rv.resize((rv.width, round(rv.height * resp)), Image.BILINEAR)
+            dy = rv.height - cache[nb].height
+        else:
+            dy = 0
         if f >= FIN_CAIDA:
             # Disolución en tinta: el rival se deshace en granos de abajo hacia arriba, con viento a la derecha.
             arr = np.asarray(rv).astype(np.float32)
@@ -82,7 +89,7 @@ def tira(tema):
             corte = ruido * 0.8 + 0.2 * (np.arange(arr.shape[1])[None, :] / arr.shape[1])
             arr[..., 3] *= (corte > p).astype(np.float32)
             rv = Image.fromarray(arr.clip(0, 255).astype(np.uint8), 'RGBA')
-        lienzo.alpha_composite(rv, (round(ox), round(oy)))
+        lienzo.alpha_composite(rv, (round(ox), round(oy) - dy))
         ra = capa(f'{dir_a}/{na:04d}.png', 25, tema, 'ronin')
         lienzo.alpha_composite(ra, (-x0, -y0))
         celdas.append(lienzo.resize((round(W * ESCALA), round(H * ESCALA)), Image.LANCZOS))

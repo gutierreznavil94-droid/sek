@@ -53,7 +53,7 @@ describe('shinobi articulado', () => {
     expect(container.querySelector('.sh-ej-video image')?.getAttribute('href')).toMatch(/animaciones\/ejecucion\/ejecucion-claro\.webp$/)
     expect(container.querySelector('.sh-ej-video .sh-kanji')?.textContent).toBe('鍛')
     expect(container.querySelector('.sh-mancha')).toBeNull()
-    expect(duracionDe({ tipo: 'ejecucion', pilar: 'manga' })).toBe(2000)
+    expect(duracionDe({ tipo: 'ejecucion', pilar: 'manga' })).toBe(2100)
     expect(duracionDe({ tipo: 'ejecucion', pilar: 'manga', vieja: true })).toBe(1500)
   })
 
