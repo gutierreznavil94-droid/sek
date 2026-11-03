@@ -27,6 +27,8 @@ export function VerAnimaciones() {
   const a = datos.datos
   if (!a) return <p className="vacio">Cargando…</p>
   const ver = (x: Animacion) => animar(x, { forzar: true })
+  /** Cámara lenta (x4) para una sola animación; después vuelve a la velocidad normal. */
+  const lenta = (x: Animacion, ms: number) => { configurarAnimaciones({ lento: 4 }); ver(x); window.setTimeout(() => configurarAnimaciones({ lento: 1 }), ms * 4 + 600) }
   const guardar = (c: Partial<Ajustes>, msg: string) => mutar(() => guardarAjustes(c)).then(() => avisar(msg, { tipo: 'ok' }))
   return (
     <>
@@ -57,6 +59,8 @@ export function VerAnimaciones() {
           <button className="boton" onClick={() => { for (let i = 0; i < 3; i++) window.setTimeout(() => ver({ tipo: 'parry' }), i * 280) }}><span className="k">弾弾</span><span className="chico">Tres series seguidas</span></button>
           <button className="boton" onClick={() => ver({ tipo: 'postura', modo: '321' })}><span className="k">{KANJI['321'].k}</span><span className="chico">3-2-1</span></button>
           <button className="boton" onClick={() => ver({ tipo: 'postura', modo: 'siguiente' })}><span className="k">{KANJI.siguiente.k}</span><span className="chico">Siguiente acción</span></button>
+          <button className="boton" onClick={() => lenta({ tipo: 'postura', modo: '321' }, 1400)}><span className="k">{KANJI['321'].k}</span><span className="chico">Caramelo (Luma) · cámara lenta</span></button>
+          <button className="boton" onClick={() => ver({ tipo: 'postura', modo: '321', vieja: true })}><span className="k">{KANJI['321'].k}</span><span className="chico">Caramelo anterior (muñeco)</span></button>
         </div>
       </Tarjeta>
 
@@ -70,7 +74,10 @@ export function VerAnimaciones() {
           <button className="boton" onClick={() => ver({ tipo: 'logro', clase: 'nivel', texto: 'Nivel 5', sub: `${KANJI.nivel.k} · ascender` })}><span className="k">{KANJI.nivel.k}</span><span className="chico">Subir de nivel</span></button>
           <button className="boton" onClick={() => ver({ tipo: 'logro', clase: 'racha', texto: '7 días seguidos', sub: `${KANJI.racha.k} · racha` })}><span className="k">{KANJI.racha.k}</span><span className="chico">Racha de 7 días</span></button>
           <button className="boton" onClick={() => ver({ tipo: 'logro', clase: 'fase', texto: 'Fase 2', sub: `${KANJI.fase.k} · nueva etapa` })}><span className="k">{KANJI.fase.k}</span><span className="chico">Cambio de fase</span></button>
+          <button className="boton" onClick={() => lenta({ tipo: 'logro', clase: 'nivel', texto: 'Nivel 5', sub: `${KANJI.nivel.k} · ascender` }, 2600)}><span className="k">{KANJI.nivel.k}</span><span className="chico">Logro (Luma) · cámara lenta</span></button>
+          <button className="boton" onClick={() => ver({ tipo: 'logro', clase: 'nivel', texto: 'Nivel 5', sub: `${KANJI.nivel.k} · ascender`, vieja: true })}><span className="k">{KANJI.nivel.k}</span><span className="chico">Logro anterior (muñeco)</span></button>
         </div>
+        <p className="ayuda">El ronin corta, el kasa vuela y alza la katana (video de Luma). El anterior, con el muñeco, queda guardado acá.</p>
       </Tarjeta>
 
       <Tarjeta titulo="Cuándo se muestran">

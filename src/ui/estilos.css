@@ -1769,3 +1769,28 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .sh-ejv-flash { opacity: 0; pointer-events: none; animation: sh-ejv-flash var(--dur) linear forwards; }
 @keyframes sh-ejv-flash { 0%, 46% { opacity: 0; transform: scale(.6) } 46.3% { opacity: .95 } 48.5% { opacity: .9 } 49%, 100% { opacity: 0 } }
 .sh-ej-video .sh-ejv-flash { transform-box: fill-box; transform-origin: center; }
+
+/* Caramelo de Luma: el caramelo rojo en la mano (29–47 %) y el aura desde que junta las manos (52 %) */
+.sh-caramelo-v { opacity: 0; pointer-events: none; animation: sh-caramelo-v var(--dur) linear forwards; }
+@keyframes sh-caramelo-v { 0%, 28% { opacity: 0 } 31%, 44% { opacity: 1 } 47%, 100% { opacity: 0 } }
+.sh-postura-video .sh-aura { animation-name: sh-aura-v; }
+@keyframes sh-aura-v { 0%, 50% { opacity: 0; transform: scaleY(.3) } 64% { opacity: .7; transform: scaleY(1.06) } 78% { opacity: .5; transform: scaleY(.95) } 100% { opacity: .65; transform: scaleY(1) } }
+.sh-postura-video .sh-aura-giro { animation-name: sh-aura-ver-v, sh-aura-giro; }
+@keyframes sh-aura-ver-v { 0%, 52% { opacity: 0 } 64%, 100% { opacity: 1 } }
+.sh-postura-video .sh-onda { animation-name: sh-onda-v; }
+@keyframes sh-onda-v { 0%, 52% { opacity: 0; transform: scale(.4) } 58% { opacity: .9 } 100% { opacity: 0; transform: scale(3) } }
+.sh-postura-video .sh-kanji-aura { animation-name: sh-kanji-aura-v; }
+@keyframes sh-kanji-aura-v { 0%, 56% { opacity: 0; transform: scale(.8) } 68% { opacity: 1; transform: scale(1.08); filter: drop-shadow(0 0 8px var(--aura)) } 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 4px var(--aura)) } }
+
+/* Logro de Luma: la katana llega arriba al 54 %: destello blanco, brillo en la punta y el sello; la pose queda 0,6 s */
+.sh-logv-flash, .sh-logv-brillo { opacity: 0; pointer-events: none; transform-box: fill-box; transform-origin: center; }
+.sh-logv-flash { animation: sh-logv-flash var(--dur) linear forwards; }
+@keyframes sh-logv-flash { 0%, 53.7% { opacity: 0 } 54% { opacity: .85 } 56% { opacity: .5 } 60%, 100% { opacity: 0 } }
+.sh-logv-brillo { animation: sh-logv-brillo var(--dur) ease-out forwards; }
+@keyframes sh-logv-brillo { 0%, 53.7% { opacity: 0; transform: scale(.3) } 54.5% { opacity: 1; transform: scale(1.5) } 70% { opacity: .5; transform: scale(.8) } 100% { opacity: .35; transform: scale(.7) } }
+.sh-logro-video .sh-sello { animation-name: sh-sello-v; }
+@keyframes sh-sello-v { 0%, 54% { opacity: 0; transform: scale(1.6) rotate(-10deg) } 64% { opacity: 1; transform: scale(.95) rotate(-6deg) } 72%, 100% { opacity: .9; transform: scale(1) rotate(-6deg) } }
+.sh-capa.logro.luma .sh-titulo { animation-delay: calc(var(--dur) * .56); }
+.sh-capa.logro.luma .sh-sub-texto { animation-delay: calc(var(--dur) * .64); }
+.sh-capa.logro.luma .sh-escenario { animation-name: sh-sacudida-logro-v; }
+@keyframes sh-sacudida-logro-v { 0%, 9% { transform: none } 10% { transform: translate(-2px, 1px) } 11.5% { transform: translate(2px, -1px) } 13%, 54% { transform: none } 55% { transform: translate(-3px, 2px) } 56.5% { transform: translate(3px, -2px) } 58% { transform: translate(-2px, -1px) } 59.5%, 100% { transform: none } }

@@ -12,8 +12,8 @@ export type EstiloCorte = 'horizontal' | 'diagonal' | 'ascendente' | 'estocada' 
 export type Animacion =
   | { tipo: 'ejecucion'; pilar: string; estilo?: EstiloCorte; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
   | { tipo: 'parry'; nombre?: string; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
-  | { tipo: 'postura'; modo: '321' | 'siguiente' }
-  | { tipo: 'logro'; clase: 'nivel' | 'racha' | 'fase' | 'record'; texto: string; sub?: string }
+  | { tipo: 'postura'; modo: '321' | 'siguiente'; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
+  | { tipo: 'logro'; clase: 'nivel' | 'racha' | 'fase' | 'record'; texto: string; sub?: string; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
 
 export type ModoAnimaciones = 'todas' | 'logros' | 'ninguna'
 
@@ -21,14 +21,16 @@ export type ModoAnimaciones = 'todas' | 'logros' | 'ninguna'
 export const DURACION: Record<Animacion['tipo'], number> = {
   ejecucion: 2000, // ejecución hecha con los dos videos de Luma (ronin corta, rival cae): 80 cuadros a 40 fps
   parry: 1900, // parry hecho con el video de Luma (88 cuadros seguidos a ~46 fps: casi el doble de rápido que el video)
-  postura: 1200,
-  logro: 2000,
+  postura: 1400, // caramelo hecho con el video de Luma (56 cuadros a 40 fps)
+  logro: 2600, // logro hecho con el video de Luma: 2 s de movimiento + 0,6 s de pose de victoria con el sello
 }
 
 /** Duración de una animación en particular (el parry anterior, de muñeco, dura 600 ms). */
 export function duracionDe(a: Animacion): number {
   if (a.tipo === 'parry' && a.vieja) return 600
   if (a.tipo === 'ejecucion' && a.vieja) return 1500
+  if (a.tipo === 'postura' && a.vieja) return 1200
+  if (a.tipo === 'logro' && a.vieja) return 2000
   return DURACION[a.tipo]
 }
 
@@ -269,10 +271,10 @@ export function sonar(a: Animacion): void {
   try {
     if (a.tipo === 'ejecucion') corte(ac, t + 0.42 * l)
     else if (a.tipo === 'parry') choque(ac, t + (a.vieja ? 0.12 : 0.67) * l)
-    else if (a.tipo === 'postura') aura(ac, t + 0.5 * l, a.modo === 'siguiente')
+    else if (a.tipo === 'postura') aura(ac, t + (a.vieja ? 0.5 : 0.72) * l, a.modo === 'siguiente')
     else {
-      corte(ac, t + 0.3 * l)
-      tambor(ac, t + 1.2 * l)
+      corte(ac, t + (a.vieja ? 0.3 : 0.26) * l)
+      tambor(ac, t + (a.vieja ? 1.2 : 1.4) * l)
     }
   } catch {
     // Sin sonido: no pasa nada.

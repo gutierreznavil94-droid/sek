@@ -579,6 +579,93 @@ function EjecucionVideo({ kanji, dur, oscuro }: { kanji: string; dur: number; os
   )
 }
 
+/**
+ * Avanza los cuadros de una tira (sprite) cambiando el viewBox del <svg> con requestAnimationFrame.
+ * `mueve` es la fracción de la duración en que se pasan todos los cuadros; después queda el último.
+ */
+function useCuadros(hoja: { w: number; h: number; cols: number; cuadros: number }, dur: number, mueve = 1) {
+  const vista = useRef<SVGSVGElement>(null)
+  useEffect(() => {
+    const el = vista.current
+    if (!el) return
+    const t0 = performance.now()
+    let id = 0
+    let ultimo = -1
+    const paso = (ahora: number) => {
+      const f = Math.min(1, (ahora - t0) / dur)
+      const n = Math.min(hoja.cuadros - 1, Math.floor((f / mueve) * hoja.cuadros))
+      if (n !== ultimo) {
+        ultimo = n
+        el.setAttribute('viewBox', `${(n % hoja.cols) * hoja.w} ${Math.floor(n / hoja.cols) * hoja.h} ${hoja.w} ${hoja.h}`)
+      }
+      if (f < 1) id = requestAnimationFrame(paso)
+    }
+    id = requestAnimationFrame(paso)
+    return () => cancelAnimationFrame(id)
+  }, [dur, hoja, mueve])
+  return vista
+}
+
+/**
+ * Caramelo con el video de Luma (scripts/solo-sprites.py, caramelo-3.mp4 del cuadro 8 al 84): medio paso, se arrodilla,
+ * lleva la mano a la bufanda (la app dibuja el caramelo rojo en la mano) y junta las manos; desde ahí sube el aura.
+ * Escala de la escena: 0,19 por px del video.
+ */
+const CAR_HOJA = { w: 176, h: 235, cols: 10, filas: 6, cuadros: 56 }
+const CAR_CAJA = { x: 111, y: SUELO_Y - 550 * 0.19, ancho: 420 * 0.19, alto: 560 * 0.19 }
+const CAR_MANO = { x: CAR_CAJA.x + 345 * 0.19, y: CAR_CAJA.y + 235 * 0.19 }
+/** Logro con el video de Luma (logro-4.mp4 del cuadro 13 al 96): corte, el kasa vuela, katana al cielo (cuadro 56 de 80). */
+const LOG_HOJA = { w: 357, h: 273, cols: 10, filas: 8, cuadros: 80 }
+const LOG_CAJA = { x: 92, y: SUELO_Y - 643 * 0.19, ancho: 850 * 0.19, alto: 650 * 0.19 }
+const LOG_PUNTA = { x: LOG_CAJA.x + 368 * 0.19, y: LOG_CAJA.y + 6 * 0.19 }
+if (typeof Image !== 'undefined') for (const n of ['caramelo', 'logro']) for (const t of ['claro', 'oscuro']) { const im = new Image(); im.src = `${import.meta.env.BASE_URL}animaciones/${n}/${n}-${t}.webp`; im.decode?.().catch(() => undefined) }
+
+function PosturaVideo({ modo, dur, oscuro }: { modo: '321' | 'siguiente'; dur: number; oscuro: boolean }) {
+  const color = modo === '321' ? '#e8323c' : '#8b6cf0'
+  const k = KANJI[modo].k
+  const vista = useCuadros(CAR_HOJA, dur)
+  const hoja = `${import.meta.env.BASE_URL}animaciones/caramelo/caramelo-${oscuro ? 'oscuro' : 'claro'}.webp`
+  const x = CAR_CAJA.x + 59
+  return (
+    <g className={`sh-postura sh-postura-video ${modo === 'siguiente' ? 'lenta' : ''}`} style={{ '--aura': color } as CSSProperties}>
+      <g transform={`translate(${x},${SUELO_Y})`}>
+        <path className="sh-aura" filter="url(#shBorron)" d="M-40,0 C-48,-36 -26,-54 -16,-84 C-10,-70 -2,-96 6,-106 C10,-84 20,-76 26,-90 C38,-62 46,-36 40,0 Z" fill={color} />
+        {modo === 'siguiente' && <path className="sh-aura sh-aura-2" filter="url(#shBorron)" d="M-30,0 C-36,-30 -18,-44 -10,-70 C-4,-58 2,-80 8,-88 C12,-70 20,-62 24,-74 C32,-50 36,-28 30,0 Z" fill="#3fbf7f" />}
+        <g className="sh-aura-giro" style={{ transformOrigin: '0px -40px' }}>
+          <ellipse cx={0} cy={-4} rx={44} ry={9} fill="none" stroke={color} strokeWidth={2} opacity={0.5} strokeDasharray="14 10" />
+        </g>
+      </g>
+      <circle className="sh-onda" cx={x} cy={SUELO_Y - 40} r={30} fill="none" stroke={color} strokeWidth={3} />
+      <svg ref={vista} className="sh-parry-cuadros" x={CAR_CAJA.x} y={CAR_CAJA.y} width={CAR_CAJA.ancho} height={CAR_CAJA.alto} viewBox={`0 0 ${CAR_HOJA.w} ${CAR_HOJA.h}`} preserveAspectRatio="none">
+        <image href={hoja} x={0} y={0} width={CAR_HOJA.w * CAR_HOJA.cols} height={CAR_HOJA.h * CAR_HOJA.filas} />
+      </svg>
+      <circle className="sh-caramelo-v" cx={CAR_MANO.x} cy={CAR_MANO.y} r={2.6} fill={ROJO} stroke="var(--sh-papel)" strokeWidth={0.7} />
+      <Kanji k={k} x={300} y={92} clase="sh-kanji sh-kanji-aura" color={color} />
+    </g>
+  )
+}
+
+function LogroVideo({ clase, dur, oscuro }: { clase: 'nivel' | 'racha' | 'fase' | 'record'; dur: number; oscuro: boolean }) {
+  const k = KANJI[clase].k
+  // 2 s de movimiento (77 % de 2,6 s) y después la pose de victoria quieta con el sello.
+  const vista = useCuadros(LOG_HOJA, dur, 2000 / 2600)
+  const hoja = `${import.meta.env.BASE_URL}animaciones/logro/logro-${oscuro ? 'oscuro' : 'claro'}.webp`
+  return (
+    <g className="sh-logro sh-logro-video">
+      <svg ref={vista} className="sh-parry-cuadros" x={LOG_CAJA.x} y={LOG_CAJA.y} width={LOG_CAJA.ancho} height={LOG_CAJA.alto} viewBox={`0 0 ${LOG_HOJA.w} ${LOG_HOJA.h}`} preserveAspectRatio="none">
+        <image href={hoja} x={0} y={0} width={LOG_HOJA.w * LOG_HOJA.cols} height={LOG_HOJA.h * LOG_HOJA.filas} />
+      </svg>
+      <circle className="sh-logv-brillo" cx={LOG_PUNTA.x} cy={LOG_PUNTA.y} r={16} fill="#fffbe8" />
+      <circle className="sh-logv-flash" cx={180} cy={120} r={260} fill="#fff" />
+      <g className="sh-sello" style={{ transformOrigin: '72px 62px' }}>
+        <rect x={44} y={34} width={56} height={56} rx={7} fill={ROJO} />
+        <rect x={49} y={39} width={46} height={46} rx={4} fill="none" stroke="#f6d9d9" strokeWidth={1.5} />
+        <Kanji k={k} x={72} y={78} tam={38} clase="" color="#fff" />
+      </g>
+    </g>
+  )
+}
+
 function Postura({ modo, dur }: { modo: '321' | 'siguiente'; dur: number }) {
   const color = modo === '321' ? '#e8323c' : '#8b6cf0'
   const k = KANJI[modo].k
@@ -676,14 +763,15 @@ export function Escena({ a, nombre, lento = 1, tema = 'claro', tinta = true, onS
   // El parry anterior (muñeco) es chiquito abajo y deja pasar los toques; el de Luma es una escena grande como las demás.
   const parry = a.tipo === 'parry' && !!a.vieja
   const parryVideo = a.tipo === 'parry' && !a.vieja
+  const luma = (a.tipo === 'postura' || a.tipo === 'logro') && !a.vieja
   return (
-    <div className={`sh-capa ${parry ? 'parry-chico' : ''} ${parryVideo ? 'parry-video' : ''} ${a.tipo} ${temaClase}`} style={{ '--dur': `${dur}ms` } as CSSProperties} onPointerDown={parry ? undefined : onSaltar} role="status" aria-label={a.tipo === 'parry' ? 'Parry' : typeof titulo === 'string' ? titulo : 'Animación de logro'}>
+    <div className={`sh-capa ${parry ? 'parry-chico' : ''} ${parryVideo ? 'parry-video' : ''} ${luma ? 'luma' : ''} ${a.tipo} ${temaClase}`} style={{ '--dur': `${dur}ms` } as CSSProperties} onPointerDown={parry ? undefined : onSaltar} role="status" aria-label={a.tipo === 'parry' ? 'Parry' : typeof titulo === 'string' ? titulo : 'Animación de logro'}>
       <svg className="sh-escenario" viewBox="0 0 360 240" aria-hidden>
         <Fondo tinte={a.tipo === 'postura' ? color : undefined} lluvia={a.tipo === 'logro'} />
         {a.tipo === 'ejecucion' && (a.vieja ? <Ejecucion estilo={estilo} kanji={kanji} dur={dur} enemigo={enemigo} /> : <EjecucionVideo kanji={kanji} dur={dur} oscuro={tema === 'oscuro'} />)}
         {a.tipo === 'parry' && (a.vieja ? <Parry dur={dur} /> : <ParryVideo dur={dur} oscuro={tema === 'oscuro'} />)}
-        {a.tipo === 'postura' && <Postura modo={a.modo} dur={dur} />}
-        {a.tipo === 'logro' && <Logro clase={a.clase} dur={dur} enemigo={enemigo} />}
+        {a.tipo === 'postura' && (a.vieja ? <Postura modo={a.modo} dur={dur} /> : <PosturaVideo modo={a.modo} dur={dur} oscuro={tema === 'oscuro'} />)}
+        {a.tipo === 'logro' && (a.vieja ? <Logro clase={a.clase} dur={dur} enemigo={enemigo} /> : <LogroVideo clase={a.clase} dur={dur} oscuro={tema === 'oscuro'} />)}
       </svg>
       {!parry && (
         <div className="sh-textos">
