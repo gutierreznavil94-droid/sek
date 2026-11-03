@@ -1,7 +1,8 @@
 # Tema de Nay
 
 Acá vive el tema de Nay. Solo se edita esta carpeta y `public/temas/nay/`.
-Por ahora tiene los valores de Shinobi: cada pedido de Nay va cambiando un campo.
+Lo que no esté escrito en `tema.json` se toma de Shinobi, así nada se rompe a medio armar.
+Cada pedido de Nay va sumando o cambiando un campo.
 
 | Campo | Qué es |
 |---|---|

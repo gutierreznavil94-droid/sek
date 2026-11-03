@@ -24,6 +24,9 @@ Un tema es la cara de la app: personaje, fondos, sprite del entreno, color de ac
 | `sprite` | `"temas/<id>/camina.webp"` |
 | `vistaPrevia` | `{ "video": "temas/<id>/lluvia.mp4", "imagen": "temas/<id>/lluvia.jpg" }` |
 | `orden` | Posición en la lista de temas |
+| `oculto` | `true`: el tema no aparece en la lista mientras se arma (con `VITE_TEMAS_OCULTOS=1` se ve igual, para probarlo) |
+
+Lo que falte en `tema.json` se completa con los valores de Shinobi: un tema puede arrancar con solo `nombre` y `descripcion`.
 
 3. Si el tema estaba en `src/temas/proximamente.json`, sacá su tarjeta de ahí.
 4. Publicar. La app encuentra sola cada carpeta con `tema.json` (y los tests verifican que Shinobi siga siendo el tema por defecto).

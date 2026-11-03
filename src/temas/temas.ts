@@ -28,21 +28,46 @@ export interface DefinicionTema {
   vistaPrevia: { video?: string; imagen: string }
   icono?: string
   orden?: number
+  /** `true`: el tema existe pero no aparece en la lista (se está armando). Se ve igual con VITE_TEMAS_OCULTOS=1. */
+  oculto?: boolean
 }
 
 export interface TemaProximo { id: string; nombre: string; pista: string }
 
-const archivos = import.meta.glob<{ default: DefinicionTema }>('./*/tema.json', { eager: true })
-export const TEMAS: DefinicionTema[] = Object.values(archivos)
-  .map((m) => m.default)
-  .sort((a, b) => (a.orden ?? 99) - (b.orden ?? 99))
-export const TEMAS_PROXIMOS: TemaProximo[] = proximamente.temas
 export const TEMA_POR_DEFECTO = 'shinobi'
+
+/**
+ * Completa un tema a medio armar con los valores del tema por defecto: lo que falte en su
+ * `tema.json` (personaje, color, fondos, sprite…) se toma de Shinobi, así nada se rompe.
+ */
+export function completarTema(parcial: Partial<DefinicionTema>, carpeta: string, base?: DefinicionTema): DefinicionTema {
+  const t = base ? { ...base, ...parcial } : (parcial as DefinicionTema)
+  return {
+    ...t,
+    id: parcial.id ?? carpeta,
+    vistaPrevia: { ...(base?.vistaPrevia ?? {}), ...(parcial.vistaPrevia ?? {}) } as DefinicionTema['vistaPrevia'],
+    oculto: parcial.oculto === true,
+  }
+}
+
+const archivos = import.meta.glob<{ default: Partial<DefinicionTema> }>('./*/tema.json', { eager: true })
+const crudos = Object.entries(archivos).map(([ruta, m]) => ({ carpeta: ruta.split('/')[1], datos: m.default }))
+const crudoBase = crudos.find((c) => c.carpeta === TEMA_POR_DEFECTO)
+const BASE = crudoBase ? completarTema(crudoBase.datos, crudoBase.carpeta) : undefined
+const mostrarOcultos = import.meta.env?.VITE_TEMAS_OCULTOS === '1'
+
+/** Todos los temas, también los ocultos (sirve para no perder el tema de quien ya lo eligió). */
+export const TODOS_LOS_TEMAS: DefinicionTema[] = crudos
+  .map((c) => (c.carpeta === TEMA_POR_DEFECTO ? BASE! : completarTema(c.datos, c.carpeta, BASE)))
+  .sort((a, b) => (a.orden ?? 99) - (b.orden ?? 99))
+/** Los temas que se ofrecen en la lista. */
+export const TEMAS: DefinicionTema[] = TODOS_LOS_TEMAS.filter((t) => !t.oculto || mostrarOcultos)
+export const TEMAS_PROXIMOS: TemaProximo[] = proximamente.temas
 /** Acento de estilos.css: si el tema usa este, no se pisa nada. */
 const ACENTO_BASE = '#c8102e'
 
 export function temaPorId(id: string | undefined): DefinicionTema {
-  return TEMAS.find((t) => t.id === id) ?? TEMAS.find((t) => t.id === TEMA_POR_DEFECTO) ?? TEMAS[0]
+  return TODOS_LOS_TEMAS.find((t) => t.id === id) ?? TODOS_LOS_TEMAS.find((t) => t.id === TEMA_POR_DEFECTO) ?? TODOS_LOS_TEMAS[0]
 }
 
 let activo: DefinicionTema = temaPorId(TEMA_POR_DEFECTO)
