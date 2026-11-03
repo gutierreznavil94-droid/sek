@@ -1605,3 +1605,5 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .mini-punto.gris { fill: rgba(var(--papel-rgb), .45); stroke: none; }
 .mini-vacio { stroke: rgba(var(--papel-rgb), .35); stroke-width: 1.2; stroke-dasharray: 2 3; }
 .mini-sello { display: inline-grid; place-items: center; width: 22px; height: 20px; margin: 1px 0; font-family: 'Pincel', serif; font-size: 13px; color: #f4eee6; background: #c8102e; border-radius: 2px 3px 2px 3px; transform: rotate(-5deg); box-shadow: 0 0 6px rgba(200, 16, 46, .4); }
+.av-tapa-arriba { position: absolute; left: 0; right: 0; top: 0; height: 170px; background: linear-gradient(to bottom, var(--fondo) 0, var(--fondo) 105px, rgba(18, 17, 16, 0)); pointer-events: none; z-index: 3; transition: opacity .2s linear; }
+@media (prefers-reduced-motion: reduce) { :root:not(.movimiento-siempre) .av-tapa-arriba { transition: none; } }

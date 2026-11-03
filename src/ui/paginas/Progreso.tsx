@@ -201,9 +201,11 @@ export function Progreso({ hoy }: { hoy: string }) {
     <div className="progreso-tinta" data-fondo={fondo?.tipo ?? 'oscuro'} data-vidrio={vidrioClaro() && fondo?.tipo === 'claro' ? 'claro' : undefined} style={{ '--av-arriba': `${arriba}px` } as React.CSSProperties}>
       {/* Fondo fijo: el video vertical cubre toda la pantalla y no se mueve al desplazar */}
       {createPortal(
-        <div className="av-fondo" aria-hidden="true" data-orientacion={horizontal ? 'horizontal' : undefined} data-vista="codigo">
+        <div className="av-fondo" aria-hidden="true" data-orientacion={horizontal ? 'horizontal' : undefined} data-vista={seccion ? 'codigo' : undefined}>
           {fondo && <VideoDeFondo key={fondo.id} fondo={fondo} quieto={reducido} pausado={verNiveles || !!sel} />}
           {!seccion && <div className="av-oscuro" style={{ opacity: oscuro }} />}
+          {/* Al bajar, la franja de arriba del video (donde aparece la marca de agua) queda bajo el encabezado */}
+          {!seccion && <div className="av-tapa-arriba" style={{ opacity: Math.min(1, oscuro / 0.3) }} />}
         </div>,
         document.body,
       )}
