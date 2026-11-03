@@ -135,6 +135,15 @@ describe('temas', () => {
     expect(TEMAS_PROXIMOS.length).toBeGreaterThan(0)
   })
 
+  it('un tema oculto (plantilla «nay») no se ofrece, pero existe y completa lo que le falta con Shinobi', () => {
+    expect(TEMAS.map((t) => t.id)).not.toContain('nay')
+    const n = temaPorId('nay')
+    expect(n.id).toBe('nay')
+    expect(n.oculto).toBe(true)
+    expect(n.sprite).toBe('shinobi/camina.webp')
+    expect(n.saludo).toContain('{personaje}')
+  })
+
   it('un tema desconocido cae en Shinobi y Shinobi no pisa el color', () => {
     expect(temaPorId('no-existe').id).toBe('shinobi')
     aplicarTema('shinobi', 'SEK')

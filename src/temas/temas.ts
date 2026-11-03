@@ -28,21 +28,30 @@ export interface DefinicionTema {
   vistaPrevia: { video?: string; imagen: string }
   icono?: string
   orden?: number
+  /** Nombres que se proponen para las tres fases (si falta, los de SEK). */
+  nombresFases?: string[]
+  /** Tema en preparación: no aparece en la primera entrada ni en Más → Tema hasta que se saque esto. */
+  oculto?: boolean
 }
 
 export interface TemaProximo { id: string; nombre: string; pista: string }
 
 const archivos = import.meta.glob<{ default: DefinicionTema }>('./*/tema.json', { eager: true })
-export const TEMAS: DefinicionTema[] = Object.values(archivos)
-  .map((m) => m.default)
+const todos = Object.values(archivos).map((m) => m.default)
+const base = todos.find((t) => t.id === 'shinobi') ?? todos[0]
+/** Todos los temas, incluso los ocultos. Lo que le falte a un tema lo toma de Shinobi, así la app no se rompe a medio armar. */
+export const TEMAS_TODOS: DefinicionTema[] = todos
+  .map((t) => ({ ...base, ...Object.fromEntries(Object.entries(t).filter(([, v]) => v !== '' && v !== null && v !== undefined)) }) as DefinicionTema)
   .sort((a, b) => (a.orden ?? 99) - (b.orden ?? 99))
+/** Temas elegibles (los ocultos quedan afuera). */
+export const TEMAS: DefinicionTema[] = TEMAS_TODOS.filter((t) => !t.oculto)
 export const TEMAS_PROXIMOS: TemaProximo[] = proximamente.temas
 export const TEMA_POR_DEFECTO = 'shinobi'
 /** Acento de estilos.css: si el tema usa este, no se pisa nada. */
 const ACENTO_BASE = '#c8102e'
 
 export function temaPorId(id: string | undefined): DefinicionTema {
-  return TEMAS.find((t) => t.id === id) ?? TEMAS.find((t) => t.id === TEMA_POR_DEFECTO) ?? TEMAS[0]
+  return TEMAS_TODOS.find((t) => t.id === id) ?? TEMAS.find((t) => t.id === TEMA_POR_DEFECTO) ?? TEMAS[0]
 }
 
 let activo: DefinicionTema = temaPorId(TEMA_POR_DEFECTO)

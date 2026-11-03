@@ -111,6 +111,7 @@ export async function configurarPrimeraVez(c: ConfigPrimeraVez): Promise<void> {
     nombreApp: c.nombreApp.trim() || 'SEK',
     tema: tema.id,
     nombrePersonaje: tema.personaje,
+    ...(tema.nombresFases?.length === 3 ? { nombresFases: tema.nombresFases } : {}),
     horaAlistarse: c.horarios.alistarse,
     horaDejarCelu: c.horarios.dejarCelu,
     horaDormido: c.horarios.dormir,
