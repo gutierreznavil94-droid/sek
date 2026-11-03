@@ -474,6 +474,8 @@ export type BloqueEjercicio = {
   descanso: number
   /** Sombra al principio del descanso (segundos) después de las series que no son la última. 0 = sin sombra. */
   sombra: number
+  /** Admite reps con ayuda (p. ej. tríceps en polea: las últimas 3 con una mano). Entonces `repsExtra` es la ayuda planeada. */
+  admiteAyuda?: boolean
   nota?: string
 }
 
@@ -482,11 +484,11 @@ export type BloqueEjercicio = {
  * Temporizador (calentamiento) o cronómetro (colgarse en barra: cuenta para
  * arriba, con peso; `segundos` es el objetivo).
  */
-export type BloqueTemporizador = { id: string; tipo: 'calentamiento' | 'temporizador'; nombre: string; segundos: number; veces?: number; peso?: number; nota?: string; modo?: 'cuenta' | 'cronometro' }
+export type BloqueTemporizador = { id: string; tipo: 'calentamiento' | 'temporizador'; nombre: string; segundos: number; veces?: number; peso?: number; nota?: string; modo?: 'cuenta' | 'cronometro'; /** Cronómetro: descanso después, sin sombra (segundos; si falta, 60). */ descansoDespues?: number }
 /** Tiempo registrado con el cronómetro (colgarse en barra). */
 export type TiempoHecho = { bloqueId: string; nombre: string; segundos: number; peso: number; instante: number }
 /** Rondas con cuenta regresiva (kick boxing). */
-export type BloqueRondas = { id: string; tipo: 'rondas'; nombre: string; rondas: { segundos: number; texto: string }[] }
+export type BloqueRondas = { id: string; tipo: 'rondas'; nombre: string; rondas: { segundos: number; texto: string }[]; /** Descanso entre rondas, en segundos (si falta, 60). */ descansoEntre?: number }
 /** Casilla para marcar (estirar). */
 export type BloqueCasilla = { id: string; tipo: 'casilla'; nombre: string; nota?: string }
 
@@ -505,10 +507,11 @@ export type Rutina = {
   creado: number
 }
 
-export type SerieHecha = { bloqueId: string; n: number; reps: number; repsExtra?: number; peso: number; instante: number }
+/** `ayuda`: reps con ayuda (solo en ejercicios que la admiten). Quedan en el historial y suman al volumen, pero no cuentan para récord ni para subir peso. */
+export type SerieHecha = { bloqueId: string; n: number; reps: number; repsExtra?: number; ayuda?: number; peso: number; instante: number }
 
 /** Fase del descanso: sombra, descansar o acomodar para el siguiente ejercicio. */
-export type FaseDescanso = { tipo: 'sombra' | 'descanso' | 'acomodar'; segundos: number; texto: string }
+export type FaseDescanso = { tipo: 'preparar' | 'sombra' | 'descanso' | 'acomodar'; segundos: number; texto: string }
 
 export type SesionEntreno = {
   id?: number
@@ -534,7 +537,7 @@ export type SesionEntreno = {
   /** Tiempos de los bloques con cronómetro. */
   tiempos?: TiempoHecho[]
   /** Descanso en marcha: para retomarlo si la app se cierra. */
-  descanso?: { inicio: number; fases: FaseDescanso[] }
+  descanso?: { inicio: number; fases: FaseDescanso[]; /** Bloque que no es ejercicio después del cual corre (colgarse en barra). */ origen?: string }
   /** Temporizador en marcha (calentamiento, colgarse, rondas). */
   reloj?: { bloqueId: string; ronda: number; inicio: number; segundos: number }
   xpExtra?: number

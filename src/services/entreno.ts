@@ -13,7 +13,7 @@
 
 import { db } from '../data/db'
 import { RUTINAS_INICIALES } from '../data/semilla'
-import type { BloqueEjercicio, BloqueRutina, FaseDescanso, Rutina, SerieHecha, SesionEntreno, TiempoHecho } from '../data/tipos'
+import type { BloqueEjercicio, BloqueRondas, BloqueRutina, FaseDescanso, Rutina, SerieHecha, SesionEntreno, TiempoHecho } from '../data/tipos'
 import { diaSemanaDe, instanteDe, lunesDe, sumarDias, type FechaDia } from '../domain/fechas'
 import { claveXp } from '../domain/xp'
 import { fechaHoy, obtenerAjustes, registrarEvento } from './base'
@@ -36,6 +36,16 @@ export async function cargarRutinasIniciales(): Promise<void> {
     for (const r of await d.rutinas.toArray()) {
       if (!r.bloques.some((b) => b.tipo === 'temporizador' && b.id.endsWith('-colgarse') && !b.modo)) continue
       await d.rutinas.put({ ...r, bloques: r.bloques.map((b) => (b.tipo === 'temporizador' && b.id.endsWith('-colgarse') && !b.modo ? { ...b, modo: 'cronometro' as const } : b)) })
+    }
+    // Ronda 8: el «+3» del jalón de tríceps en polea son reps con ayuda (se guardan aparte, no cuentan para récord).
+    for (const r of await d.rutinas.toArray()) {
+      const ids = r.bloques.filter((b) => b.tipo === 'ejercicio' && b.admiteAyuda === undefined && b.repsExtra && /tr[ií]ceps/i.test(b.nombre) && /polea/i.test(b.nombre)).map((b) => b.id)
+      if (!ids.length) continue
+      await d.rutinas.put({ ...r, bloques: r.bloques.map((b) => (ids.includes(b.id) && b.tipo === 'ejercicio' ? { ...b, admiteAyuda: true } : b)) })
+      for (const s of await d.sesionesEntreno.where('rutinaId').equals(r.id).toArray()) {
+        if (!s.series.some((x) => ids.includes(x.bloqueId) && x.repsExtra)) continue
+        await d.sesionesEntreno.put({ ...s, series: s.series.map((x) => (ids.includes(x.bloqueId) && x.repsExtra ? { ...x, ayuda: x.repsExtra, repsExtra: undefined } : x)) })
+      }
     }
     // Primera prueba de la v0.36: tenía incrementos automáticos y tope = planilla + 3. Ahora tope 12 y sin incrementos.
     for (const r of await d.rutinas.toArray()) {
@@ -109,10 +119,18 @@ export function fasesDescanso(b: Pick<BloqueEjercicio, 'series' | 'descanso' | '
   }
   const sombra = Math.max(0, Math.min(b.sombra, b.descanso))
   const fases: FaseDescanso[] = []
+  // Ronda 8: 3-2-1 antes de la sombra, descontado del descanso (el total no cambia).
+  const prep = sombra > 0 && b.descanso - sombra >= PREPARAR_SOMBRA_S ? PREPARAR_SOMBRA_S : 0
+  if (prep) fases.push({ tipo: 'preparar', segundos: prep, texto: 'Sombra en' })
   if (sombra > 0) fases.push({ tipo: 'sombra', segundos: sombra, texto: 'Sombra' })
-  if (b.descanso - sombra > 0) fases.push({ tipo: 'descanso', segundos: b.descanso - sombra, texto: 'Descansá' })
+  if (b.descanso - sombra - prep > 0) fases.push({ tipo: 'descanso', segundos: b.descanso - sombra - prep, texto: 'Descansá' })
   return fases
 }
+
+/** Segundos de la cuenta 3-2-1 antes de la sombra (se descuentan del descanso). */
+export const PREPARAR_SOMBRA_S = 3
+/** A cuántos segundos del final del descanso se pone ámbar y vibra para alistarse. */
+export const AVISO_FIN_DESCANSO_S = 10
 
 /** En qué fase está un descanso a cierto instante. `null` si ya terminó. */
 export function faseActual(descanso: { inicio: number; fases: FaseDescanso[] }, t: number): { indice: number; fase: FaseDescanso; restante: number; totalRestante: number } | null {
@@ -130,7 +148,7 @@ export function faseActual(descanso: { inicio: number; fases: FaseDescanso[] }, 
 // ---------- Sesión ----------
 
 async function guardarSesion(s: SesionEntreno): Promise<SesionEntreno> {
-  if (!s.primerMovimiento && s.estado === 'en_curso' && (s.series.length || s.hechos.length || s.saltados.length || s.reloj || s.tiempos?.length)) s = { ...s, primerMovimiento: s.reloj?.inicio ?? ahora() }
+  if (!s.primerMovimiento && s.estado === 'en_curso' && (s.series.length || s.hechos.length || s.saltados.length || s.reloj || s.tiempos?.length)) s = { ...s, primerMovimiento: Math.min(s.reloj?.inicio ?? ahora(), ahora()) }
   await db().sesionesEntreno.put(s)
   return s
 }
@@ -208,7 +226,7 @@ function nombreSiguiente(s: SesionEntreno, r: Rutina): string | undefined {
  * «Serie hecha»: anota la serie con el objetivo (las repeticiones reales se
  * corrigen en el descanso con `corregirSerie`) y arranca el descanso al instante.
  */
-export async function registrarSerie(id: number, bloqueId: string, hecho: { reps: number; repsExtra?: number; peso?: number }): Promise<SesionEntreno> {
+export async function registrarSerie(id: number, bloqueId: string, hecho: { reps: number; repsExtra?: number; ayuda?: number; peso?: number }): Promise<SesionEntreno> {
   const s = await sesion(id)
   const r = await obtenerRutina(s.rutinaId)
   const b = r && bloqueDe(r, bloqueId)
@@ -216,7 +234,11 @@ export async function registrarSerie(id: number, bloqueId: string, hecho: { reps
   const n = seriesDe(s, bloqueId).length + 1
   const t = ahora()
   const peso = hecho.peso ?? s.pesos?.[bloqueId] ?? b.peso
-  const nueva: SesionEntreno = { ...s, pesos: { ...s.pesos, [bloqueId]: peso }, series: [...s.series, { bloqueId, n, reps: Math.max(0, Math.round(hecho.reps)), repsExtra: hecho.repsExtra, peso: Math.max(0, peso), instante: t }], reloj: undefined }
+  // En los ejercicios con ayuda, el «+N» es ayuda: se guarda aparte.
+  const serie: SerieHecha = b.admiteAyuda
+    ? { bloqueId, n, reps: Math.max(0, Math.round(hecho.reps)), ayuda: hecho.ayuda ?? hecho.repsExtra, peso: Math.max(0, peso), instante: t }
+    : { bloqueId, n, reps: Math.max(0, Math.round(hecho.reps)), repsExtra: hecho.repsExtra, peso: Math.max(0, peso), instante: t }
+  const nueva: SesionEntreno = { ...s, pesos: { ...s.pesos, [bloqueId]: peso }, series: [...s.series, serie], reloj: undefined }
   // Si terminó el ejercicio, el paso pasa al siguiente y el descanso es para acomodar.
   if (n >= b.series) nueva.paso = siguientePaso(nueva, r, s.paso)
   const fases = fasesDescanso(b, n, n >= b.series ? nombreSiguiente(nueva, r) : undefined)
@@ -231,11 +253,11 @@ export async function fijarPeso(id: number, bloqueId: string, peso: number): Pro
 }
 
 /** Corrige una serie ya anotada (lo que se marca en el descanso, o tocándola en la lista). */
-export async function corregirSerie(id: number, bloqueId: string, n: number, cambios: { reps?: number; repsExtra?: number; peso?: number }): Promise<SesionEntreno> {
+export async function corregirSerie(id: number, bloqueId: string, n: number, cambios: { reps?: number; repsExtra?: number; ayuda?: number; peso?: number }): Promise<SesionEntreno> {
   const s = await sesion(id)
   const series = s.series.map((x) =>
     x.bloqueId === bloqueId && x.n === n
-      ? { ...x, ...(cambios.reps !== undefined ? { reps: Math.max(0, Math.round(cambios.reps)) } : {}), ...(cambios.repsExtra !== undefined ? { repsExtra: Math.max(0, Math.round(cambios.repsExtra)) } : {}), ...(cambios.peso !== undefined ? { peso: Math.max(0, cambios.peso) } : {}) }
+      ? { ...x, ...(cambios.reps !== undefined ? { reps: Math.max(0, Math.round(cambios.reps)) } : {}), ...(cambios.repsExtra !== undefined ? { repsExtra: Math.max(0, Math.round(cambios.repsExtra)) } : {}), ...(cambios.ayuda !== undefined ? { ayuda: Math.max(0, Math.round(cambios.ayuda)) || undefined } : {}), ...(cambios.peso !== undefined ? { peso: Math.max(0, cambios.peso) } : {}) }
       : x,
   )
   return guardarSesion({ ...s, series })
@@ -325,8 +347,31 @@ export async function iniciarReloj(id: number, bloqueId: string): Promise<Sesion
   const r = await obtenerRutina(s.rutinaId)
   const b = r && bloqueDe(r, bloqueId)
   if (!b) throw new Error('Bloque no encontrado')
-  const segundos = b.tipo === 'rondas' ? b.rondas.reduce((t, x) => t + x.segundos, 0) : b.tipo === 'casilla' || b.tipo === 'ejercicio' ? 0 : b.segundos * (b.veces ?? 1)
-  return guardarSesion({ ...s, reloj: { bloqueId, ronda: 0, inicio: ahora(), segundos }, descanso: undefined })
+  const segundos = b.tipo === 'rondas' ? tramosRondas(b).reduce((t, x) => t + x.segundos, 0) : b.tipo === 'casilla' || b.tipo === 'ejercicio' ? 0 : b.segundos * (b.veces ?? 1)
+  // Ronda 8: los relojes que cuentan para abajo (calentamiento, kick boxing) arrancan con 5 s de preparación.
+  // El cronómetro de colgarse ya los tiene adentro (estadoCronometro).
+  const prep = b.tipo === 'calentamiento' || b.tipo === 'rondas' || (b.tipo === 'temporizador' && b.modo !== 'cronometro') ? PREPARACION_S * 1000 : 0
+  return guardarSesion({ ...s, reloj: { bloqueId, ronda: 0, inicio: ahora() + prep, segundos }, descanso: undefined })
+}
+
+/** Saltea la preparación de 5 s: el reloj arranca ya. */
+export async function saltarPreparacion(id: number): Promise<SesionEntreno> {
+  const s = await sesion(id)
+  if (!s.reloj) return s
+  const t = ahora()
+  if (s.reloj.inicio > t) return guardarSesion({ ...s, reloj: { ...s.reloj, inicio: t } })
+  // Cronómetro (colgarse): la preparación va adentro del reloj; saltarla es correr el inicio 5 s atrás.
+  if (t - s.reloj.inicio < PREPARACION_S * 1000) return guardarSesion({ ...s, reloj: { ...s.reloj, inicio: t - PREPARACION_S * 1000 } })
+  return s
+}
+
+/** Tramos de un bloque de rondas: cada ronda y, entre ronda y ronda, el descanso (60 s si no se configuró). */
+export function tramosRondas(b: BloqueRondas): { segundos: number; texto: string; descanso?: boolean; ronda: number }[] {
+  const entre = b.descansoEntre ?? 60
+  return b.rondas.flatMap((x, i) => [
+    ...(i > 0 && entre > 0 ? [{ segundos: entre, texto: 'Descanso', descanso: true, ronda: i }] : []),
+    { segundos: x.segundos, texto: x.texto, ronda: i },
+  ])
 }
 
 export async function pararReloj(id: number): Promise<SesionEntreno> {
@@ -392,7 +437,7 @@ export function marcaDe(series: SerieHecha[]): Marca | null {
     peso: s1.peso,
     reps: total(s1),
     repsTotal: series.reduce((t, x) => t + total(x), 0),
-    volumen: series.reduce((t, x) => t + total(x) * x.peso, 0),
+    volumen: series.reduce((t, x) => t + (total(x) + (x.ayuda ?? 0)) * x.peso, 0),
   }
 }
 
@@ -523,7 +568,7 @@ export async function calcularResumen(s: SesionEntreno): Promise<ResumenEntreno>
   return {
     minutos: Math.max(1, Math.round(duracionEntreno(s, s.fin ?? ahora()) / 60)),
     series: s.series.length,
-    volumen: Math.round(s.series.reduce((t, x) => t + total(x) * x.peso, 0)),
+    volumen: Math.round(s.series.reduce((t, x) => t + (total(x) + (x.ayuda ?? 0)) * x.peso, 0)),
     ejercicios: ejerciciosHechos,
     xpExtra: Math.min(TOPE_XP_EXTRA, xpSinTope),
     xpSinTope,
@@ -642,7 +687,7 @@ export async function resumenFuerza(hoy: FechaDia, inicioCiclo: FechaDia, semana
   for (let i = semanas - 1; i >= 0; i--) {
     const desde = sumarDias(lunes, -7 * i)
     const hasta = sumarDias(desde, 6)
-    const volumen = todas.filter((s) => s.fecha >= desde && s.fecha <= hasta).reduce((t, s) => t + s.series.reduce((u, x) => u + (x.reps + (x.repsExtra ?? 0)) * x.peso, 0), 0)
+    const volumen = todas.filter((s) => s.fecha >= desde && s.fecha <= hasta).reduce((t, s) => t + s.series.reduce((u, x) => u + (x.reps + (x.repsExtra ?? 0) + (x.ayuda ?? 0)) * x.peso, 0), 0)
     volumenPorSemana.push({ semana: desde, volumen: Math.round(volumen) })
   }
   return { entrenos: todas.filter((s) => s.fecha >= inicioCiclo).length, records: [...records.values()].sort((a, b) => b.fecha.localeCompare(a.fecha)), mejoraronEsteMes: [...mejoraron], volumenPorSemana }
@@ -678,6 +723,9 @@ export async function terminarCronometro(id: number, bloqueId: string, peso: num
   const tiempo: TiempoHecho = { bloqueId, nombre: b.nombre, segundos, peso: Math.max(0, peso), instante: t }
   const nueva: SesionEntreno = { ...s, tiempos: [...(s.tiempos ?? []).filter((x) => x.bloqueId !== bloqueId), tiempo], pesos: { ...s.pesos, [bloqueId]: peso }, hechos: s.hechos.includes(bloqueId) ? s.hechos : [...s.hechos, bloqueId], reloj: undefined, descanso: undefined }
   nueva.paso = siguientePaso(nueva, r, s.paso)
+  // Ronda 8: después de colgarse hay descanso, sin sombra («Descanso 1:00»), si queda algo por hacer.
+  const pausa = b.tipo === 'temporizador' ? b.descansoDespues ?? 60 : 0
+  if (pausa > 0 && nueva.paso < nueva.orden.length) nueva.descanso = { inicio: t, fases: [{ tipo: 'descanso', segundos: pausa, texto: 'Descanso' }], origen: bloqueId }
   return { sesion: await guardarSesion(nueva), tiempo }
 }
 

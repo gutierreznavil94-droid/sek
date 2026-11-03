@@ -84,7 +84,7 @@ describe('rutinas de la planilla', () => {
     const a = (await obtenerRutina('rutina-a'))!
     expect(a.bloques.map((b) => b.nombre)).toEqual(['Calentamiento', 'Press banca', 'Press inclinado', 'Press mancuerna hombro', 'Vuelos laterales', 'Colgarse en barra', 'Press francés', 'Jalón tríceps polea', 'Kick boxing', 'Estirar'])
     const jalon = a.bloques.find((b) => b.id === 'a-jalon-triceps') as BloqueEjercicio
-    expect([jalon.reps, jalon.repsExtra, jalon.nota]).toEqual([12, 3, 'Codo costilla'])
+    expect([jalon.reps, jalon.repsExtra, jalon.admiteAyuda]).toEqual([12, 3, true])
     const colgarse = a.bloques[5]
     expect(colgarse).toMatchObject({ tipo: 'temporizador', segundos: 70, peso: 15, veces: 1 })
     expect(a.bloques[8]).toMatchObject({ tipo: 'rondas', rondas: [{ segundos: 60, texto: 'Enfoque en velocidad y ritmo' }, { segundos: 60, texto: 'Combinación y vaciado (FULL)' }] })
@@ -96,11 +96,15 @@ describe('rutinas de la planilla', () => {
 
 describe('descanso con fases', () => {
   const b = { series: 2, descanso: 90, sombra: 30 }
-  it('después de la primera serie: sombra 0:30 y después descansá', () => {
-    expect(fasesDescanso(b, 1, 'Press inclinado')).toEqual([
+  it('después de la primera serie: 3-2-1, sombra 0:30 y descansá; el total sigue siendo 1:30', () => {
+    const f = fasesDescanso(b, 1, 'Press inclinado')
+    expect(f).toEqual([
+      { tipo: 'preparar', segundos: 3, texto: 'Sombra en' },
       { tipo: 'sombra', segundos: 30, texto: 'Sombra' },
-      { tipo: 'descanso', segundos: 60, texto: 'Descansá' },
+      { tipo: 'descanso', segundos: 57, texto: 'Descansá' },
     ])
+    expect(f.reduce((t, x) => t + x.segundos, 0)).toBe(90)
+    expect(fasesDescanso({ ...b, sombra: 0 }, 1).map((x) => x.tipo)).toEqual(['descanso'])
   })
   it('después de la última serie: sin sombra, acomodá para el siguiente', () => {
     expect(fasesDescanso(b, 2, 'Press inclinado')).toEqual([{ tipo: 'acomodar', segundos: 90, texto: 'Acomodá para el siguiente: Press inclinado' }])
@@ -108,8 +112,9 @@ describe('descanso con fases', () => {
   })
   it('la fase actual sigue al reloj', () => {
     const d = { inicio: 0, fases: fasesDescanso(b, 1, 'x') }
-    expect(faseActual(d, 10_000)).toMatchObject({ indice: 0, restante: 20, totalRestante: 80 })
-    expect(faseActual(d, 45_000)).toMatchObject({ indice: 1, restante: 45 })
+    expect(faseActual(d, 1_000)).toMatchObject({ indice: 0, restante: 2 })
+    expect(faseActual(d, 13_000)).toMatchObject({ indice: 1, restante: 20, totalRestante: 77 })
+    expect(faseActual(d, 45_000)).toMatchObject({ indice: 2, restante: 45 })
     expect(faseActual(d, 91_000)).toBeNull()
   })
   it('al anotar series la sesión guarda el descanso que corresponde y pasa al siguiente ejercicio', async () => {
@@ -117,7 +122,7 @@ describe('descanso con fases', () => {
     s = await marcarBloque(s.id!, 'a-calentar')
     expect(s.orden[s.paso]).toBe('a-press-banca')
     s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
-    expect(s.descanso!.fases.map((f) => f.tipo)).toEqual(['sombra', 'descanso'])
+    expect(s.descanso!.fases.map((f) => f.tipo)).toEqual(['preparar', 'sombra', 'descanso'])
     s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
     expect(s.descanso!.fases[0].texto).toBe('Acomodá para el siguiente: Press inclinado')
     expect(s.orden[s.paso]).toBe('a-press-inclinado')
@@ -447,5 +452,31 @@ describe('hora límite para empezar (19:35)', () => {
     await db().acciones.put({ ...a, horaLimiteInicio: '20:00' })
     horaDelDia = '19:50'
     expect((await hacerRutinaA('2026-11-02')).xpPilar).toBe(30)
+  })
+})
+
+describe('ronda 8', () => {
+  it('reps con ayuda: se guardan aparte, suman volumen y no cuentan para el récord', async () => {
+    const { marcaDe, calcularResumen } = await import('./entreno')
+    let s = await iniciarEntreno('rutina-a')
+    s = await registrarSerie(s.id!, 'a-jalon-triceps', { reps: 12, repsExtra: 3, peso: 5 })
+    expect(s.series[0]).toMatchObject({ reps: 12, ayuda: 3 })
+    expect(s.series[0].repsExtra).toBeUndefined()
+    expect(marcaDe(s.series)).toMatchObject({ reps: 12, volumen: 75 })
+    expect((await calcularResumen(s)).volumen).toBe(75)
+  })
+
+  it('kick boxing: descanso de 1:00 entre rondas y 5 s de preparación que se saltean', async () => {
+    const { tramosRondas, saltarPreparacion, PREPARACION_S } = await import('./entreno')
+    const a = (await obtenerRutina('rutina-a'))!
+    const kick = a.bloques.find((b) => b.tipo === 'rondas')!
+    if (kick.tipo !== 'rondas') throw new Error()
+    expect(tramosRondas(kick).map((x) => `${x.texto}:${x.segundos}`)).toEqual(['Enfoque en velocidad y ritmo:60', 'Descanso:60', 'Combinación y vaciado (FULL):60'])
+    let s = await iniciarEntreno('rutina-a')
+    const t0 = s.inicio
+    s = await iniciarReloj(s.id!, 'a-kick')
+    expect(s.reloj).toMatchObject({ segundos: 180, inicio: t0 + PREPARACION_S * 1000 })
+    s = await saltarPreparacion(s.id!)
+    expect(s.reloj!.inicio).toBe(t0)
   })
 })

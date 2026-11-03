@@ -25,7 +25,7 @@ import { Copia } from './paginas/Copia'
 import { Sincronizar } from './paginas/Sincronizar'
 import { Entrenamiento } from './paginas/Entrenamiento'
 import { Entreno } from './paginas/Entreno'
-import { EditarRutina, Rutinas } from './paginas/Rutinas'
+import { EditarRutina, HistorialEntrenos, Rutinas } from './paginas/Rutinas'
 import { Historial } from './paginas/Historial'
 import { Hoy } from './paginas/Hoy'
 import { Identidad } from './paginas/Identidad'
@@ -194,6 +194,7 @@ function Rutas() {
         <Route path="/mas/acciones" element={<Acciones hoy={hoy} />} />
         <Route path="/mas/entrenamiento" element={<Entrenamiento hoy={hoy} />} />
         <Route path="/mas/rutinas" element={<Rutinas />} />
+        <Route path="/mas/rutinas/historial" element={<HistorialEntrenos />} />
         <Route path="/mas/rutinas/:id" element={<EditarRutina />} />
         <Route path="/mas/alarmas" element={<AlarmasTelefono />} />
         <Route path="/mas/copia" element={<Copia />} />

@@ -5,6 +5,7 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { createPortal } from 'react-dom'
 import type { BloqueEjercicio, BloqueRutina, BloqueTemporizador, Rutina, SerieHecha, SesionEntreno, TiempoHecho } from '../../data/tipos'
 import {
   TOPE_XP_EXTRA,
@@ -21,6 +22,11 @@ import {
   fijarPeso,
   deshacerSerie,
   faseActual,
+  AVISO_FIN_DESCANSO_S,
+  historialEjercicio,
+  saltarPreparacion,
+  tramosRondas,
+  type Marca,
   iniciarEntreno,
   inicioTarde,
   iniciarReloj,
@@ -95,10 +101,15 @@ export type Contexto = {
   sigueActual?: Siguiente
   /** Cronómetro actual (colgarse): la vez pasada y el récord. */
   tiempo?: { ultimo: TiempoHecho | null; record: TiempoHecho | null }
+  /** Récord del ejercicio actual (serie 1: más peso, o mismo peso y más reps limpias). */
+  record?: Marca | null
 }
 
 async function siguiente(s: SesionEntreno, r: Rutina, desdeId?: string): Promise<Siguiente | undefined> {
-  const b = siguienteDistinto(s, r, desdeId)
+  return comoSiguiente(s, siguienteDistinto(s, r, desdeId))
+}
+
+async function comoSiguiente(s: SesionEntreno, b: BloqueRutina | undefined): Promise<Siguiente | undefined> {
   if (!b) return undefined
   if (b.tipo !== 'ejercicio') return { bloque: b, peso: 0, reps: 0 }
   const ult = await ultimaVez(s.rutinaId, b.id, s.id)
@@ -114,7 +125,10 @@ async function cargar(hoy: string) {
   const ctx: Contexto = { anterior: [] }
   if (sesion && rutina) {
     const bloque = rutina.bloques.find((b) => b.id === sesion.orden[sesion.paso])
-    if (bloque?.tipo === 'ejercicio') ctx.anterior = await ultimaVez(sesion.rutinaId, bloque.id, sesion.id)
+    if (bloque?.tipo === 'ejercicio') {
+      ctx.anterior = await ultimaVez(sesion.rutinaId, bloque.id, sesion.id)
+      ctx.record = (await historialEjercicio(bloque.id)).record
+    }
     const serie = sesion.series[sesion.series.length - 1]
     const bu = serie && rutina.bloques.find((b) => b.id === serie.bloqueId)
     if (serie && bu?.tipo === 'ejercicio') {
@@ -122,6 +136,11 @@ async function cargar(hoy: string) {
       ctx.sigueDescanso = await siguiente(sesion, rutina, bu.id)
     }
     if (bloque) ctx.sigueActual = await siguiente(sesion, rutina, bloque.id)
+    // Descanso después de colgarse: no es de una serie; lo que sigue es el bloque actual.
+    if (sesion.descanso?.origen) {
+      ctx.ultima = undefined
+      ctx.sigueDescanso = await comoSiguiente(sesion, bloque)
+    }
     if (bloque?.tipo === 'temporizador' && bloque.modo === 'cronometro') ctx.tiempo = await historialTiempo(bloque.nombre, sesion.id)
   }
   // Hora límite para empezar (19:35): si ya pasó, se avisa antes de empezar.
@@ -184,8 +203,8 @@ function Empezar({ hoy, rutinas, delDia, limiteInicio, tarde }: { hoy: string; r
 
 function resumenBloque(b: BloqueRutina): string {
   switch (b.tipo) {
-    case 'ejercicio': return `${b.series} × ${b.reps}${b.repsExtra ? `+${b.repsExtra}` : ''} · ${b.peso ? `${String(b.peso).replace('.', ',')} kg` : 'corporal'}`
-    case 'rondas': return `${b.rondas.length} × ${reloj(b.rondas[0]?.segundos ?? 0)}`
+    case 'ejercicio': return `${b.series} × ${b.reps}${b.repsExtra ? (b.admiteAyuda ? ` +${b.repsExtra} ayuda` : `+${b.repsExtra}`) : ''} · ${b.peso ? `${String(b.peso).replace('.', ',')} kg` : 'corporal'}`
+    case 'rondas': return `${b.rondas.length} × ${reloj(b.rondas[0]?.segundos ?? 0)}${b.rondas.length > 1 && (b.descansoEntre ?? 60) > 0 ? ` · ${reloj(b.descansoEntre ?? 60)} entre` : ''}`
     case 'casilla': return '✓'
     default: return `${b.veces && b.veces > 1 ? `${b.veces} × ` : ''}${reloj(b.segundos)}${b.peso ? ` · ${b.peso} kg` : ''}`
   }
@@ -234,7 +253,7 @@ function EnCurso({ s, r, ctx, onTerminado }: { s: SesionEntreno; r: Rutina; ctx:
           {s.orden.map((id, i) => { const b = r.bloques.find((x) => x.id === id); return <span key={id} className={`${b && bloqueTerminado(s, b) ? (s.saltados.includes(id) ? 'saltado' : 'hecho') : ''} ${i === s.paso ? 'actual' : ''}`} /> })}
         </div>
       </div>
-      <div className="texto-3 chico">{r.nombre}</div>
+      <LineaAhora s={s} bloque={bloque} fase={fase} ctx={ctx} />
       <AguadaFondo tenue={!!(s.descanso && fase)} />
       <TintaPolvo bloque={bloque?.id ?? null} visible={!(s.descanso && fase)} tenue={!!(s.descanso && fase)} />
 
@@ -249,7 +268,7 @@ function EnCurso({ s, r, ctx, onTerminado }: { s: SesionEntreno; r: Rutina; ctx:
           {s.series.length > 0 && <button className="boton suave" onClick={() => mutar(() => deshacerSerie(s.id!))}>Deshacer la última serie</button>}
         </section>
       ) : bloque.tipo === 'ejercicio' ? (
-        <Ejercicio key={`${bloque.id}:${seriesDe(s, bloque.id).length}`} s={s} b={bloque} anterior={ctx.anterior} sigue={ctx.sigueActual} />
+        <Ejercicio key={`${bloque.id}:${seriesDe(s, bloque.id).length}`} s={s} b={bloque} anterior={ctx.anterior} record={ctx.record} />
       ) : bloque.tipo === 'casilla' ? (
         <section className="col entreno-bloque">
           <span className="seccion-titulo">Para cerrar</span>
@@ -259,7 +278,7 @@ function EnCurso({ s, r, ctx, onTerminado }: { s: SesionEntreno; r: Rutina; ctx:
         </section>
       ) : (
         bloque.tipo === 'temporizador' && bloque.modo === 'cronometro'
-          ? <Cronometro key={bloque.id} s={s} b={bloque} t={t} hist={ctx.tiempo} sigue={ctx.sigueActual} />
+          ? <Cronometro key={bloque.id} s={s} b={bloque} t={t} hist={ctx.tiempo} />
           : <Temporizador key={bloque.id} s={s} b={bloque} t={t} />
       )}
 
@@ -325,7 +344,7 @@ function Stepper({ etiqueta, valor, paso, min = 0, formato, onCambio, marca, esc
 }
 
 const tot = (y: SerieHecha) => y.reps + (y.repsExtra ?? 0)
-const reps = (x: SerieHecha) => `${x.reps}${x.repsExtra ? `+${x.repsExtra}` : ''}`
+const reps = (x: SerieHecha) => `${x.reps}${x.repsExtra ? `+${x.repsExtra}` : ''}${x.ayuda ? ` +${x.ayuda} ayuda` : ''}`
 
 function textoSeries(series: SerieHecha[]): string {
   if (!series.length) return ''
@@ -345,7 +364,7 @@ function marcaSerie(x: Pick<SerieHecha, 'reps' | 'repsExtra' | 'peso'>, ref?: Se
 
 function textoSigue(x: Siguiente): string {
   const b = x.bloque
-  if (b.tipo === 'ejercicio') return `${kg(x.peso)} · ${b.series} ${b.series === 1 ? 'serie' : 'series'} × ${x.reps}${b.repsExtra ? `+${b.repsExtra}` : ''} reps`
+  if (b.tipo === 'ejercicio') return `${kg(x.peso)} · ${b.series} ${b.series === 1 ? 'serie' : 'series'} × ${x.reps}${b.repsExtra ? (b.admiteAyuda ? ` +${b.repsExtra} ayuda` : `+${b.repsExtra}`) : ''} reps`
   return resumenBloque(b)
 }
 
@@ -362,7 +381,7 @@ function TarjetaSigue({ x, grande, titulo }: { x?: Siguiente; grande?: boolean; 
   )
 }
 
-function Ejercicio({ s, b, anterior, sigue }: { s: SesionEntreno; b: BloqueEjercicio; anterior: SerieHecha[]; sigue?: Siguiente }) {
+function Ejercicio({ s, b, anterior, record }: { s: SesionEntreno; b: BloqueEjercicio; anterior: SerieHecha[]; record?: Marca | null }) {
   const hechas = seriesDe(s, b.id)
   const n = hechas.length + 1
   const sug = sugerencia(b, anterior)
@@ -383,12 +402,12 @@ function Ejercicio({ s, b, anterior, sigue }: { s: SesionEntreno; b: BloqueEjerc
       <span className="seccion-titulo">{b.grupo ?? 'Ejercicio'}</span>
       <h1 className="entreno-titulo">{b.nombre}</h1>
       {b.nota && <p className="entreno-nota">«{b.nota}»</p>}
-      <p className="texto-2 chico">{anterior.length ? <>La vez pasada: <b>{textoSeries(anterior)}</b></> : 'Primera vez con la app: arrancá con lo de tu planilla.'}</p>
+      <p className="texto-2 chico">{anterior.length ? <>La vez pasada: <b>{textoSeries(anterior)}</b></> : 'Primera vez con la app: arrancá con lo de tu planilla.'}{record && <> · <span className="entreno-record">Récord: <b>{record.reps} × {kg(record.peso)}</b></span></>}</p>
       {primera && sug?.subirPeso && <div className="entreno-sugerencia peso"><span>▲ {sug.texto}</span><span className="chico">Si subís, poné el peso nuevo con − / + o tocando el número. El objetivo vuelve a {b.reps}.</span></div>}
       <Stepper etiqueta={primera ? 'Peso de hoy' : 'Peso'} valor={peso} paso={0.5} escribible compacto={!primera} formato={(v) => (v === 0 ? 'corporal' : `${String(v).replace('.', ',')} kg`)} onCambio={cambiarPeso} marca={anterior.length ? (peso > pesoAntes ? 'mejor' : peso === pesoAntes ? 'igual' : null) : null} />
       <div className="entreno-objetivo">
         <span className="entreno-serie">Serie {Math.min(n, b.series)} de {b.series}</span>
-        <span className="mono"><b>{objetivo}{b.repsExtra ? `+${b.repsExtra}` : ''}</b> reps</span>
+        <span className="mono"><b>{objetivo}</b>{b.repsExtra ? (b.admiteAyuda ? <b className="entreno-ayuda"> +{b.repsExtra} ayuda</b> : <b>+{b.repsExtra}</b>) : null} reps</span>
       </div>
       {n === 1 && sug && !sug.subirPeso && <p className="ayuda">{sug.texto}</p>}
       {n > 1 && anterior.find((x) => x.n === n) && <p className="ayuda">Objetivo de la serie {n}: lo que hiciste en la serie {n} la vez pasada. Si sale un poco menos, no resta.</p>}
@@ -399,7 +418,7 @@ function Ejercicio({ s, b, anterior, sigue }: { s: SesionEntreno; b: BloqueEjerc
           {hechas.map((x) => <button key={x.n} className={`marca ${marcaSerie(x, anterior.find((a) => a.n === x.n)) ?? ''}`} onClick={() => setCorregir(x)}>S{x.n}: {reps(x)} × {kg(x.peso)} ✎</button>)}
         </div>
       )}
-      {sigue && <p className="texto-3 chico">Después: <b className="texto-2">{sigue.bloque.nombre}</b></p>}
+      {b.admiteAyuda && <p className="ayuda">Las reps con ayuda quedan en el historial y suman al volumen, pero no cuentan para el récord ni para subir peso.</p>}
       <Hoja abierta={!!corregir} onCerrar={() => setCorregir(null)} titulo={corregir ? `Corregir serie ${corregir.n}` : ''}>
         {corregir && <CorregirSerie s={s} b={b} x={corregir} ref_={anterior.find((a) => a.n === corregir.n)} />}
       </Hoja>
@@ -411,14 +430,43 @@ function Ejercicio({ s, b, anterior, sigue }: { s: SesionEntreno; b: BloqueEjerc
 function CorregirSerie({ s, b, x, ref_, conPeso = true, titulo }: { s: SesionEntreno; b: BloqueEjercicio; x: SerieHecha; ref_?: SerieHecha; conPeso?: boolean; titulo?: string }) {
   const [r, setR] = useState(x.reps)
   const [e, setE] = useState(x.repsExtra ?? 0)
+  const [ay, setAy] = useState(x.ayuda ?? 0)
   const [p, setP] = useState(x.peso)
-  const guardar = (c: { reps?: number; repsExtra?: number; peso?: number }) => void mutar(() => corregirSerie(s.id!, b.id, x.n, c))
+  const guardar = (c: { reps?: number; repsExtra?: number; ayuda?: number; peso?: number }) => void mutar(() => corregirSerie(s.id!, b.id, x.n, c))
   return (
     <div className="col" style={{ gap: 10 }}>
       <Stepper etiqueta={titulo ?? `¿Cuántas hiciste? · serie ${x.n}`} valor={r} paso={1} onCambio={(v) => { setR(v); guardar({ reps: v }) }} marca={marcaSerie({ reps: r, repsExtra: e, peso: p }, ref_)} />
-      {b.repsExtra !== undefined && <Stepper etiqueta="Extra" valor={e} paso={1} formato={(v) => `+${v}`} onCambio={(v) => { setE(v); guardar({ repsExtra: v }) }} />}
+      {b.admiteAyuda && <Stepper etiqueta="Con ayuda (no cuentan para récord)" valor={ay} paso={1} formato={(v) => `+${v}`} onCambio={(v) => { setAy(v); guardar({ ayuda: v }) }} />}
+      {!b.admiteAyuda && b.repsExtra !== undefined && <Stepper etiqueta="Extra" valor={e} paso={1} formato={(v) => `+${v}`} onCambio={(v) => { setE(v); guardar({ repsExtra: v }) }} />}
       {conPeso && <Stepper etiqueta="Peso" valor={p} paso={0.5} escribible compacto formato={(v) => (v === 0 ? 'corporal' : `${String(v).replace('.', ',')} kg`)} onCambio={(v) => { setP(v); guardar({ peso: v }) }} />}
       {ref_ && <p className="ayuda">La vez pasada: {reps(ref_)} × {kg(ref_.peso)} · se guarda solo</p>}
+    </div>
+  )
+}
+
+/**
+ * Línea fija debajo de la barra de bloques: qué estás haciendo ahora y qué viene después (ronda 8).
+ * Así no hace falta leer toda la pantalla para ubicarse.
+ */
+function LineaAhora({ s, bloque, fase, ctx }: { s: SesionEntreno; bloque?: BloqueRutina; fase: ReturnType<typeof faseActual>; ctx: Contexto }) {
+  let ahoraTxt = ''
+  let despues = ''
+  if (s.descanso && fase) {
+    const f = fase.fase
+    const u = ctx.ultima
+    const faltan = u ? u.bloque.series - seriesDe(s, u.bloque.id).length : 0
+    ahoraTxt = f.tipo === 'preparar' || f.tipo === 'sombra' ? 'Sombra' : f.tipo === 'acomodar' ? 'Acomodá' : 'Descanso'
+    despues = u && faltan > 0 ? `${u.bloque.nombre} · serie ${u.serie.n + 1}` : ctx.sigueDescanso?.bloque.nombre ?? 'Terminar'
+  } else if (bloque) {
+    ahoraTxt = bloque.tipo === 'ejercicio' ? `${bloque.nombre} · serie ${Math.min(seriesDe(s, bloque.id).length + 1, bloque.series)}/${bloque.series}` : bloque.nombre
+    despues = ctx.sigueActual?.bloque.nombre ?? 'Terminar'
+  } else {
+    ahoraTxt = 'Todo hecho'
+  }
+  return (
+    <div className="entreno-linea" aria-live="polite">
+      <span><span className="texto-3">Ahora:</span> <b>{ahoraTxt}</b></span>
+      {despues && <span><span className="texto-3">Después:</span> <b>{despues}</b></span>}
     </div>
   )
 }
@@ -432,33 +480,58 @@ function Descanso({ s, fase, r, ctx }: { s: SesionEntreno; fase: NonNullable<Ret
   const faltan = u ? u.bloque.series - seriesDe(s, u.bloque.id).length : 0
   const pesoActual = u ? s.pesos?.[u.bloque.id] ?? u.serie.peso : 0
   const objetivoProxima = u && faltan > 0 ? objetivoSerie(u.bloque, u.anterior, u.serie.n + 1, pesoActual) : 0
+  // Ámbar a 10 s del final (con una vibración) y otra vibración a 3 s: para alistarse.
+  const ambar = fase.totalRestante <= AVISO_FIN_DESCANSO_S && f.tipo !== 'preparar'
+  const avisado = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    const k = (x: string) => `${s.descanso!.inicio}:${x}`
+    if (f.tipo === 'preparar' && !avisado.current.has(k(`p${fase.restante}`))) { avisado.current.add(k(`p${fase.restante}`)); vibrar(fase.restante === 1 ? 160 : 70) }
+    if (fase.totalRestante <= AVISO_FIN_DESCANSO_S && fase.totalRestante > 3 && !avisado.current.has(k('10'))) { avisado.current.add(k('10')); vibrar(120) }
+    if (fase.totalRestante <= 3 && fase.totalRestante > 0 && !avisado.current.has(k('3'))) { avisado.current.add(k('3')); vibrar([80, 60, 80]) }
+  }, [f.tipo, fase.restante, fase.totalRestante, s.descanso])
+  const despuesDeBarra = !!s.descanso!.origen
+  const total = s.descanso!.fases.reduce((t, x) => t + x.segundos, 0)
+  if (f.tipo === 'preparar') {
+    return (
+      <section className="col entreno-descanso preparar" aria-live="assertive">
+        <p className="entreno-fase centro">Sombra en</p>
+        <div className="entreno-321-hueco" aria-hidden />
+        {/* El número va en una capa propia, por encima del parry: así se ve el 3-2-1 completo aunque la animación siga. */}
+        {createPortal(<div className="entreno-321-capa" aria-label={`Sombra en ${fase.restante}`}><span key={fase.restante} className="entreno-321 mono">{fase.restante}</span></div>, document.body)}
+        <p className="ayuda centro">Estos 3 s ya cuentan dentro del descanso de {reloj(total)}.</p>
+        <button className="enlace texto-3 chico centro" onClick={() => mutar(() => deshacerSerie(s.id!))}>Deshacer la serie</button>
+      </section>
+    )
+  }
   return (
-    <section className={`col entreno-descanso ${f.tipo}`} aria-live="polite">
-      <div className="fila entre entreno-fase-fila"><h1 className="entreno-fase">{f.tipo === 'acomodar' ? 'Acomodá' : f.texto}</h1><span className="entreno-reloj mono">{reloj(fase.restante)}</span></div>
+    <section className={`col entreno-descanso ${f.tipo} ${ambar ? 'ambar' : ''}`} aria-live="polite">
+      <div className="fila entre entreno-fase-fila"><h1 className="entreno-fase">{f.tipo === 'acomodar' ? 'Acomodá' : despuesDeBarra ? 'Descanso' : f.texto}</h1><span className="entreno-reloj mono">{reloj(fase.restante)}</span></div>
       <div className="entreno-barra"><div style={{ width: `${pct}%` }} /></div>
-      {s.descanso!.fases.length > 1 && <p className="ayuda">{s.descanso!.fases.map((x) => `${x.tipo === 'sombra' ? 'Sombra' : 'Descansá'} ${reloj(x.segundos)}`).join(' → ')}</p>}
+      {ambar && <p className="entreno-alistate">Alistate: {faltan > 0 && u ? `serie ${u.serie.n + 1} de ${u.bloque.nombre}` : ctx.sigueDescanso?.bloque.nombre ?? 'terminar'} en {reloj(fase.totalRestante)}</p>}
+      {despuesDeBarra && <p className="ayuda">Después de colgarse: descanso de {reloj(f.segundos)}, sin sombra.</p>}
+      {s.descanso!.fases.length > 1 && <p className="ayuda">{s.descanso!.fases.filter((x) => x.tipo !== 'preparar').map((x) => `${x.tipo === 'sombra' ? 'Sombra' : 'Descansá'} ${reloj(x.segundos)}`).join(' → ')} · total {reloj(total)}</p>}
       {u && faltan > 0 ? (
         <div className="entreno-ahora">
           <span className="seccion-titulo">Ahora</span>
           <b className="te-queda">Te queda {faltan} {faltan === 1 ? 'serie' : 'series'} de {u.bloque.nombre}</b>
-          <span className="mono datos">{kg(pesoActual)} · objetivo {objetivoProxima}{u.bloque.repsExtra ? `+${u.bloque.repsExtra}` : ''} reps</span>
+          <span className="mono datos">{kg(pesoActual)} · objetivo {objetivoProxima}{u.bloque.repsExtra ? (u.bloque.admiteAyuda ? ` +${u.bloque.repsExtra} ayuda` : `+${u.bloque.repsExtra}`) : ''} reps</span>
           <TarjetaSigue x={ctx.sigueDescanso} titulo="Para alistar" />
         </div>
       ) : (
-        <TarjetaSigue x={ctx.sigueDescanso} grande />
+        <TarjetaSigue x={ctx.sigueDescanso} grande titulo={despuesDeBarra ? 'Sigue' : undefined} />
       )}
       {u && <div className="entreno-cuantas"><CorregirSerie s={s} b={u.bloque} x={u.serie} ref_={u.anterior.find((a) => a.n === u.serie.n)} conPeso={false} titulo={`${u.bloque.nombre} · serie ${u.serie.n} · ¿cuántas hiciste?`} /></div>}
       <div className="botonera">
         <button className="boton grande" onClick={() => mutar(() => alargarDescanso(s.id!, 30))}>+30 s</button>
         <button className="boton grande primario" onClick={() => mutar(() => terminarDescanso(s.id!))}>Saltar descanso</button>
       </div>
-      <button className="enlace texto-3 chico centro" onClick={() => mutar(() => deshacerSerie(s.id!))}>Deshacer la serie</button>
+      {!despuesDeBarra && <button className="enlace texto-3 chico centro" onClick={() => mutar(() => deshacerSerie(s.id!))}>Deshacer la serie</button>}
     </section>
   )
 }
 
 /** Colgarse en barra: cronómetro que cuenta para arriba, con peso. 5 s para colgarse; al tocar Listo se descuentan 3 s. */
-function Cronometro({ s, b, t, hist, sigue }: { s: SesionEntreno; b: BloqueTemporizador; t: number; hist?: { ultimo: TiempoHecho | null; record: TiempoHecho | null }; sigue?: Siguiente }) {
+function Cronometro({ s, b, t, hist }: { s: SesionEntreno; b: BloqueTemporizador; t: number; hist?: { ultimo: TiempoHecho | null; record: TiempoHecho | null } }) {
   const corriendo = s.reloj?.bloqueId === b.id ? s.reloj : undefined
   const [peso, setPeso] = useState(s.pesos?.[b.id] ?? hist?.ultimo?.peso ?? b.peso ?? 0)
   const e = corriendo ? estadoCronometro(corriendo.inicio, t) : null
@@ -491,7 +564,10 @@ function Cronometro({ s, b, t, hist, sigue }: { s: SesionEntreno; b: BloqueTempo
         <>
           <p className="entreno-fase centro">Acomodate y colgate</p>
           <div className="entreno-reloj mono entreno-prep">{e!.prep}</div>
-          <button className="boton grande" onClick={() => mutar(() => pararReloj(s.id!))}>Cancelar</button>
+          <div className="botonera">
+            <button className="boton grande" onClick={() => mutar(() => pararReloj(s.id!))}>Cancelar</button>
+            <button className="boton grande primario" onClick={() => mutar(() => saltarPreparacion(s.id!))}>Ya estoy colgado</button>
+          </div>
         </>
       ) : (
         <>
@@ -503,53 +579,81 @@ function Cronometro({ s, b, t, hist, sigue }: { s: SesionEntreno; b: BloqueTempo
           <button className="enlace texto-3" onClick={() => mutar(() => pararReloj(s.id!))}>Reiniciar</button>
         </>
       )}
-      {sigue && <p className="texto-3 chico">Después: <b className="texto-2">{sigue.bloque.nombre}</b></p>}
     </section>
   )
 }
 
 function Temporizador({ s, b, t }: { s: SesionEntreno; b: Exclude<BloqueRutina, BloqueEjercicio | { tipo: 'casilla' }>; t: number }) {
   const corriendo = s.reloj?.bloqueId === b.id ? s.reloj : undefined
-  const rondas = b.tipo === 'rondas' ? b.rondas : Array.from({ length: b.veces ?? 1 }, () => ({ segundos: b.segundos, texto: '' }))
-  const ronda = corriendo ? rondaActual(rondas, corriendo.inicio, t) : null
-  const termino = !!corriendo && !ronda
-  // Vibra entre rondas y al terminar; al terminar, el bloque queda hecho solo.
-  const claveRonda = corriendo ? `${corriendo.inicio}:${ronda?.indice ?? 'fin'}` : null
+  // Rondas con descanso entre medio (kick boxing); el calentamiento es un solo tramo.
+  const tramos = b.tipo === 'rondas' ? tramosRondas(b) : Array.from({ length: b.veces ?? 1 }, (_, i) => ({ segundos: b.segundos, texto: '', ronda: i, descanso: false as boolean | undefined }))
+  const nRondas = b.tipo === 'rondas' ? b.rondas.length : tramos.length
+  const preparando = !!corriendo && t < corriendo.inicio
+  const prep = preparando ? Math.ceil((corriendo!.inicio - t) / 1000) : 0
+  const ronda = corriendo && !preparando ? rondaActual(tramos, corriendo.inicio, t) : null
+  const termino = !!corriendo && !preparando && !ronda
+  // Vibra en la preparación, entre tramos y al terminar; al terminar, el bloque queda hecho solo.
+  const claveRonda = corriendo ? `${corriendo.inicio}:${preparando ? `p${prep}` : ronda?.indice ?? 'fin'}` : null
   const previa = useRef<string | null>(null)
   useEffect(() => {
-    if (previa.current && claveRonda && previa.current !== claveRonda) vibrar(claveRonda.endsWith('fin') ? [300, 120, 300] : [200, 100, 200])
+    if (previa.current && claveRonda && previa.current !== claveRonda) vibrar(claveRonda.endsWith('fin') ? [300, 120, 300] : claveRonda.includes(':p') ? 60 : [200, 100, 200])
     previa.current = claveRonda
   }, [claveRonda])
+  const avisoDescanso = useRef<string | null>(null)
+  const tramo = ronda ? tramos[ronda.indice] : tramos[0]
+  const ambar = !!(ronda && tramo.descanso && ronda.restante <= AVISO_FIN_DESCANSO_S)
+  useEffect(() => {
+    const k = corriendo && ronda ? `${corriendo.inicio}:${ronda.indice}` : null
+    if (ambar && k && avisoDescanso.current !== k) { avisoDescanso.current = k; vibrar(120) }
+  }, [ambar, corriendo, ronda])
   useEffect(() => {
     if (termino) void mutar(() => marcarBloque(s.id!, b.id)).then(() => avisar(`${b.nombre}: listo`, { tipo: 'ok' }))
   }, [termino, s.id, b.id, b.nombre])
-  const total = rondas.reduce((x, y) => x + y.segundos, 0)
-  const actual = ronda ? rondas[ronda.indice] : rondas[0]
-  const pct = ronda ? (ronda.restante / actual.segundos) * 100 : 100
+  const total = tramos.reduce((x, y) => x + y.segundos, 0)
+  const pct = ronda ? (ronda.restante / tramo.segundos) * 100 : 100
+  const proxima = ronda && tramo.descanso && b.tipo === 'rondas' ? b.rondas[tramo.ronda] : null
   return (
-    <section className={`col entreno-bloque entreno-timer ${b.tipo}`}>
+    <section className={`col entreno-bloque entreno-timer ${b.tipo} ${tramo.descanso && ronda ? 'en-descanso' : ''} ${ambar ? 'ambar' : ''}`}>
       <span className="seccion-titulo">{b.tipo === 'calentamiento' ? 'Para arrancar' : b.tipo === 'rondas' ? 'Rondas' : (b.nota ?? 'Temporizador')}</span>
       <h1 className="entreno-titulo">{b.nombre}</h1>
       {b.tipo !== 'rondas' && (b.nota || b.peso) && <p className="entreno-nota">{[b.tipo === 'calentamiento' ? b.nota : null, b.peso ? `con ${b.peso} kg` : null, b.veces ? `${b.veces} vez` : null].filter(Boolean).join(' · ')}</p>}
       {b.tipo === 'rondas' && (
         <div className="col" style={{ gap: 6 }}>
           {b.rondas.map((x, i) => (
-            <div key={i} className={`entreno-ronda ${ronda?.indice === i ? 'actual' : ronda && i < ronda.indice ? 'paso' : ''}`}>
-              <span className="mono">R{i + 1} · {reloj(x.segundos)}</span><span>{x.texto}</span>
+            <div key={i}>
+              {i > 0 && (b.descansoEntre ?? 60) > 0 && <div className={`entreno-ronda descanso ${ronda && tramo.descanso && tramo.ronda === i ? 'actual' : ''}`}><span className="mono">{reloj(b.descansoEntre ?? 60)}</span><span>Descanso</span></div>}
+              <div className={`entreno-ronda ${ronda && !tramo.descanso && tramo.ronda === i ? 'actual' : ronda && i < tramo.ronda ? 'paso' : ''}`}>
+                <span className="mono">R{i + 1} · {reloj(x.segundos)}</span><span>{x.texto}</span>
+              </div>
             </div>
           ))}
         </div>
       )}
-      <div className="entreno-reloj mono">{reloj(ronda ? ronda.restante : actual.segundos)}</div>
-      <div className="entreno-barra"><div style={{ width: `${pct}%` }} /></div>
-      {b.tipo === 'rondas' && ronda && <p className="entreno-fase centro">Ronda {ronda.indice + 1} de {rondas.length}: {actual.texto}</p>}
-      {!corriendo ? (
-        <button className="boton primario grande ancho" onClick={() => mutar(() => iniciarReloj(s.id!, b.id))}>Empezar · {reloj(total)}</button>
+      {preparando ? (
+        <>
+          <p className="entreno-fase centro">Preparate</p>
+          <div key={prep} className="entreno-reloj mono entreno-prep">{prep}</div>
+          <button className="boton grande ancho" onClick={() => mutar(() => saltarPreparacion(s.id!))}>Arrancar ya</button>
+        </>
       ) : (
-        <div className="botonera">
-          <button className="boton grande" onClick={() => mutar(() => pararReloj(s.id!))}>Reiniciar</button>
-          <button className="boton grande ok" onClick={() => mutar(() => marcarBloque(s.id!, b.id))}>Listo</button>
-        </div>
+        <>
+          <div className="entreno-reloj mono">{reloj(ronda ? ronda.restante : tramo.segundos)}</div>
+          <div className="entreno-barra"><div style={{ width: `${pct}%` }} /></div>
+          {b.tipo === 'rondas' && ronda && (tramo.descanso
+            ? <p className="entreno-fase centro">Descanso · sigue R{tramo.ronda + 1}: {proxima?.texto}</p>
+            : <p className="entreno-fase centro">Ronda {tramo.ronda + 1} de {nRondas}: {tramo.texto}</p>)}
+          {!corriendo ? (
+            <>
+              <button className="boton primario grande ancho" onClick={() => mutar(() => iniciarReloj(s.id!, b.id))}>Empezar · {reloj(total)}</button>
+              <p className="ayuda centro">Arranca con 5 s para prepararte (un toque los saltea).</p>
+            </>
+          ) : (
+            <div className="botonera">
+              <button className="boton grande" onClick={() => mutar(() => pararReloj(s.id!))}>Reiniciar</button>
+              <button className="boton grande ok" onClick={() => mutar(() => marcarBloque(s.id!, b.id))}>Listo</button>
+            </div>
+          )}
+        </>
       )}
     </section>
   )

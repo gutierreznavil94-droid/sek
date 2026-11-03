@@ -240,7 +240,7 @@ export const RUTINAS_INICIALES: Omit<Rutina, 'creado'>[] = [
       ej('a-vuelos', 'Vuelos laterales', 'Hombro', 2, 11, 5),
       colgarse('a'),
       ej('a-press-frances', 'Press francés', 'Tríceps', 2, 5, 15),
-      ej('a-jalon-triceps', 'Jalón tríceps polea', 'Tríceps', 2, 12, 5, { repsExtra: 3, nota: 'Codo costilla' }),
+      ej('a-jalon-triceps', 'Jalón tríceps polea', 'Tríceps', 2, 12, 5, { repsExtra: 3, admiteAyuda: true, nota: 'Codo costilla · las últimas 3 con ayuda de una mano' }),
       kick('a'),
       estirar('a'),
     ],

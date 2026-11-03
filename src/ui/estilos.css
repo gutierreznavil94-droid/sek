@@ -1560,3 +1560,28 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
   to { opacity: 1; clip-path: circle(150% at 50% 30%); filter: blur(0); }
 }
 @media (prefers-reduced-motion: reduce) { :root:not(.movimiento-siempre) .av-seccion { animation: none; } }
+
+/* ===== Entreno ronda 8: «Ahora · Después», 3-2-1 de la sombra, aviso ámbar y preparación ===== */
+:root { --ambar: #e0a23a; --ambar-rgb: 224, 162, 58; }
+.entreno-linea { display: flex; flex-direction: column; gap: 1px; font-size: 14px; line-height: 1.35; padding: 6px 10px; border-radius: 10px; background: rgba(var(--papel-rgb), 0.05); border: 1px solid var(--borde); }
+.entreno-linea b { font-weight: 700; }
+.entreno-linea-rutina { margin-left: auto; font-size: 12px; }
+.entreno-321 { font-size: 9rem; font-weight: 900; line-height: 1; text-align: center; color: #d0233a; text-shadow: 0 0 24px rgba(208, 35, 58, .45); animation: entreno-321 1s ease-out both; margin: 12px 0; }
+@keyframes entreno-321 { from { transform: scale(1.35); opacity: .2; } 30% { transform: scale(1); opacity: 1; } to { transform: scale(.96); opacity: .9; } }
+.entreno-descanso.preparar { align-items: center; padding-top: 18px; }
+.entreno-descanso.preparar .entreno-fase { color: #d0233a; }
+.entreno-descanso.ambar .entreno-reloj, .entreno-descanso.ambar .entreno-fase, .entreno-timer.ambar .entreno-reloj { color: var(--ambar) !important; transition: color .3s; }
+.entreno-descanso.ambar .entreno-barra > div, .entreno-timer.ambar .entreno-barra > div { background: var(--ambar) !important; }
+.entreno-descanso.ambar .entreno-barra, .entreno-timer.ambar .entreno-barra { box-shadow: 0 0 12px rgba(var(--ambar-rgb), .35); }
+.entreno-alistate { margin: 0; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(var(--ambar-rgb), .6); background: rgba(var(--ambar-rgb), .1); color: var(--ambar); font-weight: 700; }
+.entreno-ronda.descanso { margin-bottom: 6px; padding: 6px 12px; border-style: dashed; font-size: 14px; }
+.entreno-ronda.descanso.actual { border-color: var(--texto-2); background: rgba(var(--papel-rgb), .06); }
+.entreno-timer.en-descanso .entreno-barra > div { background: var(--texto-2); }
+.entreno-record { color: var(--ambar); white-space: nowrap; }
+.entreno-ayuda { color: var(--ambar); font-weight: 700; }
+@media (prefers-reduced-motion: reduce) { :root:not(.movimiento-siempre) .entreno-321 { animation: none; } }
+.hist-ejercicio { display: flex; flex-direction: column; gap: 4px; padding: 6px 0; border-top: 1px solid var(--borde); }
+.hist-serie { font: inherit; font-size: 12px; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--borde); background: var(--fondo); color: var(--texto); cursor: pointer; }
+.entreno-321-hueco { height: 9.5rem; }
+.entreno-321-capa { position: fixed; left: 0; right: 0; top: 30svh; z-index: 205; display: flex; justify-content: center; pointer-events: none; }
+.entreno-321-capa .entreno-321 { margin: 0; -webkit-text-stroke: 2px rgba(20, 20, 20, .35); }

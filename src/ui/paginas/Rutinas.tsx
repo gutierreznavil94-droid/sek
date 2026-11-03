@@ -4,9 +4,11 @@
  */
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import type { BloqueEjercicio, BloqueRutina, Rutina } from '../../data/tipos'
+import type { BloqueEjercicio, BloqueRutina, Rutina, SerieHecha, SesionEntreno } from '../../data/tipos'
 import { nombreDiaSemana } from '../../domain/fechas'
-import { guardarRutina, historialEjercicio, kg, listarRutinas, obtenerRutina, type PuntoEjercicio } from '../../services/entreno'
+import { corregirSerie, guardarRutina, historialEjercicio, kg, listarRutinas, obtenerRutina, sesionEnCurso, type PuntoEjercicio } from '../../services/entreno'
+import { db } from '../../data/db'
+import { fechaLegible } from '../../domain/fechas'
 import { nuevoId } from '../../services/reloj'
 import { Atras, DiasSemana, Hoja, Tarjeta } from '../componentes'
 import { avisar, mutar, useDatos } from '../estado'
@@ -19,9 +21,13 @@ export function Rutinas() {
   const datos = useDatos(() => listarRutinas(true), [])
   return (
     <>
-      <Atras a="/mas/entrenamiento" texto="Entrenamiento" />
-      <h1>Rutinas</h1>
-      <p className="texto-2 chico">Tus 3 rutinas de la planilla, cada una 2 veces por semana. Domingo libre.</p>
+      <Atras a="/mas" texto="Más" />
+      <h1>Mis rutinas</h1>
+      <p className="texto-2 chico">Tus 3 rutinas, cada una 2 veces por semana. Tocá una para ver y editar sus bloques, ejercicios y días. Los cambios valen desde el próximo entreno.</p>
+      <Link to="/mas/rutinas/historial" className="tarjeta rutina-item">
+        <div className="fila entre"><h2>Historial de entrenos</h2><span aria-hidden>›</span></div>
+        <span className="texto-2 chico">Todos los entrenos quedan guardados, aunque ese día bajes reps o peso. Ahí podés corregir una serie mal anotada.</span>
+      </Link>
       {(datos.datos ?? []).map((r) => {
         const ej = r.bloques.filter((b): b is BloqueEjercicio => b.tipo === 'ejercicio')
         return (
@@ -48,6 +54,8 @@ export function EditarRutina() {
   const [abierto, setAbierto] = useState<string | null>(null)
   const [grafico, setGrafico] = useState<BloqueEjercicio | null>(null)
   useEffect(() => { if (datos.datos) setR(datos.datos) }, [datos.datos])
+  const [enCurso, setEnCurso] = useState(false)
+  useEffect(() => { void sesionEnCurso().then((s) => setEnCurso(!!s && s.rutinaId === id)) }, [id])
   if (!r) return <p className="vacio">Cargando…</p>
   const cambiarBloque = (bid: string, cambios: Partial<BloqueRutina>) => setR({ ...r, bloques: r.bloques.map((b) => (b.id === bid ? ({ ...b, ...cambios } as BloqueRutina) : b)) })
   const mover = (i: number, delta: number) => {
@@ -58,9 +66,15 @@ export function EditarRutina() {
     setR({ ...r, bloques: b })
   }
   const quitar = (bid: string) => setR({ ...r, bloques: r.bloques.filter((b) => b.id !== bid) })
-  const agregar = () => {
-    const nuevo: BloqueEjercicio = { id: nuevoId('ej'), tipo: 'ejercicio', nombre: 'Nuevo ejercicio', series: 2, reps: 8, repsTope: 12, peso: 0, descanso: 90, sombra: 30 }
-    const iKick = r.bloques.findIndex((b) => b.tipo === 'temporizador' || b.tipo === 'rondas')
+  const agregar = (tipo: BloqueRutina['tipo'] = 'ejercicio') => {
+    const id = nuevoId(tipo === 'ejercicio' ? 'ej' : 'bl')
+    const nuevo: BloqueRutina =
+      tipo === 'ejercicio' ? { id, tipo, nombre: 'Nuevo ejercicio', series: 2, reps: 8, repsTope: 12, peso: 0, descanso: 90, sombra: 30 }
+      : tipo === 'rondas' ? { id, tipo, nombre: 'Rondas', rondas: [{ segundos: 60, texto: 'Ronda 1' }, { segundos: 60, texto: 'Ronda 2' }], descansoEntre: 60 }
+      : tipo === 'casilla' ? { id, tipo, nombre: 'Nueva casilla' }
+      : { id, tipo: 'temporizador', nombre: 'Temporizador', segundos: 60, modo: 'cuenta' }
+    // Los ejercicios van antes del kick boxing; lo demás, al final (antes de estirar).
+    const iKick = tipo === 'ejercicio' ? r.bloques.findIndex((b) => b.tipo === 'rondas') : r.bloques.findIndex((b) => b.tipo === 'casilla')
     const b = [...r.bloques]
     b.splice(iKick >= 0 ? iKick : b.length, 0, nuevo)
     setR({ ...r, bloques: b })
@@ -101,7 +115,13 @@ export function EditarRutina() {
           </div>
         ))}
       </div>
-      <button className="boton ancho" onClick={agregar}>+ Agregar ejercicio</button>
+      <div className="rejilla-2">
+        <button className="boton" onClick={() => agregar('ejercicio')}>+ Ejercicio</button>
+        <button className="boton" onClick={() => agregar('temporizador')}>+ Temporizador</button>
+        <button className="boton" onClick={() => agregar('rondas')}>+ Rondas</button>
+        <button className="boton" onClick={() => agregar('casilla')}>+ Casilla</button>
+      </div>
+      <p className="ayuda">Los cambios valen desde el próximo entreno.{enCurso ? ' Tenés esta rutina en curso: si la cambiás ahora, el entreno de hoy ya toma los cambios.' : ''}</p>
       <button className="boton primario grande ancho" onClick={guardar}>Guardar rutina</button>
       <Hoja abierta={!!grafico} onCerrar={() => setGrafico(null)} titulo={grafico?.nombre}>
         {grafico && <HistorialEjercicio b={grafico} />}
@@ -112,7 +132,7 @@ export function EditarRutina() {
 
 function descripcion(b: BloqueRutina): string {
   switch (b.tipo) {
-    case 'ejercicio': return `${b.series} × ${b.reps}${b.repsExtra ? ` + ${b.repsExtra}` : ''} · ${kg(b.peso)} · ${Math.floor(b.descanso / 60)}:${String(b.descanso % 60).padStart(2, '0')}`
+    case 'ejercicio': return `${b.series} × ${b.reps}${b.repsExtra ? ` + ${b.repsExtra}${b.admiteAyuda ? ' ayuda' : ''}` : ''} · ${kg(b.peso)} · ${Math.floor(b.descanso / 60)}:${String(b.descanso % 60).padStart(2, '0')}`
     case 'rondas': return b.rondas.map((x) => `${x.segundos} s`).join(' + ')
     case 'casilla': return 'casilla'
     default: return `${b.segundos} s${b.peso ? ` · ${b.peso} kg` : ''}`
@@ -133,13 +153,17 @@ function EditorBloque({ b, onCambio, onQuitar, onGrafico }: { b: BloqueRutina; o
             <div className="campo"><label>Grupo</label><input value={b.grupo ?? ''} onChange={(e) => onCambio({ grupo: e.target.value || undefined })} /></div>
             <Num etiqueta="Series" valor={b.series} onCambio={(v) => onCambio({ series: v })} />
             <Num etiqueta="Reps mínimo" valor={b.reps} onCambio={(v) => onCambio({ reps: v })} />
-            <Num etiqueta="Extra (+)" valor={b.repsExtra} onCambio={(v) => onCambio({ repsExtra: v > 0 ? v : undefined })} />
+            <Num etiqueta={b.admiteAyuda ? 'Con ayuda (+)' : 'Extra (+)'} valor={b.repsExtra} onCambio={(v) => onCambio({ repsExtra: v > 0 ? v : undefined })} />
             <Num etiqueta="Reps tope" valor={b.repsTope} onCambio={(v) => onCambio({ repsTope: v })} />
             <Num etiqueta="Peso (kg, 0 = corporal)" valor={b.peso} paso={0.5} onCambio={(v) => onCambio({ peso: v })} />
             <Num etiqueta="Descanso (s)" valor={b.descanso} paso={15} onCambio={(v) => onCambio({ descanso: v })} />
             <Num etiqueta="Sombra (s)" valor={b.sombra} paso={5} onCambio={(v) => onCambio({ sombra: v })} />
           </div>
           <div className="campo"><label>Nota</label><input value={b.nota ?? ''} onChange={(e) => onCambio({ nota: e.target.value || undefined })} /></div>
+          <label className="fila" style={{ gap: 8 }}>
+            <input type="checkbox" checked={!!b.admiteAyuda} onChange={(e) => onCambio({ admiteAyuda: e.target.checked || undefined })} />
+            <span>Admite reps con ayuda <span className="texto-3 chico">(se anotan aparte: «8 +3 ayuda»; no cuentan para récord ni para subir peso, sí para el volumen)</span></span>
+          </label>
           <p className="ayuda">Cuando en la serie 1 llegás a {b.repsTope}, la app te pregunta si subís peso (el peso lo ponés vos) y el objetivo vuelve a {b.reps}.</p>
         </>
       )}
@@ -147,6 +171,7 @@ function EditorBloque({ b, onCambio, onQuitar, onGrafico }: { b: BloqueRutina; o
         <div className="rejilla-2">
           <Num etiqueta={b.tipo === 'temporizador' && b.modo === 'cronometro' ? 'Objetivo (s)' : 'Segundos'} valor={b.segundos} paso={5} onCambio={(v) => onCambio({ segundos: v })} />
           <Num etiqueta="Peso (kg)" valor={b.peso} paso={0.5} onCambio={(v) => onCambio({ peso: v || undefined })} />
+          {b.tipo === 'temporizador' && b.modo === 'cronometro' && <Num etiqueta="Descanso después, sin sombra (s)" valor={b.descansoDespues ?? 60} paso={15} onCambio={(v) => onCambio({ descansoDespues: v })} />}
           {b.tipo === 'temporizador' && (
             <div className="campo"><label>Tipo</label><button className="boton" onClick={() => onCambio({ modo: b.modo === 'cronometro' ? 'cuenta' : 'cronometro' })}>{b.modo === 'cronometro' ? 'Cronómetro (cuenta para arriba)' : 'Cuenta regresiva'}</button></div>
           )}
@@ -158,6 +183,15 @@ function EditorBloque({ b, onCambio, onQuitar, onGrafico }: { b: BloqueRutina; o
           <div className="campo"><label>Texto</label><input value={x.texto} onChange={(e) => onCambio({ rondas: b.rondas.map((y, j) => (j === i ? { ...y, texto: e.target.value } : y)) })} /></div>
         </div>
       ))}
+      {b.tipo === 'rondas' && (
+        <div className="rejilla-2">
+          <Num etiqueta="Descanso entre rondas (s)" valor={b.descansoEntre ?? 60} paso={15} onCambio={(v) => onCambio({ descansoEntre: v })} />
+          <div className="campo"><label>Rondas</label><div className="fila" style={{ gap: 6 }}>
+            <button className="boton chico" onClick={() => onCambio({ rondas: [...b.rondas, { segundos: 60, texto: `Ronda ${b.rondas.length + 1}` }] })}>+ ronda</button>
+            <button className="boton chico" disabled={b.rondas.length <= 1} onClick={() => onCambio({ rondas: b.rondas.slice(0, -1) })}>− ronda</button>
+          </div></div>
+        </div>
+      )}
       <div className="botonera">
         {onGrafico && <button className="boton" onClick={onGrafico}>Ver progreso</button>}
         <button className="boton peligro" onClick={onQuitar}>Quitar</button>
@@ -214,5 +248,75 @@ export function GraficoEjercicio({ puntos }: { puntos: PuntoEjercicio[] }) {
       <text x={W - pad.d + 4} y={yR(maxR) + 16} className="etq reps">reps</text>
       {puntos.map((p, i) => (puntos.length <= 8 || i % Math.ceil(puntos.length / 8) === 0) && <text key={`f${i}`} x={x(i)} y={H - 6} textAnchor="middle" className="etq">{p.fecha.slice(8)}/{p.fecha.slice(5, 7)}</text>)}
     </svg>
+  )
+}
+
+/** Historial de entrenos: todos quedan guardados (aunque ese día bajes). Tocar una serie la corrige. */
+export function HistorialEntrenos() {
+  const datos = useDatos(async () => {
+    const sesiones = (await db().sesionesEntreno.filter((s) => s.estado === 'terminada').toArray()).sort((a, b) => (b.fin ?? b.inicio) - (a.fin ?? a.inicio))
+    const rutinas = new Map((await listarRutinas(true)).map((r) => [r.id, r]))
+    return { sesiones, rutinas }
+  }, [])
+  const [corregir, setCorregir] = useState<{ s: SesionEntreno; x: SerieHecha; b?: BloqueEjercicio } | null>(null)
+  const d = datos.datos
+  return (
+    <>
+      <Atras a="/mas/rutinas" texto="Mis rutinas" />
+      <h1>Historial de entrenos</h1>
+      <p className="texto-2 chico">Cada entreno queda guardado tal cual, aunque ese día hayas hecho menos. El récord se guarda aparte y no se pisa. Tocá una serie para corregirla (no cambia el XP).</p>
+      {!d ? <p className="vacio">Cargando…</p> : d.sesiones.length === 0 ? <p className="vacio">Todavía no terminaste ningún entreno.</p> : d.sesiones.map((s) => {
+        const r = d.rutinas.get(s.rutinaId)
+        const ids = [...new Set(s.series.map((x) => x.bloqueId))]
+        return (
+          <Tarjeta key={s.id} compacta>
+            <div className="fila entre"><b>{fechaLegible(s.fecha, false)}</b><span className="texto-3 chico">{r?.nombre.split(' · ')[0] ?? s.rutinaId}</span></div>
+            {ids.map((id) => {
+              const b = r?.bloques.find((x) => x.id === id)
+              const series = s.series.filter((x) => x.bloqueId === id).sort((a, c) => a.n - c.n)
+              return (
+                <div key={id} className="hist-ejercicio">
+                  <span className="chico">{b?.nombre ?? id}</span>
+                  <div className="chips-mini">
+                    {series.map((x) => (
+                      <button key={x.n} className="hist-serie mono" onClick={() => setCorregir({ s, x, b: b?.tipo === 'ejercicio' ? b : undefined })}>
+                        S{x.n} {x.reps}{x.repsExtra ? `+${x.repsExtra}` : ''}{x.ayuda ? ` +${x.ayuda} ayuda` : ''} × {kg(x.peso)} ✎
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+            {(s.tiempos ?? []).map((x) => <div key={x.bloqueId} className="fila entre chico"><span>{x.nombre}</span><span className="mono">{Math.floor(x.segundos / 60)}:{String(x.segundos % 60).padStart(2, '0')} · {kg(x.peso)}</span></div>)}
+          </Tarjeta>
+        )
+      })}
+      <Hoja abierta={!!corregir} onCerrar={() => setCorregir(null)} titulo={corregir ? `Corregir serie ${corregir.x.n}` : ''}>
+        {corregir && <CorregirHistorial key={`${corregir.s.id}:${corregir.x.bloqueId}:${corregir.x.n}`} {...corregir} onListo={() => setCorregir(null)} />}
+      </Hoja>
+    </>
+  )
+}
+
+function CorregirHistorial({ s, x, b, onListo }: { s: SesionEntreno; x: SerieHecha; b?: BloqueEjercicio; onListo: () => void }) {
+  const [reps, setReps] = useState(x.reps)
+  const [extra, setExtra] = useState(x.repsExtra ?? 0)
+  const [ayuda, setAyuda] = useState(x.ayuda ?? 0)
+  const [peso, setPeso] = useState(x.peso)
+  const guardar = async () => {
+    await mutar(() => corregirSerie(s.id!, x.bloqueId, x.n, { reps, peso, ...(b?.admiteAyuda ? { ayuda } : x.repsExtra !== undefined || extra ? { repsExtra: extra } : {}) }))
+    avisar('Serie corregida', { tipo: 'ok' })
+    onListo()
+  }
+  return (
+    <div className="col" style={{ gap: 8 }}>
+      <p className="texto-2 chico">{b?.nombre ?? x.bloqueId} · {fechaLegible(s.fecha, false)}</p>
+      <div className="rejilla-2">
+        <Num etiqueta="Reps" valor={reps} onCambio={setReps} />
+        {b?.admiteAyuda ? <Num etiqueta="Con ayuda (+)" valor={ayuda} onCambio={setAyuda} /> : <Num etiqueta="Extra (+)" valor={extra} onCambio={setExtra} />}
+        <Num etiqueta="Peso (kg)" valor={peso} paso={0.5} onCambio={setPeso} />
+      </div>
+      <button className="boton primario ancho" onClick={() => void guardar()}>Guardar corrección</button>
+    </div>
   )
 }
