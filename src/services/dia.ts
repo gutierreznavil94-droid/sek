@@ -3,6 +3,7 @@
  * resúmenes (cumplimiento, racha, atributos).
  */
 
+import { evaluarPlanComida, ID_PILAR_COMIDA } from './comidas'
 import { db } from '../data/db'
 import type { Accion, Compromiso, DiaCerrado, RegistroSuenio } from '../data/tipos'
 import {
@@ -29,7 +30,7 @@ export function idCompromiso(accionId: string, fecha: FechaDia): string {
 }
 
 /** Tipos de acción que se programan como compromisos visibles en Hoy. */
-const TIPOS_PROGRAMABLES: Accion['tipo'][] = ['compromiso', 'entrenamiento', 'acostarse', 'revision_diaria', 'revision_semanal', 'limite_juego']
+const TIPOS_PROGRAMABLES: Accion['tipo'][] = ['compromiso', 'entrenamiento', 'acostarse', 'revision_diaria', 'revision_semanal', 'limite_juego', 'comida_plan']
 
 /** Crea los compromisos de una fecha según las acciones activas. Idempotente. */
 export async function generarCompromisosDelDia(fecha: FechaDia): Promise<Compromiso[]> {
@@ -460,7 +461,7 @@ async function cerrarDia(fecha: FechaDia): Promise<DiaCerrado> {
   // 1. Lo que quedó sin marcar pasa a "omitido".
   const pendientes = await d.compromisos.where('fecha').equals(fecha).filter((c) => c.estado === 'pendiente' || c.estado === 'iniciado').toArray()
   for (const c of pendientes) {
-    if (c.accionId === 'limite_juego') continue
+    if (c.accionId === 'limite_juego' || c.accionId === ID_PILAR_COMIDA) continue
     await cambiarEstado(c.id, { estado: 'omitido', nota: 'Sin marcar al cerrar el día' })
   }
   // 2. Límite de juego: se decide una sola vez al cerrar.
@@ -471,6 +472,14 @@ async function cerrarDia(fecha: FechaDia): Promise<DiaCerrado> {
   if (limite && (limite.estado === 'pendiente' || limite.estado === 'iniciado')) {
     if (minutosJuego <= limiteMin) await completarCompromiso(limite.id, { instante: instanteDe(fecha, '23:59', ajustes.zonaHoraria) })
     else await cambiarEstado(limite.id, { estado: 'omitido', nota: `${minutosJuego} min de juego, límite ${limiteMin}` })
+  }
+  // 2b. Comer según el plan: un día sin comidas cargadas no cuenta (se quita); si hay, se evalúa.
+  const plan = await d.compromisos.get(idCompromiso(ID_PILAR_COMIDA, fecha))
+  if (plan && (plan.estado === 'pendiente' || plan.estado === 'iniciado')) {
+    const r = await evaluarPlanComida(fecha)
+    if (!r) await d.compromisos.delete(plan.id)
+    else if (r.cumplido) await completarCompromiso(plan.id, { instante: instanteDe(fecha, '23:59', ajustes.zonaHoraria) })
+    else await cambiarEstado(plan.id, { estado: 'omitido', nota: `${r.kcal} kcal · ${r.proteina} g de proteína` })
   }
   // 3. Cumplimiento del día y foto de atributos.
   const cerrado = await recalcularDiaCerrado(fecha, minutosJuego, !!excepcion)

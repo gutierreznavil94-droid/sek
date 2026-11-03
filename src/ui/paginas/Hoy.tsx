@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import type { Compromiso } from '../../data/tipos'
 import { NOMBRES_FASES_INICIALES } from '../../data/semilla'
+import { TarjetaComida } from './Comida'
 import { db } from '../../data/db'
 import { entrarModoPrueba } from '../../data/modoPrueba'
 import { diaSemanaDe, duracionLegible, fechaLegible, formatoHora, instanteDe, lunesDe, minutosDe, partesLocales, sumarDias } from '../../domain/fechas'
@@ -285,6 +286,8 @@ export function Hoy({ hoy }: { hoy: string }) {
     if (p.estado !== 'pendiente') return setPilarSel(p)
     // Entrenamiento: abre el modo entreno (la rutina que toca hoy); al terminar se marca solo.
     if (p.accion.tipo === 'entrenamiento') return navegar('/entreno')
+    // Comer según el plan: se evalúa solo al cerrar el día; tocar abre la comida.
+    if (p.accion.tipo === 'comida_plan') return navegar('/comida')
     if (p.accion.tipo === 'acostarse') {
       if (p.ventanaCerrada) return avisar(`Pasaron las ${ajustes.horaLimiteCelu}: la noche queda sin cumplir.`, { tipo: 'bajo' })
       return void dejoCelu()
@@ -402,6 +405,9 @@ export function Hoy({ hoy }: { hoy: string }) {
           </p>
         )}
       </section>
+
+      {/* Comida: dos anillos (calorías y proteína) y «+ Comí» */}
+      <TarjetaComida hoy={hoy} />
 
       {/* Metas de la semana: fila mini de 7 días, debajo de los pilares */}
       <SemanaMetas hoy={hoy} />
@@ -547,10 +553,10 @@ function TarjetaPilar({ p, suenio, zona, tic, flash, marcado, destello, onTocar,
       detalle = 'Descanso'
       break
     default:
-      detalle = p.ventanaCerrada ? 'Ya no se registra' : p.vencido ? (esCelu ? `Tarde · hasta ${horaLimiteCelu}` : `Venció ${p.horaLimite}`) : esCelu ? `Dejo celu hasta ${p.horaLimite}` : esEntreno ? `${p.accion.horaLimiteInicio && !entrenoEnCurso ? `Empezar hasta ${p.accion.horaLimiteInicio} · ` : ''}${rutina ? `${p.accion.horaLimiteInicio && !entrenoEnCurso ? rutina.nombre.split(' · ')[0] : rutina.nombre} · ~${rutina.minutos} min` : `mín. ${p.accion.minutosMinimos ?? 0} min`}` : `Hasta ${p.horaLimite}${p.accion.minutosMinimos ? ` · ${p.accion.minutosMinimos} min` : ''}`
+      detalle = p.ventanaCerrada ? 'Ya no se registra' : p.vencido ? (esCelu ? `Tarde · hasta ${horaLimiteCelu}` : `Venció ${p.horaLimite}`) : esCelu ? `Dejo celu hasta ${p.horaLimite}` : esEntreno ? `${p.accion.horaLimiteInicio && !entrenoEnCurso ? `Empezar hasta ${p.accion.horaLimiteInicio} · ` : ''}${rutina ? `${p.accion.horaLimiteInicio && !entrenoEnCurso ? rutina.nombre.split(' · ')[0] : rutina.nombre} · ~${rutina.minutos} min` : `mín. ${p.accion.minutosMinimos ?? 0} min`}` : p.accion.tipo === 'comida_plan' ? 'Se mide al cerrar el día' : `Hasta ${p.horaLimite}${p.accion.minutosMinimos ? ` · ${p.accion.minutosMinimos} min` : ''}`
   }
   const conExtra = tieneExtra(p.accion) && (p.estado === 'cumplido' || p.estado === 'tarde')
-  const accionTexto = conExtra && !c?.extra ? `A los ${p.accion.minutosExtra} min, tocá de nuevo` : p.estado === 'pendiente' ? (esCelu ? 'Tocá para registrar' : esEntreno ? (entrenoEnCurso ? 'En curso · tocá para seguir' : 'Tocá para empezar') : 'Tocá si lo hiciste') : ''
+  const accionTexto = conExtra && !c?.extra ? `A los ${p.accion.minutosExtra} min, tocá de nuevo` : p.estado === 'pendiente' ? (esCelu ? 'Tocá para registrar' : esEntreno ? (entrenoEnCurso ? 'En curso · tocá para seguir' : 'Tocá para empezar') : p.accion.tipo === 'comida_plan' ? 'Tocá para ver tu comida' : 'Tocá si lo hiciste') : ''
   return (
     <button
       type="button"

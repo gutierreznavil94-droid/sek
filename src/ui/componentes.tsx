@@ -272,6 +272,7 @@ export function IconoPilar({ id, tipo }: { id: string; tipo: string }) {
   if (tipo === 'entrenamiento') return <svg {...comun}><path d="M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12" /></svg>
   if (tipo === 'acostarse') return <svg {...comun}><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" /></svg>
   if (id === 'manga' || /dibuj|manga|pint/i.test(id)) return <svg {...comun}><path d="M14 4l6 6-9 9H5v-6z" /><path d="M12 6l6 6" /></svg>
+  if (tipo === 'comida_plan') return <svg {...comun}><path d="M7 3v8a2 2 0 0 0 2 2v8M5 3v5M9 3v5M17 21V3c-2 1-3 4-3 8h3" /></svg>
   if (/leer/.test(id)) return <svg {...comun}><path d="M3 5h6a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H3zM21 5h-6a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h7z" /></svg>
   if (/estudiar/.test(id)) return <svg {...comun}><path d="M2 9l10-5 10 5-10 5z" /><path d="M6 11v5c3 2 9 2 12 0v-5" /></svg>
   if (/meditar/.test(id)) return <svg {...comun}><circle cx="12" cy="5" r="2" /><path d="M12 8v5M5 19c2-3 4-4 7-4s5 1 7 4M8 12l4 1 4-1" /></svg>

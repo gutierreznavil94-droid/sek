@@ -16,6 +16,7 @@ const SECCIONES = [
   { a: '/mas/contadores', t: 'Contadores', d: 'Flexiones y dominadas: cuota, extra, cuánto suma cada toque y XP' },
   { a: '/mas/objetivos', t: 'Objetivos y fases', d: 'Qué buscás en cada etapa de 30 días' },
   { a: '/mas/acciones', t: 'Pilares y acciones', d: 'Nombre, hora límite, mínimo, atributo y XP de cada pilar y compromiso' },
+  { a: '/mas/comida', t: 'Comida', d: 'Objetivo de calorías y proteína, peso y pilar «Comer según el plan»' },
   { a: '/mas/rutinas', t: 'Mis rutinas', d: 'Ver y editar rutinas, ejercicios y días; historial de entrenos para corregir una serie' },
   { a: '/mas/entrenamiento', t: 'Entrenamiento y descanso', d: 'Días y horas, hora de acostarse, objetivo de sueño' },
   { a: '/mas/alarmas', t: 'Alarmas del teléfono', d: 'Qué cargar en el reloj de Android' },

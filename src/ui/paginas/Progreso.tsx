@@ -18,6 +18,8 @@ import { graficoMetas, lineaDeMetas, metasPorDia } from '../../services/metas'
 import { FilaMeta } from '../metas'
 import { VERSION_APP } from '../../version'
 import { rutaTema } from '../../temas/temas'
+import { resumenComida, type ResumenComida } from '../../services/comidas'
+import { SeccionComida } from './Comida'
 import { VIDEOS, VIDRIO_EN_DESTELLO, intensidadDestello, type VideoFondo, elegirVideo, useModoFondo, usePantallaHorizontal, VIDEO_PC, video as datosVideo } from '../../fondos/elegir'
 
 const BASE = import.meta.env.BASE_URL
@@ -31,16 +33,17 @@ const BASE = import.meta.env.BASE_URL
 type Rango = 'semana' | 'mes' | 'ciclo'
 
 /** Secciones de Progreso: el resumen arriba y cada sección a un toque, a pantalla completa sobre el mismo video. */
-type Seccion = 'xp' | 'pilares' | 'metas' | 'sueno' | 'fuerza' | 'series' | 'codigo'
+type Seccion = 'xp' | 'pilares' | 'metas' | 'sueno' | 'fuerza' | 'series' | 'comida' | 'codigo'
 const SECCIONES: { id: Seccion; kanji: string; nombre: string }[] = [
   { id: 'xp', kanji: '昇', nombre: 'XP' },
   { id: 'metas', kanji: '目', nombre: 'Metas' },
   { id: 'sueno', kanji: '眠', nombre: 'Sueño' },
   { id: 'fuerza', kanji: '力', nombre: 'Fuerza' },
   { id: 'series', kanji: '連', nombre: 'Series' },
+  { id: 'comida', kanji: '食', nombre: 'Comida' },
   { id: 'codigo', kanji: '掟', nombre: 'Mi código' },
 ]
-const NOMBRE_SECCION: Record<Seccion, string> = { xp: 'XP', pilares: 'Pilares', metas: 'Metas', sueno: 'Sueño', fuerza: 'Fuerza', series: 'Series rápidas', codigo: 'Mi código' }
+const NOMBRE_SECCION: Record<Seccion, string> = { xp: 'XP', pilares: 'Pilares', metas: 'Metas', sueno: 'Sueño', fuerza: 'Fuerza', series: 'Series rápidas', comida: 'Comida', codigo: 'Mi código' }
 /** La última sección abierta se recuerda solo durante la misma visita y el mismo día. */
 const CLAVE_SECCION = 'progreso-seccion'
 function seccionRecordada(hoy: string): Seccion | null {
@@ -131,14 +134,16 @@ export function Progreso({ hoy }: { hoy: string }) {
     const metasSemana = [...metasPorDiaSemana.values()].flat()
     // Miniaturas de los botones del resumen (solo para mirar: no cambian ningún cálculo).
     const xpUltimos = await xpPorDia(sumarDias(hoy, -6), hoy)
+    const comida = await resumenComida(hoy)
     const mini = {
       xp: Array.from({ length: 7 }, (_, i) => xpUltimos.get(sumarDias(hoy, i - 6)) ?? 0),
       metas: Array.from({ length: 7 }, (_, i) => { const f = sumarDias(lunes, i); return lineaDeMetas(metasPorDiaSemana.get(f) ?? [], hoy) }),
       sueno: sueno.noches.slice(-7).map((n) => n.minutos),
       fuerza: fuerza.volumenPorSemana.slice(-6).map((v) => v.volumen),
       series: contadores[0]?.escalonesReps.map((e) => e.reps) ?? [],
+      comida: comida.pesos.slice(-8).map((p) => p.kg),
     }
-    return { ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados, conExtra, reglasCodigo: await db().codigo.count(), metasSemana: { cumplidas: metasSemana.filter((m) => m.cumplida).length, total: metasSemana.length }, mini }
+    return { ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados, conExtra, reglasCodigo: await db().codigo.count(), comida, metasSemana: { cumplidas: metasSemana.filter((m) => m.cumplida).length, total: metasSemana.length }, mini }
   }, [hoy])
   const reducido = useMemo(() => movimientoReducido(), [])
   const modo = useModoFondo()
@@ -266,6 +271,8 @@ export function Progreso({ hoy }: { hoy: string }) {
                   </>
                 )}
 
+                {seccion === 'comida' && <SeccionComida r={d.comida} />}
+
                 {seccion === 'series' && (
                   <section className="av-tarjeta">
                     <div className="av-tarjeta-titulo"><span>Series rápidas</span><span className="av-nota">hoy · semana · récord</span></div>
@@ -358,7 +365,7 @@ export function Progreso({ hoy }: { hoy: string }) {
   )
 }
 
-type Mini = { xp: number[]; metas: ('verde' | 'gris' | 'roja' | null)[]; sueno: number[]; fuerza: number[]; series: number[] }
+type Mini = { xp: number[]; metas: ('verde' | 'gris' | 'roja' | null)[]; sueno: number[]; fuerza: number[]; series: number[]; comida: number[] }
 /** Miniatura del gráfico de cada sección, bien chica, al lado del dato clave. */
 function Miniatura({ s, m }: { s: Seccion; m: Mini }) {
   const W = 64
@@ -385,12 +392,21 @@ function Miniatura({ s, m }: { s: Seccion; m: Mini }) {
     const max = Math.max(1, ...v)
     const a = (W - 4) / v.length
     cuerpo = <path d={v.map((y, i) => `${i ? 'L' : 'M'}${(2 + i * a).toFixed(1)},${(H - 2 - (y / max) * (H - 5)).toFixed(1)} H${(2 + (i + 1) * a).toFixed(1)}`).join(' ')} className="mini-linea" />
+  } else if (s === 'comida') {
+    // Curva de peso (sin escala desde cero: se ve la tendencia).
+    const v = m.comida
+    if (v.length < 2) cuerpo = <line x1={2} x2={W - 2} y1={H / 2} y2={H / 2} className="mini-vacio" />
+    else {
+      const lo = Math.min(...v)
+      const hi = Math.max(...v)
+      cuerpo = <path d={v.map((y, i) => `${i ? 'L' : 'M'}${((i / (v.length - 1)) * (W - 4) + 2).toFixed(1)},${(H - 3 - ((y - lo) / (hi - lo || 1)) * (H - 6)).toFixed(1)}`).join(' ')} className="mini-linea" />
+    }
   } else if (s === 'codigo') return <span className="mini-sello" aria-hidden>誓</span>
   return <svg className={`mini-grafico ${s}`} viewBox={`0 0 ${W} ${H}`} aria-hidden>{cuerpo}</svg>
 }
 
 /** El dato que muestra cada botón del resumen, para no tener que entrar. */
-function datoClave(s: Seccion, d: { xpSemana: number; metasSemana: { cumplidas: number; total: number }; sueno: ResumenSuenio; fuerza: ResumenFuerza; contadores: ResumenContador[]; reglasCodigo: number }): string {
+function datoClave(s: Seccion, d: { xpSemana: number; metasSemana: { cumplidas: number; total: number }; sueno: ResumenSuenio; fuerza: ResumenFuerza; contadores: ResumenContador[]; reglasCodigo: number; comida: ResumenComida }): string {
   switch (s) {
     case 'xp': return `+${d.xpSemana} esta semana`
     case 'metas': return d.metasSemana.total ? `${d.metasSemana.cumplidas}/${d.metasSemana.total} esta semana` : 'sin metas esta semana'
@@ -399,6 +415,10 @@ function datoClave(s: Seccion, d: { xpSemana: number; metasSemana: { cumplidas: 
     case 'series': {
       const listas = d.contadores.filter((c) => c.metaLogradaHoy).length
       return listas === d.contadores.length ? 'cuota ✓' : d.contadores.length === 1 ? `${d.contadores[0].hoy}/${d.contadores[0].cuotaHoy} hoy` : `${listas}/${d.contadores.length} cuotas`
+    }
+    case 'comida': {
+      const s = d.comida.semanas[d.comida.semanas.length - 1]
+      return s?.kcal ? `${s.kcal.toLocaleString('es-AR')} kcal/día` : d.comida.pesos.length ? `${d.comida.pesos[d.comida.pesos.length - 1].kg} kg` : 'sin cargar aún'
     }
     case 'codigo': return `${d.reglasCodigo} ${d.reglasCodigo === 1 ? 'regla' : 'reglas'}`
     default: return ''

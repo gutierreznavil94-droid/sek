@@ -1675,3 +1675,92 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 
 /* Temas sin kanjis decorativos */
 :root[data-kanjis="no"] .av-seccion-kanji { display: none; }
+
+/* ---------- Comida (食): dos números mandan ---------- */
+:root { --verde: #79c29a; --verde-suave: rgba(121, 194, 154, 0.16); }
+.co-kanji { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 30px; line-height: 1; color: var(--texto); }
+.co-kanji.grande { font-size: 44px; }
+.co-anillo { position: relative; flex: none; }
+.co-anillo svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.co-anillo circle { fill: none; stroke-width: 9; }
+.co-anillo .fondo { stroke: var(--fondo-3); }
+.co-anillo .valor { stroke: var(--verde); stroke-linecap: round; transition: stroke-dashoffset 0.8s cubic-bezier(.2,.8,.2,1), stroke 0.3s; }
+.co-anillo.pasado .valor { stroke: var(--ambar); }
+.co-anillo.vacio .fondo { stroke-dasharray: 3 5; stroke: var(--borde); }
+.co-anillo-centro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.05; text-align: center; }
+.co-anillo-centro b { font-size: 0.95em; font-variant-numeric: tabular-nums; }
+.co-anillo-centro span { font-size: 0.62rem; color: var(--texto-3); }
+.co-anillo[style*="150px"] .co-anillo-centro b { font-size: 1.7rem; }
+.co-anillo[style*="112px"] .co-anillo-centro b { font-size: 1.3rem; }
+.co-anillo[style*="52px"] .co-anillo-centro b { font-size: 0.72rem; }
+.co-anillo[style*="52px"] .co-anillo-centro span { font-size: 0.55rem; }
+.co-anillo[style*="52px"] circle { stroke-width: 10; }
+
+.co-tarjeta { display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 14px; border: 1px solid var(--borde); border-radius: 14px; background: var(--fondo-2); }
+.co-tarjeta-link { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; color: var(--texto); }
+.co-tarjeta-texto { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.co-tarjeta-anillos { display: flex; gap: 6px; }
+.co-comi { flex: none; padding: 10px 14px; }
+
+.co-pantalla { display: flex; flex-direction: column; gap: 14px; }
+.co-titulo { display: flex; align-items: center; gap: 10px; }
+.co-titulo h1 { margin: 0; flex: 1; }
+.co-resumen { display: flex; flex-direction: column; gap: 12px; padding: 16px 12px; border: 1px solid var(--borde); border-radius: 16px; background: var(--fondo-2); }
+.co-anillos-grandes { display: flex; align-items: center; justify-content: center; gap: 18px; }
+.co-barras { display: flex; flex-direction: column; gap: 6px; }
+.co-barra-fina { display: grid; grid-template-columns: 56px 1fr 46px; align-items: center; gap: 8px; }
+.co-barra-fina > div { height: 5px; background: var(--fondo-3); border-radius: 3px; overflow: hidden; }
+.co-barra-fina > div > div { height: 100%; background: var(--texto-2); border-radius: 3px; transition: width 0.6s; }
+.co-barra-fina > div > div.pasado { background: var(--ambar); }
+.co-barra-fina > span:last-child { text-align: right; }
+.co-franja { display: flex; flex-direction: column; gap: 4px; }
+.co-item { appearance: none; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; width: 100%; padding: 10px 12px; background: var(--fondo-2); border: 1px solid var(--borde); border-radius: 10px; color: var(--texto); text-align: left; font-size: 0.95rem; }
+.co-up { display: inline-block; margin-left: 6px; padding: 0 4px; border-radius: 4px; border: 1px solid var(--ambar); color: var(--ambar); font-size: 0.6rem; font-weight: 800; vertical-align: 2px; }
+.co-franja-acciones { display: flex; gap: 14px; }
+
+.co-cargar { display: flex; flex-direction: column; gap: 10px; }
+.co-franjas { display: flex; gap: 4px; flex-wrap: wrap; }
+.co-franjas button, .co-porciones button { appearance: none; flex: 1; min-height: 38px; padding: 0 8px; border-radius: 10px; border: 1px solid var(--borde); background: var(--fondo); color: var(--texto-2); font-weight: 600; font-size: 0.8rem; }
+.co-franjas button.activo, .co-porciones button.activo { background: var(--verde-suave); border-color: var(--verde); color: var(--texto); }
+.co-buscar { width: 100%; min-height: 48px; padding: 10px 14px; font-size: 1rem; border-radius: 12px; border: 1px solid var(--borde); background: var(--fondo); }
+.co-lista { display: flex; flex-direction: column; gap: 4px; max-height: 46svh; overflow-y: auto; }
+.co-opcion { appearance: none; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 11px 12px; border: 0; border-bottom: 1px solid var(--borde); background: none; color: var(--texto); text-align: left; font-size: 0.95rem; }
+.co-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.co-chips button { appearance: none; padding: 9px 12px; border-radius: 999px; border: 1px solid var(--borde); background: var(--fondo-3); color: var(--texto); font-size: 0.88rem; font-weight: 600; }
+.co-chips button span { color: var(--texto-3); font-weight: 500; font-size: 0.78rem; }
+.co-atajos { display: flex; gap: 6px; flex-wrap: wrap; }
+.co-atajos .boton { flex: 1; }
+.co-porciones { display: flex; gap: 6px; align-items: stretch; }
+.co-porciones button { font-size: 1.05rem; }
+.co-gramos { display: flex; align-items: center; gap: 4px; flex: 1.4; }
+.co-gramos input { width: 100%; min-height: 38px; padding: 4px 8px; border-radius: 10px; border: 1px solid var(--borde); background: var(--fondo); font-size: 1rem; text-align: right; }
+.co-previa { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; text-align: center; }
+.co-previa > div { display: flex; flex-direction: column; padding: 8px 4px; border-radius: 10px; background: var(--fondo); }
+.co-previa b { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.co-previa .chico b { font-size: 1rem; color: var(--texto-2); }
+.co-previa span { font-size: 0.7rem; color: var(--texto-3); }
+.co-dos { display: flex; gap: 8px; }
+.co-dos > * { flex: 1; min-width: 0; }
+.co-dos > input { min-height: 44px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--borde); background: var(--fondo); }
+.co-camara { position: relative; aspect-ratio: 4 / 3; border-radius: 14px; overflow: hidden; background: #000; }
+.co-camara video { width: 100%; height: 100%; object-fit: cover; }
+.co-mira { position: absolute; left: 12%; right: 12%; top: 38%; bottom: 38%; border: 2px solid var(--verde); border-radius: 8px; box-shadow: 0 0 0 999px rgba(0,0,0,0.35); }
+.co-camara-estado { position: absolute; left: 0; right: 0; bottom: 10px; text-align: center; font-size: 0.85rem; }
+.co-objetivo { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-left: 3px solid var(--verde); background: var(--fondo); border-radius: 4px 12px 12px 4px; font-size: 1.05rem; }
+
+.co-curva { width: 100%; height: auto; color: var(--verde); }
+.co-curva circle { fill: var(--verde); }
+.co-curva circle.ultimo { fill: var(--texto); stroke: var(--verde); stroke-width: 2; }
+.co-eje { fill: var(--texto-3); font-size: 9px; }
+.co-semanas { position: relative; display: flex; gap: 6px; align-items: flex-end; height: 120px; padding-top: 6px; }
+.co-semana { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr auto; gap: 2px; height: 100%; }
+.co-semana > span { grid-column: 1 / 3; text-align: center; font-size: 0.6rem; color: var(--texto-3); }
+.co-col { display: flex; align-items: flex-end; height: 100%; }
+.co-col > div { width: 100%; border-radius: 3px 3px 1px 1px; min-height: 2px; }
+.co-col .k { background: var(--verde); }
+.co-col .k.pasado { background: var(--ambar); }
+.co-col .p { background: var(--texto-2); }
+.co-punto { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; }
+.co-punto.k { background: var(--verde); }
+.co-punto.p { background: var(--texto-2); }
+.co-item-num { white-space: nowrap; }

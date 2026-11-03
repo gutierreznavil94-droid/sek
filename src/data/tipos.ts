@@ -67,7 +67,7 @@ export type Objetivo = {
   archivado?: boolean
 }
 
-export type TipoAccion = 'compromiso' | 'entrenamiento' | 'acostarse' | 'limite_juego' | 'revision_diaria' | 'revision_semanal'
+export type TipoAccion = 'compromiso' | 'entrenamiento' | 'acostarse' | 'limite_juego' | 'revision_diaria' | 'revision_semanal' | 'comida_plan'
 
 export type Accion = {
   id: string
@@ -273,6 +273,8 @@ export type Ajustes = {
   nombresFases: string[]
   /** Se completó la pantalla de primera vez (las bases viejas no la tienen: no les aparece). */
   primeraVezHecha?: boolean
+  /** Objetivo de comida (Más → Comida). Sin esto, la tarjeta de Hoy invita a configurarlo. */
+  comida?: ObjetivoComida
   /** La app se armó en la primera vez: las migraciones de los pilares de Navil no se aplican. */
   aMedida?: boolean
 }
@@ -554,3 +556,59 @@ export type SesionEntreno = {
   reloj?: { bloqueId: string; ronda: number; inicio: number; segundos: number }
   xpExtra?: number
 }
+
+// ---------- Comidas ----------
+
+export type FranjaComida = 'desayuno' | 'almuerzo' | 'merienda' | 'cena' | 'otro'
+export type ActividadComida = 'sedentario' | 'ligero' | 'moderado' | 'alto'
+export type MetaComida = 'bajar' | 'mantener' | 'ganar'
+
+/** Datos del objetivo y resultado (calorías y proteína por día). `manual`: los números se corrigieron a mano. */
+export type ObjetivoComida = {
+  peso: number
+  altura: number
+  edad: number
+  sexo: 'hombre' | 'mujer'
+  actividad: ActividadComida
+  meta: MetaComida
+  kcal: number
+  proteina: number
+  manual?: boolean
+}
+
+/** Alimento propio o traído por código de barras. Valores por 100 g. */
+export type AlimentoPropio = {
+  id: string
+  n: string
+  kcal: number
+  p: number
+  c: number
+  g: number
+  /** Porción habitual: nombre y gramos. */
+  por: string
+  gr: number
+  fuente: 'propio' | 'off'
+  codigo?: string
+  up?: 1
+  creado: number
+}
+
+/** Una cosa comida: los totales ya calculados para esa cantidad. */
+export type RegistroComida = {
+  id: string
+  fecha: FechaDia
+  franja: FranjaComida
+  alimentoId: string
+  nombre: string
+  gramos: number
+  kcal: number
+  p: number
+  c: number
+  g: number
+  up?: 1
+  instante: number
+}
+
+export type RegistroPeso = { id: string; fecha: FechaDia; kg: number; instante: number }
+
+export type ComidaGuardada = { id: string; nombre: string; items: { alimentoId: string; nombre: string; gramos: number }[]; creado: number }

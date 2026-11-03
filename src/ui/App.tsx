@@ -31,6 +31,7 @@ import { Hoy } from './paginas/Hoy'
 import { Identidad } from './paginas/Identidad'
 import { Inicio } from './paginas/Inicio'
 import { PrimeraVez } from './paginas/PrimeraVez'
+import { Comida, MasComida } from './paginas/Comida'
 import { TemaYNombres } from './paginas/TemaYNombres'
 import { necesitaPrimeraVez } from '../services/primeraVez'
 import { aplicarTema } from '../temas/temas'
@@ -216,6 +217,8 @@ function Rutas() {
         <Route path="/mas/sincronizar" element={<Sincronizar />} />
         <Route path="/mas/ajustes" element={<Ajustes />} />
         <Route path="/mas/tema" element={<TemaYNombres />} />
+        <Route path="/mas/comida" element={<MasComida hoy={hoy} />} />
+        <Route path="/comida" element={<Comida hoy={hoy} />} />
         <Route path="/sueno" element={<Sueno hoy={hoy} />} />
         <Route path="/mas/suenio" element={<Navigate to="/sueno" replace />} />
         <Route path="/mas/animaciones" element={<Suspense fallback={<Cargando />}><VerAnimaciones /></Suspense>} />
