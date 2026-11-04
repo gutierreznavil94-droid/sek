@@ -8,6 +8,7 @@ import { ahora } from '../../services/reloj'
 import { SINCRONIZACION_CONFIGURADA } from '../../sync/config'
 import { Tarjeta } from '../componentes'
 import { avisar, useDatos } from '../estado'
+import { configRecomendaciones } from '../../services/recomendaciones'
 
 const SECCIONES = [
   { a: '/mas/identidad', t: 'Identidad', d: 'Visión y obstáculos' },
@@ -48,6 +49,7 @@ async function actualizarApp(): Promise<void> {
 
 export function Mas() {
   const ajustes = useDatos(() => obtenerAjustes(), [])
+  const recomendar = useDatos(() => configRecomendaciones(), [])
   const [instalacion, setInstalacion] = useState(estadoInstalacion())
   useEffect(() => alCambiarInstalacion(() => setInstalacion(estadoInstalacion())), [])
   const [verIphone, setVerIphone] = useState(false)
@@ -64,6 +66,9 @@ export function Mas() {
             <Link to="/mas/copia" className="boton chico primario">Exportar</Link>
           </div>
         </Tarjeta>
+      )}
+      {recomendar.datos && (
+        <Link to="/mas/recomendar" className="boton ancho rec-boton"><span className="rec-kanji chico" aria-hidden>願</span><span>Recomendar algo<span className="desc">Contale al dueño de la app qué mejorarías</span></span><span className="flecha">›</span></Link>
       )}
       <Tarjeta>
         <div className="lista-nav">

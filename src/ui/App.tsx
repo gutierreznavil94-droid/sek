@@ -16,6 +16,8 @@ import { avisar, mutar, notificarCambio, useDatos, useVersion } from './estado'
 import { Layout } from './Layout'
 import { Acciones } from './paginas/Acciones'
 import { Ajustes } from './paginas/Ajustes'
+import { Recomendar } from './paginas/Recomendar'
+import { reintentarPendientes } from '../services/recomendaciones'
 import { Sueno } from './paginas/Sueno'
 import { AlarmasTelefono } from './paginas/AlarmasTelefono'
 import { Atributos } from './paginas/Atributos'
@@ -74,6 +76,9 @@ export function App() {
         if (terminado) marcarBuenosDias(terminado.noche)
         else if (await modoSuenioActivo()) await registrarAperturaEnSuenio()
         if (navigator.storage?.persist) navigator.storage.persist().catch(() => {})
+        // Recomendaciones que quedaron esperando internet.
+        reintentarPendientes().catch(() => {})
+        window.addEventListener('online', () => { reintentarPendientes().catch(() => {}) })
       } catch (e) {
         if (!cancelado) setError(e instanceof Error ? e.message : String(e))
       } finally {
@@ -218,6 +223,7 @@ function Rutas() {
         <Route path="/mas/copia" element={<Copia />} />
         <Route path="/mas/sincronizar" element={<Sincronizar />} />
         <Route path="/mas/ajustes" element={<Ajustes />} />
+        <Route path="/mas/recomendar" element={<Recomendar />} />
         <Route path="/mas/tema" element={<TemaYNombres />} />
         <Route path="/mas/comida" element={<MasComida hoy={hoy} />} />
         <Route path="/comida" element={<Comida hoy={hoy} />} />

@@ -7,6 +7,7 @@ import { TEMAS, TEMAS_PROXIMOS, aplicarTema, saludoDe, temaPorId, type Definicio
 import { DiasSemana, movimientoReducido } from '../componentes'
 import { Divisor } from '../Divisor'
 import { avisar, mutar } from '../estado'
+import { temaTieneFormulario } from '../../services/recomendaciones'
 
 const MuniecoVivo = lazy(() => import('../animaciones/Escena').then((m) => ({ default: m.MuniecoVivo })))
 const BASE = import.meta.env.BASE_URL
@@ -264,6 +265,7 @@ function Listo({ tema, nombre, hoy, pilares }: { tema: DefinicionTema; nombre: s
         <div><span className="texto-3 chico">Tus pilares</span><b>{pilares.map((p) => p.nombre.trim()).join(' · ')}</b></div>
       </div>
       <p className="ayuda">Todo se puede cambiar después desde Más. Los datos viven solo en este teléfono: hacé una copia cada semana.</p>
+      {temaTieneFormulario() && <p className="ayuda centro">¿Algo que mejorarías? Después, en Más → <b>Recomendar algo</b>.</p>}
     </>
   )
 }

@@ -307,6 +307,8 @@ export type Ajustes = {
   agua?: ConfigAgua
   /** Mi horario (Calendario): bloques fijos de la semana, horarios guardados y excepciones por fecha. */
   horario?: ConfigHorario
+  /** Link del formulario de Google para «Recomendar algo» (pisa el del tema). Vacío = botón oculto. */
+  formularioRecomendaciones?: string
   /** La app se armó en la primera vez: las migraciones de los pilares de Navil no se aplican. */
   aMedida?: boolean
 }
@@ -660,6 +662,18 @@ export type ConfigAgua = {
   principal: string
   /** Objetivo diario a mano, en ml. Sin esto se calcula del peso. */
   objetivoMl?: number
+}
+
+/** Recomendación de un usuario: se manda a un formulario de Google de Navil; si no hay internet, espera. */
+export type Recomendacion = {
+  id: string
+  texto: string
+  parte: string
+  contacto?: string
+  estado: 'pendiente' | 'enviada'
+  creada: number
+  enviada?: number
+  intentos: number
 }
 
 /** Una toma de agua (un toque). */

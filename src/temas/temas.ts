@@ -32,6 +32,8 @@ export interface DefinicionTema {
   nombresFases?: string[]
   /** Tema en preparación: no aparece en la primera entrada ni en Más → Tema hasta que se saque esto. */
   oculto?: boolean
+  /** «Recomendar algo»: link de respuesta del formulario de Google (…/formResponse) y los ids de sus campos (entry.NNN). Sin link, el botón no aparece. */
+  recomendaciones?: { formulario: string; campos: { texto: string; parte: string; contacto: string; app: string } }
 }
 
 export interface TemaProximo { id: string; nombre: string; pista: string }

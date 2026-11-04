@@ -137,6 +137,13 @@ export function Ajustes() {
         </div>
         <div className="campo"><label>Avisar copia de seguridad cada (días)</label><input type="number" inputMode="numeric" value={a.diasAvisoCopia} onChange={num('diasAvisoCopia', 1, 60)} /></div>
       </Tarjeta>
+      <Tarjeta titulo="Recomendaciones de usuarios">
+        <div className="campo">
+          <label>Link del formulario de Google</label>
+          <input value={a.formularioRecomendaciones ?? ''} onChange={(e) => set('formularioRecomendaciones', e.target.value)} placeholder="https://docs.google.com/forms/d/e/…/formResponse entry.1 entry.2 entry.3 entry.4" />
+          <span className="ayuda">Pegá el link y, separados por espacios, los cuatro ids de los campos (entry.NNN) en este orden: qué recomendás, parte, contacto, app. Vacío: el botón «Recomendar algo» no se muestra. Cómo crear el formulario: recomendaciones-formulario-google.md.</span>
+        </div>
+      </Tarjeta>
       <button className="boton primario ancho" onClick={guardar}>Guardar ajustes</button>
     </>
   )
