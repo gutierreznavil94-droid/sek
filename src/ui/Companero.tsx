@@ -15,6 +15,7 @@ import { useAnimacionActual } from './animaciones/motor'
 import { HOJA_BASE, apoyoEn, arcoSalto, caida, clipPara, duracionDe, elegirMovimiento, escalonCercano, SALTO, type Escalon, type Hoja, type Movimiento } from './companero/rutina'
 import { movimientoReducido } from './componentes'
 import { useDatos, useTic, useVersion } from './estado'
+import { CompaneroDormido } from './animaciones/Siluetas'
 
 const hoja = () => `${import.meta.env.BASE_URL}${temaActivo().sprite}`
 const hojaJson = () => hoja().replace(/\.webp$/, '.json')
@@ -73,7 +74,9 @@ export function Companero({ hoy }: { hoy: string }) {
 
   const modo = ajustes.datos?.companero ?? 'pasea'
   const lugar = lugarDe(pathname)
-  const visible = modo !== 'apagado' && lugar !== null
+  // Después de «Dejo celu» (Hoy lo anota) el compañero no se pasea: duerme en su cama en una esquina.
+  const dormido = companeroDormido()
+  const visible = modo !== 'apagado' && lugar !== null && !dormido
   const pasea = visible && lugar === 'pasea' && modo === 'pasea' && !reducido && !hablando && !anim
 
   // Habla solo: al abrir (una vez por día) y cuando se dispara un consejo. Nunca con una animación en pantalla.
@@ -339,6 +342,7 @@ export function Companero({ hoy }: { hoy: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, lugar, pasea, reducido])
 
+  if (dormido && modo !== 'apagado' && lugar !== null) return <div className="companero" aria-hidden><div className="companero-caja dormido"><CompaneroDormido /></div></div>
   if (!visible) return null
   const [cw, ch] = hojaDatos.celda
   const estilo = { backgroundImage: `url(${hoja()})`, backgroundSize: `${hojaDatos.columnas * cw}px ${hojaDatos.filas * ch}px`, width: cw, height: ch }
@@ -369,6 +373,11 @@ export function Companero({ hoy }: { hoy: string }) {
       </div>
     </div>
   )
+}
+
+/** ¿Está durmiendo? Hoy guarda la noche al tocar «Dejo celu» y la borra al deshacer o al día siguiente. */
+export function companeroDormido(): boolean {
+  try { return !!localStorage.getItem('companero-dormido') } catch { return false }
 }
 
 /** Espera `ms` y llama; si justo está el tajo en pantalla, espera 5 s más (no habla encima del corte). */

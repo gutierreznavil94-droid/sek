@@ -8,6 +8,7 @@ import { ahora } from '../../services/reloj'
 import { recordatorios } from '../../reminders/recordatorios'
 import { Barra, Confirmar, Explicacion, Hoja, Tarjeta } from '../componentes'
 import { avisar, mutar, useDatos, useTic } from '../estado'
+import { CasaDelJuego } from '../animaciones/Siluetas'
 
 export function Juego({ hoy }: { hoy: string }) {
   const tic = useTic(1000)
@@ -40,25 +41,29 @@ export function Juego({ hoy }: { hoy: string }) {
 
   return (
     <>
-      <Tarjeta>
+      <Tarjeta compacta>
         <div className="fila entre">
-          <h2>Temporizador de juego</h2>
+          <span className="seccion-titulo">Temporizador de juego</span>
           <Explicacion titulo="Cómo funciona">
             <p>Es manual: iniciás, pausás y finalizás. La sesión activa queda guardada en el teléfono, así que cerrar la app no la pierde.</p>
             <p className="texto-2 chico">Registrar el juego no da XP. Respetar el límite del día ({r.limiteMinutos} min hoy: {ajustes.limiteJuegoSemana} de lunes a viernes, {ajustes.limiteJuegoFinde} sábados, domingos y feriados) sí, y se resuelve al cerrar el día. Los avisos de límite solo suenan con la app abierta; con la app cerrada, poné una alarma en el teléfono.</p>
           </Explicacion>
         </div>
-        <div className="centro">
-          <div className={`enorme mono ${estado === 'superado' ? 'bajo' : estado === 'cerca' ? 'medio' : ''}`}>{activa ? tiempo(msSesion) : '00:00'}</div>
-          <div className="texto-2 chico" style={{ marginTop: 6 }}>{activa ? (r.pausada ? 'En pausa' : `Jugando desde las ${formatoHora(activa.inicio, ajustes.zonaHoraria)}`) : 'Sin sesión activa'}</div>
-        </div>
-        {!activa && <button className="boton primario grande ancho" onClick={iniciar}>▶ Iniciar</button>}
-        {activa && (
-          <div className="botonera">
-            {r.pausada ? <button className="boton grande" onClick={() => mutar(reanudarJuego)}>▶ Reanudar</button> : <button className="boton grande" onClick={() => mutar(pausarJuego)}>❚❚ Pausar</button>}
-            <button className="boton grande peligro" onClick={finalizar}>■ Finalizar</button>
+        <div className="fila entre juego-temporizador">
+          <div>
+            <div className={`juego-segundos mono ${estado === 'superado' ? 'bajo' : estado === 'cerca' ? 'medio' : ''}`}>{activa ? tiempo(msSesion) : '00:00'}</div>
+            <div className="texto-3 muy-chico">{activa ? (r.pausada ? 'En pausa' : `Jugando desde las ${formatoHora(activa.inicio, ajustes.zonaHoraria)}`) : 'Sin sesión activa'}</div>
           </div>
-        )}
+          {!activa && <button className="boton primario" onClick={iniciar}>▶ Iniciar</button>}
+          {activa && (
+            <div className="fila" style={{ gap: 6 }}>
+              {r.pausada ? <button className="boton" onClick={() => mutar(reanudarJuego)}>▶ Reanudar</button> : <button className="boton" onClick={() => mutar(pausarJuego)}>❚❚ Pausar</button>}
+              <button className="boton peligro" onClick={finalizar}>■ Finalizar</button>
+            </div>
+          )}
+        </div>
+        {/* La casa: pelean hasta que empezás a jugar; jugando, concentrados; en pausa, té. Clips J1–J5 cuando estén. */}
+        <CasaDelJuego activa={!!activa} pausada={!!r.pausada} />
       </Tarjeta>
 
       <Tarjeta compacta>

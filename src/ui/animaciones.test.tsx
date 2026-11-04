@@ -57,9 +57,11 @@ async function marcarManga(base: string, modo: 'todas' | 'ninguna') {
   configurarAnimaciones({ modo })
   const vista = render(<MemoryRouter><Hoy hoy="2026-11-02" /><CapaAnimacion /></MemoryRouter>)
   await screen.findByRole('link', { name: /3 · 2 · 1/ })
-  const manga = [...document.querySelectorAll('.pilar-fila')].find((e) => e.textContent?.includes('Dibujar manga'))!
+  const manga = [...document.querySelectorAll('.pilar-bloque')].find((e) => e.textContent?.includes('Dibujar manga'))!
   fireEvent.click(manga)
   await waitFor(async () => expect((await db().compromisos.get('manga:2026-11-02'))?.estado).toBe('completado'))
+  // El XP se asienta en la misma mutación, pero la lectura puede adelantarse al cierre de la transacción.
+  await waitFor(async () => expect(await xpTotal()).toBeGreaterThan(0), { timeout: 3000 })
   const capa = document.querySelector('.sh-capa')
   const guardado = await db().compromisos.get('manga:2026-11-02')
   return { vista, capa, xp: await xpTotal(), estado: guardado?.estado, eventos: await db().eventos.count() }

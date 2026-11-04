@@ -69,11 +69,11 @@ export function Calendario({ hoy }: { hoy: string }) {
       <Link to="/calendario/horario" className="boton ancho hor-boton"><span>Mi horario<span className="desc">bloques fijos de la semana: colegio, trabajo, entreno</span></span><span className="flecha">›</span></Link>
       <div className="fila entre">
         <button className="boton chico" onClick={() => setMes(sumarDias(mes, -1).slice(0, 8) + '01')} aria-label="Mes anterior">‹</button>
-        <h1 style={{ textTransform: 'capitalize' }}>{nombreMes(m)} {a}</h1>
+        <h1 style={{ textTransform: 'capitalize' }} className="cal-titulo"><span className="cal-kanji" aria-hidden>暦</span>{nombreMes(m)} {a}</h1>
         <button className="boton chico" onClick={() => setMes(sumarDias(ultimo, 1).slice(0, 8) + '01')} aria-label="Mes siguiente">›</button>
       </div>
       <Tarjeta>
-        <div className="calendario">
+        <div className="calendario tinta">
           {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((x) => <div key={x} className="cab">{x}</div>)}
           {Array.from({ length: huecos }).map((_, i) => <div key={`h${i}`} className="cal-dia vacio" />)}
           {dias.map((f) => {
@@ -87,7 +87,7 @@ export function Calendario({ hoy }: { hoy: string }) {
             return (
               <div
                 key={f}
-                className={`cal-dia ${!enCiclo ? 'fuera' : ''} ${f === hoy ? 'hoy' : ''} ${sel === f ? 'seleccionado' : ''} ${d?.excepciones.has(f) ? 'excepcion' : ''} ${d?.feriados.has(f) ? 'feriado' : ''} ${inicioFase ? 'fase-inicio' : ''}`}
+                className={`cal-dia ${!enCiclo ? 'fuera' : ''} ${f === hoy ? 'hoy' : ''} ${sel === f ? 'seleccionado' : ''} ${d?.excepciones.has(f) ? 'excepcion' : ''} ${d?.feriados.has(f) ? 'feriado' : ''} ${inicioFase ? 'fase-inicio' : ''} ${f <= hoy && puntos.length > 0 && puntos.every((p) => p.estado === 'cumplido' || p.estado === 'descanso') && puntos.some((p) => p.estado === 'cumplido') ? 'completo' : ''}`}
                 onClick={() => { setSel(sel === f ? null : f); setEnfocar(sel !== f) }}
                 role="button"
                 aria-label={`${fechaLegible(f, false)}${enCiclo ? `, día ${dia}` : ''}${claves.length ? `, fecha clave: ${claves.map((c) => c.titulo).join(', ')}` : ''}`}

@@ -33,7 +33,7 @@ export function Sueno({ hoy }: { hoy: string }) {
   const anocheFecha = sumarDias(hoy, -1)
   return (
     <div className="pagina-sueno">
-      <h1>Sueño</h1>
+      <h1 className="sueno-titulo"><span className="sueno-kanji" aria-hidden>眠</span>Sueño</h1>
 
       <Tarjeta titulo="Anoche">
         {r.anoche ? (
@@ -106,6 +106,9 @@ function GraficoNoches({ noches, ventana, onElegir }: { noches: NocheDeSuenio[];
   return (
     <svg className="sueno-grafico" viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label={`Sueño de ${noches.length} noches`}>
       <rect x={x(v0)} y={0} width={Math.max(0, x(v1) - x(v0))} height={H - 16} className="sueno-ventana" />
+      {/* Trazo de pincel verde arriba de la ventana ideal (decoración: la franja sigue marcando el rango) */}
+      <path d={`M${x(v0)},2 C${x(v0) + (x(v1) - x(v0)) * 0.3},0 ${x(v0) + (x(v1) - x(v0)) * 0.7},4 ${x(v1)},1.5`} className="sueno-trazo" />
+      <path d={`M${x(v0)},${H - 18} C${x(v0) + (x(v1) - x(v0)) * 0.4},${H - 16} ${x(v0) + (x(v1) - x(v0)) * 0.6},${H - 20} ${x(v1)},${H - 17.5}`} className="sueno-trazo" />
       {[20, 22, 24, 26, 28, 30, 32].map((h) => (
         <g key={h}>
           <line x1={x(h * 60)} y1={0} x2={x(h * 60)} y2={H - 16} className="sueno-eje" />

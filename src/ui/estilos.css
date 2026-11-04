@@ -2011,7 +2011,7 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 
 /* ---------- El tajo ---------- */
 .tajo { position: fixed; inset: 0; z-index: 70; overflow: hidden; background: transparent; }
-.tajo-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: url(#tajo-luma); }
+.tajo-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: url(#tajo-luma) brightness(0.72) contrast(1.1); }
 /* La hoja brillante: un riel girado sobre la diagonal del corte; la hoja (blanca con punta roja) lo recorre en 0,4 s. */
 .tajo-riel { position: absolute; left: 50%; top: 50%; height: 6px; pointer-events: none; }
 .tajo-hoja { position: absolute; top: 0; left: 0; width: 180px; height: 6px; border-radius: 3px; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6) 35%, #ffffff 70%, #ff3b3b 88%, #ff8a8a 100%); box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.85), 0 0 26px 6px rgba(255, 60, 60, 0.55); animation: tajo-hoja 0.4s cubic-bezier(.2,.7,.3,1) both; }
@@ -2028,40 +2028,37 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .avisos { display: flex; flex-direction: column; gap: 4px; }
 .aviso-linea { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 9px 11px 8px 12px / 12px 8px 11px 9px; border: 1px solid var(--borde); background: var(--fondo-2); font-size: 0.9rem; line-height: 1.25; }
 .aviso-linea .crece { flex: 1; min-width: 0; }
-.aviso-linea.rojo { border-color: rgba(200, 16, 46, .7); background: linear-gradient(160deg, rgba(200, 16, 46, .14), var(--fondo-2)); }
-.aviso-linea.ambar { border-color: rgba(240, 180, 41, .6); }
+.aviso-linea.rojo { border-color: rgba(var(--papel-rgb), 0.45); font-weight: 600; }
+.aviso-linea.ambar { border-color: rgba(var(--papel-rgb), 0.3); }
 .aviso-linea .boton.chico { padding: 4px 10px; }
 .aviso-cerrar { appearance: none; border: 0; background: transparent; color: var(--texto-3); font: inherit; font-size: 0.85rem; padding: 2px 6px; cursor: pointer; }
-/* Pilares: una fila cada uno */
+/* El paréntesis del título, en gris chico y sin mayúsculas */
 .seccion-nota { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--texto-3); font-size: 0.68rem; }
-.pilares-filas { display: flex; flex-direction: column; gap: 5px; }
-.pilar-fila { position: relative; appearance: none; text-align: left; display: grid; grid-template-columns: 30px auto minmax(0, 1fr) 26px; align-items: center; gap: 8px; min-height: 42px; padding: 5px 8px 5px 8px; border-radius: 10px 12px 9px 13px / 12px 9px 13px 10px; background: var(--fondo-2); border: 1px solid var(--borde); color: var(--texto); font: inherit; cursor: pointer; transition: transform 0.15s ease, background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
-.pilar-fila:active { transform: scale(0.985); }
-.pilar-fila .icono { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; background: var(--fondo-3); color: var(--texto-2); transition: background 0.3s ease, color 0.3s ease; }
-.pilar-fila .icono svg { width: 17px; height: 17px; }
-.pilar-fila .nombre { font-weight: 700; font-size: 0.92rem; line-height: 1.2; white-space: nowrap; }
-.pilar-fila .detalle { font-size: 0.74rem; color: var(--texto-3); line-height: 1.2; text-align: right; min-width: 0; }
-.pilar-fila .detalle .extra-pendiente { color: var(--texto-3); opacity: 0.75; }
-.pilar-fila .estado-ic { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--texto-3); display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-weight: 800; color: var(--texto-3); background: var(--fondo-2); }
-.pilar-fila .estado-ic .punto-ambar { width: 10px; height: 10px; border-radius: 50%; background: var(--medio, #f0b429); box-shadow: 0 0 8px rgba(240, 180, 41, 0.7); }
-.pilar-fila.iniciado .estado-ic { border-color: rgba(240, 180, 41, 0.6); }
-.pilar-fila .mas { position: absolute; top: 50%; right: 36px; transform: translateY(-50%); width: 22px; height: 22px; border-radius: 6px; display: none; }
-.pilar-fila.pendiente { --brillo-rgb: var(--acento-rgb); border-color: rgba(var(--acento-rgb), 0.45); animation: aparecer 0.28s ease both, brillo 3.2s ease-in-out 0.3s infinite; }
-.pilar-fila.pendiente .icono { background: var(--acento-suave); color: var(--acento); }
-.pilar-fila.pendiente.cerca, .pilar-fila.pendiente.vencido { --brillo-rgb: 240, 180, 41; border-color: rgba(240, 180, 41, 0.6); animation-duration: 2.2s; }
-.pilar-fila.pendiente.cerca .icono, .pilar-fila.pendiente.vencido .icono { background: var(--medio-suave); color: var(--medio); }
-.pilar-fila.cumplido { background: linear-gradient(160deg, rgba(60, 207, 122, 0.22), rgba(60, 207, 122, 0.06)); border-color: rgba(60, 207, 122, 0.7); }
-.pilar-fila.cumplido .icono { background: var(--ok); color: #06261a; }
-.pilar-fila.cumplido .estado-ic { background: var(--ok); border-color: var(--ok); color: #06261a; font-size: 1.1rem; }
-.pilar-fila.cumplido .detalle { color: var(--ok); }
-.pilar-fila.tarde, .pilar-fila.omitido { background: rgba(239, 91, 91, 0.09); border-color: rgba(239, 91, 91, 0.45); }
-.pilar-fila.tarde .icono, .pilar-fila.omitido .icono { background: rgba(239, 91, 91, 0.2); color: var(--bajo); }
-.pilar-fila.tarde .estado-ic, .pilar-fila.omitido .estado-ic { border-color: var(--bajo); color: var(--bajo); }
-.pilar-fila.tarde .detalle, .pilar-fila.omitido .detalle { color: var(--bajo); }
-.pilar-fila.descanso { opacity: 0.55; border-style: dashed; cursor: default; }
-.pilar-fila.marcado { animation: pop 0.4s ease; }
-.pilar-fila.destello-extra { animation: extra-destello 0.9s ease; }
-.pilar-fila .flash { position: absolute; top: 2px; right: 40px; font-weight: 800; color: var(--ok); font-size: 0.95rem; animation: subir 1.2s ease forwards; pointer-events: none; }
+/* Pilares: 4 bloques (2 arriba, 2 abajo), resumidos: ícono + nombre, una línea de detalle y el círculo/tilde. Bordes a tinta; el rojo solo en los íconos. */
+.pilares-bloques { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pilar-bloque { position: relative; appearance: none; text-align: left; display: flex; flex-direction: column; gap: 3px; min-height: 60px; padding: 8px 30px 8px 10px; border-radius: 11px 14px 10px 15px / 14px 10px 15px 11px; background: var(--fondo-2); border: 1.5px solid rgba(var(--papel-rgb), 0.3); color: var(--texto); font: inherit; cursor: pointer; transition: transform 0.15s ease, background 0.3s ease, border-color 0.3s ease; }
+.pilar-bloque:active { transform: scale(0.98); }
+.pilar-bloque .icono { width: 26px; height: 26px; flex: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: rgba(200, 16, 46, 0.12); color: #d8384f; }
+.pilar-bloque .icono svg { width: 15px; height: 15px; }
+.pilar-bloque .nombre { font-weight: 700; font-size: 0.84rem; line-height: 1.15; min-width: 0; }
+.pilar-bloque .detalle { font-size: 0.68rem; color: var(--texto-3); line-height: 1.2; }
+.pilar-bloque .detalle .extra-pendiente { opacity: 0.75; }
+.pilar-bloque .estado-ic { position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--texto-3); display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; color: var(--texto-3); background: var(--fondo-2); }
+.pilar-bloque .estado-ic .punto-ambar { width: 8px; height: 8px; border-radius: 50%; background: var(--medio, #f0b429); box-shadow: 0 0 6px rgba(240, 180, 41, 0.7); }
+.pilar-bloque.iniciado .estado-ic { border-color: rgba(240, 180, 41, 0.6); }
+.pilar-bloque .mas { position: absolute; bottom: 4px; right: 4px; width: 22px; height: 20px; border-radius: 6px; border: 0; background: transparent; color: var(--texto-3); font-weight: 800; font-size: 0.8rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.pilar-bloque.pendiente.cerca, .pilar-bloque.pendiente.vencido { border-color: rgba(240, 180, 41, 0.55); }
+.pilar-bloque.pendiente.cerca .detalle, .pilar-bloque.pendiente.vencido .detalle { color: var(--medio); }
+.pilar-bloque.cumplido { background: linear-gradient(160deg, rgba(60, 207, 122, 0.18), rgba(60, 207, 122, 0.05)); border-color: rgba(60, 207, 122, 0.6); }
+.pilar-bloque.cumplido .icono { background: var(--ok); color: #06261a; }
+.pilar-bloque.cumplido .estado-ic { background: var(--ok); border-color: var(--ok); color: #06261a; }
+.pilar-bloque.cumplido .detalle { color: var(--ok); }
+.pilar-bloque.tarde, .pilar-bloque.omitido { opacity: 0.8; }
+.pilar-bloque.tarde .estado-ic, .pilar-bloque.omitido .estado-ic { border-color: var(--texto-2); color: var(--texto-2); }
+.pilar-bloque.descanso { opacity: 0.5; border-style: dashed; cursor: default; }
+.pilar-bloque.marcado { animation: pop 0.4s ease; }
+.pilar-bloque.destello-extra { animation: extra-destello 0.9s ease; }
+.pilar-bloque .flash { position: absolute; top: 4px; right: 30px; font-weight: 800; color: var(--ok); font-size: 0.9rem; animation: subir 1.2s ease forwards; pointer-events: none; }
 /* Comida y agua un poco más llamativas: borde a pincel más marcado */
 .co-tarjeta { border: 1.5px solid rgba(var(--papel-rgb), 0.42); border-radius: 12px 15px 11px 16px / 15px 11px 16px 12px; }
 .agua-chica { border: 1px solid rgba(var(--papel-rgb), 0.3); border-radius: 9px 11px 8px 12px / 11px 8px 12px 9px; }
@@ -2148,3 +2145,65 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .tn-frase { font-size: 1.1rem; color: rgba(243, 239, 230, 0.9); letter-spacing: 0.02em; animation: aparecer 0.5s ease 0.8s both; }
 .tn-cerrar { font-size: 0.72rem; color: rgba(243, 239, 230, 0.5); animation: aparecer 0.5s ease 1.6s both; }
 @media (prefers-reduced-motion: reduce) { :root:not(.movimiento-siempre) .tn-kanji { animation: none; clip-path: none; } :root:not(.movimiento-siempre) .tn-aro, :root:not(.movimiento-siempre) .tn-tocalo { animation: none; } }
+
+/* ===== v0.43: decoración de Calendario y Sueño, la casa del juego, buenas noches ===== */
+/* Calendario: solo decoración (nada cambia de lugar) */
+.cal-titulo { display: inline-flex; align-items: center; gap: 8px; }
+.cal-kanji { font-family: 'Noto Serif JP', serif; font-size: 1.1rem; color: rgba(200, 16, 46, 0.85); line-height: 1; }
+.calendario.tinta { padding: 6px; border: 1.5px solid rgba(var(--papel-rgb), 0.35); border-radius: 12px 16px 11px 17px / 16px 11px 17px 12px; }
+.calendario.tinta .cal-dia { border-top: 1px solid rgba(var(--papel-rgb), 0.1); }
+.calendario.tinta .cal-dia.vacio { border-top-color: transparent; }
+.calendario.tinta .cal-dia.hoy { border-color: transparent; box-shadow: none; }
+.calendario.tinta .cal-dia.hoy::before { content: ''; position: absolute; inset: 1px; border: 2px solid var(--texto); border-radius: 46% 54% 48% 52% / 52% 46% 54% 48%; transform: rotate(-4deg); pointer-events: none; }
+.calendario.tinta .cal-dia.completo { background: rgba(200, 16, 46, 0.1); }
+.calendario.tinta .cal-dia.completo .num { color: var(--texto); }
+.calendario.tinta .cal-dia.completo::after { content: ''; position: absolute; top: 3px; left: 3px; width: 6px; height: 6px; border-radius: 1px 2px 1px 2px; background: rgba(200, 16, 46, 0.55); transform: rotate(-8deg); }
+.calendario.tinta .cal-dia.completo.feriado::after { background: rgba(200, 16, 46, 0.55); top: 3px; left: 3px; right: auto; border: 0; }
+/* Sueño: título a pincel con kanji, bordes de tinta, trazo verde en la ventana ideal */
+.sueno-titulo { display: inline-flex; align-items: center; gap: 8px; }
+.sueno-kanji { font-family: 'Noto Serif JP', serif; font-size: 1.2rem; color: rgba(200, 16, 46, 0.85); line-height: 1; }
+.pagina-sueno .tarjeta { border: 1.5px solid rgba(var(--papel-rgb), 0.3); border-radius: 12px 16px 11px 17px / 16px 11px 17px 12px; }
+.sueno-grafico .sueno-ventana { opacity: 0.07; }
+.sueno-grafico .sueno-trazo { fill: none; stroke: var(--verde); stroke-width: 2.4; stroke-linecap: round; opacity: 0.85; }
+/* Juego: temporizador chico, la casa debajo */
+.juego-temporizador { gap: 10px; }
+.juego-segundos { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.sl-casa-marco { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.sl-casa { --sh-tinta: #141414; --sh-tinta-seca: #3a3836; --sh-papel: #f3efe6; --sh-enemigo: #4b4b4b; --sh-enemigo-2: #6a6a6a; width: 100%; height: auto; display: block; border-radius: 10px 13px 9px 12px / 12px 9px 13px 10px; border: 1.5px solid rgba(var(--papel-rgb), 0.35); overflow: hidden; }
+.sl-casa-nota { font-size: 0.7rem; color: var(--texto-3); text-align: center; }
+@media (min-width: 900px) { .sl-casa { max-height: 260px; } }
+/* Pelea en casa: vaivén y un amague cada tanto; al tocar Jugar frenan y se sientan; al terminar desenvainan */
+.sl-casa .sl-shinobi { animation: sl-amague 2.6s ease-in-out infinite; transform-origin: 80px 150px; }
+.sl-casa .sl-rival { animation: sl-amague-rival 2.6s ease-in-out infinite 1.3s; transform-origin: 290px 150px; }
+@keyframes sl-amague { 0%, 100% { transform: translateX(0); } 40% { transform: translateX(0); } 55% { transform: translateX(28px) rotate(-6deg); } 70% { transform: translateX(0); } }
+@keyframes sl-amague-rival { 0%, 100% { transform: translateX(0); } 40% { transform: translateX(0); } 55% { transform: translateX(-28px) rotate(6deg); } 70% { transform: translateX(0); } }
+.sl-casa.a-jugar .sl-sentados { animation: sl-sentarse 1.1s ease-out both; transform-origin: 180px 150px; }
+@keyframes sl-sentarse { 0% { transform: translateY(-18px); opacity: 0; } 55% { transform: translateY(-18px); opacity: 0.6; } 100% { transform: none; opacity: 1; } }
+.sl-casa.terminar .sl-peleando { animation: sl-desenvainar 0.5s ease-out both; }
+@keyframes sl-desenvainar { 0% { transform: translateY(10px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.sl-casa .sl-juego { animation: sl-parpadeo 0.6s steps(2) infinite; }
+@keyframes sl-parpadeo { 0% { opacity: 1; } 100% { opacity: 0.35; } }
+.sl-casa .sl-mando { animation: sl-mando 0.5s ease-in-out infinite alternate; }
+@keyframes sl-mando { from { transform: translateY(0); } to { transform: translateY(-1.5px); } }
+.sl-casa .sl-taza { animation: sl-taza 3s ease-in-out infinite; }
+@keyframes sl-taza { 0%, 60%, 100% { transform: translateY(0); } 75% { transform: translateY(-6px); } }
+.sl-casa .sl-vapor { animation: sl-vapor 1.8s ease-in-out infinite; }
+@keyframes sl-vapor { 0% { opacity: 0.2; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-4px); } }
+.sl-casa.jugando .sl-pantalla { animation: sl-pantalla 1.2s ease-in-out infinite alternate; }
+@keyframes sl-pantalla { from { fill: #cfe8d6; } to { fill: #a9d6b8; } }
+/* Buenas noches: katana, sombrero, camina, se acuesta y respira */
+.sl-noche { --sh-tinta: #9a9ea8; --sh-tinta-seca: #6b6f78; width: min(100%, 420px); height: auto; display: block; margin: 0 auto 6px; }
+.sl-noche-katana { opacity: 0; animation: aparecer 0.6s ease 1.2s both; }
+.sl-noche-sombrero { opacity: 0; animation: aparecer 0.6s ease 2s both; }
+.sl-noche-camina { animation: sl-camina 2.8s ease-in-out both; }
+@keyframes sl-camina { 0% { transform: translateX(-60px); opacity: 1; } 75% { transform: translateX(90px); opacity: 1; } 100% { transform: translateX(100px); opacity: 0; } }
+.sl-noche-acostado { opacity: 0; animation: aparecer 0.8s ease 2.8s both; }
+.sl-noche-acostado path { transform-origin: 250px 120px; animation: sl-respira 4s ease-in-out 3.6s infinite; }
+@keyframes sl-respira { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.06); } }
+.sl-noche-z { animation: sl-z 3s ease-in-out 3.8s infinite; }
+@keyframes sl-z { 0% { opacity: 0; transform: translateY(0); } 30% { opacity: 0.9; } 100% { opacity: 0; transform: translateY(-10px); } }
+/* El compañero dormido en su cama, en la esquina */
+.companero-caja.dormido { left: auto; right: 10px; bottom: 4px; color: var(--texto-2); opacity: 0.85; }
+.companero-cama-cuerpo { transform-origin: 70px 36px; animation: sl-respira 4s ease-in-out infinite; }
+.companero-cama-z { animation: sl-z 3s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { :root:not(.movimiento-siempre) .sl-casa *, :root:not(.movimiento-siempre) .sl-noche *, :root:not(.movimiento-siempre) .companero-cama * { animation: none !important; opacity: 1; } }

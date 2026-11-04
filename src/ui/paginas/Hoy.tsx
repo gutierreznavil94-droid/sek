@@ -2,14 +2,14 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import type { Compromiso } from '../../data/tipos'
-import { prepararBatalla, puedeBatallar, selloBatalla } from '../../services/batalla'
+import { prepararBatalla, puedeBatallar } from '../../services/batalla'
 import { pedirBatalla } from '../Batalla'
 import { pedirTension, useClipsTension } from '../Tension'
 import { NOMBRES_FASES_INICIALES } from '../../data/semilla'
 import { TarjetaComida } from './Comida'
 import { TarjetaAgua } from './Agua'
 import { cerrarAvisoDormir, minutosAvisoDormir, mostrarAvisoDormir } from '../../services/dormir'
-import { debeMostrarTajo, distraccionesDe, marcarTajo, momentoActivo, nombreDistraccion, peleasDelDia, prepararPelea, tajoMostradoHoy, vistaAnterior } from '../../services/ninjas'
+import { debeMostrarTajo, marcarTajo, momentoActivo, peleasDelDia, prepararPelea, tajoMostradoHoy, vistaAnterior } from '../../services/ninjas'
 import { hayPelea, pedirPelea } from '../Ninja'
 import { Tajo } from '../Tajo'
 import { LineaDelDia } from './MiHorario'
@@ -121,6 +121,14 @@ export function Hoy({ hoy }: { hoy: string }) {
   useEffect(() => { setHuecoCabecera(document.getElementById('cabecera-extra')) }, [])
   const clipsTension = useClipsTension()
   const batallas = useDatos(() => puedeBatallar(hoy), [hoy]).datos
+  // El compañero duerme después de «Dejo celu» (y vuelve a pasear al deshacerlo o al otro día).
+  useEffect(() => {
+    if (!d || d.antes) return
+    try {
+      if (d.suenio) localStorage.setItem('companero-dormido', d.nocheAbierta)
+      else localStorage.removeItem('companero-dormido')
+    } catch { /* sin almacenamiento */ }
+  }, [d])
   // A las 20:50 en punto (y al cierre) la pantalla se actualiza sola, sin esperar al reloj de 30 s.
   const [, forzar] = useState(0)
   useEffect(() => {
@@ -433,7 +441,7 @@ export function Hoy({ hoy }: { hoy: string }) {
             <span className="texto-3">/{d.pilares.aplican}</span>
           </span>
         </div>
-        <div className="pilares-filas">
+        <div className="pilares-bloques">
           {d.pilares.pilares.map((p) => (
             <FilaPilar
               key={p.accion.id}
@@ -453,9 +461,7 @@ export function Hoy({ hoy }: { hoy: string }) {
         </div>
         {ajustes.ninjas !== false && (d.peleas.length > 0 || (batallas && batallas.hechas > 0)) && (
           <div className="fila entre ninja-fila">
-            <span className="muy-chico texto-3">
-              {d.peleas.map((p) => selloBatalla(nombreDistraccion(distraccionesDe(ajustes), p.distraccion), p, d.contadores.find((c) => c.contador.id === (ajustes.batalla?.contadorId ?? 'flexiones'))?.contador.nombre.toLowerCase() ?? 'flexiones')).join(' · ')}
-            </span>
+            <span className="muy-chico texto-3">{resumenPeleas(d.peleas, d.contadores.find((c) => c.contador.id === (ajustes.batalla?.contadorId ?? 'flexiones'))?.contador.nombre.toLowerCase() ?? 'flexiones')}</span>
             {batallas && batallas.hechas > 0 && <span className="muy-chico texto-3" style={{ whiteSpace: 'nowrap' }}>Batallas hoy: {batallas.hechas} de {batallas.tope}</span>}
           </div>
         )}
@@ -576,6 +582,17 @@ function BotonContador({ r, destello, onToque, onDeshacer }: { r: ResumenContado
   )
 }
 
+/** Una sola línea chica: la última batalla ganada con sus reps, y cuántos se escaparon. */
+function resumenPeleas(peleas: { resultado: 'vencido' | 'escapo'; reps?: number }[], unidad: string): string {
+  const vencidos = peleas.filter((p) => p.resultado === 'vencido')
+  const escapados = peleas.length - vencidos.length
+  const conReps = [...vencidos].reverse().find((p) => p.reps)
+  const partes: string[] = []
+  if (vencidos.length) partes.push(conReps ? `${vencidos.length === 1 ? 'Venciste' : `${vencidos.length} vencidos, el último`} con ${conReps.reps} ${unidad}` : `${vencidos.length} ninja${vencidos.length === 1 ? '' : 's'} vencido${vencidos.length === 1 ? '' : 's'}`)
+  if (escapados) partes.push(`${escapados} se escap${escapados === 1 ? 'ó' : 'aron'} hoy`)
+  return partes.join(' · ')
+}
+
 /** ¿Se usó hoy 3·2·1 o Siguiente acción? (lo anotan esas pantallas al empezar). */
 function usadoHoy(que: '321' | 'siguiente', hoy: string): boolean {
   try { return !!localStorage.getItem(`usado-${que}:${hoy}`) } catch { return false }
@@ -615,13 +632,15 @@ function FilaPilar({ p, suenio, zona, tic, flash, marcado, destello, onTocar, on
   return (
     <button
       type="button"
-      className={`pilar-fila ${p.estado} ${p.vencido ? 'vencido' : ''} ${cerca ? 'cerca' : ''} ${marcado ? 'marcado' : ''} ${c?.extra ? 'extra' : ''} ${destello ? 'destello-extra' : ''} ${iniciado ? 'iniciado' : ''}`}
+      className={`pilar-bloque ${p.estado} ${p.vencido ? 'vencido' : ''} ${cerca ? 'cerca' : ''} ${marcado ? 'marcado' : ''} ${c?.extra ? 'extra' : ''} ${destello ? 'destello-extra' : ''} ${iniciado ? 'iniciado' : ''}`}
       onClick={onTocar}
       aria-label={`${p.accion.nombre}: ${texto}`}
       disabled={p.estado === 'descanso'}
     >
-      <span className="icono"><IconoPilar id={p.accion.id} tipo={p.accion.tipo} /></span>
-      <span className="nombre">{p.accion.nombre}</span>
+      <span className="fila" style={{ gap: 8, alignItems: 'center', minWidth: 0 }}>
+        <span className="icono"><IconoPilar id={p.accion.id} tipo={p.accion.tipo} /></span>
+        <span className="nombre">{p.accion.nombre}</span>
+      </span>
       <span className="detalle">{detalle}</span>
       <span className="estado-ic" aria-hidden>{p.estado === 'cumplido' ? '✓' : p.estado === 'tarde' ? '!' : p.estado === 'omitido' ? '✕' : p.estado === 'descanso' ? '–' : iniciado ? <i className="punto-ambar" /> : ''}</span>
       {flash !== undefined && <span className="flash" aria-hidden>+{flash} XP</span>}
