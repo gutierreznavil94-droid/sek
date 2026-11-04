@@ -68,3 +68,75 @@
 @media (prefers-reduced-motion: reduce) {
   :root[data-tema="nay"] .app .cabecera::before { animation: none; }
 }
+
+/* ===== Fondo claro pastel (toda la app) ===== */
+:root[data-tema="nay"] {
+  color-scheme: light;
+  --fondo: #F6F0FC;
+  --fondo-2: #FFFFFF;
+  --fondo-3: #F3E6F6;
+  --borde: #F2C6DA;
+  --borde-papel: #F2C6DA;
+  --texto: #3F2357;
+  --texto-2: #6B5580;
+  --texto-3: #7E6E8C;
+  --papel: #FFFFFF;
+  --papel-2: #FBEFF5;
+  --papel-rgb: 63, 35, 87;
+  --tinta: #3F2357;
+  --ok: #C2457E;
+  --ok-suave: rgba(194, 69, 126, 0.12);
+  --medio: #8A6BA8;
+  --medio-suave: rgba(138, 107, 168, 0.14);
+  --bajo: #8C8496;
+  --bajo-suave: rgba(140, 132, 150, 0.14);
+  --verde: #C2457E;
+  --verde-rgb: 194, 69, 126;
+  --nay-rosa-fuerte: #D6608F;
+}
+/* La «nubecita» de no cumplido, gris */
+:root[data-tema="nay"] .pilar-tarjeta.omitido .estado-ic { color: #9A93A3; border-color: #CFC9D6; font-size: 0.95rem; }
+
+/* Barra de abajo blanca, con el ícono activo en rosa */
+:root[data-tema="nay"] .app .nav,
+:root[data-tema="nay"] .app:has(.progreso-tinta) .nav { background: #FFFFFF; border-top: 1px solid var(--borde); -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root[data-tema="nay"] .app .nav a,
+:root[data-tema="nay"] .app:has(.progreso-tinta) .nav a { color: var(--texto-3); }
+:root[data-tema="nay"] .app .nav a.activo,
+:root[data-tema="nay"] .app:has(.progreso-tinta) .nav a.activo { color: var(--nay-rosa-fuerte); }
+
+/* Hojas (ventanas que suben) claras también en Progreso */
+:root[data-tema="nay"] .app:has(.progreso-tinta) .hoja { background: rgba(255, 255, 255, 0.92); }
+
+/* Progreso: vidrio claro en rosa, texto violeta, sin halo oscuro */
+:root[data-tema="nay"] .progreso-tinta[data-vidrio="claro"] { --av-crema: var(--texto); --texto: #3F2357; --texto-3: #6B5580; color: #3F2357; --halo-texto: none; }
+:root[data-tema="nay"] .progreso-tinta[data-vidrio="claro"] .av-tarjeta,
+:root[data-tema="nay"] .progreso-tinta[data-vidrio="claro"] .codigo-cabeza,
+:root[data-tema="nay"] .progreso-tinta[data-vidrio="claro"] .codigo-regla { background: rgba(255, 255, 255, 0.78); border-color: var(--borde); box-shadow: 0 2px 14px rgba(214, 96, 143, 0.12); text-shadow: none; }
+:root[data-tema="nay"] .progreso-tinta[data-vidrio="claro"] .av-barra { background: rgba(63, 35, 87, 0.12); }
+:root[data-tema="nay"] .progreso-tinta .boton,
+:root[data-tema="nay"] .progreso-tinta button.boton { background: rgba(255, 255, 255, 0.7); border-color: var(--borde); }
+:root[data-tema="nay"] .progreso-tinta .meta-rapida { background: rgba(255, 255, 255, 0.6); border-color: var(--borde); }
+:root[data-tema="nay"] .app:has(.progreso-tinta) ~ .dia-mini,
+:root[data-tema="nay"] .app:has(.progreso-tinta) .dia-mini,
+:root[data-tema="nay"] .dia-mini { background: linear-gradient(to bottom, rgba(251, 211, 228, 0.96) 0, rgba(230, 211, 245, 0.9) 60%, rgba(230, 211, 245, 0)); color: var(--nay-violeta); }
+/* Debajo del video, el fundido va al lila del fondo */
+:root[data-tema="nay"] .av-fondo::after { background: linear-gradient(to bottom, rgba(246, 240, 252, 0), var(--fondo)); }
+:root[data-tema="nay"] .av-tapa-arriba { background: linear-gradient(to bottom, var(--fondo) 0, var(--fondo) 105px, rgba(246, 240, 252, 0)); }
+
+/* Texto suelto sobre el video de Progreso: halo blanco en vez de oscuro */
+:root[data-tema="nay"] .progreso-tinta { text-shadow: 0 0 2px rgba(255, 255, 255, 0.95), 0 0 8px rgba(255, 255, 255, 0.8); }
+/* Trazos rojos de Mi código y del juramento, en rosa */
+:root[data-tema="nay"] .codigo-grupo-trazo path,
+:root[data-tema="nay"] .jur-trazo path,
+:root[data-tema="nay"] .codigo-vistas-trazo path,
+:root[data-tema="nay"] .codigo-cabeza-trazo path,
+:root[data-tema="nay"] .av-codigo-trazo path { stroke: var(--nay-rosa-fuerte); }
+
+/* Entreno: texto violeta con halo claro (Shinobi usa halo oscuro sobre la aguada) */
+:root[data-tema="nay"] .contenido.entreno { --texto-2: #5C4672; --texto-3: #6B5580; text-shadow: 0 0 3px rgba(255, 255, 255, 0.95), 0 0 8px rgba(255, 255, 255, 0.7); }
+
+/* «No cumplido» en gris (como la nubecita), «cumplido» en rosa */
+:root[data-tema="nay"] { --rojo-apagado: #A89FB3; }
+/* Botón «+ Nueva regla» de Mi código en rosa en vez de rojo */
+:root[data-tema="nay"] .codigo-nueva { border-color: var(--nay-rosa-fuerte) !important; background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(251, 211, 228, 0.85)) !important; box-shadow: 0 0 14px rgba(214, 96, 143, 0.25); color: var(--nay-violeta); }

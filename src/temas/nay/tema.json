@@ -6,12 +6,43 @@
   "personaje": "Kitty",
   "saludo": "Soy {personaje} y te voy a acompañar todos los días ✨",
   "acento": "#F4A6C8",
-  "kanjis": false,
+  "kanjis": true,
   "carpetaFondos": "temas/nay/",
   "sprite": "temas/nay/camina.webp",
   "vistaPrevia": {
     "video": "temas/nay/lluvia.mp4",
     "imagen": "temas/nay/lluvia.jpg"
   },
+  "adornos": {
+    "aves": "estrellas",
+    "cumplir": "chispazo",
+    "numerosComunes": true,
+    "simbolos": {
+      "✕": "☁",
+      "食": "🍓",
+      "掟": "📖",
+      "誓": "💗",
+      "印": "🎀",
+      "鍛": "💪",
+      "昇": "⭐",
+      "目": "🎯",
+      "眠": "🌙",
+      "力": "💪",
+      "連": "💞",
+      "体": "🤸",
+      "心": "💭",
+      "整": "🛁",
+      "朝": "☀️",
+      "昼": "🌤️",
+      "夜": "🌙",
+      "常": "✨",
+      "始": "🌷",
+      "忍": "🎨",
+      "柱": "🌸",
+      "時": "⏰",
+      "志": "🌟"
+    }
+  },
+  "vidrio": "claro",
   "oculto": true
 }
