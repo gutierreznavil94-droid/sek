@@ -1,0 +1,12 @@
+{
+  "celda": [48, 35],
+  "columnas": 16,
+  "filas": 13,
+  "clips": {
+    "caminar": { "desde": 0, "n": 48, "fps": 33.6 },
+    "frenar": { "desde": 48, "n": 55, "fps": 33.6 },
+    "quieto": { "desde": 103, "n": 105, "fps": 12 }
+  },
+  "pasoCuadro": 0.3348,
+  "frenoAvance": 5.8
+}

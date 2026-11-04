@@ -1,9 +1,15 @@
 """Arma el sprite del shinobi que camina por la barra del entreno.
 
-Uso: python3 -I scripts/shinobi-sprites.py <dir_cuadros> <salida.webp>
+Uso: python3 -I scripts/shinobi-sprites.py <dir_cuadros> <salida.webp> [--clip nombre=carpeta[:paso[:fps]]]...
 <dir_cuadros> tiene los cuadros PNG (24 fps) de:
   camina-y-frena/  (de camina-y-frena.mp4; se usan los cuadros 72..174)
   quieto/          (de quieto-respirando-1.mp4; uno de cada dos)
+Clips nuevos (los de Luma para la rutina del compañero) se suman por nombre, por ejemplo:
+  --clip correr=carrera:2 --clip sentado=sentado-borde:2:12 --clip caerRodar=cae-rueda --clip voltereta=voltereta
+  (nombre = el que usa src/ui/companero/rutina.ts: correr, saltar, sentado, caerRodar, voltereta, estirarse, alerta, llamar, desenvainar;
+   carpeta = subcarpeta con los PNG; paso = tomar uno de cada N cuadros; fps = a cuánto se reproduce).
+Además del .webp escribe el .json de al lado (celda, columnas, filas y los clips): la app lo lee y usa cada clip
+que encuentre; mientras un clip no está, ese movimiento usa caminar o quieto.
 Quita el fondo blanco, recorta al personaje (sin la marca de Luma) y lo pinta en tinta
 color papel con el borde rojo del kasa. Para cambiar el color, tocá TINTA y ROJO.
 """
@@ -18,6 +24,16 @@ ANCHO_SRC, ALTO_SRC = 480, 352
 IZQ = 230              # el cuerpo (x media) queda a 230 px del borde izquierdo de la celda
 
 d, salida = sys.argv[1], sys.argv[2]
+extras = []  # (nombre, carpeta, paso, fps)
+args = sys.argv[3:]
+while args:
+    if args[0] == '--clip' and len(args) > 1:
+        nombre, resto = args[1].split('=', 1)
+        partes = resto.split(':')
+        extras.append((nombre, partes[0], int(partes[1]) if len(partes) > 1 else 1, float(partes[2]) if len(partes) > 2 else 24))
+        args = args[2:]
+    else:
+        args = args[1:]
 cyf = sorted(glob.glob(d + '/camina-y-frena/*.png'))
 qui = sorted(glob.glob(d + '/quieto/*.png'))
 
@@ -69,6 +85,19 @@ quieto = qui[::2]
 for f in quieto:
     celdas.append(celda(cargar(f), qx, 103))
 
+# Clips nuevos: cada uno anclado a su propio centro (no avanzan: el bucle de la app mueve al muñeco).
+clips_extra = {}
+for nombre, carpeta, paso, fps in extras:
+    fs = sorted(glob.glob(f'{d}/{carpeta}/*.png'))[::paso]
+    if not fs:
+        print(f'aviso: sin cuadros en {carpeta}', file=sys.stderr)
+        continue
+    ax = np.mean([xmedia(cargar(f)) for f in fs[::max(1, len(fs) // 8)]])
+    desde = len(celdas)
+    for f in fs:
+        celdas.append(celda(cargar(f), ax, 100))
+    clips_extra[nombre] = {'desde': desde, 'n': len(fs), 'fps': fps}
+
 cols = 16
 w, h = celdas[0].size
 filas = (len(celdas) + cols - 1) // cols
@@ -77,11 +106,16 @@ for n, c in enumerate(celdas):
     hoja.paste(c, ((n % cols) * w, (n // cols) * h))
 hoja.save(salida, 'WEBP', quality=82, method=6, alpha_quality=90)
 meta = {
-    'celda': [w, h], 'columnas': cols, 'escala': 2,
-    'ancla': round(IZQ * ESCALA), 'pies': round((444 - 100) * ESCALA),
-    'caminar': [0, len(caminar)], 'frenar': [len(caminar), len(frenar)],
-    'quieto': [len(caminar) + len(frenar), len(quieto)],
+    'celda': [w // 2, h // 2], 'columnas': cols, 'filas': filas,
+    'clips': {
+        'caminar': {'desde': 0, 'n': len(caminar), 'fps': 33.6},
+        'frenar': {'desde': len(caminar), 'n': len(frenar), 'fps': 33.6},
+        'quieto': {'desde': len(caminar) + len(frenar), 'n': len(quieto), 'fps': 12},
+        **clips_extra,
+    },
     'pasoCuadro': round(k * ESCALA / 2, 4),       # px CSS que avanza por cuadro (24 fps)
     'frenoAvance': round(fin_freno * ESCALA / 2, 2),
 }
+with open(salida.rsplit('.', 1)[0] + '.json', 'w') as f:
+    json.dump(meta, f, indent=2, ensure_ascii=False)
 print(json.dumps(meta))
