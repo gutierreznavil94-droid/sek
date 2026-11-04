@@ -740,7 +740,7 @@ export function Escena({ a, nombre, lento = 1, tema = 'epico', tinta = true, onS
   if (a.tipo === 'ejecucion') {
     const k = KANJI[a.pilar] ?? { k: '斬', significado: 'cortar' }
     kanji = k.k
-    titulo = nombreDePilar(a.pilar)
+    titulo = a.titulo ?? nombreDePilar(a.pilar)
     sub = <>{k.k} · {k.significado} · {nombre}</>
   } else if (a.tipo === 'postura') {
     const k = KANJI[a.modo]
@@ -788,6 +788,7 @@ export function Escena({ a, nombre, lento = 1, tema = 'epico', tinta = true, onS
         {a.tipo === 'postura' && (a.vieja ? <Postura modo={a.modo} dur={dur} /> : <PosturaVideo modo={a.modo} dur={dur} oscuro={tema === 'oscuro'} />)}
         {a.tipo === 'logro' && (a.vieja ? <Logro clase={a.clase} dur={dur} enemigo={enemigo} /> : <LogroVideo clase={a.clase} dur={dur} oscuro={tema === 'oscuro'} />)}
       </svg>
+      {a.tipo === 'ejecucion' && a.rival && <div className="sh-cartel-rival">{a.rival}</div>}
       {!parry && (
         <div className="sh-textos">
           {titulo && <div className="sh-titulo">{titulo}</div>}

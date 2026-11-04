@@ -8,6 +8,7 @@ import { Desintegracion } from './Desintegrar'
 import { useDatos } from './estado'
 import { VERSION_APP } from '../version'
 import { enModoPrueba, salirModoPrueba } from '../data/modoPrueba'
+import { Companero } from './Companero'
 
 const ICONOS = {
   sueno: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" /></svg>,
@@ -78,6 +79,7 @@ export function Layout({ hoy }: { hoy: string }) {
       <main className="contenido">
         <Outlet />
       </main>
+      <Companero hoy={hoy} />
       <nav className="nav" aria-label="Secciones">
         <NavLink to="/" end className={({ isActive }) => (isActive ? 'activo' : '')}>{ICONOS.hoy}Hoy</NavLink>
         <NavLink to="/calendario" className={({ isActive }) => (isActive ? 'activo' : '')}>{ICONOS.calendario}Calendario</NavLink>

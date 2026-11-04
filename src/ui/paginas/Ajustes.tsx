@@ -5,6 +5,7 @@ import { guardarAjustes, obtenerAjustes } from '../../services/base'
 import { Atras, Tarjeta, elegirMovimiento, preferenciaMovimiento, sistemaPideReducir, type PreferenciaMovimiento } from '../componentes'
 import { avisar, mutar, useDatos } from '../estado'
 import { FRASES_DORMIR_DEFECTO, MINUTOS_AVISO_DORMIR } from '../../services/dormir'
+import { frasesCompanero } from '../../services/companero'
 import { Divisor, elegirDivisor, useVarianteDivisor, type VarianteDivisor } from '../Divisor'
 
 const ZONAS = ['America/Argentina/Cordoba', 'America/Argentina/Buenos_Aires', 'America/Montevideo', 'America/Santiago', 'America/Sao_Paulo', 'America/Lima', 'America/Bogota', 'America/Mexico_City', 'Europe/Madrid', 'UTC']
@@ -113,6 +114,10 @@ export function Ajustes() {
           ))}
         </div>
         <p className="ayuda">Se ve en Más → Ver animaciones.</p>
+      </Tarjeta>
+      <Tarjeta titulo="Frases del compañero">
+        <div className="campo"><label>Una por línea (rotan, no se repiten en el día)</label><textarea rows={6} value={(a.frasesCompanero ?? frasesCompanero(a)).join('\n')} onChange={(e) => set('frasesCompanero', e.target.value.split('\n'))} /></div>
+        <p className="ayuda">Las dice el shinobi que se pasea por Hoy. Si borrás todas, vuelven las del tema. Los consejos según tus datos (agua, pilares, racha) van aparte y no se editan acá.</p>
       </Tarjeta>
       <Tarjeta titulo="Recordatorio para dormir">
         <div className="campo"><label>Minutos antes de «Dejo celu»</label><input type="number" inputMode="numeric" min={5} max={180} value={a.minutosAvisoDormir ?? MINUTOS_AVISO_DORMIR} onChange={num('minutosAvisoDormir', 5, 180)} /></div>

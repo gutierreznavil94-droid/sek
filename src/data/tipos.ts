@@ -289,6 +289,16 @@ export type Ajustes = {
   animaciones: 'todas' | 'logros' | 'ninguna'
   /** Sonido de las animaciones (generado por la app). Apagado al inicio. */
   sonidoAnimaciones: boolean
+  /** Compañero del tema (el shinobi que se pasea): se pasea / quieto / apagado. Se pasea si falta. */
+  companero?: ModoCompanero
+  /** Frases sueltas del compañero (si falta, las del tema). */
+  frasesCompanero?: string[]
+  /** Ninjas de la distracción: lista editable. Si falta, las 3 de muestra; vacía = no aparecen. */
+  distracciones?: Distraccion[]
+  /** Ninjas de la distracción y el tajo: sí / no (sí si falta). */
+  ninjas?: boolean
+  /** Tira «Ninjas vencidos esta semana» en Progreso (sí si falta). */
+  ninjasEnProgreso?: boolean
   /** Recordatorio tenue en Hoy para alistarse a dormir: cuántos minutos antes de «Dejo celu» (30 si falta). */
   minutosAvisoDormir?: number
   /** Frases del recordatorio, rotan una por noche. Si falta, las tres de la app. */
@@ -695,3 +705,16 @@ export type Recomendacion = {
 export type TomaAgua = { id: string; fecha: FechaDia; ml: number; envase?: string; instante: number }
 
 export type ComidaGuardada = { id: string; nombre: string; items: { alimentoId: string; nombre: string; gramos: number }[]; creado: number }
+
+// ---------- Compañero y ninjas de la distracción (4 nov 2026) ----------
+
+export type ModoCompanero = 'pasea' | 'quieto' | 'apagado'
+
+/** Momentos de duda que la app puede ver. */
+export type MomentoNinja = 'pilar' | 'noche' | 'duda' | 'juego'
+
+/** Una distracción (la edita la persona): nombre y, opcional, en qué momento aparece. */
+export type Distraccion = { id: string; nombre: string; momento?: MomentoNinja | 'cualquiera' }
+
+/** Una pelea con un ninja de la distracción: vencido (tocó «Empezar») o se escapó. Sin XP. */
+export type PeleaNinja = { id?: number; fecha: FechaDia; distraccion: string; momento: MomentoNinja; resultado: 'vencido' | 'escapo'; pilar?: string; instante: number }

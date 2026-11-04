@@ -34,6 +34,8 @@ export interface DefinicionTema {
   oculto?: boolean
   /** «Recomendar algo»: link de respuesta del formulario de Google (…/formResponse) y los ids de sus campos (entry.NNN). Sin link, el botón no aparece. */
   recomendaciones?: { formulario: string; campos: { texto: string; parte: string; contacto: string; app: string } }
+  /** Frases sueltas del compañero (cortas, alentadoras). Editables desde Ajustes. */
+  frases?: string[]
 }
 
 export interface TemaProximo { id: string; nombre: string; pista: string }

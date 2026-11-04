@@ -6,6 +6,9 @@ import { EditorPose } from '../animaciones/EditorPose'
 import { MuniecoVivo } from '../animaciones/Escena'
 import { Atras, Tarjeta } from '../componentes'
 import { avisar, mutar, useDatos } from '../estado'
+import type { Distraccion, ModoCompanero, MomentoNinja } from '../../data/tipos'
+import { NOMBRE_MOMENTO, distraccionesDe, guardarDistracciones, nuevaDistraccion } from '../../services/ninjas'
+import { pedirPelea } from '../Ninja'
 
 const PILARES = ['entrenamiento', 'empresa', 'manga', 'acostarse']
 
@@ -115,6 +118,27 @@ export function VerAnimaciones() {
         </label>
       </Tarjeta>
 
+      <Tarjeta titulo="Compañero">
+        <div className="selector-3">
+          {([['pasea', 'Se pasea'], ['quieto', 'Quieto'], ['apagado', 'Apagado']] as [ModoCompanero, string][]).map(([v, t]) => (
+            <button key={v} className={`boton chico ${(a.companero ?? 'pasea') === v ? 'primario' : ''}`} onClick={() => guardar({ companero: v }, `Compañero: ${t.toLowerCase()}`)}>{t}</button>
+          ))}
+        </div>
+        <p className="ayuda">El shinobi chiquito camina por el borde de abajo de Hoy y queda quieto en una esquina en Calendario, Comida y Más. Tocalo y habla. Con «reducir movimiento» queda quieto. Sus frases se editan en Más → Ajustes.</p>
+      </Tarjeta>
+
+      <Tarjeta titulo="Ninjas de la distracción">
+        <label className="fila chico" style={{ gap: 8 }}>
+          <input type="checkbox" checked={a.ninjas !== false} onChange={(e) => guardar({ ninjas: e.target.checked }, e.target.checked ? 'Ninjas encendidos' : 'Ninjas apagados')} /> Aparecen en los momentos de duda (y el tajo al volver después de horas)
+        </label>
+        <label className="fila chico" style={{ gap: 8 }}>
+          <input type="checkbox" checked={a.ninjasEnProgreso !== false} onChange={(e) => guardar({ ninjasEnProgreso: e.target.checked }, 'Guardado')} /> Tira «Ninjas vencidos esta semana» en Progreso
+        </label>
+        <MisDistracciones lista={distraccionesDe(a)} />
+        <button className="boton ancho" onClick={() => { const l = distraccionesDe(a); if (!l.length) return avisar('Agregá una distracción primero'); pedirPelea({ fecha: '0000-00-00', distraccion: l[0], momento: { momento: 'duda' } }) }}>Ver una pelea de prueba</button>
+        <p className="ayuda">Un ninja gris con el nombre de la distracción; el shinobi lo bloquea y queda una frase con «Empezar» / «Ahora no». Sin XP por la pelea. Máximo 2 por día solos; el botón «Estoy dudando» de Hoy no tiene tope.</p>
+      </Tarjeta>
+
       <Tarjeta titulo="Nombre del personaje">
         <div className="fila" style={{ gap: 8 }}>
           <input aria-label="Nombre del personaje" value={nombre} maxLength={24} onChange={(e) => setNombre(e.target.value)} style={{ flex: 1 }} />
@@ -128,5 +152,36 @@ export function VerAnimaciones() {
         {editor ? <EditorPose /> : <button className="boton ancho" onClick={() => setEditor(true)}>Abrir el editor</button>}
       </Tarjeta>
     </>
+  )
+}
+
+const MOMENTOS: (MomentoNinja | 'cualquiera')[] = ['cualquiera', 'pilar', 'noche', 'duda', 'juego']
+
+/** Lista editable de distracciones: nombre y, opcional, en qué momento aparece. Se guarda con cada cambio. */
+function MisDistracciones({ lista }: { lista: Distraccion[] }) {
+  const [nueva, setNueva] = useState('')
+  const guardarLista = (l: Distraccion[]) => mutar(() => guardarDistracciones(l))
+  const cambiar = (id: string, c: Partial<Distraccion>) => guardarLista(lista.map((d) => (d.id === id ? { ...d, ...c } : d)))
+  const mover = (i: number, a: number) => { const l = [...lista]; const [x] = l.splice(i, 1); l.splice(a, 0, x); void guardarLista(l) }
+  const agregar = () => { if (nueva.trim().length < 2) return; void guardarLista([...lista, nuevaDistraccion(nueva)]); setNueva('') }
+  return (
+    <div className="col" style={{ gap: 6 }}>
+      <span className="seccion-titulo">Mis distracciones</span>
+      {lista.length === 0 && <p className="ayuda">La lista está vacía: los ninjas no aparecen. Agregá una.</p>}
+      {lista.map((d, i) => (
+        <div key={d.id} className="distraccion-fila">
+          <input aria-label="Nombre de la distracción" value={d.nombre} maxLength={30} onChange={(e) => cambiar(d.id, { nombre: e.target.value })} />
+          <select aria-label="Cuándo aparece" value={d.momento ?? 'cualquiera'} onChange={(e) => cambiar(d.id, { momento: e.target.value as Distraccion['momento'] })}>
+            {MOMENTOS.map((m) => <option key={m} value={m}>{m === 'cualquiera' ? 'Cualquier momento' : NOMBRE_MOMENTO[m]}</option>)}
+          </select>
+          <button type="button" className="boton chico suave" aria-label="Subir" disabled={i === 0} onClick={() => mover(i, i - 1)}>↑</button>
+          <button type="button" className="boton chico suave" aria-label="Borrar" onClick={() => guardarLista(lista.filter((x) => x.id !== d.id))}>✕</button>
+        </div>
+      ))}
+      <div className="fila" style={{ gap: 6 }}>
+        <input placeholder="Nueva distracción (ej.: Series)" value={nueva} maxLength={30} onChange={(e) => setNueva(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') agregar() }} style={{ flex: 1 }} />
+        <button type="button" className="boton chico" onClick={agregar}>Agregar</button>
+      </div>
+    </div>
   )
 }

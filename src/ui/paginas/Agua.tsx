@@ -103,7 +103,7 @@ export function TarjetaAgua({ hoy }: { hoy: FechaDia }) {
         onClick={click}
         aria-label={`Tomé ${d.cfg.principal.nombre} de ${d.cfg.principal.ml} ml. Llevás ${litros(d.dia.ml)} de ${litros(d.dia.objetivo)}. Mantené apretado para otro envase`}
       >
-        <Cantimplora nivel={d.dia.nivel} ancho={132} chorro={chorro} sello={sello} />
+        <Cantimplora nivel={d.dia.nivel} ancho={60} chorro={chorro} sello={sello} />
       </button>
       <div className="agua-texto">
         <span className="seccion-titulo">Agua</span>

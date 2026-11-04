@@ -10,7 +10,7 @@ export type PilarAnim = 'entrenamiento' | 'empresa' | 'manga' | 'acostarse'
 export type EstiloCorte = 'horizontal' | 'diagonal' | 'ascendente' | 'estocada' | 'vertical'
 
 export type Animacion = (
-  | { tipo: 'ejecucion'; pilar: string; estilo?: EstiloCorte; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
+  | { tipo: 'ejecucion'; pilar: string; estilo?: EstiloCorte; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean; /** Ninjas de la distracción: título propio y nombre del rival en un cartelito. */ titulo?: string; rival?: string }
   | { tipo: 'parry'; nombre?: string; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
   | { tipo: 'postura'; modo: '321' | 'siguiente'; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
   | { tipo: 'logro'; clase: 'nivel' | 'racha' | 'fase' | 'record'; texto: string; sub?: string; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
@@ -49,6 +49,7 @@ export const KANJI: Record<string, { k: string; significado: string }> = {
   fase: { k: '段', significado: 'etapa' },
   record: { k: '力', significado: 'fuerza' },
   parry: { k: '忍', significado: 'perseverar' },
+  ninja: { k: '忍', significado: 'perseverar' },
 }
 
 /** Corte por defecto de cada pilar; a veces sale otro al azar para que no se repita. */

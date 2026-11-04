@@ -12,6 +12,7 @@ import { programarAlarmas } from '../services/alarmas'
 import { Avisos, Cargando } from './componentes'
 import { PantallaSuenio } from './ModoSuenio'
 import { CapaAnimacion } from './animaciones/CapaAnimacion'
+import { NinjaPelea } from './Ninja'
 import { avisar, mutar, notificarCambio, useDatos, useVersion } from './estado'
 import { Layout } from './Layout'
 import { Acciones } from './paginas/Acciones'
@@ -148,6 +149,7 @@ export function App() {
     <HashRouter>
       <ConSuenio />
       <CapaAnimacion />
+      <NinjaPelea />
       <Avisos />
     </HashRouter>
   )

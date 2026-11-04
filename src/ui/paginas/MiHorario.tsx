@@ -91,7 +91,7 @@ function Grilla({ bloques, dormir, duracionEntreno, onTocar, onMantener }: { blo
         <div key={ds} className="hor-col">
           <div className="hor-cab">{nombreDiaSemana(ds, true).slice(0, 2)}</div>
           <div className="hor-dia" style={{ height: alto }}>
-            {Array.from({ length: H1 - H0 }, (_, i) => <i key={i} className="hor-linea" style={{ top: i * PX_HORA }} />)}
+            {Array.from({ length: H1 - H0 }, (_, i) => <i key={i} className="hor-raya" style={{ top: i * PX_HORA }} />)}
             {/* Dormir */}
             <div className="hor-bloque dormir" style={{ top: Math.max(0, y(dormir.desde)), height: Math.max(0, alto - Math.max(0, y(dormir.desde))) }} aria-hidden />
             {minutosDe(dormir.hasta) > H0 * 60 && <div className="hor-bloque dormir" style={{ top: 0, height: y(dormir.hasta) }} aria-hidden />}

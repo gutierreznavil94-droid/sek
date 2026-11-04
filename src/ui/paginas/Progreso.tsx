@@ -15,6 +15,7 @@ import { kg, progresionEjercicio, resumenFuerza, type ResumenFuerza } from '../.
 import { Hoja, clasePorcentaje, elegirMovimiento, movimientoReducido } from '../componentes'
 import { useDatos } from '../estado'
 import { graficoMetas, lineaDeMetas, metasPorDia } from '../../services/metas'
+import { ninjasVencidosSemana } from '../../services/ninjas'
 import { FilaMeta } from '../metas'
 import { VERSION_APP } from '../../version'
 import { rutaTema } from '../../temas/temas'
@@ -143,7 +144,8 @@ export function Progreso({ hoy }: { hoy: string }) {
       series: contadores[0]?.escalonesReps.map((e) => e.reps) ?? [],
       comida: comida.pesos.slice(-8).map((p) => p.kg),
     }
-    return { ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados, conExtra, reglasCodigo: await db().codigo.count(), comida, metasSemana: { cumplidas: metasSemana.filter((m) => m.cumplida).length, total: metasSemana.length }, mini }
+    const ninjas = await ninjasVencidosSemana(hoy)
+    return { ninjas, ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados, conExtra, reglasCodigo: await db().codigo.count(), comida, metasSemana: { cumplidas: metasSemana.filter((m) => m.cumplida).length, total: metasSemana.length }, mini }
   }, [hoy])
   const reducido = useMemo(() => movimientoReducido(), [])
   const modo = useModoFondo()
@@ -298,6 +300,9 @@ export function Progreso({ hoy }: { hoy: string }) {
               <Dato grande={String(d.racha)} chico="RACHA" sub={d.racha === 1 ? 'día seguido' : 'días seguidos'} rojo={d.racha > 0} />
               <div className="av-barra" aria-hidden="true"><div style={{ width: `${Math.round(100 * d.nivel.progreso)}%` }} /></div>
             </section>
+            {d.ajustes.ninjas !== false && d.ajustes.ninjasEnProgreso !== false && d.ninjas.peleas > 0 && (
+              <div className="av-ninjas av-nota" aria-label="Ninjas vencidos esta semana"><span className="av-ninjas-k">忍</span> Ninjas vencidos esta semana: <b>{d.ninjas.vencidos}</b><span className="texto-3"> de {d.ninjas.peleas}</span></div>
+            )}
 
             {/* Los 4 pilares en una fila compacta; tocar abre el detalle con la tira del manga y los atributos */}
             {d.pilares.length > 0 && (

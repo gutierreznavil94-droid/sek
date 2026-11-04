@@ -1,10 +1,13 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import type { Compromiso } from '../../data/tipos'
 import { NOMBRES_FASES_INICIALES } from '../../data/semilla'
 import { TarjetaComida } from './Comida'
 import { TarjetaAgua } from './Agua'
 import { cerrarAvisoDormir, fraseDormir, minutosAvisoDormir, mostrarAvisoDormir } from '../../services/dormir'
+import { debeMostrarTajo, distraccionesDe, marcarTajo, momentoActivo, nombreDistraccion, peleasDelDia, prepararPelea, tajoMostradoHoy, vistaAnterior } from '../../services/ninjas'
+import { hayPelea, pedirPelea } from '../Ninja'
+import { Tajo } from '../Tajo'
 import { LineaDelDia } from './MiHorario'
 import { finDeObligatorio } from '../../services/horario'
 import { db } from '../../data/db'
@@ -84,7 +87,8 @@ async function cargarPanel(hoy: string) {
   const ajusteDeAyer = revisionAyer?.respuestas.ajuste?.trim() || null
   const rutina = (await rutinaDelDia(hoy)) ?? null
   const entrenoEnCurso = !!(await sesionEnCurso())
-  return { antes: false as const, rutina, entrenoEnCurso, metasSemana, ajustes, estado, compromisos, nivel, atributos, racha, juego, semana, xpHoy, revision, nocheAbierta, suenio, proximoEntreno, pilares, propuestas, contadores, ventana, ajusteDeAyer, buenosDias, anoche }
+  const peleas = await peleasDelDia(hoy)
+  return { antes: false as const, peleas, rutina, entrenoEnCurso, metasSemana, ajustes, estado, compromisos, nivel, atributos, racha, juego, semana, xpHoy, revision, nocheAbierta, suenio, proximoEntreno, pilares, propuestas, contadores, ventana, ajusteDeAyer, buenosDias, anoche }
 }
 
 async function proximoEntrenamiento(hoy: string, zona: string) {
@@ -120,6 +124,9 @@ export function Hoy({ hoy }: { hoy: string }) {
   const [marcado, setMarcado] = useState<string | null>(null)
   const [nivelNuevo, setNivelNuevo] = useState<number | null>(null)
   const [avisoDormirAbierto, setAvisoDormirAbierto] = useState(true)
+  const [tajo, setTajo] = useState(false)
+  const cerrarTajo = useCallback(() => setTajo(false), [])
+  const intentoNinja = useRef<string>('')
   const cerrarCelebracion = useCallback(() => setNivelNuevo(null), [])
   const d = panel.datos
 
@@ -185,6 +192,29 @@ export function Hoy({ hoy }: { hoy: string }) {
   }, [d])
 
 
+  // El tajo y los ninjas automáticos (hooks: van antes de cualquier return).
+  useEffect(() => {
+    if (!d || d.antes || d.ajustes.ninjas === false) return
+    const pendientes = d.pilares.pilares.filter((p) => p.estado === 'pendiente')
+    const instDejar = instanteDe(d.nocheAbierta, d.ajustes.horaDejarCelu, d.ajustes.zonaHoraria)
+    if (debeMostrarTajo({ ultimaVista: vistaAnterior(), ahora: Date.now(), pilarPendiente: pendientes.length > 0, pasoDejoCelu: !d.suenio && Date.now() > instDejar, mostradoHoy: tajoMostradoHoy(hoy) })) {
+      marcarTajo(hoy)
+      setTajo(true)
+    }
+  }, [hoy, d])
+  useEffect(() => {
+    if (!d || d.antes || hayPelea()) return
+    const pendientes = d.pilares.pilares.filter((p) => p.estado === 'pendiente').map((p) => ({ id: p.accion.id, nombre: p.accion.nombre, horaLimite: p.accion.tipo === 'entrenamiento' ? p.accion.horaLimiteInicio ?? p.horaLimite : p.horaLimite, entreno: p.accion.tipo === 'entrenamiento' }))
+    const instDejar = instanteDe(d.nocheAbierta, d.ajustes.horaDejarCelu, d.ajustes.zonaHoraria)
+    const pl = partesLocales(tic, d.ajustes.zonaHoraria)
+    const m = momentoActivo({ minutoActual: pl.hora * 60 + pl.minuto, pilaresPendientes: pendientes, pasoDejoCelu: !d.suenio && tic > instDejar, juegoPasado: d.juego.minutosHoy > d.juego.limiteMinutos })
+    if (!m) return
+    const clave = `${hoy}:${m.momento}`
+    if (intentoNinja.current === clave) return
+    intentoNinja.current = clave
+    void prepararPelea(hoy, m).then((p) => { if (p) pedirPelea(p) })
+  }, [tic, hoy, d])
+
   if (!d) return <p className="vacio">{panel.error ?? 'Cargando…'}</p>
 
   if (d.antes) {
@@ -229,6 +259,15 @@ export function Hoy({ hoy }: { hoy: string }) {
   const enAviso2050 = !d.revision && tic >= d.ventana.instanteAviso && tic < d.ventana.instanteCierre
   const pasoElCierre = tic >= d.ventana.instanteCierre
   const pendientesNoche = d.pilares.pilares.filter((p) => p.estado === 'pendiente' && p.accion.tipo === 'compromiso')
+
+  // Pilares pendientes con su hora límite (para el compañero y los ninjas).
+  const pendientesConHora = d.pilares.pilares.filter((p) => p.estado === 'pendiente').map((p) => ({ id: p.accion.id, nombre: p.accion.nombre, horaLimite: p.accion.tipo === 'entrenamiento' ? p.accion.horaLimiteInicio ?? p.horaLimite : p.horaLimite, entreno: p.accion.tipo === 'entrenamiento' }))
+  const dudar = async () => {
+    const m = { momento: 'duda' as const, pilar: pendientesConHora[0] }
+    const p = await prepararPelea(hoy, m)
+    if (!p) return avisar(ajustes.ninjas === false ? 'Los ninjas están apagados (Más → Ver animaciones).' : 'Sin distracciones en la lista (Más → Ver animaciones → Mis distracciones).')
+    pedirPelea(p)
+  }
 
   const celebrarYFlash = (id: string, xp: number, nuevoNivel: number | null) => {
     setMarcado(id)
@@ -401,6 +440,14 @@ export function Hoy({ hoy }: { hoy: string }) {
             />
           ))}
         </div>
+        {ajustes.ninjas !== false && (
+          <div className="fila entre ninja-fila">
+            <span className="muy-chico texto-3">
+              {d.peleas.length ? d.peleas.map((p) => `${p.resultado === 'vencido' ? 'Venciste a' : 'Se escapó'} ${nombreDistraccion(distraccionesDe(ajustes), p.distraccion)}`).join(' · ') : ''}
+            </span>
+            <button type="button" className="enlace chico texto-3" onClick={dudar}>Estoy dudando</button>
+          </div>
+        )}
         {!d.suenio && esHoraDeAlistarse && !ventanaCeluCerrada && (
           <button className="boton celu ancho grande" onClick={dejoCelu}>
             Dejo celu{minutosHastaCelu > 0 ? ` · faltan ${duracionLegible(minutosHastaCelu)}` : minutosHastaCelu < 0 ? ` · ${duracionLegible(-minutosHastaCelu)} tarde` : ''}
@@ -422,6 +469,7 @@ export function Hoy({ hoy }: { hoy: string }) {
 
       {/* Agua: la cantimplora, un toque y se llena */}
       <TarjetaAgua hoy={hoy} />
+      {tajo && <Tajo onFin={cerrarTajo} />}
       {avisoDormir && (
         <button type="button" className="franja-dormir" onClick={() => { cerrarAvisoDormir(d.nocheAbierta); setAvisoDormirAbierto(false) }} aria-label="Recordatorio para dormir. Tocá para cerrarlo por esta noche.">
           <span className="franja-dormir-kanji" aria-hidden>眠</span>
