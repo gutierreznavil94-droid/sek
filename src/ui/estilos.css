@@ -1962,24 +1962,21 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 @keyframes rec-sello { 0% { opacity: 0; transform: scale(1.6) rotate(-10deg) } 100% { opacity: 1; transform: scale(1) rotate(-4deg) } }
 .rec-fila { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-top: 1px solid var(--borde); }
 
-/* ---------- Fondo épico de las escenas: carbón, cielo de lluvia, sin golpe de blanco ---------- */
-.sh-capa.epica { --sh-papel: #121110; --sh-tinta: #141414; --sh-tinta-2: #2e2c2c; --sh-tinta-seca: #3a3836; --sh-enemigo: #2a2a2e; --sh-enemigo-2: #3c3c42; --sh-lejos: #1d1c1b; --sh-lejos-2: #171615; --sh-piedra: #4a4740; --sh-texto: #f1ece2; --sh-texto-2: #b5aea2; background: #121110; animation: sh-entrar 250ms ease-out both; }
+/* ---------- Fondo épico de las escenas: papel suave gris, como nubes lloviendo (4 nov: Navil pidió volver al claro pero más oscurito) ---------- */
+.sh-capa.epica { --sh-papel: #d3d1cb; --sh-tinta: #141414; --sh-tinta-2: #2e2c2c; --sh-tinta-seca: #3a3836; --sh-enemigo: #4b4b4b; --sh-enemigo-2: #6a6a6a; --sh-lejos: #bdbbb4; --sh-lejos-2: #c8c6bf; --sh-piedra: #8d8a82; --sh-texto: #141414; --sh-texto-2: #4a4743; background: #d3d1cb; animation: sh-entrar 250ms ease-out both; }
 .sh-capa.epica.parry-video { animation: sh-entrar 250ms ease-out both, sh-pv-sale calc(var(--dur) * .08) ease-in calc(var(--dur) * .92) forwards; }
 .sh-epico { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-.sh-epico-cielo { position: absolute; inset: -4%; background-size: cover; background-position: center 30%; filter: blur(7px) brightness(.3) saturate(.6); }
-.sh-epico-lluvia { position: absolute; inset: -20% 0 0 0; background: repeating-linear-gradient(100deg, transparent 0 13px, rgba(230, 226, 214, .07) 13px 14px); animation: sh-epico-lluvia 1.1s linear infinite; }
+/* El cielo de lluvia, lavado: nubes grises claras sobre papel. */
+.sh-epico-cielo { position: absolute; inset: -4%; background-size: cover; background-position: center 30%; filter: blur(9px) grayscale(1) brightness(1.75) contrast(.55); opacity: .9; }
+.sh-epico-cielo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(211, 209, 203, .15), rgba(211, 209, 203, .55) 70%, rgba(211, 209, 203, .8)); }
+.sh-epico-lluvia { position: absolute; inset: -20% 0 0 0; background: repeating-linear-gradient(100deg, transparent 0 13px, rgba(20, 20, 20, .09) 13px 14px); animation: sh-epico-lluvia 1.1s linear infinite; }
 @keyframes sh-epico-lluvia { from { transform: translate(0, -40px) } to { transform: translate(-30px, 120px) } }
 .sh-capa.epica .sh-escenario { position: relative; }
-/* Personajes negros recortados con un hilo blanco, como tinta sobre tinta. */
-.sh-capa.epica .sh-escenario image { filter: drop-shadow(0 0 0.7px rgba(255, 255, 255, .95)) drop-shadow(0 0 0.4px rgba(255, 255, 255, .8)); }
-.sh-capa.epica .sh-enso { stroke: #e6e1d6; opacity: .12; }
-.sh-capa.epica .sh-lluvia { stroke: #cfcabf; opacity: .35; }
-/* El destello del impacto: relámpago gris claro, no pantalla blanca. */
-.sh-capa.epica .sh-pv-destello, .sh-capa.epica .sh-destello { fill: #c9ccd1; }
-.sh-capa.epica .sh-pv-brillo { fill: #e3e6e9; }
+.sh-capa.epica .sh-enso { stroke: #141414; opacity: .1; }
+.sh-capa.epica .sh-lluvia { stroke: #3a3836; opacity: .3; }
 .sh-capa.epica.reducida { animation: sh-flash-epico 700ms ease-out both; }
-@keyframes sh-flash-epico { 0% { background: #2a2a2e } 100% { background: #121110 } }
-.sh-capa.epica .sh-titulo { text-shadow: 0 2px 12px rgba(0,0,0,.8); }
+@keyframes sh-flash-epico { 0% { background: #f3efe6 } 100% { background: #d3d1cb } }
+.sh-capa.epica .sh-titulo { text-shadow: 0 1px 10px rgba(211, 209, 203, .9); }
 
 /* ---------- Compañero: el shinobi que se pasea (4 nov 2026) ---------- */
 .companero { position: fixed; left: 0; right: 0; bottom: calc(var(--nav-alto) + env(safe-area-inset-bottom)); height: 0; z-index: 19; pointer-events: none; max-width: 640px; margin: 0 auto; }

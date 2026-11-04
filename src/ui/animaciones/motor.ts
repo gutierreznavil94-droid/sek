@@ -20,7 +20,7 @@ export type ModoAnimaciones = 'todas' | 'logros' | 'ninguna'
 
 /** Duración máxima de cada animación (ms), según lo pedido. */
 export const DURACION: Record<Animacion['tipo'], number> = {
-  ejecucion: 2100, // ejecución hecha con los dos videos de Luma (ronin corta, rival cae): 84 cuadros a 40 fps
+  ejecucion: 2900, // ejecución con los dos videos de Luma: impacto al 46 % (1,33 s) y la caída del rival estirada hasta el 92 % (ver cuadroEjecucion)
   parry: 1900, // parry hecho con el video de Luma (88 cuadros seguidos a ~46 fps: casi el doble de rápido que el video)
   postura: 1400, // caramelo hecho con el video de Luma (56 cuadros a 40 fps)
   logro: 2600, // logro hecho con el video de Luma: 2 s de movimiento + 0,6 s de pose de victoria con el sello
@@ -308,7 +308,7 @@ export function sonar(a: Animacion): void {
   const t = ac.currentTime + 0.01
   const l = lentoDe(a)
   try {
-    if (a.tipo === 'ejecucion') corte(ac, t + (a.vieja ? 0.42 : 0.95) * l)
+    if (a.tipo === 'ejecucion') corte(ac, t + (a.vieja ? 0.42 : 1.33) * l)
     else if (a.tipo === 'parry') choque(ac, t + (a.vieja ? 0.12 : 0.67) * l)
     else if (a.tipo === 'postura') aura(ac, t + (a.vieja ? 0.5 : 0.72) * l, a.modo === 'siguiente')
     else {

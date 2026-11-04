@@ -547,6 +547,18 @@ const EJ_TORSO = aEscena(223, 46)
 if (typeof Image !== 'undefined') for (const t of ['claro', 'oscuro']) { const im = new Image(); im.src = `${import.meta.env.BASE_URL}animaciones/ejecucion/ejecucion-${t}.webp`; im.decode?.().catch(() => undefined) }
 if (typeof document !== 'undefined') document.fonts?.load('64px Pincel', '鍛進描静斬').catch(() => undefined)
 
+/**
+ * Cuadro de la tira según la fracción del tiempo. El impacto queda en el 46 % (donde van los destellos); la caída del
+ * rival (cuadros 39 a 72) se estira hasta el 92 % para que no se desplome de golpe; el resto es la disolución.
+ */
+export function cuadroEjecucion(f: number): number {
+  const IMPACTO = 39
+  const FIN_CAIDA = 72
+  if (f < 0.46) return (f / 0.46) * IMPACTO
+  if (f < 0.92) return IMPACTO + ((f - 0.46) / 0.46) * (FIN_CAIDA - IMPACTO)
+  return FIN_CAIDA + ((f - 0.92) / 0.08) * (EJ_HOJA.cuadros - FIN_CAIDA)
+}
+
 function EjecucionVideo({ kanji, dur, oscuro }: { kanji: string; dur: number; oscuro: boolean }) {
   const vista = useRef<SVGSVGElement>(null)
   useEffect(() => {
@@ -557,7 +569,7 @@ function EjecucionVideo({ kanji, dur, oscuro }: { kanji: string; dur: number; os
     let ultimo = -1
     const paso = (ahora: number) => {
       const f = Math.min(1, (ahora - t0) / dur)
-      const n = Math.min(EJ_HOJA.cuadros - 1, Math.floor(f * EJ_HOJA.cuadros))
+      const n = Math.min(EJ_HOJA.cuadros - 1, Math.floor(cuadroEjecucion(f)))
       if (n !== ultimo) {
         ultimo = n
         el.setAttribute('viewBox', `${(n % EJ_HOJA.cols) * EJ_HOJA.w} ${Math.floor(n / EJ_HOJA.cols) * EJ_HOJA.h} ${EJ_HOJA.w} ${EJ_HOJA.h}`)

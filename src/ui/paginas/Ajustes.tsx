@@ -106,7 +106,7 @@ export function Ajustes() {
       <ElegirMovimiento />
       <Tarjeta titulo="Fondo de las animaciones">
         <div className="fondos-opciones" role="radiogroup" aria-label="Fondo de las animaciones">
-          {([['epico', 'Épico', 'oscuro, con el cielo de lluvia: sin golpe de blanco de noche'], ['claro', 'Papel', 'tinta sobre papel claro'], ['oscuro', 'Oscuro liso', 'fondo carbón sin cielo']] as const).map(([v, t, nota]) => (
+          {([['epico', 'Épico', 'papel gris suave con nubes y lluvia'], ['claro', 'Papel', 'tinta sobre papel claro'], ['oscuro', 'Oscuro liso', 'fondo carbón sin cielo']] as const).map(([v, t, nota]) => (
             <button key={v} role="radio" aria-checked={(a.temaAnimaciones ?? 'epico') === v} className={`fondo-opcion ${(a.temaAnimaciones ?? 'epico') === v ? 'activo' : ''}`} onClick={async () => { set('temaAnimaciones', v); await mutar(() => guardarAjustes({ temaAnimaciones: v })); avisar(`Animaciones: ${t.toLowerCase()}`) }}>
               <span>{t}</span>
               <span className="chico texto-3">{nota}</span>
