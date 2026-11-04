@@ -36,7 +36,7 @@ export const AJUSTES_INICIALES: Ajustes = {
   animaciones: 'todas',
   sonidoAnimaciones: false,
   nombrePersonaje: 'Shinobi',
-  temaAnimaciones: 'claro',
+  temaAnimaciones: 'epico',
   diaInicioSemana: 1,
   tema: 'shinobi',
   nombrePersona: '',

@@ -111,6 +111,7 @@ export function Entrenamiento({ hoy }: { hoy: string }) {
         )}
         <span className="ayuda">{recordatorios.capacidades().conAppCerrada ? 'El aviso suena aunque la app esté cerrada.' : 'En la versión web el aviso sale con la app abierta o recién minimizada (y como cartel en Hoy). Con la app de Android suena aunque esté cerrada.'}</span>
         <span className="ayuda">El cambio vale de hoy en adelante y no altera días pasados. El calendario y «próximo entrenamiento» lo reflejan.</span>
+        <label className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={d.ajustes.sonidoAviso10s !== false} onChange={(e) => mutar(() => guardarAjustes({ sonidoAviso10s: e.target.checked })).then(() => avisar(e.target.checked ? 'Taiko a 10 s del fin del descanso: encendido' : 'Taiko apagado', { tipo: 'ok' }))} /> Sonido de aviso a 10 s <span className="texto-3">(un golpe de taiko, una sola vez; aparte del sonido de animaciones)</span></label>
         <button className="boton primario ancho" onClick={guardarEntreno}>Guardar entrenamiento</button>
         {d.proximos.length > 0 && (
           <>

@@ -173,6 +173,25 @@ export function faseActual(descanso: { inicio: number; fases: FaseDescanso[] }, 
 
 // ---------- Sesión ----------
 
+/** Tope: una serie que «dura» más que esto no se mide (la app quedó abierta sin usar). */
+export const TOPE_SEGUNDOS_SERIE = 30 * 60
+
+/**
+ * Cuánto duró la serie que se está anotando: desde que terminó el descanso anterior (tocando
+ * «Saltar descanso» o cuando se agotó solo) o desde que pasó a este bloque, hasta ahora.
+ * Sin punto de partida (la primera serie del entreno abierta desde el inicio) queda sin medir.
+ */
+export function duracionSerie(s: Pick<SesionEntreno, 'serieDesde' | 'descanso'>, t: number): number | undefined {
+  let desde = s.serieDesde
+  if (s.descanso) {
+    const fin = s.descanso.inicio + s.descanso.fases.reduce((a, f) => a + f.segundos, 0) * 1000
+    desde = Math.min(t, fin)
+  }
+  if (desde === undefined) return undefined
+  const seg = Math.max(0, Math.round((t - desde) / 1000))
+  return seg > TOPE_SEGUNDOS_SERIE ? undefined : seg
+}
+
 async function guardarSesion(s: SesionEntreno): Promise<SesionEntreno> {
   if (!s.primerMovimiento && s.estado === 'en_curso' && (s.series.length || s.hechos.length || s.saltados.length || s.reloj || s.tiempos?.length)) s = { ...s, primerMovimiento: Math.min(s.reloj?.inicio ?? ahora(), ahora()) }
   await db().sesionesEntreno.put(s)
@@ -260,11 +279,12 @@ export async function registrarSerie(id: number, bloqueId: string, hecho: { reps
   const n = seriesDe(s, bloqueId).length + 1
   const t = ahora()
   const peso = hecho.peso ?? s.pesos?.[bloqueId] ?? b.peso
+  const segundos = duracionSerie(s, t)
   // En los ejercicios con ayuda, el «+N» es ayuda: se guarda aparte.
   const serie: SerieHecha = b.admiteAyuda
-    ? { bloqueId, n, reps: Math.max(0, Math.round(hecho.reps)), ayuda: hecho.ayuda ?? hecho.repsExtra, peso: Math.max(0, peso), instante: t }
-    : { bloqueId, n, reps: Math.max(0, Math.round(hecho.reps)), repsExtra: hecho.repsExtra, peso: Math.max(0, peso), instante: t }
-  const nueva: SesionEntreno = { ...s, pesos: { ...s.pesos, [bloqueId]: peso }, series: [...s.series, serie], reloj: undefined }
+    ? { bloqueId, n, reps: Math.max(0, Math.round(hecho.reps)), ayuda: hecho.ayuda ?? hecho.repsExtra, peso: Math.max(0, peso), instante: t, segundos }
+    : { bloqueId, n, reps: Math.max(0, Math.round(hecho.reps)), repsExtra: hecho.repsExtra, peso: Math.max(0, peso), instante: t, segundos }
+  const nueva: SesionEntreno = { ...s, pesos: { ...s.pesos, [bloqueId]: peso }, series: [...s.series, serie], reloj: undefined, serieDesde: undefined }
   // Si terminó el ejercicio, el paso pasa al siguiente y el descanso es para acomodar.
   if (n >= b.series) nueva.paso = siguientePaso(nueva, r, s.paso)
   const fases = fasesDescanso(b, n, n >= b.series ? nombreSiguiente(nueva, r) : undefined)
@@ -313,7 +333,7 @@ export async function marcarBloque(id: number, bloqueId: string): Promise<Sesion
   const s = await sesion(id)
   const r = await obtenerRutina(s.rutinaId)
   if (!r) throw new Error('Rutina no encontrada')
-  const nueva = { ...s, hechos: s.hechos.includes(bloqueId) ? s.hechos : [...s.hechos, bloqueId], reloj: undefined, descanso: undefined }
+  const nueva = { ...s, hechos: s.hechos.includes(bloqueId) ? s.hechos : [...s.hechos, bloqueId], reloj: undefined, descanso: undefined, serieDesde: ahora() }
   nueva.paso = siguientePaso(nueva, r, s.paso)
   return guardarSesion(nueva)
 }
@@ -322,7 +342,7 @@ export async function saltarBloque(id: number, bloqueId: string): Promise<Sesion
   const s = await sesion(id)
   const r = await obtenerRutina(s.rutinaId)
   if (!r) throw new Error('Rutina no encontrada')
-  const nueva = { ...s, saltados: s.saltados.includes(bloqueId) ? s.saltados : [...s.saltados, bloqueId], reloj: undefined, descanso: undefined }
+  const nueva = { ...s, saltados: s.saltados.includes(bloqueId) ? s.saltados : [...s.saltados, bloqueId], reloj: undefined, descanso: undefined, serieDesde: ahora() }
   nueva.paso = siguientePaso(nueva, r, s.paso)
   return guardarSesion(nueva)
 }
@@ -332,7 +352,7 @@ export async function irABloque(id: number, bloqueId: string): Promise<SesionEnt
   const s = await sesion(id)
   const i = s.orden.indexOf(bloqueId)
   if (i < 0) return s
-  return guardarSesion({ ...s, paso: i, saltados: s.saltados.filter((x) => x !== bloqueId), reloj: undefined, descanso: undefined })
+  return guardarSesion({ ...s, paso: i, saltados: s.saltados.filter((x) => x !== bloqueId), reloj: undefined, descanso: undefined, serieDesde: ahora() })
 }
 
 /** Mueve un bloque pendiente una posición antes (-1) o después (+1). */
@@ -355,7 +375,7 @@ export async function guardarPaso(id: number, paso: number): Promise<SesionEntre
 
 export async function terminarDescanso(id: number): Promise<SesionEntreno> {
   const s = await sesion(id)
-  return guardarSesion({ ...s, descanso: undefined })
+  return guardarSesion({ ...s, descanso: undefined, serieDesde: ahora() })
 }
 
 /** Alarga la fase actual del descanso. */
@@ -707,7 +727,7 @@ export async function historialEjercicio(bloqueId: string): Promise<{ puntos: Pu
 }
 
 /** Un entreno de un ejercicio en la progresión: la serie 1 (reps limpias) y el tramo de peso al que pertenece. */
-export type PuntoProgresion = { fecha: FechaDia; peso: number; reps: number; series: SerieHecha[]; record: boolean; tramo: number }
+export type PuntoProgresion = { fecha: FechaDia; peso: number; reps: number; series: SerieHecha[]; record: boolean; tramo: number; /** Tiempo promedio por serie ese día (s); falta en sesiones viejas. */ segundos?: number }
 export type TramoPeso = { indice: number; peso: number; desde: FechaDia; hasta: FechaDia; entrenos: number; mejorReps: number }
 
 /**
@@ -730,7 +750,9 @@ export async function progresionEjercicio(bloqueId: string): Promise<{ puntos: P
     t.entrenos++
     t.hasta = s.fecha
     t.mejorReps = Math.max(t.mejorReps, s1.reps)
-    puntos.push({ fecha: s.fecha, peso: s1.peso, reps: s1.reps, series, record, tramo: t.indice })
+    const conTiempo = series.filter((x) => x.segundos !== undefined)
+    const segundos = conTiempo.length ? Math.round(conTiempo.reduce((a, x) => a + x.segundos!, 0) / conTiempo.length) : undefined
+    puntos.push({ fecha: s.fecha, peso: s1.peso, reps: s1.reps, series, record, tramo: t.indice, segundos })
   }
   return { puntos, tramos }
 }

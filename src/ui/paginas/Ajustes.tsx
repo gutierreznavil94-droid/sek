@@ -4,6 +4,7 @@ import type { Ajustes as TipoAjustes } from '../../data/tipos'
 import { guardarAjustes, obtenerAjustes } from '../../services/base'
 import { Atras, Tarjeta, elegirMovimiento, preferenciaMovimiento, sistemaPideReducir, type PreferenciaMovimiento } from '../componentes'
 import { avisar, mutar, useDatos } from '../estado'
+import { FRASES_DORMIR_DEFECTO, MINUTOS_AVISO_DORMIR } from '../../services/dormir'
 import { Divisor, elegirDivisor, useVarianteDivisor, type VarianteDivisor } from '../Divisor'
 
 const ZONAS = ['America/Argentina/Cordoba', 'America/Argentina/Buenos_Aires', 'America/Montevideo', 'America/Santiago', 'America/Sao_Paulo', 'America/Lima', 'America/Bogota', 'America/Mexico_City', 'Europe/Madrid', 'UTC']
@@ -102,6 +103,22 @@ export function Ajustes() {
       <ElegirFranja />
       <ElegirVideoFondo />
       <ElegirMovimiento />
+      <Tarjeta titulo="Fondo de las animaciones">
+        <div className="fondos-opciones" role="radiogroup" aria-label="Fondo de las animaciones">
+          {([['epico', 'Épico', 'oscuro, con el cielo de lluvia: sin golpe de blanco de noche'], ['claro', 'Papel', 'tinta sobre papel claro'], ['oscuro', 'Oscuro liso', 'fondo carbón sin cielo']] as const).map(([v, t, nota]) => (
+            <button key={v} role="radio" aria-checked={(a.temaAnimaciones ?? 'epico') === v} className={`fondo-opcion ${(a.temaAnimaciones ?? 'epico') === v ? 'activo' : ''}`} onClick={async () => { set('temaAnimaciones', v); await mutar(() => guardarAjustes({ temaAnimaciones: v })); avisar(`Animaciones: ${t.toLowerCase()}`) }}>
+              <span>{t}</span>
+              <span className="chico texto-3">{nota}</span>
+            </button>
+          ))}
+        </div>
+        <p className="ayuda">Se ve en Más → Ver animaciones.</p>
+      </Tarjeta>
+      <Tarjeta titulo="Recordatorio para dormir">
+        <div className="campo"><label>Minutos antes de «Dejo celu»</label><input type="number" inputMode="numeric" min={5} max={180} value={a.minutosAvisoDormir ?? MINUTOS_AVISO_DORMIR} onChange={num('minutosAvisoDormir', 5, 180)} /></div>
+        <div className="campo"><label>Frases (una por línea, rotan cada noche)</label><textarea rows={4} value={(a.frasesDormir ?? FRASES_DORMIR_DEFECTO).join('\n')} onChange={(e) => set('frasesDormir', e.target.value.split('\n'))} /></div>
+        <p className="ayuda">En Hoy aparece una franja oscura al pie, sin brillo. Un toque la cierra por esa noche; si ya marcaste «Dejo celu», no aparece.</p>
+      </Tarjeta>
       <Tarjeta titulo="Juego">
         <div className="rejilla-2">
           <div className="campo"><label>Lunes a viernes (min)</label><input type="number" inputMode="numeric" value={a.limiteJuegoSemana} onChange={num('limiteJuegoSemana', 0, 1440)} /></div>

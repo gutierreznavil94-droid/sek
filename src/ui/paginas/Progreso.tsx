@@ -137,7 +137,7 @@ export function Progreso({ hoy }: { hoy: string }) {
     const comida = await resumenComida(hoy)
     const mini = {
       xp: Array.from({ length: 7 }, (_, i) => xpUltimos.get(sumarDias(hoy, i - 6)) ?? 0),
-      metas: Array.from({ length: 7 }, (_, i) => { const f = sumarDias(lunes, i); return lineaDeMetas(metasPorDiaSemana.get(f) ?? [], hoy) }),
+      metas: Array.from({ length: 7 }, (_, i) => { const f = sumarDias(lunes, i); return lineaDeMetas(metasPorDiaSemana.get(f) ?? [], hoy, f) }),
       sueno: sueno.noches.slice(-7).map((n) => n.minutos),
       fuerza: fuerza.volumenPorSemana.slice(-6).map((v) => v.volumen),
       series: contadores[0]?.escalonesReps.map((e) => e.reps) ?? [],
@@ -915,6 +915,12 @@ function GraficosEjercicio({ id, nombre, hoy }: { id: string; nombre: string; ho
   const rMin = Math.max(0, Math.min(...puntos.map((p) => p.reps)) - 1)
   const rMax = Math.max(...puntos.map((p) => p.reps)) + 1
   const yR = (r: number) => mi.arriba + (1 - (r - rMin) / Math.max(1, rMax - rMin)) * (HR - mi.arriba - mi.abajo)
+  // Tiempo por serie (gris): su propia escala, dibujado al lado de las reps. Sesiones viejas sin tiempo quedan fuera.
+  const conTiempo = puntos.filter((q) => q.segundos !== undefined)
+  const sMin = conTiempo.length ? Math.min(...conTiempo.map((q) => q.segundos!)) : 0
+  const sMax = conTiempo.length ? Math.max(...conTiempo.map((q) => q.segundos!)) : 1
+  const yS = (sg: number) => mi.arriba + (1 - (sMax === sMin ? 0.5 : (sg - sMin) / (sMax - sMin))) * (HR - mi.arriba - mi.abajo)
+  const rutaTiempo = conTiempo.map((q, i) => `${i ? 'L' : 'M'}${x(q.fecha).toFixed(1)},${yS(q.segundos!).toFixed(1)}`).join(' ')
   let escalera = ''
   tramos.forEach((t, i) => {
     const x0 = x(t.desde)
@@ -937,7 +943,7 @@ function GraficosEjercicio({ id, nombre, hoy }: { id: string; nombre: string; ho
         ))}
         <text x={W - mi.der + 4} y={yP(tramos[tramos.length - 1].peso) + 4} className="sr-valor fin">kg</text>
       </svg>
-      <div className="sr-sub">Reps · serie 1</div>
+      <div className="sr-sub">Reps · serie 1 <span className="texto-3">· en gris, tiempo por serie</span></div>
       <svg className="sr-escalones av-prog-reps" viewBox={`0 0 ${W} ${HR}`} role="img" aria-label={`Reps de la serie 1 de ${nombre}: ${puntos.map((q) => `${q.reps} el ${fechaLegible(q.fecha, false)}${q.record ? ', récord' : ''}`).join(', ')}`}>
         <line className="sr-base" x1={mi.izq} x2={W - mi.der} y1={HR - mi.abajo} y2={HR - mi.abajo} />
         {tramos.slice(1).map((t) => <line key={t.desde} className="av-prog-corte" x1={x(t.desde)} x2={x(t.desde)} y1={mi.arriba - 10} y2={HR - mi.abajo} />)}
@@ -946,6 +952,8 @@ function GraficosEjercicio({ id, nombre, hoy }: { id: string; nombre: string; ho
           const d = del.map((q, i) => `${i ? 'L' : 'M'}${x(q.fecha).toFixed(1)},${yR(q.reps).toFixed(1)}`).join(' ')
           return <path key={t.desde} className={`sr-linea av-prog-tramo ${t.indice % 2 ? 'alt' : ''}`} d={d} />
         })}
+        {conTiempo.length > 0 && <path className="av-prog-tiempo" d={rutaTiempo} />}
+        {conTiempo.length > 0 && <text x={W - mi.der + 4} y={yS(conTiempo[conTiempo.length - 1].segundos!) + 15} className="sr-cuota fin">{conTiempo[conTiempo.length - 1].segundos} s</text>}
         {puntos.map((q, i) => (
           <g key={q.fecha + i} className={`sr-paso ${sel === i ? 'sel' : ''}`} onClick={() => setSel(sel === i ? null : i)}>
             <rect x={x(q.fecha) - 12} y={yR(q.reps) - 18} width={24} height={34} fill="transparent" />
@@ -957,7 +965,7 @@ function GraficosEjercicio({ id, nombre, hoy }: { id: string; nombre: string; ho
       </svg>
       <div className="av-nota">
         {p
-          ? <><b>{fechaLegible(p.fecha)}</b> · {kg(p.peso)} · {p.series.map((q) => `S${q.n} ${q.reps}${q.ayuda ? `+${q.ayuda}` : ''}`).join(' · ')}{p.record ? ' · ★ récord' : ''}</>
+          ? <><b>{fechaLegible(p.fecha)}</b> · {kg(p.peso)} · {p.series.map((q) => `S${q.n} ${q.reps}${q.ayuda ? `+${q.ayuda}` : ''}`).join(' · ')}{p.record ? ' · ★ récord' : ''} · tiempo por serie {p.segundos !== undefined ? `${p.segundos} s` : '—'}</>
           : <>{puntos.length} {puntos.length === 1 ? 'entreno' : 'entrenos'} · {tramos.length === 1 ? 'un solo peso' : `${tramos.length - 1} ${tramos.length === 2 ? 'subida' : 'subidas'} de peso`} · {puntos.filter((q) => q.record).length} récords · tocá un punto</>}
       </div>
     </div>
@@ -1022,17 +1030,18 @@ function SerieRapida({ c, hoy }: { c: ResumenContador; hoy: string }) {
             <g key={p.desde + i} className={`sr-paso ${escSel === i ? 'sel' : ''}`} onClick={() => setEscSel(escSel === i ? null : i)}>
               <rect x={px - 16} y={py - 22} width={32} height={40} fill="transparent" />
               <circle cx={px} cy={py} r={subida ? 4.5 : 3.5} className={subida ? 'sr-punto subida' : 'sr-punto'} />
-              <text x={px} y={py - 9} textAnchor={i === 0 ? 'start' : 'middle'} className="sr-valor">{p.reps}</text>
+              <text x={px} y={py - 9} textAnchor={i === 0 ? 'start' : 'middle'} className="sr-valor">{p.reps}<tspan className="sr-cuota"> ·{p.cuota}</tspan></text>
               {subida && <text x={px} y={H - 4} textAnchor="middle" className="sr-fecha">{diaMes(p.desde)}</text>}
             </g>
           )
         })}
         <text x={W - mi.der + 4} y={y(pasos[pasos.length - 1].reps) + 4} className="sr-valor fin">{pasos[pasos.length - 1].reps}</text>
+        <text x={W - mi.der + 4} y={y(pasos[pasos.length - 1].reps) + 15} className="sr-cuota fin">{pasos[pasos.length - 1].cuota}</text>
       </svg>
       <div className="av-nota">
         {pasoElegido
-          ? (escSel === 0 ? `${pasoElegido.reps} por serie desde el inicio` : `Subiste a ${pasoElegido.reps} por serie el ${fechaLegible(pasoElegido.desde, false)}`)
-          : pasos.length > 1 ? `${pasos.length - 1} ${pasos.length === 2 ? 'subida' : 'subidas'} en el ciclo · tocá un punto` : 'Todavía sin subidas: la propuesta llega tras 3 días seguidos en cuota.'}
+          ? (escSel === 0 ? `${pasoElegido.reps} por serie desde el inicio · cuota ${pasoElegido.cuota}` : `Subiste a ${pasoElegido.reps} por serie el ${fechaLegible(pasoElegido.desde, false)} · cuota ${pasoElegido.cuota}`)
+          : pasos.length > 1 ? `${pasos.length - 1} ${pasos.length === 2 ? 'subida' : 'subidas'} en el ciclo · en gris, la cuota · tocá un punto` : 'Todavía sin subidas: la propuesta llega tras 3 días seguidos en cuota. En gris, la cuota del día.'}
       </div>
 
       <div className="sr-sub">Cumplimiento por día</div>

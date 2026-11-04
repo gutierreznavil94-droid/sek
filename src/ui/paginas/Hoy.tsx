@@ -4,6 +4,7 @@ import type { Compromiso } from '../../data/tipos'
 import { NOMBRES_FASES_INICIALES } from '../../data/semilla'
 import { TarjetaComida } from './Comida'
 import { TarjetaAgua } from './Agua'
+import { cerrarAvisoDormir, fraseDormir, minutosAvisoDormir, mostrarAvisoDormir } from '../../services/dormir'
 import { LineaDelDia } from './MiHorario'
 import { finDeObligatorio } from '../../services/horario'
 import { db } from '../../data/db'
@@ -39,7 +40,7 @@ import { celebrarFase, celebrarNivel, celebrarPilar, celebrarRacha } from '../an
 import { animar, configuracionAnimaciones } from '../animaciones/motor'
 import { finalizarJuego, iniciarJuego, resumenJuego } from '../../services/juego'
 import { deshacerUltimoToque, propuestasDeSubida, responderPropuesta, resumenContadores, sumarToque, type ResumenContador } from '../../services/contadores'
-import { estadoVisible, metasPorDia } from '../../services/metas'
+import { estadoEnDia, estadoVisible, metasPorDia } from '../../services/metas'
 import { FilaMeta } from '../metas'
 import { ahora } from '../../services/reloj'
 import { rutinaDelDia, sesionEnCurso } from '../../services/entreno'
@@ -118,6 +119,7 @@ export function Hoy({ hoy }: { hoy: string }) {
   const [flash, setFlash] = useState<Record<string, number>>({})
   const [marcado, setMarcado] = useState<string | null>(null)
   const [nivelNuevo, setNivelNuevo] = useState<number | null>(null)
+  const [avisoDormirAbierto, setAvisoDormirAbierto] = useState(true)
   const cerrarCelebracion = useCallback(() => setNivelNuevo(null), [])
   const d = panel.datos
 
@@ -222,6 +224,8 @@ export function Hoy({ hoy }: { hoy: string }) {
   const minutosHastaCelu = Math.round((instDejarCelu - tic) / 60_000)
   const instFinCelu = instanteDe(d.nocheAbierta, ajustes.horaLimiteCelu, ajustes.zonaHoraria)
   const ventanaCeluCerrada = tic > instFinCelu
+  // Recordatorio tenue para alistarse a dormir (30 min antes de «Dejo celu»; un toque lo cierra por esta noche).
+  const avisoDormir = mostrarAvisoDormir({ ahora: tic, instDejarCelu, instFinCelu, minutos: minutosAvisoDormir(ajustes), dormirMarcado: !!d.suenio, noche: d.nocheAbierta }) && avisoDormirAbierto
   const enAviso2050 = !d.revision && tic >= d.ventana.instanteAviso && tic < d.ventana.instanteCierre
   const pasoElCierre = tic >= d.ventana.instanteCierre
   const pendientesNoche = d.pilares.pilares.filter((p) => p.estado === 'pendiente' && p.accion.tipo === 'compromiso')
@@ -418,6 +422,13 @@ export function Hoy({ hoy }: { hoy: string }) {
 
       {/* Agua: la cantimplora, un toque y se llena */}
       <TarjetaAgua hoy={hoy} />
+      {avisoDormir && (
+        <button type="button" className="franja-dormir" onClick={() => { cerrarAvisoDormir(d.nocheAbierta); setAvisoDormirAbierto(false) }} aria-label="Recordatorio para dormir. Tocá para cerrarlo por esta noche.">
+          <span className="franja-dormir-kanji" aria-hidden>眠</span>
+          <span className="franja-dormir-texto">{fraseDormir(ajustes, d.nocheAbierta)}</span>
+          <span className="franja-dormir-hora mono">{ajustes.horaDejarCelu}</span>
+        </button>
+      )}
 
       {/* Comida: dos anillos (calorías y proteína) y «+ Comí» */}
       <TarjetaComida hoy={hoy} />
@@ -818,7 +829,7 @@ function SemanaMetas({ hoy }: { hoy: string }) {
       <div className="semana-fila">
         {dias.map((f, i) => {
           const metas = porDia.get(f) ?? []
-          const cumplida = metas.some((m) => estadoVisible(m, hoy) === 'cumplida')
+          const cumplida = metas.some((m) => estadoEnDia(m, f, hoy) === 'cumplida')
           return (
             <button key={f} className={`semana-dia ${i === 0 ? 'hoy' : ''}`} onClick={() => abrir(f)} aria-label={`${fechaLegible(f)}: ${metas.length ? `${metas.length} meta${metas.length > 1 ? 's' : ''}` : 'sin metas'}`}>
               <span className="semana-letra">{i === 0 ? 'hoy' : LETRAS[diaSemanaDe(f)]}</span>
@@ -828,7 +839,7 @@ function SemanaMetas({ hoy }: { hoy: string }) {
           )
         })}
       </div>
-      {deHoy.length > 0 && <div className="semana-hoy">{deHoy.map((m) => <FilaMeta key={m.id} m={m} hoy={hoy} chica />)}</div>}
+      {deHoy.length > 0 && <div className="semana-hoy">{deHoy.map((m) => <FilaMeta key={m.id} m={m} hoy={hoy} dia={hoy} chica />)}</div>}
       <div className="muy-chico texto-3 semana-proxima">
         {deHoy.length === 0 && !proxima && 'Sin metas esta semana. Tocá un día para escribir una.'}
         {proxima && <>próxima: <b className="texto-2">{proxima.titulo}</b> · {fechaLegible(proxima.fecha)}</>}

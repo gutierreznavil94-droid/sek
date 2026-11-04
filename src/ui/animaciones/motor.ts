@@ -72,7 +72,7 @@ export function elegirCorte(pilar: string, azar = Math.random): EstiloCorte {
   return otros[Math.floor(azar() * otros.length) % otros.length]
 }
 
-type Config = { modo: ModoAnimaciones; sonido: boolean; nombre: string; lento: number; tema: 'claro' | 'oscuro'; tinta: boolean }
+type Config = { modo: ModoAnimaciones; sonido: boolean; nombre: string; lento: number; tema: 'claro' | 'oscuro' | 'epico'; tinta: boolean }
 function leerTinta(): boolean {
   try { return localStorage.getItem('anim-tinta') !== 'no' } catch { return true }
 }
@@ -262,6 +262,38 @@ function tambor(ac: AudioContext, t: number) {
   o.connect(g).connect(ac.destination)
   o.start(t)
   o.stop(t + 0.5)
+}
+
+/** Golpe de taiko grave: un solo aviso a 10 s del fin del descanso (independiente del sonido de animaciones). */
+export function sonarTaiko(): void {
+  const ac = audio()
+  if (!ac) return
+  try {
+    const t = ac.currentTime + 0.01
+    const o = ac.createOscillator()
+    o.type = 'sine'
+    o.frequency.setValueAtTime(90, t)
+    o.frequency.exponentialRampToValueAtTime(38, t + 0.4)
+    const g = ac.createGain()
+    g.gain.setValueAtTime(0.7, t)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6)
+    o.connect(g).connect(ac.destination)
+    o.start(t)
+    o.stop(t + 0.65)
+    // El «parche»: un soplo corto de ruido grave al golpear.
+    const n = ac.createBufferSource()
+    n.buffer = ruido(ac, 0.06)
+    const f = ac.createBiquadFilter()
+    f.type = 'lowpass'
+    f.frequency.value = 400
+    const gn = ac.createGain()
+    gn.gain.setValueAtTime(0.35, t)
+    gn.gain.exponentialRampToValueAtTime(0.0001, t + 0.06)
+    n.connect(f).connect(gn).connect(ac.destination)
+    n.start(t)
+  } catch {
+    // Sin sonido: no pasa nada.
+  }
 }
 
 /** Cámara lenta que corresponde a una animación: la suya o la general. */

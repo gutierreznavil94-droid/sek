@@ -99,8 +99,9 @@ export function VerAnimaciones() {
           ))}
         </div>
         <p className="ayuda">Si el teléfono tiene «reducir movimiento», solo se ve un destello de color y el texto.</p>
-        <div className="selector-3" style={{ gridTemplateColumns: '1fr 1fr', marginTop: 10 }}>
-          <button className={`boton chico ${(a.temaAnimaciones ?? 'claro') === 'claro' ? 'primario' : ''}`} onClick={() => guardar({ temaAnimaciones: 'claro' }, 'Escenas sobre papel claro')}>Papel claro</button>
+        <div className="selector-3" style={{ marginTop: 10 }}>
+          <button className={`boton chico ${(a.temaAnimaciones ?? 'epico') === 'epico' ? 'primario' : ''}`} onClick={() => guardar({ temaAnimaciones: 'epico' }, 'Escenas con fondo épico')}>Épico</button>
+          <button className={`boton chico ${a.temaAnimaciones === 'claro' ? 'primario' : ''}`} onClick={() => guardar({ temaAnimaciones: 'claro' }, 'Escenas sobre papel claro')}>Papel claro</button>
           <button className={`boton chico ${a.temaAnimaciones === 'oscuro' ? 'primario' : ''}`} onClick={() => guardar({ temaAnimaciones: 'oscuro' }, 'Escenas oscuras')}>Fondo oscuro</button>
         </div>
         <label className="fila chico" style={{ gap: 8, marginTop: 10 }}>

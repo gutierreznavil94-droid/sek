@@ -36,15 +36,15 @@ export function repsDelDia(c: Contador, fecha: FechaDia): number {
 }
 
 /** Escalones de reps por serie: el valor inicial y cada cambio con su fecha. */
-export function subidasDeReps(c: Contador): { desde: FechaDia; reps: number }[] {
+export function subidasDeReps(c: Contador): { desde: FechaDia; reps: number; cuota: number }[] {
   const h = c.historialCuota ?? []
-  const r: { desde: FechaDia; reps: number }[] = []
+  const r: { desde: FechaDia; reps: number; cuota: number }[] = []
   for (const x of h) {
     const reps = x.porToque ?? c.cantidadPorToque
-    if (r.length && r[r.length - 1].reps === reps) continue
-    r.push({ desde: x.desde, reps })
+    if (r.length && r[r.length - 1].reps === reps && r[r.length - 1].cuota === x.cuota) continue
+    r.push({ desde: x.desde, reps, cuota: x.cuota })
   }
-  if (!r.length) r.push({ desde: '0000-01-01', reps: c.cantidadPorToque })
+  if (!r.length) r.push({ desde: '0000-01-01', reps: c.cantidadPorToque, cuota: c.metaDiaria })
   return r
 }
 

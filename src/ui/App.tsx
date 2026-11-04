@@ -17,6 +17,7 @@ import { Layout } from './Layout'
 import { Acciones } from './paginas/Acciones'
 import { Ajustes } from './paginas/Ajustes'
 import { Recomendar } from './paginas/Recomendar'
+import { RecomendacionesCreador } from './paginas/RecomendacionesCreador'
 import { reintentarPendientes } from '../services/recomendaciones'
 import { Sueno } from './paginas/Sueno'
 import { AlarmasTelefono } from './paginas/AlarmasTelefono'
@@ -224,6 +225,7 @@ function Rutas() {
         <Route path="/mas/sincronizar" element={<Sincronizar />} />
         <Route path="/mas/ajustes" element={<Ajustes />} />
         <Route path="/mas/recomendar" element={<Recomendar />} />
+        <Route path="/mas/creador" element={<RecomendacionesCreador hoy={hoy} />} />
         <Route path="/mas/tema" element={<TemaYNombres />} />
         <Route path="/mas/comida" element={<MasComida hoy={hoy} />} />
         <Route path="/comida" element={<Comida hoy={hoy} />} />

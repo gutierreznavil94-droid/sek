@@ -73,7 +73,9 @@ function EditarContador({ contador, atributos, onCerrar }: { contador: Contador 
   const [nombre, setNombre] = useState(contador?.nombre ?? '')
   const [porToque, setPorToque] = useState(contador?.cantidadPorToque ?? 10)
   const [series, setSeries] = useState(contador ? seriesDe(contador) : 5)
-  const metaDiaria = porToque * series
+  const [cuotaAMano, setCuotaAMano] = useState(contador?.cuotaAMano ?? false)
+  const [cuotaManual, setCuotaManual] = useState(contador?.metaDiaria ?? 50)
+  const metaDiaria = cuotaAMano ? cuotaManual : porToque * series
   const [extraManual, setExtraManual] = useState<number | null>(contador?.metaExtra !== undefined && contador.metaExtra !== extraPorDefecto(contador.metaDiaria) ? contador.metaExtra : null)
   const extra = extraManual ?? extraPorDefecto(metaDiaria)
   const [xpExtra, setXpExtra] = useState(contador?.xpExtra ?? 5)
@@ -83,7 +85,7 @@ function EditarContador({ contador, atributos, onCerrar }: { contador: Contador 
   const [activo, setActivo] = useState(contador?.activo ?? true)
   const [errores, setErrores] = useState<string[]>([])
   const guardar = async () => {
-    const base = { id: contador?.id ?? nuevoIdContador(), nombre, cantidadPorToque: porToque, seriesPorDia: series, metaDiaria, metaSemanal: metaSemanal > 0 ? metaSemanal : undefined, xpMetaDiaria: xp, metaExtra: extra, xpExtra, atributoIds, activo, ...(contador ? { pasoSubida: contador.pasoSubida, historialCuota: contador.historialCuota, proximaPropuesta: contador.proximaPropuesta } : {}) }
+    const base = { id: contador?.id ?? nuevoIdContador(), nombre, cantidadPorToque: porToque, seriesPorDia: series, metaDiaria, cuotaAMano, metaSemanal: metaSemanal > 0 ? metaSemanal : undefined, xpMetaDiaria: xp, metaExtra: extra, xpExtra, atributoIds, activo, ...(contador ? { pasoSubida: contador.pasoSubida, historialCuota: contador.historialCuota, proximaPropuesta: contador.proximaPropuesta } : {}) }
     const errs = validarContador(base)
     if (errs.length) return setErrores(errs)
     await mutar(() => guardarContador(base))
@@ -96,13 +98,19 @@ function EditarContador({ contador, atributos, onCerrar }: { contador: Contador 
       <div className="rejilla-2">
         <div className="campo"><label>Reps por serie</label><input type="number" inputMode="numeric" min={1} value={porToque} onChange={(e) => setPorToque(Number(e.target.value))} /><span className="ayuda">Cada toque suma esto.</span></div>
         <div className="campo"><label>Series por día</label><input type="number" inputMode="numeric" min={1} value={series} onChange={(e) => setSeries(Number(e.target.value))} /><span className="ayuda">5 por defecto.</span></div>
-        <div className="campo"><label>Cuota diaria</label><output className="campo-calculado mono">{metaDiaria > 0 ? metaDiaria : '—'}</output><span className="ayuda">{porToque} × {series} series</span></div>
+        <div className="campo"><label>Cuota diaria</label>
+          {cuotaAMano
+            ? <input type="number" inputMode="numeric" min={1} value={cuotaManual} onChange={(e) => setCuotaManual(Number(e.target.value))} />
+            : <output className="campo-calculado mono">{metaDiaria > 0 ? metaDiaria : '—'}</output>}
+          <span className="ayuda">{cuotaAMano ? 'Fija: no cambia al subir las reps' : `${porToque} × ${series} series`}</span>
+        </div>
         <div className="campo"><label>Extra</label><input type="number" inputMode="numeric" min={1} value={extra} onChange={(e) => setExtraManual(Number(e.target.value))} /><span className="ayuda">{extraManual === null ? '1,5 × la cuota' : <button type="button" className="enlace" onClick={() => setExtraManual(null)}>volver a 1,5 × cuota</button>}</span></div>
         <div className="campo"><label>XP de la cuota</label><input type="number" inputMode="numeric" min={0} max={100} value={xp} onChange={(e) => setXp(Number(e.target.value))} /></div>
         <div className="campo"><label>XP del extra</label><input type="number" inputMode="numeric" min={0} max={100} value={xpExtra} onChange={(e) => setXpExtra(Number(e.target.value))} /></div>
         <div className="campo"><label>Meta semanal (opcional)</label><input type="number" inputMode="numeric" min={0} value={metaSemanal} onChange={(e) => setMetaSemanal(Number(e.target.value))} /></div>
       </div>
       <div className="campo"><label>Atributo que alimenta</label><Chips opciones={atributos} valor={atributoIds} onChange={setAtributoIds} multiple /></div>
+      <label className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={cuotaAMano} onChange={(e) => { setCuotaAMano(e.target.checked); if (e.target.checked) setCuotaManual(metaDiaria) }} /> Cuota a mano (en vez de reps × series)</label>
       {contador && <label className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={activo} onChange={(e) => setActivo(e.target.checked)} /> Activo (aparece en Hoy)</label>}
       {errores.map((e) => <p key={e} className="error">{e}</p>)}
       <button className="boton primario ancho" onClick={guardar}>Guardar</button>

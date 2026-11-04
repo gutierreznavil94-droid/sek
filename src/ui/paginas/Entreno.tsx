@@ -54,9 +54,10 @@ import {
   type ResultadoTerminar,
 } from '../../services/entreno'
 import { db } from '../../data/db'
+import { obtenerAjustes } from '../../services/base'
 import { ahora } from '../../services/reloj'
 import { celebrarNivel, celebrarRecord } from '../animaciones/logros'
-import { animar } from '../animaciones/motor'
+import { animar, sonarTaiko } from '../animaciones/motor'
 import { Avisos, Confirmar, Hoja } from '../componentes'
 import { AguadaFondo, TintaPolvo } from '../TintaPolvo'
 import { ShinobiBarra } from '../Shinobi'
@@ -416,7 +417,7 @@ function Ejercicio({ s, b, anterior, record }: { s: SesionEntreno; b: BloqueEjer
       <p className="ayuda centro">Las repeticiones las anotás en el descanso.</p>
       {hechas.length > 0 && (
         <div className="entreno-hoy chico">
-          {hechas.map((x) => <button key={x.n} className={`marca ${marcaSerie(x, anterior.find((a) => a.n === x.n)) ?? ''}`} onClick={() => setCorregir(x)}>S{x.n}: {reps(x)} × {kg(x.peso)} ✎</button>)}
+          {hechas.map((x) => <button key={x.n} className={`marca ${marcaSerie(x, anterior.find((a) => a.n === x.n)) ?? ''}`} onClick={() => setCorregir(x)}>S{x.n}: {reps(x)} × {kg(x.peso)}{x.segundos !== undefined ? <span className="texto-3"> · {x.segundos} s</span> : null} ✎</button>)}
         </div>
       )}
       {b.admiteAyuda && <p className="ayuda">Las reps con ayuda quedan en el historial y suman al volumen, pero no cuentan para el récord ni para subir peso.</p>}
@@ -484,12 +485,15 @@ function Descanso({ s, fase, r, ctx }: { s: SesionEntreno; fase: NonNullable<Ret
   // Ámbar a 10 s del final (con una vibración) y otra vibración a 3 s: para alistarse.
   const ambar = fase.totalRestante <= AVISO_FIN_DESCANSO_S && f.tipo !== 'preparar'
   const avisado = useRef<Set<string>>(new Set())
+  const ajustes = useDatos(() => obtenerAjustes(), [])
+  const conTaiko = ajustes.datos?.sonidoAviso10s !== false
   useEffect(() => {
     const k = (x: string) => `${s.descanso!.inicio}:${x}`
     if (f.tipo === 'preparar' && !avisado.current.has(k(`p${fase.restante}`))) { avisado.current.add(k(`p${fase.restante}`)); vibrar(fase.restante === 1 ? 160 : 70) }
-    if (fase.totalRestante <= AVISO_FIN_DESCANSO_S && fase.totalRestante > 3 && !avisado.current.has(k('10'))) { avisado.current.add(k('10')); vibrar(120) }
+    // A 10 s: vibra y, una sola vez, un golpe de taiko para alistarse (a 3 s y al final no suena).
+    if (fase.totalRestante <= AVISO_FIN_DESCANSO_S && fase.totalRestante > 3 && !avisado.current.has(k('10'))) { avisado.current.add(k('10')); vibrar(120); if (conTaiko) sonarTaiko() }
     if (fase.totalRestante <= 3 && fase.totalRestante > 0 && !avisado.current.has(k('3'))) { avisado.current.add(k('3')); vibrar([80, 60, 80]) }
-  }, [f.tipo, fase.restante, fase.totalRestante, s.descanso])
+  }, [f.tipo, fase.restante, fase.totalRestante, s.descanso, conTaiko])
   const despuesDeBarra = !!s.descanso!.origen
   const total = s.descanso!.fases.reduce((t, x) => t + x.segundos, 0)
   const capaParry = useCapaParry(f.tipo === 'preparar')
@@ -522,7 +526,7 @@ function Descanso({ s, fase, r, ctx }: { s: SesionEntreno; fase: NonNullable<Ret
       ) : (
         <TarjetaSigue x={ctx.sigueDescanso} grande titulo={despuesDeBarra ? 'Sigue' : undefined} />
       )}
-      {u && <div className="entreno-cuantas"><CorregirSerie s={s} b={u.bloque} x={u.serie} ref_={u.anterior.find((a) => a.n === u.serie.n)} conPeso={false} titulo={`${u.bloque.nombre} · serie ${u.serie.n} · ¿cuántas hiciste?`} /></div>}
+      {u && <div className="entreno-cuantas"><CorregirSerie s={s} b={u.bloque} x={u.serie} ref_={u.anterior.find((a) => a.n === u.serie.n)} conPeso={false} titulo={`${u.bloque.nombre} · serie ${u.serie.n}${u.serie.segundos !== undefined ? ` · ${u.serie.segundos} s` : ''} · ¿cuántas hiciste?`} /></div>}
       <div className="botonera">
         <button className="boton grande" onClick={() => mutar(() => alargarDescanso(s.id!, 30))}>+30 s</button>
         <button className="boton grande primario" onClick={() => mutar(() => terminarDescanso(s.id!))}>Saltar descanso</button>

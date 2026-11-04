@@ -6,7 +6,7 @@ import { inicializarSiHaceFalta, obtenerAjustes, obtenerIdentidad } from './base
 import { cicloActivo, iniciarCiclo } from './ciclo'
 import { pilaresDelDia } from './dia'
 import { exportarTodo } from './exportar'
-import { configurarPrimeraVez, necesitaPrimeraVez, validarPrimeraVez, type ConfigPrimeraVez } from './primeraVez'
+import { PILARES_DEL_CREADOR, agregarPilaresDelCreador, configurarPrimeraVez, necesitaPrimeraVez, pilaresDelCreadorQueTiene, validarPrimeraVez, type ConfigPrimeraVez } from './primeraVez'
 import { fijarAhora, reiniciarReloj } from './reloj'
 
 const Z = 'America/Argentina/Cordoba'
@@ -157,5 +157,21 @@ describe('temas', () => {
     expect(rutaTema('fondos/lluvia.mp4')).toBe('fondos/lluvia.mp4')
     expect(rutaTema('fondos/lluvia.mp4', otro)).toBe('temas/otro/lluvia.mp4')
     expect(saludoDe(otro, 'Lu')).toContain('Soy Shinobi')
+  })
+})
+
+describe('recomendaciones del creador (4 nov)', () => {
+  it('«Agregar los que me falten» suma los 4 pilares del creador que no tiene, sin pasar el máximo', async () => {
+    await configurarPrimeraVez(config({ pilares: [{ clave: 'entrenar', nombre: 'Entrenar', dias: [2, 4], horaLimite: '18:30', minutos: 25 }] }))
+    expect([...(await pilaresDelCreadorQueTiene())]).toEqual(['entrenar'])
+    const r = await agregarPilaresDelCreador('2026-11-02')
+    expect(r).toEqual(['Dormir a horario', 'Dibujar', 'Proyecto propio'])
+    expect((await pilaresDelCreadorQueTiene()).size).toBe(PILARES_DEL_CREADOR.length)
+    const dibujar = (await db().acciones.get('manga'))!
+    expect(dibujar).toMatchObject({ nombre: 'Dibujar', pilar: true, activa: true, horaLimite: '20:50', minutosMinimos: 15 })
+    // El pilar que ya tenía no se toca
+    expect((await db().acciones.get('entrenamiento'))!.horaLimiteInicio).toBe('18:30')
+    // Segunda vez: nada que agregar
+    expect(await agregarPilaresDelCreador('2026-11-02')).toEqual([])
   })
 })

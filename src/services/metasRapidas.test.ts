@@ -7,7 +7,7 @@ import { cerrarDiasPendientes } from './dia'
 import { exportarTodo } from './exportar'
 import { fijarAhora, reiniciarReloj } from './reloj'
 import { xpTotal } from './xp'
-import { crearMeta, crearMetaRapida, cumplirMeta, resolverMeta, desmarcarMeta, estadoVisible, graficoMetas, lineaDeMetas, metasPorDia, XP_META_RAPIDA } from './metas'
+import { crearMeta, crearMetaRapida, cumplirMeta, resolverMeta, desmarcarMeta, estadoEnDia, estadoVisible, graficoMetas, lineaDeMetas, metasPorDia, XP_META_RAPIDA } from './metas'
 
 const Z = 'America/Argentina/Cordoba'
 let n = 0
@@ -105,6 +105,49 @@ describe('metas rápidas por día', () => {
     expect(g.puestas).toBe(3)
     expect(g.porDia.get('2026-11-02')).toMatchObject({ cumplidas: 1, noCumplidas: 1, pendientes: 0 })
     expect(g.porDia.get('2026-11-04')).toMatchObject({ pendientes: 1 })
+  })
+
+  it('cumplida antes de tiempo: queda el día que se marcó, con el XP y el sello ese día; en su fecha dice cumplida el…', async () => {
+    const m = await crearMetaRapida('2026-11-05', 'Entregar el dibujo', '2026-11-02')
+    const antes = await xpTotal()
+    const r = await cumplirMeta(m.id) // hoy es el 2
+    expect(r.xp).toBe(XP_META_RAPIDA)
+    expect(await xpTotal()).toBe(antes + XP_META_RAPIDA)
+    const g = (await db().metas.get(m.id))!
+    expect(g.cumplidaEl).toBe('2026-11-02')
+    expect(g.fecha).toBe('2026-11-05') // la fecha original no se mueve
+    expect((await db().xp.where('fecha').equals('2026-11-02').toArray()).some((x) => x.origen === 'meta' && !x.anulado)).toBe(true)
+    expect((await db().xp.where('fecha').equals('2026-11-05').toArray()).some((x) => x.origen === 'meta' && !x.anulado)).toBe(false)
+    // Aparece los dos días: sello el 2, «adelantada» el 5
+    const porDia = await metasPorDia('2026-11-01', '2026-11-08')
+    expect(porDia.get('2026-11-02')?.map((x) => x.id)).toEqual([m.id])
+    expect(porDia.get('2026-11-05')?.map((x) => x.id)).toEqual([m.id])
+    expect(estadoEnDia(g, '2026-11-02', '2026-11-02')).toBe('cumplida')
+    expect(estadoEnDia(g, '2026-11-05', '2026-11-02')).toBe('adelantada')
+    expect(lineaDeMetas([g], '2026-11-02', '2026-11-02')).toBe('verde')
+    expect(lineaDeMetas([g], '2026-11-02', '2026-11-05')).toBeNull()
+    // El gráfico la cuenta una sola vez, el día real
+    const graf = await graficoMetas('2026-11-01', '2026-11-08', '2026-11-06')
+    expect(graf.cumplidas).toBe(1)
+    expect(graf.puestas).toBe(1)
+    expect(graf.porDia.get('2026-11-02')).toMatchObject({ cumplidas: 1 })
+    expect(graf.porDia.get('2026-11-05')).toMatchObject({ cumplidas: 0, noCumplidas: 0, pendientes: 0 })
+    // El tope de 2 por día cuenta en el día que se marcó
+    await cumplirMeta((await crearMetaRapida('2026-11-06', 'Otra', '2026-11-02')).id)
+    const tercera = await cumplirMeta((await crearMetaRapida('2026-11-07', 'Tercera', '2026-11-02')).id)
+    expect(tercera.conTope).toBe(true)
+    // Desmarcar la devuelve a su día
+    await desmarcarMeta(m.id)
+    expect((await db().metas.get(m.id))!.cumplidaEl).toBeUndefined()
+    expect(((await metasPorDia('2026-11-02', '2026-11-02')).get('2026-11-02') ?? []).map((x) => x.id)).not.toContain(m.id)
+  })
+
+  it('cumplida en su fecha: cumplidaEl es la misma fecha y no se duplica', async () => {
+    const m = await crearMetaRapida('2026-11-02', 'Hoy mismo', '2026-11-02')
+    await cumplirMeta(m.id)
+    const g = (await db().metas.get(m.id))!
+    expect(g.cumplidaEl).toBe('2026-11-02')
+    expect((await metasPorDia('2026-11-01', '2026-11-08')).get('2026-11-02')).toHaveLength(1)
   })
 
   it('exportar incluye las metas', async () => {

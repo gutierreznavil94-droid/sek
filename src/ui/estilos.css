@@ -1100,6 +1100,7 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 .meta-casilla { flex: none; width: 24px; height: 24px; border-radius: 7px 8px 6px 8px; border: 1.5px solid var(--texto-3); background: transparent; color: #0f1d16; font-weight: 900; font-size: 0.85rem; display: grid; place-items: center; cursor: pointer; padding: 0; }
 .meta-titulo { flex: 1; min-width: 0; font-size: 0.95rem; cursor: pointer; overflow-wrap: anywhere; }
 .meta-rapida.chica .meta-titulo { font-size: 0.88rem; }
+.meta-otro-dia { color: var(--texto-3); font-size: 0.8em; white-space: nowrap; }
 .meta-menu { flex: none; background: none; border: 0; color: var(--texto-3); font-size: 1.1rem; padding: 0 4px; min-width: 32px; min-height: 32px; cursor: pointer; }
 .meta-editar { flex: 1; min-width: 0; background: var(--fondo); color: var(--texto); border: 1px solid var(--borde); border-radius: 7px; padding: 6px 8px; font-size: 0.95rem; }
 .meta-opciones { position: absolute; right: 6px; top: calc(100% - 4px); z-index: 30; display: flex; flex-direction: column; min-width: 120px; background: var(--fondo-2); border: 1px solid var(--borde); border-radius: 10px; overflow: hidden; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); }
@@ -1414,6 +1415,21 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 .sr-escalones .sr-valor { fill: currentColor; font: 700 12px var(--mono, ui-monospace, monospace); }
 .sr-escalones .sr-valor.fin { opacity: .8; font-weight: 600; }
 .sr-escalones .sr-fecha { fill: currentColor; opacity: .7; font-size: 10px; }
+/* «Así lo usa el creador» */
+.pv-creador { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(176, 124, 48, 0.45); background: rgba(176, 124, 48, 0.06); }
+.pv-creador-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.pv-creador-lista li { display: flex; align-items: center; gap: 10px; font-size: 0.95rem; }
+.pv-creador-lista li.tiene { color: var(--texto-2); }
+
+/* Recordatorio tenue para dormir: franja carbón al pie, borde ámbar apagado, sin brillo */
+.franja-dormir { position: fixed; left: 12px; right: 12px; bottom: calc(var(--nav-alto) + 10px + env(safe-area-inset-bottom)); z-index: 18; max-width: 616px; margin: 0 auto; display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 12px; background: rgba(18, 17, 16, 0.9); border: 1px solid rgba(176, 124, 48, 0.55); color: #cfc7b8; text-align: left; cursor: pointer; animation: franja-dormir-entra 0.6s ease; }
+.franja-dormir-kanji { font-family: var(--pincel, serif); font-size: 1.5rem; color: rgba(176, 124, 48, 0.8); line-height: 1; }
+.franja-dormir-texto { flex: 1; font-size: 0.92rem; line-height: 1.3; }
+.franja-dormir-hora { color: rgba(176, 124, 48, 0.9); font-size: 0.85rem; }
+@keyframes franja-dormir-entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.sr-escalones .av-prog-tiempo { fill: none; stroke: currentColor; stroke-opacity: .35; stroke-width: 1.5; stroke-dasharray: 3 3; }
+.sr-escalones .sr-cuota { fill: currentColor; opacity: .5; font: 600 10px var(--mono, ui-monospace, monospace); }
 .sr-dias { display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 3px; }
 .sr-dia { aspect-ratio: 1; min-height: 0; padding: 0; border: 0; border-radius: 4px; cursor: pointer; display: inline-block; }
 .sr-dia.no { background: rgba(var(--papel-rgb), .16); }
@@ -1939,3 +1955,22 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .rec-sello .rec-kanji { animation: rec-sello .7s cubic-bezier(.175,.885,.32,1.275) both; }
 @keyframes rec-sello { 0% { opacity: 0; transform: scale(1.6) rotate(-10deg) } 100% { opacity: 1; transform: scale(1) rotate(-4deg) } }
 .rec-fila { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-top: 1px solid var(--borde); }
+
+/* ---------- Fondo épico de las escenas: carbón, cielo de lluvia, sin golpe de blanco ---------- */
+.sh-capa.epica { --sh-papel: #121110; --sh-tinta: #141414; --sh-tinta-2: #2e2c2c; --sh-tinta-seca: #3a3836; --sh-enemigo: #2a2a2e; --sh-enemigo-2: #3c3c42; --sh-lejos: #1d1c1b; --sh-lejos-2: #171615; --sh-piedra: #4a4740; --sh-texto: #f1ece2; --sh-texto-2: #b5aea2; background: #121110; animation: sh-entrar 250ms ease-out both; }
+.sh-capa.epica.parry-video { animation: sh-entrar 250ms ease-out both, sh-pv-sale calc(var(--dur) * .08) ease-in calc(var(--dur) * .92) forwards; }
+.sh-epico { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.sh-epico-cielo { position: absolute; inset: -4%; background-size: cover; background-position: center 30%; filter: blur(7px) brightness(.3) saturate(.6); }
+.sh-epico-lluvia { position: absolute; inset: -20% 0 0 0; background: repeating-linear-gradient(100deg, transparent 0 13px, rgba(230, 226, 214, .07) 13px 14px); animation: sh-epico-lluvia 1.1s linear infinite; }
+@keyframes sh-epico-lluvia { from { transform: translate(0, -40px) } to { transform: translate(-30px, 120px) } }
+.sh-capa.epica .sh-escenario { position: relative; }
+/* Personajes negros recortados con un hilo blanco, como tinta sobre tinta. */
+.sh-capa.epica .sh-escenario image { filter: drop-shadow(0 0 0.7px rgba(255, 255, 255, .95)) drop-shadow(0 0 0.4px rgba(255, 255, 255, .8)); }
+.sh-capa.epica .sh-enso { stroke: #e6e1d6; opacity: .12; }
+.sh-capa.epica .sh-lluvia { stroke: #cfcabf; opacity: .35; }
+/* El destello del impacto: relámpago gris claro, no pantalla blanca. */
+.sh-capa.epica .sh-pv-destello, .sh-capa.epica .sh-destello { fill: #c9ccd1; }
+.sh-capa.epica .sh-pv-brillo { fill: #e3e6e9; }
+.sh-capa.epica.reducida { animation: sh-flash-epico 700ms ease-out both; }
+@keyframes sh-flash-epico { 0% { background: #2a2a2e } 100% { background: #121110 } }
+.sh-capa.epica .sh-titulo { text-shadow: 0 2px 12px rgba(0,0,0,.8); }

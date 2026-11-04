@@ -34,7 +34,7 @@ import {
   terminarEntreno,
   ultimaVez,
 } from './entreno'
-import { DESCUENTO_S, PREPARACION_S, estadoCronometro, historialTiempo, iniciarReloj, terminarCronometro } from './entreno'
+import { DESCUENTO_S, PREPARACION_S, TOPE_SEGUNDOS_SERIE, duracionSerie, estadoCronometro, historialTiempo, iniciarReloj, terminarCronometro, terminarDescanso } from './entreno'
 import { ahora, avanzar, fijarAhora, reiniciarReloj } from './reloj'
 import { xpTotal } from './xp'
 
@@ -517,5 +517,40 @@ describe('ronda 8', () => {
     expect(s.reloj).toMatchObject({ segundos: 180, inicio: t0 + PREPARACION_S * 1000 })
     s = await saltarPreparacion(s.id!)
     expect(s.reloj!.inicio).toBe(t0)
+  })
+})
+
+describe('tiempo por serie (4 nov)', () => {
+  it('mide desde el fin del descanso (saltado o agotado) hasta «Serie hecha» y lo guarda en la serie', async () => {
+    dia('2026-11-02')
+    let s = await iniciarEntreno('rutina-a', '2026-11-02')
+    // Primera serie del entreno: sin punto de partida, queda sin medir
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
+    expect(seriesDe(s, 'a-press-banca')[0].segundos).toBeUndefined()
+    // Salta el descanso a los 20 s y hace la serie 2 en 38 s
+    avanzar(20_000)
+    s = await terminarDescanso(s.id!)
+    avanzar(38_000)
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
+    expect(seriesDe(s, 'a-press-banca')[1].segundos).toBe(38)
+    // Deja que el descanso (1:30) se agote solo y hace la serie 3 en 45 s después del fin
+    const total = s.descanso!.fases.reduce((a, f) => a + f.segundos, 0)
+    avanzar(total * 1000 + 45_000)
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
+    expect(seriesDe(s, 'a-press-banca')[2].segundos).toBe(45)
+    // Si toca «Serie hecha» con el descanso aún corriendo, cuenta 0 s (no negativo)
+    avanzar(5_000)
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
+    expect(seriesDe(s, 'a-press-banca')[3].segundos).toBe(0)
+    // Más de 30 min: no se mide (la app quedó abierta)
+    expect(duracionSerie({ serieDesde: ahora() - (TOPE_SEGUNDOS_SERIE + 1) * 1000 }, ahora())).toBeUndefined()
+    // Progreso → Fuerza: promedio del día; sesiones viejas sin tiempo muestran nada
+    avanzar(60_000)
+    await terminarEntreno(s.id!)
+    const prog = await progresionEjercicio('a-press-banca')
+    expect(prog.puntos[0].segundos).toBe(Math.round((38 + 45 + 0) / 3))
+    const vieja = (await db().sesionesEntreno.get(s.id!))!
+    await db().sesionesEntreno.put({ ...vieja, series: vieja.series.map(({ segundos: _s, ...x }) => { void _s; return x }) })
+    expect((await progresionEjercicio('a-press-banca')).puntos[0].segundos).toBeUndefined()
   })
 })

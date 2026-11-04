@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { temaActivo } from '../../temas/temas'
 import { movimientoReducido } from '../componentes'
 import { KANJI, duracionDe, elegirCorte, nombreDePilar, useAnimacionActual, type EnCurso, type EstiloCorte } from './motor'
 import { Munieco, Sombrero, poseEn, puntoBoca, puntoMano, puntosKatana, useSecuenciaDOM, type Clave } from './munieco'
@@ -240,7 +241,7 @@ export function Enemigo({ variante = 'ronin', sinArma }: { variante?: VarianteEn
 
 // ---------- Fondo: papel, montañas lejanas, pájaros, rama seca, motas y suelo de pincel ----------
 
-function Fondo({ tinte, lluvia }: { tinte?: string; lluvia?: boolean }) {
+function Fondo({ tinte, lluvia, epico }: { tinte?: string; lluvia?: boolean; epico?: boolean }) {
   return (
     <g>
       <defs>
@@ -254,8 +255,8 @@ function Fondo({ tinte, lluvia }: { tinte?: string; lluvia?: boolean }) {
           <feDisplacementMap in="SourceGraphic" in2="r" scale="2.5" xChannelSelector="R" yChannelSelector="G" />
         </filter>
       </defs>
-      <rect x={0} y={0} width={360} height={240} fill="var(--sh-papel)" />
-      <rect className="sh-grano" x={0} y={0} width={360} height={240} filter="url(#shPapel)" />
+      {!epico && <rect x={0} y={0} width={360} height={240} fill="var(--sh-papel)" />}
+      {!epico && <rect className="sh-grano" x={0} y={0} width={360} height={240} filter="url(#shPapel)" />}
       {tinte && <rect className="sh-tinte" x={0} y={0} width={360} height={240} fill={tinte} />}
       {/* Montañas lejanas, en gris suave */}
       <g filter={TINTA_ESCURRIDA}>
@@ -716,7 +717,18 @@ function Logro({ clase, dur, enemigo }: { clase: 'nivel' | 'racha' | 'fase' | 'r
 
 // ---------- Capa: superpone la escena actual sobre toda la app ----------
 
-export function Escena({ a, nombre, lento = 1, tema = 'claro', tinta = true, onSaltar }: { a: EnCurso; nombre: string; lento?: number; tema?: 'claro' | 'oscuro'; tinta?: boolean; onSaltar: () => void }) {
+/** Fondo épico: carbón con el cielo de lluvia de Progreso desenfocado y oscurecido, y lluvia fina. Sin paso por blanco. */
+function FondoEpico() {
+  const img = `${import.meta.env.BASE_URL}${temaActivo().carpetaFondos}lluvia.jpg`
+  return (
+    <div className="sh-epico" aria-hidden>
+      <div className="sh-epico-cielo" style={{ backgroundImage: `url(${img})` }} />
+      <div className="sh-epico-lluvia" />
+    </div>
+  )
+}
+
+export function Escena({ a, nombre, lento = 1, tema = 'epico', tinta = true, onSaltar }: { a: EnCurso; nombre: string; lento?: number; tema?: 'claro' | 'oscuro' | 'epico'; tinta?: boolean; onSaltar: () => void }) {
   const dur = duracionDe(a) * lento
   const reducido = movimientoReducido()
   const estilo = useMemo<EstiloCorte>(() => (a.tipo === 'ejecucion' ? a.estilo ?? elegirCorte(a.pilar) : 'diagonal'), [a])
@@ -748,7 +760,8 @@ export function Escena({ a, nombre, lento = 1, tema = 'claro', tinta = true, onS
     kanji = '弾'
   }
 
-  const temaClase = `${tema === 'oscuro' ? 'oscura' : ''} ${tinta ? '' : 'sin-tinta'}`
+  const epico = tema === 'epico'
+  const temaClase = `${tema === 'oscuro' ? 'oscura' : epico ? 'oscura epica' : ''} ${tinta ? '' : 'sin-tinta'}`
   if (reducido) {
     // Sin movimiento: solo un destello de color y el texto.
     if (a.tipo === 'parry' && a.vieja) return null
@@ -767,8 +780,9 @@ export function Escena({ a, nombre, lento = 1, tema = 'claro', tinta = true, onS
   const luma = (a.tipo === 'postura' || a.tipo === 'logro') && !a.vieja
   return (
     <div className={`sh-capa ${parry ? 'parry-chico' : ''} ${parryVideo ? 'parry-video' : ''} ${luma ? 'luma' : ''} ${a.tipo} ${temaClase}`} style={{ '--dur': `${dur}ms` } as CSSProperties} onPointerDown={parry ? undefined : onSaltar} role="status" aria-label={a.tipo === 'parry' ? 'Parry' : typeof titulo === 'string' ? titulo : 'Animación de logro'}>
+      {epico && <FondoEpico />}
       <svg className="sh-escenario" viewBox="0 0 360 240" aria-hidden>
-        <Fondo tinte={a.tipo === 'postura' ? color : undefined} lluvia={a.tipo === 'logro'} />
+        <Fondo tinte={a.tipo === 'postura' ? color : undefined} lluvia={a.tipo === 'logro' || epico} epico={epico} />
         {a.tipo === 'ejecucion' && (a.vieja ? <Ejecucion estilo={estilo} kanji={kanji} dur={dur} enemigo={enemigo} /> : <EjecucionVideo kanji={kanji} dur={dur} oscuro={tema === 'oscuro'} />)}
         {a.tipo === 'parry' && (a.vieja ? <Parry dur={dur} /> : <ParryVideo dur={dur} oscuro={tema === 'oscuro'} />)}
         {a.tipo === 'postura' && (a.vieja ? <Postura modo={a.modo} dur={dur} /> : <PosturaVideo modo={a.modo} dur={dur} oscuro={tema === 'oscuro'} />)}

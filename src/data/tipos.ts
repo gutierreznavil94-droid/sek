@@ -130,6 +130,8 @@ export type Meta = {
   /** XP que da al cumplirse (metas propias). */
   xp?: number
   resueltaEn?: number
+  /** Día en que se marcó cumplida. Si se cumplió antes de la fecha, el sello y el XP van a este día. */
+  cumplidaEl?: FechaDia
   /** Compatibilidad con versiones anteriores; `estado` manda. */
   cumplida?: boolean
   nota?: string
@@ -154,6 +156,8 @@ export type Contador = {
   pasoSubida?: number
   /** Series por día (por defecto 5). La cuota es reps por serie × series. */
   seriesPorDia?: number
+  /** Cuota fijada a mano: no se recalcula al subir las reps por serie. */
+  cuotaAMano?: boolean
   /** Cuántas reps por serie sube cuando la app lo propone (por defecto 1). */
   pasoReps?: number
   /** Cambios de cuota: cada uno vale desde su fecha. Los días anteriores conservan la que tenían. */
@@ -285,10 +289,19 @@ export type Ajustes = {
   animaciones: 'todas' | 'logros' | 'ninguna'
   /** Sonido de las animaciones (generado por la app). Apagado al inicio. */
   sonidoAnimaciones: boolean
+  /** Recordatorio tenue en Hoy para alistarse a dormir: cuántos minutos antes de «Dejo celu» (30 si falta). */
+  minutosAvisoDormir?: number
+  /** Frases del recordatorio, rotan una por noche. Si falta, las tres de la app. */
+  frasesDormir?: string[]
+  /** Golpe de taiko una sola vez a 10 s del fin del descanso (independiente del sonido de animaciones). Encendido si falta. */
+  sonidoAviso10s?: boolean
   /** Nombre del personaje de las animaciones (provisional). */
   nombrePersonaje: string
   /** Fondo de las escenas: papel claro (como la referencia) u oscuro. */
-  temaAnimaciones: 'claro' | 'oscuro'
+  /** Fondo de las escenas: épico (oscuro con cielo de lluvia), papel claro u oscuro liso. */
+  temaAnimaciones: 'claro' | 'oscuro' | 'epico'
+  /** Ya se pasó al fondo épico por defecto (4 nov 2026). */
+  fondoEpicoAplicado?: boolean
   ultimaExportacion?: number
   diaInicioSemana: 1
   /** Tema elegido (carpeta de src/temas). Por defecto «shinobi». */
@@ -562,7 +575,7 @@ export type Rutina = {
 }
 
 /** `ayuda`: reps con ayuda (solo en ejercicios que la admiten). Quedan en el historial y suman al volumen, pero no cuentan para récord ni para subir peso. */
-export type SerieHecha = { bloqueId: string; n: number; reps: number; repsExtra?: number; ayuda?: number; peso: number; instante: number }
+export type SerieHecha = { bloqueId: string; n: number; reps: number; repsExtra?: number; ayuda?: number; peso: number; instante: number; /** Cuánto duró la serie (desde que terminó el descanso anterior hasta «Serie hecha»). Falta en sesiones viejas. */ segundos?: number }
 
 /** Fase del descanso: sombra, descansar o acomodar para el siguiente ejercicio. */
 export type FaseDescanso = { tipo: 'preparar' | 'sombra' | 'descanso' | 'acomodar'; segundos: number; texto: string }
@@ -592,6 +605,8 @@ export type SesionEntreno = {
   tiempos?: TiempoHecho[]
   /** Descanso en marcha: para retomarlo si la app se cierra. */
   descanso?: { inicio: number; fases: FaseDescanso[]; /** Bloque que no es ejercicio después del cual corre (colgarse en barra). */ origen?: string }
+  /** Desde cuándo corre la serie en curso (se fija al terminar el descanso o al pasar de bloque). */
+  serieDesde?: number
   /** Temporizador en marcha (calentamiento, colgarse, rondas). */
   reloj?: { bloqueId: string; ronda: number; inicio: number; segundos: number }
   xpExtra?: number

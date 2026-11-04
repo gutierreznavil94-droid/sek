@@ -74,6 +74,14 @@ export async function inicializarSiHaceFalta(): Promise<void> {
   await cargarRutinasIniciales()
   await sembrarCodigo()
   await equilibrarXp()
+  await fondoEpicoPorDefecto()
+}
+
+/** 4 nov 2026: las escenas pasan al fondo épico oscuro (sin golpe de blanco), una sola vez; después manda lo que elija la persona. */
+async function fondoEpicoPorDefecto(): Promise<void> {
+  const a = await obtenerAjustes()
+  if (a.fondoEpicoAplicado) return
+  await guardarAjustes({ temaAnimaciones: 'epico', fondoEpicoAplicado: true }, 'Fondo épico de las animaciones')
 }
 
 /**
@@ -198,6 +206,7 @@ async function migrar(): Promise<void> {
   await cargarRutinasIniciales()
   await sembrarCodigo()
   await equilibrarXp()
+  await fondoEpicoPorDefecto()
 }
 
 export type EventoTipo = TipoEvento

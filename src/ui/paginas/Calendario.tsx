@@ -80,7 +80,7 @@ export function Calendario({ hoy }: { hoy: string }) {
             const enCiclo = ciclo && f >= ciclo.inicio && fin && f <= fin
             const dia = ciclo ? diaDelCiclo(ciclo.inicio, f) : 0
             const puntos = enCiclo ? d?.pilares.get(f) ?? [] : []
-            const linea = lineaDeMetas(d?.metas.get(f) ?? [], hoy)
+            const linea = lineaDeMetas(d?.metas.get(f) ?? [], hoy, f)
             const inicioFase = enCiclo && ciclo && (dia - 1) % ciclo.diasPorFase === 0
             const claves = d?.claves.get(f) ?? []
             const franjas = d?.bloques.get(f) ?? []
@@ -174,7 +174,7 @@ function PilaresDelDiaSel({ fecha, hoy, ciclo, enfocar, onMas }: { fecha: string
       {/* Lo primero: escribir una meta (hoy y días futuros). En días pasados, solo marcar. */}
       <div className="metas-del-dia">
         {fecha >= hoy && <CampoMeta fecha={fecha} hoy={hoy} enfocar={enfocar} />}
-        {d.metas.map((m) => <FilaMeta key={m.id} m={m} hoy={hoy} />)}
+        {d.metas.map((m) => <FilaMeta key={m.id} m={m} hoy={hoy} dia={fecha} />)}
         {fecha < hoy && d.metas.length === 0 && <p className="muy-chico texto-3">Sin metas ese día. En días pasados no se agregan.</p>}
       </div>
       <FechasClaveDelDia fecha={fecha} />
