@@ -17,7 +17,7 @@ import { useDatos } from '../estado'
 import { graficoMetas, lineaDeMetas, metasPorDia } from '../../services/metas'
 import { FilaMeta } from '../metas'
 import { VERSION_APP } from '../../version'
-import { rutaTema, simbolo } from '../../temas/temas'
+import { rutaTema, simbolo, temaActivo } from '../../temas/temas'
 import { resumenComida, type ResumenComida } from '../../services/comidas'
 import { SeccionComida } from './Comida'
 import { VIDEOS, VIDRIO_EN_DESTELLO, intensidadDestello, type VideoFondo, elegirVideo, useModoFondo, usePantallaHorizontal, VIDEO_PC, video as datosVideo } from '../../fondos/elegir'
@@ -204,7 +204,7 @@ export function Progreso({ hoy }: { hoy: string }) {
   const fondo = d ? (horizontal ? VIDEO_PC : datosVideo(elegirVideo(modo, hoy, d.estado?.ciclo.inicio))) : null
 
   return (
-    <div className="progreso-tinta" data-fondo={fondo?.tipo ?? 'oscuro'} data-vidrio={vidrioClaro() && fondo?.tipo === 'claro' ? 'claro' : undefined} style={{ '--av-arriba': `${arriba}px` } as React.CSSProperties}>
+    <div className="progreso-tinta" data-fondo={fondo?.tipo ?? 'oscuro'} data-vidrio={(vidrioClaro() && fondo?.tipo === 'claro') || temaActivo().vidrio === 'claro' ? 'claro' : undefined} style={{ '--av-arriba': `${arriba}px` } as React.CSSProperties}>
       {/* Fondo fijo: el video vertical cubre toda la pantalla y no se mueve al desplazar */}
       {createPortal(
         <div className="av-fondo" aria-hidden="true" data-orientacion={horizontal ? 'horizontal' : undefined} data-vista={seccion ? 'codigo' : undefined}>

@@ -30,6 +30,8 @@ export interface DefinicionTema {
   orden?: number
   /** `true`: el tema existe pero no aparece en la lista (se está armando). Se ve igual con VITE_TEMAS_OCULTOS=1. */
   oculto?: boolean
+  /** Tarjetas de Progreso: vidrio oscuro (Shinobi) o claro, para temas de fondo claro. */
+  vidrio?: 'oscuro' | 'claro'
   /** Adornos del tema. Lo que falte queda como en Shinobi. */
   adornos?: AdornosTema
 }

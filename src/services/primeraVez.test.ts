@@ -171,6 +171,7 @@ describe('temas', () => {
     expect(adorno('aves', s)).toBe('pajaros')
     expect(adorno('cumplir', s)).toBe('corte')
     expect(s.adornos?.numerosComunes).toBeFalsy()
+    expect(s.vidrio).toBeUndefined()
   })
 
   it('un tema puede reemplazar símbolos y adornos', () => {
