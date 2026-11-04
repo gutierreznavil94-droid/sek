@@ -162,7 +162,7 @@ export function Desintegracion({ cabecera, texto }: { cabecera: RefObject<HTMLEl
       const tf = Math.max(0, t - 0.6)
       const dx = a.curva * Math.sin(tf * 2.2)
       const vuelo = Math.max(0, t - 1.1)
-      const imp = vuelo ** 1.35 * (estrellas ? 0.45 : 1) // las estrellitas flotan despacio
+      const imp = vuelo ** 1.35 * (estrellas ? 0.3 : 1) // las estrellitas flotan despacio
       return [a.cx + dx + a.vx * imp, a.cy - tf * 14 + a.vy * imp]
     }
 
