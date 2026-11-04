@@ -687,6 +687,8 @@ export type ConfigAgua = {
   principal: string
   /** Objetivo diario a mano, en ml. Sin esto se calcula del peso. */
   objetivoMl?: number
+  /** Cómo se ve en Hoy: chiquita dentro de la tarjeta de Comida (lo normal) o como tarjeta aparte. */
+  enHoy?: 'chica' | 'tarjeta'
 }
 
 /** Recomendación de un usuario: se manda a un formulario de Google de Navil; si no hay internet, espera. */

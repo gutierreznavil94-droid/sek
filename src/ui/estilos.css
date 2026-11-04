@@ -1861,6 +1861,12 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .agua-boton { background: none; border: 0; padding: 4px; margin: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none; border-radius: 16px; line-height: 0; }
 .agua-boton:active .agua-svg { transform: scale(.97); }
 .agua-boton.chico { padding: 0; }
+.agua-chica { flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 2px 6px; border-radius: 10px; }
+.agua-chica:active { background: var(--fondo-3); }
+.agua-chica .agua-svg { overflow: visible; }
+.agua-chica .agua-sello { font-size: 64px; }
+.agua-chica-ml { font-size: 0.6rem; line-height: 1; color: var(--texto-2); white-space: nowrap; }
+.agua-chica-ml.suma { color: var(--verde); font-weight: 700; }
 .agua-texto { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .agua-numero { font-size: 1.5rem; font-weight: 800; line-height: 1.1; }
 .agua-numero .texto-3 { font-size: 0.95rem; font-weight: 600; }

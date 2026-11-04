@@ -467,8 +467,8 @@ export function Hoy({ hoy }: { hoy: string }) {
         )}
       </section>
 
-      {/* Agua: la cantimplora, un toque y se llena */}
-      <TarjetaAgua hoy={hoy} />
+      {/* Agua como tarjeta aparte (lo normal es la chiquita dentro de Comida) */}
+      {ajustes.agua?.enHoy === 'tarjeta' && <TarjetaAgua hoy={hoy} />}
       {tajo && <Tajo onFin={cerrarTajo} />}
       {avisoDormir && (
         <button type="button" className="franja-dormir" onClick={() => { cerrarAvisoDormir(d.nocheAbierta); setAvisoDormirAbierto(false) }} aria-label="Recordatorio para dormir. Tocá para cerrarlo por esta noche.">

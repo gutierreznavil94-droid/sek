@@ -64,7 +64,7 @@ export function Cantimplora({ nivel, ancho = 150, chorro = false, sello = false,
 
 // ---------- Hoy ----------
 
-export function TarjetaAgua({ hoy }: { hoy: FechaDia }) {
+export function TarjetaAgua({ hoy, chica = false }: { hoy: FechaDia; chica?: boolean }) {
   const datos = useDatos(async () => ({ dia: await aguaDelDia(hoy), cfg: await configAgua(), zona: (await obtenerAjustes()).zonaHoraria }), [hoy])
   const [chorro, setChorro] = useState(false)
   const [sello, setSello] = useState(false)
@@ -90,6 +90,33 @@ export function TarjetaAgua({ hoy }: { hoy: FechaDia }) {
   const soltar = () => { if (largo.current) { window.clearTimeout(largo.current); largo.current = null } }
   const click = () => { if (fueLargo.current) { fueLargo.current = false; return } void tomar() }
   const pasado = Math.max(0, d.dia.ml - d.dia.objetivo)
+  const hojaEnvases = (
+    <Hoja abierta={hoja} onCerrar={() => setHoja(false)} titulo="Agua">
+      <HojaEnvases hoy={hoy} envases={d.cfg.config.envases} principal={d.cfg.principal.id} tomas={d.dia.tomas} zona={d.zona} onTomar={(id) => { setHoja(false); void tomar(id) }} onCerrar={() => setHoja(false)} />
+    </Hoja>
+  )
+  if (chica) {
+    // Chiquita, dentro de la tarjeta de Comida: un toque suma y se ve el chorro; mantené para otro envase.
+    return (
+      <>
+        <button
+          type="button"
+          className="agua-boton agua-chica"
+          onPointerDown={empezar}
+          onPointerUp={soltar}
+          onPointerLeave={soltar}
+          onPointerCancel={soltar}
+          onContextMenu={(e) => e.preventDefault()}
+          onClick={click}
+          aria-label={`Agua: llevás ${litros(d.dia.ml)} de ${litros(d.dia.objetivo)}. Tocá para sumar ${d.cfg.principal.nombre} de ${d.cfg.principal.ml} ml; mantené apretado para otro envase`}
+        >
+          <Cantimplora nivel={d.dia.nivel} ancho={26} chorro={chorro} sello={sello} />
+          <span className={`agua-chica-ml mono ${ultimo ? 'suma' : ''}`}>{ultimo ? `+${ultimo}` : litros(d.dia.ml)}</span>
+        </button>
+        {hojaEnvases}
+      </>
+    )
+  }
   return (
     <section className="agua-tarjeta" aria-label="Agua">
       <button
@@ -113,9 +140,7 @@ export function TarjetaAgua({ hoy }: { hoy: FechaDia }) {
         <span className="chico texto-2">{ultimo ? `+${ultimo} ml` : d.dia.llego ? (pasado > 0 ? 'Rebalsa: seguís sumando' : 'Objetivo del día cumplido') : d.dia.tomas.length ? `Faltan ${d.dia.objetivo - d.dia.ml >= 1000 ? litros(d.dia.objetivo - d.dia.ml) : `${d.dia.objetivo - d.dia.ml} ml`}` : 'Tocá la cantimplora'}</span>
         <span className="chico texto-3">Un toque = {d.cfg.principal.nombre.toLowerCase()} {d.cfg.principal.ml} ml · mantené para más</span>
       </div>
-      <Hoja abierta={hoja} onCerrar={() => setHoja(false)} titulo="Agua">
-        <HojaEnvases hoy={hoy} envases={d.cfg.config.envases} principal={d.cfg.principal.id} tomas={d.dia.tomas} zona={d.zona} onTomar={(id) => { setHoja(false); void tomar(id) }} onCerrar={() => setHoja(false)} />
-      </Hoja>
+      {hojaEnvases}
     </section>
   )
 }
@@ -192,6 +217,14 @@ export function ConfigAguaTarjeta() {
   return (
     <Tarjeta titulo="Agua">
       <p className="chico texto-2">La cantimplora de Hoy suma el envase principal con un toque. Mantené apretado para los otros.</p>
+      <div className="col" style={{ gap: 4 }}>
+        <span className="seccion-titulo">En Hoy</span>
+        <div className="fila" style={{ gap: 6 }}>
+          {([['chica', 'Chiquita, en Comida'], ['tarjeta', 'Tarjeta aparte']] as const).map(([v, t]) => (
+            <button key={v} className={`boton chico ${(d.config.enHoy ?? 'chica') === v ? 'primario' : 'suave'}`} aria-pressed={(d.config.enHoy ?? 'chica') === v} onClick={() => guardar({ enHoy: v }, v === 'chica' ? 'Agua chiquita en Comida' : 'Agua como tarjeta')}>{t}</button>
+          ))}
+        </div>
+      </div>
       <div className="col" style={{ gap: 6 }}>
         {envases.map((e) => (
           <div key={e.id} className="agua-envase-fila">

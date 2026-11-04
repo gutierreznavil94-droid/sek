@@ -11,7 +11,7 @@ import {
 import { db } from '../../data/db'
 import { Atras, Confirmar, Hoja, Tarjeta } from '../componentes'
 import { avisar, mutar, useDatos } from '../estado'
-import { AguaEnComida, ConfigAguaTarjeta, SeccionAgua, resumenAgua } from './Agua'
+import { AguaEnComida, ConfigAguaTarjeta, SeccionAgua, TarjetaAgua, resumenAgua } from './Agua'
 
 // ---------- Anillos ----------
 
@@ -43,7 +43,7 @@ export function AnilloComida({ valor, objetivo, etiqueta, unidad, tam = 72, alPa
 // ---------- Tarjeta de Hoy ----------
 
 export function TarjetaComida({ hoy }: { hoy: string }) {
-  const datos = useDatos(async () => ({ dia: await comidasDelDia(hoy), objetivo: (await obtenerAjustes()).comida }), [hoy])
+  const datos = useDatos(async () => { const a = await obtenerAjustes(); return { dia: await comidasDelDia(hoy), objetivo: a.comida, aguaChica: (a.agua?.enHoy ?? 'chica') === 'chica' } }, [hoy])
   const [cargar, setCargar] = useState(false)
   const d = datos.datos
   if (!d) return null
@@ -66,6 +66,7 @@ export function TarjetaComida({ hoy }: { hoy: string }) {
           </span>
         )}
       </Link>
+      {d.aguaChica && <TarjetaAgua hoy={hoy} chica />}
       {o ? <button className="boton primario co-comi" onClick={() => setCargar(true)}>+ Comí</button> : <Link to="/mas/comida" className="boton co-comi">Objetivo</Link>}
       {cargar && <CargarComida hoy={hoy} onCerrar={() => setCargar(false)} />}
     </section>
