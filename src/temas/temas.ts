@@ -50,6 +50,13 @@ export function completarTema(parcial: Partial<DefinicionTema>, carpeta: string,
   }
 }
 
+/**
+ * Estilos propios de un tema (cabecera, decoración): `src/temas/<id>/tema.css`, opcional.
+ * Cada regla tiene que empezar con `:root[data-tema="<id>"]`, así solo se aplica con ese tema
+ * activo y los demás (Shinobi) quedan idénticos. Lo verifica un test.
+ */
+import.meta.glob('./*/tema.css', { eager: true })
+
 const archivos = import.meta.glob<{ default: Partial<DefinicionTema> }>('./*/tema.json', { eager: true })
 const crudos = Object.entries(archivos).map(([ruta, m]) => ({ carpeta: ruta.split('/')[1], datos: m.default }))
 const crudoBase = crudos.find((c) => c.carpeta === TEMA_POR_DEFECTO)

@@ -28,8 +28,9 @@ Un tema es la cara de la app: personaje, fondos, sprite del entreno, color de ac
 
 Lo que falte en `tema.json` se completa con los valores de Shinobi: un tema puede arrancar con solo `nombre` y `descripcion`.
 
-3. Si el tema estaba en `src/temas/proximamente.json`, sacá su tarjeta de ahí.
-4. Publicar. La app encuentra sola cada carpeta con `tema.json` (y los tests verifican que Shinobi siga siendo el tema por defecto).
+3. **Estilos propios (opcional)** en `src/temas/<id>/tema.css`: cabecera, decoración, colores. Cada regla empieza con `:root[data-tema="<id>"]`, así solo se ve con ese tema; un test lo verifica y también que Shinobi no tenga `tema.css` (queda idéntico).
+4. Si el tema estaba en `src/temas/proximamente.json`, sacá su tarjeta de ahí.
+5. Publicar. La app encuentra sola cada carpeta con `tema.json` (y los tests verifican que Shinobi siga siendo el tema por defecto).
 
 ## Qué es del tema y qué no
 
