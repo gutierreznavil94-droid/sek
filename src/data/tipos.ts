@@ -275,6 +275,8 @@ export type Ajustes = {
   primeraVezHecha?: boolean
   /** Objetivo de comida (Más → Comida). Sin esto, la tarjeta de Hoy invita a configurarlo. */
   comida?: ObjetivoComida
+  /** Agua: envases propios, cuál es el del toque y objetivo a mano (sin esto, 35 ml por kilo del peso de Comida). */
+  agua?: ConfigAgua
   /** La app se armó en la primera vez: las migraciones de los pilares de Navil no se aplican. */
   aMedida?: boolean
 }
@@ -618,5 +620,19 @@ export type RegistroComida = {
 }
 
 export type RegistroPeso = { id: string; fecha: FechaDia; kg: number; instante: number }
+
+/** Envase de agua: un toque en la cantimplora de Hoy suma el principal. */
+export type EnvaseAgua = { id: string; nombre: string; ml: number }
+
+export type ConfigAgua = {
+  envases: EnvaseAgua[]
+  /** Id del envase que suma con un toque. */
+  principal: string
+  /** Objetivo diario a mano, en ml. Sin esto se calcula del peso. */
+  objetivoMl?: number
+}
+
+/** Una toma de agua (un toque). */
+export type TomaAgua = { id: string; fecha: FechaDia; ml: number; envase?: string; instante: number }
 
 export type ComidaGuardada = { id: string; nombre: string; items: { alimentoId: string; nombre: string; gramos: number }[]; creado: number }

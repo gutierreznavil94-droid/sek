@@ -271,7 +271,7 @@ export function Progreso({ hoy }: { hoy: string }) {
                   </>
                 )}
 
-                {seccion === 'comida' && <SeccionComida r={d.comida} />}
+                {seccion === 'comida' && <SeccionComida r={d.comida} hoy={hoy} />}
 
                 {seccion === 'series' && (
                   <section className="av-tarjeta">

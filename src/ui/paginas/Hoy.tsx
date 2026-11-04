@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import type { Compromiso } from '../../data/tipos'
 import { NOMBRES_FASES_INICIALES } from '../../data/semilla'
 import { TarjetaComida } from './Comida'
+import { TarjetaAgua } from './Agua'
 import { db } from '../../data/db'
 import { entrarModoPrueba } from '../../data/modoPrueba'
 import { diaSemanaDe, duracionLegible, fechaLegible, formatoHora, instanteDe, lunesDe, minutosDe, partesLocales, sumarDias } from '../../domain/fechas'
@@ -405,6 +406,9 @@ export function Hoy({ hoy }: { hoy: string }) {
           </p>
         )}
       </section>
+
+      {/* Agua: la cantimplora, un toque y se llena */}
+      <TarjetaAgua hoy={hoy} />
 
       {/* Comida: dos anillos (calorías y proteína) y «+ Comí» */}
       <TarjetaComida hoy={hoy} />

@@ -14,6 +14,7 @@ import type {
   FechaClave,
   AlimentoPropio,
   RegistroComida,
+  TomaAgua,
   RegistroPeso,
   ComidaGuardada,
   Atributo,
@@ -72,6 +73,7 @@ export class BaseDatos extends Dexie {
   fechasClave!: EntityTable<FechaClave, 'id'>
   alimentosPropios!: EntityTable<AlimentoPropio, 'id'>
   comidas!: EntityTable<RegistroComida, 'id'>
+  agua!: EntityTable<TomaAgua, 'id'>
   pesos!: EntityTable<RegistroPeso, 'id'>
   comidasGuardadas!: EntityTable<ComidaGuardada, 'id'>
   eventos!: EntityTable<Evento, 'id'>
@@ -129,6 +131,9 @@ export class BaseDatos extends Dexie {
       pesos: 'id, fecha',
       comidasGuardadas: 'id',
     })
+    this.version(9).stores({
+      agua: 'id, fecha',
+    })
   }
 
   /** Todas las tablas, para exportar e importar. */
@@ -140,7 +145,7 @@ export class BaseDatos extends Dexie {
 export const TABLAS = [
   'identidad', 'atributos', 'ciclos', 'fases', 'objetivos', 'acciones', 'reglasXp', 'metas', 'ajustes',
   'compromisos', 'sesionesJuego', 'suenio', 'siguienteAccion', 'revisiones', 'xp', 'niveles',
-  'atributosDiarios', 'diasCerrados', 'excepciones', 'feriados', 'contadores', 'registrosContador', 'eventos', 'temporizador', 'modoSuenio', 'rutinas', 'sesionesEntreno', 'codigo', 'fechasClave', 'alimentosPropios', 'comidas', 'pesos', 'comidasGuardadas',
+  'atributosDiarios', 'diasCerrados', 'excepciones', 'feriados', 'contadores', 'registrosContador', 'eventos', 'temporizador', 'modoSuenio', 'rutinas', 'sesionesEntreno', 'codigo', 'fechasClave', 'alimentosPropios', 'comidas', 'pesos', 'comidasGuardadas', 'agua',
 ] as const
 
 let instancia: BaseDatos | null = null
