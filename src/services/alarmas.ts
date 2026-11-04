@@ -11,9 +11,10 @@ import { recordatorios, type Recordatorio } from '../reminders/recordatorios'
 import { obtenerAjustes } from './base'
 import { cicloActivo } from './ciclo'
 import { horaFinMargen } from './dia'
+import { bloquesDelDia } from './horario'
 import { ahora } from './reloj'
 
-export type Alarma = Recordatorio & { fecha: FechaDia; hora: string; tipo: 'entrenamiento' | 'entreno-aviso' | 'revision' | 'celu' | 'dormido' }
+export type Alarma = Recordatorio & { fecha: FechaDia; hora: string; tipo: 'entrenamiento' | 'entreno-aviso' | 'revision' | 'celu' | 'dormido' | 'salida' }
 
 /** Las alarmas de una fecha según la configuración actual. Solo dentro del ciclo. */
 export async function alarmasDelDia(fecha: FechaDia): Promise<Alarma[]> {
@@ -43,7 +44,27 @@ export async function alarmasDelDia(fecha: FechaDia): Promise<Alarma[]> {
   lista.push({ id: `alarma:revision:${fecha}`, tipo: 'revision', fecha, hora: horaRev, titulo: 'Completá tu revisión ahora', cuerpo: `Menos de 3 min. Marcá manga y empresa si faltan: a las ${horaFinMargen(horaRev, a.margenNocheMinutos)} queda sin cumplir.`, instante: instanteDe(fecha, horaRev, a.zonaHoraria) })
   lista.push({ id: `alarma:celu:${fecha}`, tipo: 'celu', fecha, hora: a.horaDejarCelu, titulo: 'Dejo celu', cuerpo: 'Celular abajo, fuera del cuarto. Tocá «Dejo celu» en la app.', instante: instanteDe(fecha, a.horaDejarCelu, a.zonaHoraria) })
   lista.push({ id: `alarma:dormido:${fecha}`, tipo: 'dormido', fecha, hora: a.horaDormido, titulo: 'A dormir', cuerpo: 'Hora de estar dormido. Buenas noches.', instante: instanteDe(fecha, a.horaDormido, a.zonaHoraria) })
-  return lista.sort((x, y) => x.instante - y.instante)
+  return callarEnObligatorios(fecha, lista, a.zonaHoraria)
+}
+
+/**
+ * Mi horario: durante un bloque obligatorio (facultad, trabajo) no suenan avisos de pilares; al salir llega
+ * uno solo con lo que falta. El del entrenamiento a su hora sigue igual.
+ */
+async function callarEnObligatorios(fecha: FechaDia, lista: Alarma[], zona: string): Promise<Alarma[]> {
+  const obligatorios = (await bloquesDelDia(fecha)).filter((b) => b.tipo === 'obligatorio')
+  if (!obligatorios.length) return lista.sort((x, y) => x.instante - y.instante)
+  const salida: Alarma[] = []
+  for (const b of obligatorios) {
+    const desde = instanteDe(fecha, b.desde, zona)
+    const fin = instanteDe(fecha, b.hasta, zona)
+    const calladas = lista.filter((x) => x.tipo !== 'entrenamiento' && x.instante >= desde && x.instante < fin)
+    if (!calladas.length) continue
+    lista = lista.filter((x) => !calladas.includes(x))
+    const faltan = calladas.map((x) => x.titulo)
+    salida.push({ id: `alarma:salida:${fecha}:${b.id}`, tipo: 'salida', fecha, hora: b.hasta, titulo: `Saliste de ${b.nombre}`, cuerpo: `Te queda: ${faltan.join(' · ')}`, instante: fin })
+  }
+  return [...lista, ...salida].sort((x, y) => x.instante - y.instante)
 }
 
 /** Alarmas de los próximos `dias` días que todavía no sonaron. */

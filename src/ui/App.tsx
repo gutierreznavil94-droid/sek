@@ -20,6 +20,7 @@ import { Sueno } from './paginas/Sueno'
 import { AlarmasTelefono } from './paginas/AlarmasTelefono'
 import { Atributos } from './paginas/Atributos'
 import { Calendario } from './paginas/Calendario'
+import { MiHorario } from './paginas/MiHorario'
 import { CierreFase } from './paginas/CierreFase'
 import { Copia } from './paginas/Copia'
 import { Sincronizar } from './paginas/Sincronizar'
@@ -199,6 +200,7 @@ function Rutas() {
       <Route element={<Layout hoy={hoy} />}>
         <Route path="/" element={<Hoy hoy={hoy} />} />
         <Route path="/calendario" element={<Calendario hoy={hoy} />} />
+        <Route path="/calendario/horario" element={<MiHorario />} />
         <Route path="/juego" element={<Juego hoy={hoy} />} />
         <Route path="/progreso/*" element={<Progreso hoy={hoy} />} />
         <Route path="/mas" element={<Mas />} />

@@ -4,6 +4,8 @@ import type { Compromiso } from '../../data/tipos'
 import { NOMBRES_FASES_INICIALES } from '../../data/semilla'
 import { TarjetaComida } from './Comida'
 import { TarjetaAgua } from './Agua'
+import { LineaDelDia } from './MiHorario'
+import { finDeObligatorio } from '../../services/horario'
 import { db } from '../../data/db'
 import { entrarModoPrueba } from '../../data/modoPrueba'
 import { diaSemanaDe, duracionLegible, fechaLegible, formatoHora, instanteDe, lunesDe, minutosDe, partesLocales, sumarDias } from '../../domain/fechas'
@@ -128,7 +130,11 @@ export function Hoy({ hoy }: { hoy: string }) {
     }
     const pendientes = d.pilares.pilares.filter((p) => p.estado === 'pendiente' && p.accion.tipo === 'compromiso')
     if (d.ventana.instanteAviso > Date.now()) {
-      recordatorios.programar({ id: 'revision-2050', titulo: 'Completá tu revisión ahora', cuerpo: `Menos de 3 min${pendientes.length ? ` · sin marcar: ${pendientes.map((p) => p.accion.nombre).join(', ')}` : ''}`, instante: d.ventana.instanteAviso })
+      // Si cae dentro de un bloque obligatorio (facultad, trabajo), se corre al final del bloque.
+      void finDeObligatorio(hoy, d.ventana.instanteAviso).then((x) => {
+        const instante = x && x.fin < d.ventana.instanteCierre ? x.fin : d.ventana.instanteAviso
+        recordatorios.programar({ id: 'revision-2050', titulo: x ? `Saliste de ${x.bloque.nombre}: completá tu revisión` : 'Completá tu revisión ahora', cuerpo: `Menos de 3 min${pendientes.length ? ` · sin marcar: ${pendientes.map((p) => p.accion.nombre).join(', ')}` : ''}`, instante })
+      })
     }
   }, [d, hoy])
 
@@ -335,6 +341,9 @@ export function Hoy({ hoy }: { hoy: string }) {
         </div>
       )}
       {!d.buenosDias && d.ajusteDeAyer && <p className="ajuste-ayer">Ajuste de hoy: <b>{d.ajusteDeAyer}</b></p>}
+
+      {/* Mi horario: dónde estás ahora y qué sigue (tocar abre la semana) */}
+      <LineaDelDia hoy={hoy} />
 
       {/* Un solo mensaje a las 20:50: marcar lo que falta y completar la revisión */}
       {enAviso2050 && (

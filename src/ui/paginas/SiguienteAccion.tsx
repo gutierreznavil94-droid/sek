@@ -5,6 +5,8 @@ import { cerrarInicio, crearSiguienteAccion, iniciosRecientes } from '../../serv
 import { Tarjeta } from '../componentes'
 import { mutar, useDatos } from '../estado'
 import { animar } from '../animaciones/motor'
+import { momento } from '../../services/horario'
+import { compromisosDelDia } from '../../services/dia'
 
 /**
  * Siguiente acción: una tarea ambigua se convierte en una acción concreta
@@ -15,6 +17,11 @@ export function SiguienteAccion({ hoy }: { hoy: string }) {
   const [ambigua, setAmbigua] = useState('')
   const [concreta, setConcreta] = useState('')
   const recientes = useDatos(() => iniciosRecientes(15), [hoy])
+  const hueco = useDatos(async () => {
+    const m = await momento(hoy, Date.now())
+    const pend = (await compromisosDelDia(hoy)).filter((c) => (c.estado === 'pendiente' || c.estado === 'iniciado') && c.accion.tipo === 'compromiso')
+    return { m, entran: pend.filter((c) => (c.accion.minutosMinimos ?? 15) <= m.libres) }
+  }, [hoy])
 
   const lanzar = async () => {
     const r = await mutar(() => crearSiguienteAccion(ambigua, concreta))
@@ -29,6 +36,12 @@ export function SiguienteAccion({ hoy }: { hoy: string }) {
           <h1>Siguiente acción</h1>
           <button className="boton chico suave" onClick={() => navegar(-1)}>Cerrar</button>
         </div>
+        {hueco.datos && (hueco.datos.m.siguiente || hueco.datos.m.ahora) && (
+          <p className="hor-hueco chico">
+            {hueco.datos.m.ahora ? <>Estás en <b>{hueco.datos.m.ahora.nombre}</b> hasta {hueco.datos.m.ahora.hasta}.</> : <>Tenés <b>{hueco.datos.m.libres >= 60 ? `${Math.floor(hueco.datos.m.libres / 60)} h ${hueco.datos.m.libres % 60 || ''}`.trim() : `${hueco.datos.m.libres} min`}</b> hasta {hueco.datos.m.siguiente ? `${hueco.datos.m.siguiente.nombre} ${hueco.datos.m.siguiente.desde}` : `alistarte ${hueco.datos.m.libreHasta}`}.</>}
+            {hueco.datos.entran.length > 0 && !hueco.datos.m.ahora && <> Entra: {hueco.datos.entran.map((c) => <button key={c.id} type="button" className="enlace" onClick={() => setAmbigua(c.accion.nombre)}>{c.accion.nombre}{c.accion.minutosMinimos ? ` ${c.accion.minutosMinimos} min` : ''}</button>).reduce<React.ReactNode[]>((acc, x, i) => (i ? [...acc, ' · ', x] : [x]), [])}</>}
+          </p>
+        )}
         <Tarjeta>
           <div className="campo">
             <label>¿Qué tenés que hacer? (vale que sea vago)</label>

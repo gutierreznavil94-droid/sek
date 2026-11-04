@@ -191,7 +191,35 @@ export type FechaClave = {
   titulo: string
   nota?: string
   anual?: boolean
+  /** Con hora (examen, trámite) se trata como bloque obligatorio ese día en Mi horario. */
+  hora?: string
+  horaFin?: string
   creada: number
+}
+
+// ---------- Mi horario ----------
+
+export type TipoBloque = 'obligatorio' | 'entreno' | 'otro'
+
+/** Bloque fijo de la semana: colegio, facultad, trabajo, entreno, otro. */
+export type BloqueHorario = {
+  id: string
+  nombre: string
+  tipo: TipoBloque
+  /** Días de la semana (0 dom..6 sáb). */
+  dias: number[]
+  desde: string
+  hasta: string
+}
+
+export type Horario = { id: string; nombre: string; bloques: BloqueHorario[] }
+
+export type ConfigHorario = {
+  /** Id del horario en uso («Cuatrimestre», «Vacaciones»). */
+  activo: string
+  horarios: Horario[]
+  /** Por fecha, ids de bloques que ese día no van («hoy no hay cursada»). */
+  excepciones: Record<FechaDia, string[]>
 }
 
 /** Regla de «Mi código» (掟): solo se lee, no se marca ni da XP. */
@@ -277,6 +305,8 @@ export type Ajustes = {
   comida?: ObjetivoComida
   /** Agua: envases propios, cuál es el del toque y objetivo a mano (sin esto, 35 ml por kilo del peso de Comida). */
   agua?: ConfigAgua
+  /** Mi horario (Calendario): bloques fijos de la semana, horarios guardados y excepciones por fecha. */
+  horario?: ConfigHorario
   /** La app se armó en la primera vez: las migraciones de los pilares de Navil no se aplican. */
   aMedida?: boolean
 }
