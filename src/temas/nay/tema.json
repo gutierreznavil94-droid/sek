@@ -3,5 +3,15 @@
   "nombre": "Nay",
   "descripcion": "El tema de Nay (en armado).",
   "orden": 2,
+  "personaje": "Kitty",
+  "saludo": "¡Hola, {nombre}! Soy {personaje} y te voy a acompañar todos los días ✨",
+  "acento": "#F4A6C8",
+  "kanjis": false,
+  "carpetaFondos": "temas/nay/",
+  "sprite": "temas/nay/camina.webp",
+  "vistaPrevia": {
+    "video": "temas/nay/lluvia.mp4",
+    "imagen": "temas/nay/lluvia.jpg"
+  },
   "oculto": true
 }
