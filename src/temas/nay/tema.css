@@ -1,0 +1,70 @@
+/*
+ * Tema Nay: cabecera rosa pastel → lila, borde de nube y pétalos de cerezo cayendo.
+ * Todas las reglas empiezan con :root[data-tema="nay"] (solo se ven con el tema de Nay).
+ */
+:root[data-tema="nay"] {
+  --nay-rosa: #FBD3E4;
+  --nay-lila: #E6D3F5;
+  --nay-violeta: #4A2A63;
+  --nay-violeta-2: #6E4C8C;
+}
+
+/* Fondo y texto (también en Progreso, que en Shinobi la vuelve vidrio oscuro) */
+:root[data-tema="nay"] .app .cabecera {
+  background: linear-gradient(180deg, var(--nay-rosa) 0%, var(--nay-lila) 100%);
+  color: var(--nay-violeta);
+  border-bottom: 0;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  text-shadow: none;
+}
+:root[data-tema="nay"] .app .cabecera .dia { color: var(--nay-violeta); }
+:root[data-tema="nay"] .app .cabecera .fecha,
+:root[data-tema="nay"] .app .cabecera .fecha .texto-3,
+:root[data-tema="nay"] .app .cabecera .fecha a,
+:root[data-tema="nay"] .app .cabecera .fase { color: var(--nay-violeta-2); }
+
+/* Barra de fases en tonos pastel */
+:root[data-tema="nay"] .app .barra-fases .tramo,
+:root[data-tema="nay"] .app .barra-fases .tramo.final { background: rgba(255, 255, 255, 0.55); }
+:root[data-tema="nay"] .app .barra-fases .tramo .lleno,
+:root[data-tema="nay"] .app .barra-fases .tramo.final .lleno { background: #C9A6E3; }
+:root[data-tema="nay"] .app .barra-fases .tramo.actual { background: rgba(255, 255, 255, 0.75); box-shadow: inset 0 0 0 1.5px #D77FA8; }
+:root[data-tema="nay"] .app .barra-fases .tramo.actual .lleno { background: #F4A6C8; }
+:root[data-tema="nay"] .app .barra-fases .etq,
+:root[data-tema="nay"] .app .barra-fases .tramo.final .etq,
+:root[data-tema="nay"] .app .barra-fases .tramo.actual .etq { color: var(--nay-violeta); }
+
+/* Borde de nube en vez de la pincelada negra */
+:root[data-tema="nay"] .app .cabecera .divisor-cabecera { display: none; }
+:root[data-tema="nay"] .app .cabecera::after {
+  content: '';
+  position: absolute; left: 0; right: 0; bottom: -13px; height: 14px;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 0, var(--nay-lila) 13px, transparent 13.5px) 0 0 / 30px 14px repeat-x;
+}
+
+/* Pétalos de cerezo cayendo despacito (detrás del texto) */
+:root[data-tema="nay"] .app .cabecera .cabecera-int,
+:root[data-tema="nay"] .app .cabecera .barra-fases { position: relative; z-index: 1; }
+:root[data-tema="nay"] .app .cabecera::before {
+  content: '';
+  position: absolute; inset: 0;
+  pointer-events: none;
+  opacity: 0.75;
+  /* Tres capas, cada una un mosaico con un pétalo; se mueven justo un mosaico por vuelta (sin saltos). */
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='110'%3E%3Cellipse cx='30' cy='20' rx='4.5' ry='2.6' fill='%23F49AC1' transform='rotate(25 30 20)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='190' height='150'%3E%3Cellipse cx='120' cy='70' rx='3.6' ry='2.1' fill='%23F7B6D2' transform='rotate(-30 120 70)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='230' height='130'%3E%3Cellipse cx='190' cy='40' rx='5' ry='2.8' fill='%23FFFFFF' transform='rotate(40 190 40)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 140px 110px, 190px 150px, 230px 130px;
+  animation: nay-petalos 16s linear infinite;
+}
+@keyframes nay-petalos {
+  from { background-position: 0 0, 0 0, 0 0; }
+  to   { background-position: 140px 220px, -190px 150px, 0 130px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-tema="nay"] .app .cabecera::before { animation: none; }
+}
