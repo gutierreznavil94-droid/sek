@@ -15,6 +15,7 @@ import { avisar, mutar, useDatos } from '../estado'
 import { agregarFechaClave, borrarFechaClave, editarFechaClave, fechasClavePorDia } from '../../services/fechasClave'
 import type { FechaClave } from '../../data/tipos'
 import { Confirmar } from '../componentes'
+import { simbolo } from '../../temas/temas'
 
 function primerDiaMes(fecha: string): string {
   return fecha.slice(0, 8) + '01'
@@ -88,7 +89,7 @@ export function Calendario({ hoy }: { hoy: string }) {
                 aria-label={`${fechaLegible(f, false)}${enCiclo ? `, día ${dia}` : ''}${claves.length ? `, fecha clave: ${claves.map((c) => c.titulo).join(', ')}` : ''}`}
               >
                 <span className="num">{Number(f.slice(8))}</span>
-                {claves.length > 0 && <span className="sello-clave" aria-hidden>印</span>}
+                {claves.length > 0 && <span className="sello-clave" aria-hidden>{simbolo('印')}</span>}
                 {puntos.length > 0 && (
                   <span className="puntos" aria-hidden>
                     {puntos.map((p) => <i key={p.accionId} className={f > hoy ? '' : p.estado} />)}
@@ -111,7 +112,7 @@ export function Calendario({ hoy }: { hoy: string }) {
           <span><span className="puntos"><i /></span>pendiente</span>
           <span><span className="linea-meta verde muestra" />meta cumplida</span>
           <span><span className="linea-meta roja muestra" />meta no cumplida</span>
-          <span><span className="sello-clave muestra">印</span>fecha clave</span>
+          <span><span className="sello-clave muestra">{simbolo('印')}</span>fecha clave</span>
         </div>
         <p className="ayuda">Los 4 puntos van siempre en ese orden: entrenamiento, empresa, manga, dormir. Tocá un día para ver cuál es cada uno. Borde: hoy. Punto arriba: feriado. Línea abajo: meta (gris pendiente). ▎ inicio de fase.</p>
       </Tarjeta>
@@ -316,7 +317,7 @@ function FechasClaveDelDia({ fecha }: { fecha: string }) {
     <div className="claves-del-dia">
       {lista.map((fc) => (
         <button key={fc.id} type="button" className="clave-fila" onClick={() => setEditor(fc)} aria-label={`Fecha clave: ${fc.titulo}. Tocá para editar`}>
-          <span className="sello-clave grande" aria-hidden>印</span>
+          <span className="sello-clave grande" aria-hidden>{simbolo('印')}</span>
           <span className="crece col" style={{ gap: 0 }}>
             <b className="chico">{fc.titulo}</b>
             {(fc.nota || fc.anual) && <span className="muy-chico texto-3">{[fc.nota, fc.anual ? `cada año${fc.fecha.slice(0, 4) !== fecha.slice(0, 4) ? ` · desde ${fc.fecha.slice(0, 4)}` : ''}` : ''].filter(Boolean).join(' · ')}</span>}
@@ -338,7 +339,7 @@ function EditorFechaClave({ fecha, fc, onCerrar }: { fecha: string; fc?: FechaCl
     if (!titulo.trim()) return
     if (fc) await mutar(() => editarFechaClave(fc.id, { titulo, nota, anual }))
     else await mutar(() => agregarFechaClave(fecha, titulo, nota, anual))
-    avisar(fc ? 'Fecha clave guardada' : 'Fecha clave marcada 印', { tipo: 'ok' })
+    avisar(fc ? 'Fecha clave guardada' : `Fecha clave marcada ${simbolo('印')}`, { tipo: 'ok' })
     onCerrar()
   }
   return (

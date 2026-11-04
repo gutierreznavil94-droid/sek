@@ -24,6 +24,7 @@ Un tema es la cara de la app: personaje, fondos, sprite del entreno, color de ac
 | `sprite` | `"temas/<id>/camina.webp"` |
 | `vistaPrevia` | `{ "video": "temas/<id>/lluvia.mp4", "imagen": "temas/<id>/lluvia.jpg" }` |
 | `orden` | Posición en la lista de temas |
+| `adornos` | Opcional. `aves`: `"pajaros"` (Shinobi) o `"estrellas"` (la cabecera se deshace en estrellitas y corazones). `cumplir`: `"corte"` (Shinobi) o `"chispazo"` (estrellitas al cumplir un pilar). `simbolos`: reemplazos de kanjis y de la cruz de «no cumplido», por ejemplo `{ "食": "🍓" }`. `numerosComunes`: `true` para numerar Mi código con 1, 2, 3 |
 | `oculto` | `true`: el tema no aparece en la lista mientras se arma (con `VITE_TEMAS_OCULTOS=1` se ve igual, para probarlo) |
 
 Lo que falte en `tema.json` se completa con los valores de Shinobi: un tema puede arrancar con solo `nombre` y `descripcion`.

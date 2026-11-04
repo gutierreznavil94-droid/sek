@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { AJUSTES_INICIALES } from '../../data/semilla'
 import { fechaLegible } from '../../domain/fechas'
 import { configurarPrimeraVez, MAX_PILARES, SUGERENCIAS_PILARES, validarPrimeraVez, type ClavePilar, type EleccionPilar } from '../../services/primeraVez'
-import { TEMAS, TEMAS_PROXIMOS, aplicarTema, saludoDe, temaPorId, type DefinicionTema } from '../../temas/temas'
+import { TEMAS, TEMAS_PROXIMOS, aplicarTema, saludoDe, temaPorId, type DefinicionTema, simbolo } from '../../temas/temas'
 import { DiasSemana, movimientoReducido } from '../componentes'
 import { Divisor } from '../Divisor'
 import { avisar, mutar } from '../estado'
@@ -72,7 +72,7 @@ export function PrimeraVez({ hoy }: { hoy: string }) {
           {PASOS.map((p, i) => <span key={p.titulo} className={i < paso ? 'hecho' : i === paso ? 'actual' : ''} />)}
         </div>
         <div className="pv-titulo">
-          <span className="pv-kanji" aria-hidden>{PASOS[paso].kanji}</span>
+          <span className="pv-kanji" aria-hidden>{simbolo(PASOS[paso].kanji)}</span>
           <div>
             <span className="pv-num">Paso {paso + 1} de {PASOS.length}</span>
             <h1>{PASOS[paso].titulo}</h1>
@@ -178,7 +178,7 @@ export function ListaTemas({ valor, onElegir }: { valor: string; onElegir: (id: 
             <b>{t.nombre}</b>
             <span className="chico texto-2">{t.descripcion}</span>
           </span>
-          {valor === t.id && <span className="pv-tema-sello" aria-hidden>印</span>}
+          {valor === t.id && <span className="pv-tema-sello" aria-hidden>{simbolo('印', t)}</span>}
         </button>
       ))}
       {TEMAS_PROXIMOS.map((t) => (

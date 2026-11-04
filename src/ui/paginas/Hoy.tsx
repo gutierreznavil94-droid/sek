@@ -44,6 +44,7 @@ import { obtenerRevision } from '../../services/revisiones'
 import { xpDelDia, xpTotal } from '../../services/xp'
 import { Celebracion, Hoja, IconoPilar } from '../componentes'
 import { avisar, mutar, useDatos, useTic } from '../estado'
+import { simbolo } from '../../temas/temas'
 
 async function cargarPanel(hoy: string) {
   const ajustes = await obtenerAjustes()
@@ -526,7 +527,7 @@ function iconoPilar(estado: Pilar['estado']): string {
   switch (estado) {
     case 'cumplido': return '✓'
     case 'tarde': return '!'
-    case 'omitido': return '✕'
+    case 'omitido': return simbolo('✕')
     case 'descanso': return '–'
     default: return ''
   }
@@ -684,7 +685,7 @@ function iconoEstado(estado: Compromiso['estado']): string {
     case 'completado': return '✓'
     case 'tarde': return '!'
     case 'iniciado': return '●'
-    case 'omitido': return '✕'
+    case 'omitido': return simbolo('✕')
     case 'no_registrado': return '–'
     case 'reprogramado': return '→'
     default: return ''

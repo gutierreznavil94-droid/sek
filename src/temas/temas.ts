@@ -30,6 +30,19 @@ export interface DefinicionTema {
   orden?: number
   /** `true`: el tema existe pero no aparece en la lista (se está armando). Se ve igual con VITE_TEMAS_OCULTOS=1. */
   oculto?: boolean
+  /** Adornos del tema. Lo que falte queda como en Shinobi. */
+  adornos?: AdornosTema
+}
+
+export interface AdornosTema {
+  /** En qué se convierte la cabecera al bajar: pájaros de tinta (Shinobi) o estrellitas y corazones. */
+  aves?: 'pajaros' | 'estrellas'
+  /** Animación al cumplir un pilar: el corte (Shinobi) o un chispazo de estrellitas. */
+  cumplir?: 'corte' | 'chispazo'
+  /** Reemplazos de símbolos que se ven en la app (kanjis, la cruz de «no cumplido»): `{ "食": "🍓" }`. */
+  simbolos?: Record<string, string>
+  /** `true`: Mi código numera con 1, 2, 3 en vez de 一, 二, 三. */
+  numerosComunes?: boolean
 }
 
 export interface TemaProximo { id: string; nombre: string; pista: string }
@@ -109,6 +122,17 @@ export function aplicarTema(id: string | undefined, nombreApp?: string): Definic
   }
   for (const o of oyentes) o()
   return activo
+}
+
+/** Símbolo a mostrar con el tema activo: el reemplazo del tema o el mismo (Shinobi no reemplaza nada). */
+export function simbolo(s: string, tema: DefinicionTema = activo): string {
+  return tema.adornos?.simbolos?.[s] ?? s
+}
+
+/** Adorno elegido por el tema activo, con el de Shinobi si no eligió. */
+export function adorno<K extends 'aves' | 'cumplir'>(clave: K, tema: DefinicionTema = activo): NonNullable<AdornosTema[K]> {
+  const porDefecto = { aves: 'pajaros', cumplir: 'corte' } as const
+  return (tema.adornos?.[clave] ?? porDefecto[clave]) as NonNullable<AdornosTema[K]>
 }
 
 /** Ruta de un archivo de fondo según el tema activo («fondos/lluvia.mp4» → «<carpetaFondos>lluvia.mp4»). */

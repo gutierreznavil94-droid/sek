@@ -61,6 +61,7 @@ import { Avisos, Confirmar, Hoja } from '../componentes'
 import { AguadaFondo, TintaPolvo } from '../TintaPolvo'
 import { ShinobiBarra } from '../Shinobi'
 import { avisar, mutar, useDatos, useTic } from '../estado'
+import { simbolo } from '../../temas/temas'
 
 function vibrar(patron: number | number[]) {
   try { if ('vibrate' in navigator) navigator.vibrate(patron) } catch { /* sin vibración */ }
@@ -261,7 +262,7 @@ function EnCurso({ s, r, ctx, onTerminado }: { s: SesionEntreno; r: Rutina; ctx:
         <Descanso key={s.descanso.inicio} s={s} fase={fase} r={r} ctx={ctx} />
       ) : !bloque ? (
         <section className="entreno-fin col">
-          <span className="entreno-k" aria-hidden>鍛</span>
+          <span className="entreno-k" aria-hidden>{simbolo('鍛')}</span>
           <h1 className="entreno-titulo">Todo hecho</h1>
           <p className="texto-2">{s.series.length} series anotadas. Terminá para guardar y marcar el pilar.</p>
           <button className="boton primario grande ancho" onClick={terminar}>Terminar entreno</button>
@@ -681,7 +682,7 @@ function Resumen({ r, rutina, onReabrir }: { r: ResultadoTerminar; rutina?: Ruti
   const records = x.ejercicios.filter((e) => e.record)
   return (
     <section className="col entreno-resumen" style={{ gap: 14 }}>
-      <span className="entreno-k" aria-hidden>鍛</span>
+      <span className="entreno-k" aria-hidden>{simbolo('鍛')}</span>
       <h1 className="entreno-titulo centro">Entreno terminado</h1>
       <p className="texto-2 centro">{rutina?.nombre}</p>
       <div className="entreno-stats">

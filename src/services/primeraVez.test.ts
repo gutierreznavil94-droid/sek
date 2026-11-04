@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, usarBaseDePruebas } from '../data/db'
 import { instanteDe } from '../domain/fechas'
-import { TEMAS, TEMAS_PROXIMOS, TODOS_LOS_TEMAS, aplicarTema, completarTema, rutaTema, saludoDe, temaActivo, temaPorId } from '../temas/temas'
+import { TEMAS, TEMAS_PROXIMOS, TODOS_LOS_TEMAS, adorno, aplicarTema, completarTema, simbolo, rutaTema, saludoDe, temaActivo, temaPorId } from '../temas/temas'
 import { inicializarSiHaceFalta, obtenerAjustes, obtenerIdentidad } from './base'
 import { cicloActivo, iniciarCiclo } from './ciclo'
 import { pilaresDelDia } from './dia'
@@ -163,5 +163,21 @@ describe('temas', () => {
       expect(temaPorId(t.id).id).toBe(t.id)
     }
     expect(temaPorId('shinobi').oculto).toBe(false)
+  })
+
+  it('Shinobi conserva sus adornos: kanjis, cruz, pájaros y corte', () => {
+    const s = temaPorId('shinobi')
+    for (const k of ['食', '掟', '誓', '印', '鍛', '昇', '✕']) expect(simbolo(k, s)).toBe(k)
+    expect(adorno('aves', s)).toBe('pajaros')
+    expect(adorno('cumplir', s)).toBe('corte')
+    expect(s.adornos?.numerosComunes).toBeFalsy()
+  })
+
+  it('un tema puede reemplazar símbolos y adornos', () => {
+    const t = completarTema({ adornos: { aves: 'estrellas', cumplir: 'chispazo', simbolos: { '食': '🍓' } } }, 'otro', temaPorId('shinobi'))
+    expect(simbolo('食', t)).toBe('🍓')
+    expect(simbolo('掟', t)).toBe('掟')
+    expect(adorno('aves', t)).toBe('estrellas')
+    expect(adorno('cumplir', t)).toBe('chispazo')
   })
 })
