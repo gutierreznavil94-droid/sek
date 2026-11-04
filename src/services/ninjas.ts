@@ -26,6 +26,7 @@ export const NOMBRE_MOMENTO: Record<MomentoNinja, string> = {
   noche: 'Después de «Dejo celu» sin dormir',
   duda: 'Botón «Estoy dudando»',
   juego: 'Límite de juego pasado',
+  batalla: 'Batalla (botón «Dudo»)',
 }
 
 export function distraccionesDe(a: Pick<Ajustes, 'distracciones'>): Distraccion[] {
@@ -96,9 +97,9 @@ export async function peleasDelDia(fecha: FechaDia): Promise<PeleaNinja[]> {
 
 /** ¿Puede aparecer solo en ese momento? Tope de 2 automáticos por día y una vez por momento. */
 export async function puedeAparecer(fecha: FechaDia, momento: MomentoNinja): Promise<boolean> {
-  if (momento === 'duda') return true
+  if (momento === 'duda' || momento === 'batalla') return true
   const hoy = await peleasDelDia(fecha)
-  const automaticas = hoy.filter((p) => p.momento !== 'duda')
+  const automaticas = hoy.filter((p) => p.momento !== 'duda' && p.momento !== 'batalla')
   if (automaticas.length >= TOPE_NINJAS_DIA) return false
   return !automaticas.some((p) => p.momento === momento)
 }
@@ -119,8 +120,8 @@ export async function prepararPelea(fecha: FechaDia, momento: MomentoActivo, aza
 }
 
 /** Sello del día: vencido («Empezar») o se escapó («Ahora no»). */
-export async function registrarPelea(p: Pelea, resultado: PeleaNinja['resultado']): Promise<PeleaNinja> {
-  const x: PeleaNinja = { fecha: p.fecha, distraccion: p.distraccion.id, momento: p.momento.momento, resultado, pilar: p.momento.pilar?.id, instante: ahora() }
+export async function registrarPelea(p: Pelea, resultado: PeleaNinja['resultado'], extra: { reps?: number } = {}): Promise<PeleaNinja> {
+  const x: PeleaNinja = { fecha: p.fecha, distraccion: p.distraccion.id, momento: p.momento.momento, resultado, pilar: p.momento.pilar?.id, instante: ahora(), ...(extra.reps ? { reps: extra.reps } : {}) }
   x.id = await db().ninjas.add(x) as number
   return x
 }

@@ -37,6 +37,7 @@ export function Protocolo321({ hoy }: { hoy: string }) {
   const empezar = async () => {
     const id = params.get('id')
     const r = await mutar(() => registrarInicio({ id: id ? Number(id) : undefined, accionConcreta: texto.trim(), compromisoId }))
+    try { localStorage.setItem(`usado-321:${hoy}`, '1') } catch { /* sin almacenamiento */ }
     celebrarNivel(r.nuevoNivel)
     avisar(r.xp > 0 ? `Empezaste. +${r.xp} XP${r.nuevoNivel ? ` · ¡Nivel ${r.nuevoNivel}!` : ''}` : `Empezaste. ${r.motivoSinXp ?? ''}`, { tipo: 'ok' })
     navegar('/')

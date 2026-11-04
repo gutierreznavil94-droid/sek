@@ -299,6 +299,10 @@ export type Ajustes = {
   ninjas?: boolean
   /** Tira «Ninjas vencidos esta semana» en Progreso (sí si falta). */
   ninjasEnProgreso?: boolean
+  /** Batalla contra la distracción (minijuego): activa, contador y reps por toque. */
+  batalla?: ConfigBatalla
+  /** Cinemática «Tensión»: kanji y frase del final. */
+  tension?: ConfigTension
   /** Recordatorio tenue en Hoy para alistarse a dormir: cuántos minutos antes de «Dejo celu» (30 si falta). */
   minutosAvisoDormir?: number
   /** Frases del recordatorio, rotan una por noche. Si falta, las tres de la app. */
@@ -713,10 +717,16 @@ export type ComidaGuardada = { id: string; nombre: string; items: { alimentoId: 
 export type ModoCompanero = 'pasea' | 'quieto' | 'apagado'
 
 /** Momentos de duda que la app puede ver. */
-export type MomentoNinja = 'pilar' | 'noche' | 'duda' | 'juego'
+export type MomentoNinja = 'pilar' | 'noche' | 'duda' | 'juego' | 'batalla'
 
 /** Una distracción (la edita la persona): nombre y, opcional, en qué momento aparece. */
 export type Distraccion = { id: string; nombre: string; momento?: MomentoNinja | 'cualquiera' }
 
 /** Una pelea con un ninja de la distracción: vencido (tocó «Empezar») o se escapó. Sin XP. */
-export type PeleaNinja = { id?: number; fecha: FechaDia; distraccion: string; momento: MomentoNinja; resultado: 'vencido' | 'escapo'; pilar?: string; instante: number }
+export type PeleaNinja = { id?: number; fecha: FechaDia; distraccion: string; momento: MomentoNinja; resultado: 'vencido' | 'escapo'; pilar?: string; instante: number; /** Batalla: reps hechas (la serie que se anotó en el contador). */ reps?: number }
+
+/** Batalla contra la distracción (minijuego de flexiones). Todo editable en Más → Ver animaciones. */
+export type ConfigBatalla = { /** Sí si falta. */ activa?: boolean; /** Contador de reps que se usa (flexiones si falta). */ contadorId?: string; /** Reps por toque (5 si falta). */ repsPorToque?: number }
+
+/** Cinemática «Tensión»: kanji y frase del final (editables en Más → Ver animaciones). */
+export type ConfigTension = { kanji?: string; frase?: string }

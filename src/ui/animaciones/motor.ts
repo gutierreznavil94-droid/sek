@@ -265,6 +265,45 @@ function tambor(ac: AudioContext, t: number) {
   o.stop(t + 0.5)
 }
 
+/** Lluvia suave generada (cinemática «Tensión»): ruido grave y parejo. Devuelve la función que la apaga con un fundido. */
+export function sonarLluvia(): () => void {
+  const ac = audio()
+  if (!ac) return () => undefined
+  try {
+    const src = ac.createBufferSource()
+    src.buffer = ruido(ac, 2)
+    src.loop = true
+    const f = ac.createBiquadFilter()
+    f.type = 'lowpass'
+    f.frequency.value = 1400
+    const g = ac.createGain()
+    const t = ac.currentTime
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.exponentialRampToValueAtTime(0.09, t + 1.2)
+    src.connect(f).connect(g).connect(ac.destination)
+    src.start(t)
+    return () => {
+      try {
+        const t2 = ac.currentTime
+        g.gain.cancelScheduledValues(t2)
+        g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), t2)
+        g.gain.exponentialRampToValueAtTime(0.0001, t2 + 0.5)
+        src.stop(t2 + 0.55)
+      } catch { /* ya parada */ }
+    }
+  } catch {
+    return () => undefined
+  }
+}
+
+/** Choque de katanas suelto (batalla). Respeta el ajuste de sonido. */
+export function sonarChoque(): void {
+  if (!config.sonido) return
+  const ac = audio()
+  if (!ac) return
+  try { choque(ac, ac.currentTime + 0.01) } catch { /* sin sonido */ }
+}
+
 /** Golpe de taiko grave: un solo aviso a 10 s del fin del descanso (independiente del sonido de animaciones). */
 export function sonarTaiko(): void {
   const ac = audio()

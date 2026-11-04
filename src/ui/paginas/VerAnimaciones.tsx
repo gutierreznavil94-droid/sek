@@ -9,6 +9,13 @@ import { avisar, mutar, useDatos } from '../estado'
 import type { Distraccion, ModoCompanero, MomentoNinja } from '../../data/tipos'
 import { NOMBRE_MOMENTO, distraccionesDe, guardarDistracciones, nuevaDistraccion } from '../../services/ninjas'
 import { pedirPelea } from '../Ninja'
+import { Tajo } from '../Tajo'
+import { pedirBatalla } from '../Batalla'
+import { FRASE_TENSION, KANJI_TENSION, pedirTension, useClipsTension } from '../Tension'
+import { REPS_POR_TOQUE, TOPE_BATALLAS_DIA, objetivoBatalla, prepararBatalla } from '../../services/batalla'
+import { listarContadores } from '../../services/contadores'
+import { fechaDe } from '../../domain/fechas'
+import { ahora } from '../../services/reloj'
 
 const PILARES = ['entrenamiento', 'empresa', 'manga', 'acostarse']
 
@@ -24,6 +31,14 @@ export function VerAnimaciones() {
   const config = useConfigAnimaciones()
   const [nombre, setNombre] = useState('')
   const [editor, setEditor] = useState(false)
+  const [tajo, setTajo] = useState(false)
+  const contadores = useDatos(() => listarContadores(), [])
+  const clipsTension = useClipsTension()
+  const [kanjiT, setKanjiT] = useState('')
+  const [fraseT, setFraseT] = useState('')
+  useEffect(() => {
+    if (datos.datos) { setKanjiT(datos.datos.tension?.kanji ?? ''); setFraseT(datos.datos.tension?.frase ?? '') }
+  }, [datos.datos])
   useEffect(() => {
     if (datos.datos) setNombre(datos.datos.nombrePersonaje || 'Shinobi')
   }, [datos.datos])
@@ -135,8 +150,44 @@ export function VerAnimaciones() {
           <input type="checkbox" checked={a.ninjasEnProgreso !== false} onChange={(e) => guardar({ ninjasEnProgreso: e.target.checked }, 'Guardado')} /> Tira «Ninjas vencidos esta semana» en Progreso
         </label>
         <MisDistracciones lista={distraccionesDe(a)} />
-        <button className="boton ancho" onClick={() => { const l = distraccionesDe(a); if (!l.length) return avisar('Agregá una distracción primero'); pedirPelea({ fecha: '0000-00-00', distraccion: l[0], momento: { momento: 'duda' } }) }}>Ver una pelea de prueba</button>
-        <p className="ayuda">Un ninja gris con el nombre de la distracción; el shinobi lo bloquea y queda una frase con «Empezar» / «Ahora no». Sin XP por la pelea. Máximo 2 por día solos; el botón «Estoy dudando» de Hoy no tiene tope.</p>
+        <div className="rejilla-2">
+          <button className="boton" onClick={() => { const l = distraccionesDe(a); if (!l.length) return avisar('Agregá una distracción primero'); pedirPelea({ fecha: '0000-00-00', distraccion: l[0], momento: { momento: 'duda' } }) }}>Probar ninja</button>
+          <button className="boton" onClick={() => setTajo(true)}>Probar el tajo</button>
+        </div>
+        {tajo && <Tajo onFin={() => setTajo(false)} />}
+        <p className="ayuda">Un ninja gris con el nombre de la distracción; el shinobi lo bloquea y queda una frase con «Empezar» / «Ahora no» / «⚔ Batalla». Sin XP por la pelea. Máximo 2 por día solos. El tajo aparece solo al volver a la app después de 3 h con un pilar pendiente; acá lo ves cuando quieras.</p>
+      </Tarjeta>
+
+      <Tarjeta titulo="Batalla contra la distracción">
+        <label className="fila chico" style={{ gap: 8 }}>
+          <input type="checkbox" checked={a.batalla?.activa !== false} onChange={(e) => guardar({ batalla: { ...a.batalla, activa: e.target.checked } }, e.target.checked ? 'Batalla encendida' : 'Batalla apagada: «Dudo» abre la pelea corta')} /> «Dudo» (arriba en Hoy) arranca el minijuego: 3·2·1 y flexiones por rondas
+        </label>
+        <div className="campo">
+          <label>Ejercicio de la batalla</label>
+          <select value={a.batalla?.contadorId ?? (contadores.datos?.find((c) => /flexi/i.test(c.nombre))?.id ?? contadores.datos?.[0]?.id ?? '')} onChange={(e) => guardar({ batalla: { ...a.batalla, contadorId: e.target.value } }, 'Ejercicio guardado')}>
+            {(contadores.datos ?? []).map((c) => <option key={c.id} value={c.id}>{c.nombre} ({c.cantidadPorToque} por serie)</option>)}
+          </select>
+        </div>
+        <div className="campo">
+          <label>Reps por toque</label>
+          <input type="number" inputMode="numeric" min={1} max={50} value={a.batalla?.repsPorToque ?? REPS_POR_TOQUE} onChange={(e) => { const v = Number(e.target.value); if (v > 0) guardar({ batalla: { ...a.batalla, repsPorToque: v } }, `${v} reps por toque`) }} style={{ width: 90 }} />
+        </div>
+        <p className="ayuda">
+          {(() => { const c = (contadores.datos ?? []).find((x) => x.id === (a.batalla?.contadorId ?? '')) ?? (contadores.datos ?? []).find((x) => /flexi/i.test(x.nombre)) ?? contadores.datos?.[0]; const o = objetivoBatalla(c?.cantidadPorToque, a.batalla?.repsPorToque ?? REPS_POR_TOQUE); return `Objetivo hoy: ${o} ${c ? c.nombre.toLowerCase() : 'flexiones'} (las reps por serie redondeadas a múltiplo de ${a.batalla?.repsPorToque ?? REPS_POR_TOQUE}). Al ganar se anota una serie en el contador con esas reps, con la XP de siempre. Rendirse no anota nada. Tope: ${TOPE_BATALLAS_DIA} batallas por día.` })()}
+        </p>
+        <button className="boton ancho" onClick={async () => { const r = await prepararBatalla(fechaDe(ahora(), a.zonaHoraria)); if (r.batalla) pedirBatalla(r.batalla); else avisar(r.motivo) }}>Probar la batalla</button>
+      </Tarjeta>
+
+      <Tarjeta titulo="Tensión 「進」">
+        <p className="chico texto-2" style={{ margin: 0 }}>Cinemática para el momento de estrés: el shinobi mira, el ejército corre, te da la mano y espera tu toque; desenvaina y carga. Termina con el kanji y la frase de abajo. Sin tope ni XP.</p>
+        <div className="fila" style={{ gap: 8 }}>
+          <input aria-label="Kanji del final" value={kanjiT} maxLength={2} placeholder={KANJI_TENSION} onChange={(e) => setKanjiT(e.target.value)} style={{ width: 64, textAlign: 'center', fontSize: '1.3rem' }} />
+          <input aria-label="Frase del final" value={fraseT} maxLength={60} placeholder={FRASE_TENSION} onChange={(e) => setFraseT(e.target.value)} style={{ flex: 1 }} />
+          <button className="boton chico" onClick={() => guardar({ tension: { kanji: kanjiT.trim() || undefined, frase: fraseT } }, 'Guardado')}>Guardar</button>
+        </div>
+        {clipsTension
+          ? <button className="boton ancho" onClick={() => pedirTension()}>Ver la cinemática</button>
+          : <p className="ayuda">Todavía no están los videos: el botón 「進」 aparece en Hoy (al lado de «Dudo») cuando los clips de Luma estén en animaciones/tension/ (t1-mirada, t2-ejercito, t3-mano, t3b-espera, t4-carga).</p>}
       </Tarjeta>
 
       <Tarjeta titulo="Nombre del personaje">
@@ -155,7 +206,7 @@ export function VerAnimaciones() {
   )
 }
 
-const MOMENTOS: (MomentoNinja | 'cualquiera')[] = ['cualquiera', 'pilar', 'noche', 'duda', 'juego']
+const MOMENTOS: (MomentoNinja | 'cualquiera')[] = ['cualquiera', 'pilar', 'noche', 'duda', 'juego', 'batalla']
 
 /** Lista editable de distracciones: nombre y, opcional, en qué momento aparece. Se guarda con cada cambio. */
 function MisDistracciones({ lista }: { lista: Distraccion[] }) {

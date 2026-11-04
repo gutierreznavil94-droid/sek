@@ -13,6 +13,8 @@ import { Avisos, Cargando } from './componentes'
 import { PantallaSuenio } from './ModoSuenio'
 import { CapaAnimacion } from './animaciones/CapaAnimacion'
 import { NinjaPelea } from './Ninja'
+import { BatallaCapa } from './Batalla'
+import { TensionCapa } from './Tension'
 import { avisar, mutar, notificarCambio, useDatos, useVersion } from './estado'
 import { Layout } from './Layout'
 import { Acciones } from './paginas/Acciones'
@@ -150,6 +152,8 @@ export function App() {
       <ConSuenio />
       <CapaAnimacion />
       <NinjaPelea />
+      <BatallaCapa />
+      <TensionCapa />
       <Avisos />
     </HashRouter>
   )

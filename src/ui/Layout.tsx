@@ -54,6 +54,8 @@ export function Layout({ hoy }: { hoy: string }) {
           </div>
           <div className="fase" style={{ textAlign: 'right' }}>
             {e && e.ciclo.numero > 1 && <div>Ciclo {e.ciclo.numero}</div>}
+            {/* Hueco para los botones chicos de Hoy («Dudo», 「進」) */}
+            <span id="cabecera-extra" className="cabecera-extra" />
           </div>
         </div>
         {/* Barra de fases: mide tiempo (días del ciclo), no esfuerzo. El nivel va aparte. */}

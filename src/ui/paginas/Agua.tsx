@@ -110,7 +110,7 @@ export function TarjetaAgua({ hoy, chica = false }: { hoy: FechaDia; chica?: boo
           onClick={click}
           aria-label={`Agua: llevás ${litros(d.dia.ml)} de ${litros(d.dia.objetivo)}. Tocá para sumar ${d.cfg.principal.nombre} de ${d.cfg.principal.ml} ml; mantené apretado para otro envase`}
         >
-          <Cantimplora nivel={d.dia.nivel} ancho={26} chorro={chorro} sello={sello} />
+          <Cantimplora nivel={d.dia.nivel} ancho={30} chorro={chorro} sello={sello} />
           <span className={`agua-chica-ml mono ${ultimo ? 'suma' : ''}`}>{ultimo ? `+${ultimo}` : litros(d.dia.ml)}</span>
         </button>
         {hojaEnvases}

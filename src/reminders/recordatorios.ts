@@ -43,9 +43,29 @@ export interface Recordatorios {
 
 type Oyente = (r: Recordatorio) => void
 
+const CLAVE_WEB = 'recordatorios-web'
+/** Un aviso atrasado se dispara igual hasta 3 h después (volver a la app después de las 20:50 sigue avisando). */
+const GRACIA_MS = 3 * 3_600_000
+
 class RecordatoriosWeb implements Recordatorios {
   private temporizadores = new Map<string, { id: number; r: Recordatorio }>()
   private oyentes = new Set<Oyente>()
+  /** Instantes ya disparados (id → instante), para no repetir un aviso al volver a la app. */
+  private disparados = new Map<string, number>()
+
+  constructor() {
+    if (typeof window === 'undefined') return
+    // Lo programado se guarda: al recargar la app o al volver del fondo (donde los temporizadores se congelan)
+    // se revisa qué quedó pendiente y se dispara en el momento.
+    for (const r of this.leer()) void this.programar(r)
+    const revisar = () => this.revisar()
+    try {
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') revisar() })
+      window.addEventListener('focus', revisar)
+      window.addEventListener('pageshow', revisar)
+      window.setInterval(revisar, 20_000)
+    } catch { /* sin eventos */ }
+  }
 
   capacidades(): Capacidades {
     return {
@@ -75,11 +95,16 @@ class RecordatoriosWeb implements Recordatorios {
     const espera = r.instante - Date.now()
     // setTimeout no admite más de ~24,8 días; de todos modos la web no garantiza nada tan lejos.
     if (espera > 2_000_000_000) return
+    // Ya sonó este mismo aviso (misma hora): no se repite.
+    if (this.disparados.get(r.id) === r.instante) return
+    if (espera < -GRACIA_MS) return
     const id = window.setTimeout(() => {
       this.temporizadores.delete(r.id)
+      this.guardar()
       this.disparar(r)
     }, Math.max(0, espera))
     this.temporizadores.set(r.id, { id, r })
+    this.guardar()
   }
 
   async cancelar(id: string): Promise<void> {
@@ -87,12 +112,14 @@ class RecordatoriosWeb implements Recordatorios {
     if (t !== undefined) {
       clearTimeout(t.id)
       this.temporizadores.delete(id)
+      this.guardar()
     }
   }
 
   async cancelarTodos(): Promise<void> {
     for (const t of this.temporizadores.values()) clearTimeout(t.id)
     this.temporizadores.clear()
+    this.guardar()
   }
 
   async programados(): Promise<Recordatorio[]> {
@@ -104,7 +131,39 @@ class RecordatoriosWeb implements Recordatorios {
     return () => this.oyentes.delete(o)
   }
 
+  /** Dispara ya lo que venció mientras la pestaña estaba congelada (los temporizadores pueden atrasarse minutos u horas). */
+  private revisar(): void {
+    const t = Date.now()
+    for (const [id, x] of [...this.temporizadores]) {
+      if (x.r.instante > t) continue
+      clearTimeout(x.id)
+      this.temporizadores.delete(id)
+      this.guardar()
+      if (t - x.r.instante <= GRACIA_MS) this.disparar(x.r)
+    }
+  }
+
+  private leer(): Recordatorio[] {
+    try {
+      const v = JSON.parse(localStorage.getItem(CLAVE_WEB) ?? '{}') as { lista?: Recordatorio[]; disparados?: Record<string, number> }
+      for (const [k, i] of Object.entries(v.disparados ?? {})) this.disparados.set(k, i)
+      return (v.lista ?? []).filter((r) => r && typeof r.instante === 'number')
+    } catch {
+      return []
+    }
+  }
+
+  private guardar(): void {
+    try {
+      const disparados: Record<string, number> = {}
+      for (const [k, i] of this.disparados) if (Date.now() - i < 2 * 86_400_000) disparados[k] = i
+      localStorage.setItem(CLAVE_WEB, JSON.stringify({ lista: [...this.temporizadores.values()].map((t) => t.r), disparados }))
+    } catch { /* sin almacenamiento */ }
+  }
+
   private disparar(r: Recordatorio) {
+    this.disparados.set(r.id, r.instante)
+    this.guardar()
     for (const o of this.oyentes) o(r)
     if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
       try {

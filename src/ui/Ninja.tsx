@@ -5,8 +5,14 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { accionDePelea, fraseDePelea, registrarPelea, type Pelea } from '../services/ninjas'
+import { prepararBatalla } from '../services/batalla'
+import { pedirBatalla } from './Batalla'
 import { DURACION, animar, lentoDe, type Animacion } from './animaciones/motor'
 import { avisar, mutar } from './estado'
+import { fechaDe } from '../domain/fechas'
+import { ahora } from '../services/reloj'
+
+function fechaDeHoy(): string { return fechaDe(ahora()) }
 
 let pendiente: Pelea | null = null
 const oyentes = new Set<() => void>()
@@ -45,6 +51,13 @@ export function NinjaPelea() {
     cerrar()
     if (resultado === 'vencido') { avisar(`Venciste a ${pelea.distraccion.nombre}`, { tipo: 'ok' }); navegar(accion.ruta) }
   }
+  // Tercer camino: la batalla (minijuego de flexiones) contra este mismo ninja. La pelea corta no se anota.
+  const batallar = async () => {
+    const r = await prepararBatalla(pelea.fecha === '0000-00-00' ? fechaDeHoy() : pelea.fecha, pelea.distraccion)
+    if (!r.batalla) return avisar(r.motivo)
+    cerrar()
+    pedirBatalla(r.batalla)
+  }
   return (
     <div className="ninja-carta-fondo" role="dialog" aria-label={`${pelea.distraccion.nombre} apareció`}>
       <div className="ninja-carta">
@@ -54,6 +67,7 @@ export function NinjaPelea() {
           <button type="button" className="boton grande primario" onClick={() => responder('vencido')}>{accion.etiqueta}</button>
           <button type="button" className="boton grande" onClick={() => responder('escapo')}>Ahora no</button>
         </div>
+        <button type="button" className="boton grande ancho bt-entrar" onClick={batallar}>⚔ Batalla</button>
         <span className="muy-chico texto-3">Sin XP por la pelea: lo que vale es lo que hagas después.</span>
       </div>
     </div>

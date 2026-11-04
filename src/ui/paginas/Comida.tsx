@@ -61,8 +61,8 @@ export function TarjetaComida({ hoy }: { hoy: string }) {
         </span>
         {o && (
           <span className="co-tarjeta-anillos">
-            <AnilloComida valor={t.kcal} objetivo={o.kcal} etiqueta="Calorías" unidad="kcal" tam={52} />
-            <AnilloComida valor={t.p} objetivo={o.proteina} etiqueta="Proteína" unidad="g" tam={52} alPasarse={false} />
+            <AnilloComida valor={t.kcal} objetivo={o.kcal} etiqueta="Calorías" unidad="kcal" tam={60} />
+            <AnilloComida valor={t.p} objetivo={o.proteina} etiqueta="Proteína" unidad="g" tam={60} alPasarse={false} />
           </span>
         )}
       </Link>

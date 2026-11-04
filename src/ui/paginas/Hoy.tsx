@@ -1,10 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import type { Compromiso } from '../../data/tipos'
+import { prepararBatalla, puedeBatallar, selloBatalla } from '../../services/batalla'
+import { pedirBatalla } from '../Batalla'
+import { pedirTension, useClipsTension } from '../Tension'
 import { NOMBRES_FASES_INICIALES } from '../../data/semilla'
 import { TarjetaComida } from './Comida'
 import { TarjetaAgua } from './Agua'
-import { cerrarAvisoDormir, fraseDormir, minutosAvisoDormir, mostrarAvisoDormir } from '../../services/dormir'
+import { cerrarAvisoDormir, minutosAvisoDormir, mostrarAvisoDormir } from '../../services/dormir'
 import { debeMostrarTajo, distraccionesDe, marcarTajo, momentoActivo, nombreDistraccion, peleasDelDia, prepararPelea, tajoMostradoHoy, vistaAnterior } from '../../services/ninjas'
 import { hayPelea, pedirPelea } from '../Ninja'
 import { Tajo } from '../Tajo'
@@ -41,7 +45,7 @@ import {
 import { duracionSuenio, entrarModoSuenio, horaDeMinutos, resumenSuenio } from '../../services/suenio'
 import { celebrarFase, celebrarNivel, celebrarPilar, celebrarRacha } from '../animaciones/logros'
 import { animar, configuracionAnimaciones } from '../animaciones/motor'
-import { finalizarJuego, iniciarJuego, resumenJuego } from '../../services/juego'
+import { resumenJuego } from '../../services/juego'
 import { deshacerUltimoToque, propuestasDeSubida, responderPropuesta, resumenContadores, sumarToque, type ResumenContador } from '../../services/contadores'
 import { estadoEnDia, estadoVisible, metasPorDia } from '../../services/metas'
 import { FilaMeta } from '../metas'
@@ -79,7 +83,6 @@ async function cargarPanel(hoy: string) {
   const minutoActual = p.hora * 60 + p.minuto
   const nocheAbierta = minutoActual < minutosDe(ajustes.horaCorteNoche) ? sumarDias(hoy, -1) : hoy
   const suenio = await db().suenio.where('noche').equals(nocheAbierta).first()
-  const proximoEntreno = await proximoEntrenamiento(hoy, ajustes.zonaHoraria)
   const metasSemana = (await metasEntre(hoy, sumarDias(hoy, 6))).sort((a, b) => a.fecha.localeCompare(b.fecha))
   let buenosDias: string | null = null
   try { buenosDias = localStorage.getItem('buenos-dias') } catch { /* sin almacenamiento */ }
@@ -88,25 +91,9 @@ async function cargarPanel(hoy: string) {
   const rutina = (await rutinaDelDia(hoy)) ?? null
   const entrenoEnCurso = !!(await sesionEnCurso())
   const peleas = await peleasDelDia(hoy)
-  return { antes: false as const, peleas, rutina, entrenoEnCurso, metasSemana, ajustes, estado, compromisos, nivel, atributos, racha, juego, semana, xpHoy, revision, nocheAbierta, suenio, proximoEntreno, pilares, propuestas, contadores, ventana, ajusteDeAyer, buenosDias, anoche }
+  return { antes: false as const, peleas, rutina, entrenoEnCurso, metasSemana, ajustes, estado, compromisos, nivel, atributos, racha, juego, semana, xpHoy, revision, nocheAbierta, suenio, pilares, propuestas, contadores, ventana, ajusteDeAyer, buenosDias, anoche }
 }
 
-async function proximoEntrenamiento(hoy: string, zona: string) {
-  const t = ahora()
-  const accion = await db().acciones.get('entrenamiento')
-  if (!accion?.activa) return null
-  for (let i = 0; i < 8; i++) {
-    const f = sumarDias(hoy, i)
-    const c = await db().compromisos.get(`entrenamiento:${f}`)
-    const programado = c ? c.estado === 'pendiente' || c.estado === 'iniciado' : accion.dias.includes(diaSemanaDe(f))
-    if (!programado) continue
-    const hora = c?.horaPrevista ?? accion.hora ?? '07:00'
-    const inst = instanteDe(f, hora, zona)
-    if (i === 0 && inst < t - 3 * 3_600_000 && c?.estado !== 'pendiente') continue
-    return { fecha: f, hora, instante: inst, esHoy: i === 0 }
-  }
-  return null
-}
 
 const ICONO_321 = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 1.5M9 2h6" /></svg>
 const ICONO_REV = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M9 11l3 3 8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9" /></svg>
@@ -129,6 +116,18 @@ export function Hoy({ hoy }: { hoy: string }) {
   const intentoNinja = useRef<string>('')
   const cerrarCelebracion = useCallback(() => setNivelNuevo(null), [])
   const d = panel.datos
+  // «Dudo» y 「進」 van en la cabecera, al lado de la fecha (hueco que deja Layout).
+  const [huecoCabecera, setHuecoCabecera] = useState<HTMLElement | null>(null)
+  useEffect(() => { setHuecoCabecera(document.getElementById('cabecera-extra')) }, [])
+  const clipsTension = useClipsTension()
+  const batallas = useDatos(() => puedeBatallar(hoy), [hoy]).datos
+  // A las 20:50 en punto (y al cierre) la pantalla se actualiza sola, sin esperar al reloj de 30 s.
+  const [, forzar] = useState(0)
+  useEffect(() => {
+    if (!d || d.antes) return
+    const ids = [d.ventana.instanteAviso, d.ventana.instanteCierre].map((i) => i - Date.now() + 80).filter((e) => e > 0 && e < 2_000_000_000).map((e) => window.setTimeout(() => forzar((x) => x + 1), e))
+    return () => ids.forEach((i) => window.clearTimeout(i))
+  }, [d])
 
   // Un solo aviso a las 20:50: marcar lo que falta y completar la revisión (solo con la app abierta en la versión web).
   useEffect(() => {
@@ -138,13 +137,22 @@ export function Hoy({ hoy }: { hoy: string }) {
       return
     }
     const pendientes = d.pilares.pilares.filter((p) => p.estado === 'pendiente' && p.accion.tipo === 'compromiso')
-    if (d.ventana.instanteAviso > Date.now()) {
-      // Si cae dentro de un bloque obligatorio (facultad, trabajo), se corre al final del bloque.
-      void finDeObligatorio(hoy, d.ventana.instanteAviso).then((x) => {
-        const instante = x && x.fin < d.ventana.instanteCierre ? x.fin : d.ventana.instanteAviso
-        recordatorios.programar({ id: 'revision-2050', titulo: x ? `Saliste de ${x.bloque.nombre}: completá tu revisión` : 'Completá tu revisión ahora', cuerpo: `Menos de 3 min${pendientes.length ? ` · sin marcar: ${pendientes.map((p) => p.accion.nombre).join(', ')}` : ''}`, instante })
-      })
-    }
+    const t = Date.now()
+    if (t >= d.ventana.instanteCierre) return
+    // Si cae dentro de un bloque obligatorio (facultad, trabajo), se corre al final del bloque.
+    void finDeObligatorio(hoy, d.ventana.instanteAviso).then((x) => {
+      let instante = x && x.fin < d.ventana.instanteCierre ? x.fin : d.ventana.instanteAviso
+      if (instante <= t) {
+        // Ya pasó la hora (la app estaba cerrada o recién se abrió): avisa ahora, una sola vez por día.
+        const clave = `aviso-2050:${hoy}`
+        try {
+          if (localStorage.getItem(clave)) return
+          localStorage.setItem(clave, '1')
+        } catch { /* sin almacenamiento */ }
+        instante = t
+      }
+      recordatorios.programar({ id: 'revision-2050', titulo: x ? `Saliste de ${x.bloque.nombre}: completá tu revisión` : 'Completá tu revisión ahora', cuerpo: `Menos de 3 min${pendientes.length ? ` · sin marcar: ${pendientes.map((p) => p.accion.nombre).join(', ')}` : ''}`, instante })
+    })
   }, [d, hoy])
 
   // Aviso de entreno (19:00): si es día de entreno y todavía no empezó. En la web suena solo con la app abierta
@@ -243,8 +251,6 @@ export function Hoy({ hoy }: { hoy: string }) {
 
   const { ajustes } = d
   const faseTerminada = d.estado?.fase && d.estado.dia > d.estado.fase.diaFin
-  // Minutos de juego en vivo: nunca negativos (el reloj de la interfaz puede ir unos ms detras del de la app).
-  const minutosJuego = d.juego.minutosHoy + (d.juego.activa && !d.juego.pausada ? Math.max(0, Math.floor((tic - ahora()) / 60_000)) : 0)
   // La revisión diaria tiene su botón grande arriba: no se repite en la lista.
   const otros = d.compromisos.filter((c) => !c.accion.pilar && c.accion.tipo !== 'limite_juego' && c.accion.tipo !== 'acostarse' && c.accion.tipo !== 'revision_diaria')
   const pendientesOtros = otros.filter((c) => c.estado === 'pendiente' || c.estado === 'iniciado')
@@ -258,7 +264,6 @@ export function Hoy({ hoy }: { hoy: string }) {
   const avisoDormir = mostrarAvisoDormir({ ahora: tic, instDejarCelu, instFinCelu, minutos: minutosAvisoDormir(ajustes), dormirMarcado: !!d.suenio, noche: d.nocheAbierta }) && avisoDormirAbierto
   const enAviso2050 = !d.revision && tic >= d.ventana.instanteAviso && tic < d.ventana.instanteCierre
   const pasoElCierre = tic >= d.ventana.instanteCierre
-  const pendientesNoche = d.pilares.pilares.filter((p) => p.estado === 'pendiente' && p.accion.tipo === 'compromiso')
 
   // Pilares pendientes con su hora límite (para el compañero y los ninjas).
   const pendientesConHora = d.pilares.pilares.filter((p) => p.estado === 'pendiente').map((p) => ({ id: p.accion.id, nombre: p.accion.nombre, horaLimite: p.accion.tipo === 'entrenamiento' ? p.accion.horaLimiteInicio ?? p.horaLimite : p.horaLimite, entreno: p.accion.tipo === 'entrenamiento' }))
@@ -268,6 +273,23 @@ export function Hoy({ hoy }: { hoy: string }) {
     if (!p) return avisar(ajustes.ninjas === false ? 'Los ninjas están apagados (Más → Ver animaciones).' : 'Sin distracciones en la lista (Más → Ver animaciones → Mis distracciones).')
     pedirPelea(p)
   }
+  // «Dudo»: arranca la batalla (minijuego de flexiones). Si la batalla está apagada, la pelea corta de antes.
+  const batallar = async () => {
+    if (ajustes.batalla?.activa === false) return dudar()
+    const r = await prepararBatalla(hoy)
+    if (r.batalla) pedirBatalla(r.batalla)
+    else avisar(r.motivo)
+  }
+  // Avisos de una línea, apilados: entreno, pilares por vencer (45 min), dejo celu y la revisión.
+  const avisos: { clave: string; texto: ReactNode; accion?: ReactNode; onCerrar?: () => void; tono?: 'rojo' | 'ambar' }[] = []
+  if (enAvisoEntreno && avisoEntreno) avisos.push({ clave: 'entreno', tono: 'rojo', texto: <>Entreno en <b>{Math.max(1, Math.ceil((avisoEntreno.hasta - tic) / 60_000))} min</b></>, accion: <Link to="/entreno" className="boton chico primario">Empezar</Link> })
+  for (const p of d.pilares.pilares) {
+    if (p.estado !== 'pendiente' || p.vencido || !p.horaLimite || p.accion.tipo === 'entrenamiento' || p.accion.tipo === 'acostarse' || !p.compromiso) continue
+    const faltan = Math.ceil((instanteDe(p.compromiso.fecha, p.horaLimite, ajustes.zonaHoraria) - tic) / 60_000)
+    if (faltan > 0 && faltan <= 45) avisos.push({ clave: p.accion.id, tono: 'ambar', texto: <>{p.accion.nombre} en <b>{faltan} min</b></> })
+  }
+  if (avisoDormir) avisos.push({ clave: 'celu', texto: <>Dejo celu en <b>{Math.max(0, minutosHastaCelu)} min</b></>, onCerrar: () => { cerrarAvisoDormir(d.nocheAbierta); setAvisoDormirAbierto(false) } })
+  if (enAviso2050) avisos.push({ clave: 'revision', tono: 'rojo', texto: <>Revisión diaria <b>ahora</b> · hasta las {d.ventana.horaCierre}</>, accion: <Link to="/revision" className="boton chico primario">Empezar</Link> })
 
   const celebrarYFlash = (id: string, xp: number, nuevoNivel: number | null) => {
     setMarcado(id)
@@ -364,11 +386,25 @@ export function Hoy({ hoy }: { hoy: string }) {
         </div>
       )}
 
-      {/* Aviso de entreno: entre las 19:00 y las 19:35, si todavía no empezó */}
-      {enAvisoEntreno && avisoEntreno && (
-        <div className="aviso-entreno" role="alert">
-          <span><b>Quedan {Math.max(1, Math.ceil((avisoEntreno.hasta - tic) / 60_000))} min para empezar el entreno.</b><br /><span className="chico texto-2">Hasta las {avisoEntreno.limite} el pilar cuenta; la hora en que terminás no importa.</span></span>
-          <Link to="/entreno" className="boton chico primario">Empezar</Link>
+      {/* «Dudo» (batalla) y 「進」 (tensión) en la cabecera, al lado de la fecha */}
+      {huecoCabecera && createPortal(
+        <span className="hoy-arriba">
+          {clipsTension && <button type="button" className="boton-duda kanji" onClick={() => pedirTension()} aria-label="Tensión: cinemática">進</button>}
+          {ajustes.ninjas !== false && <button type="button" className="boton-duda" onClick={batallar} aria-label="Estoy dudando: batalla contra la distracción">Dudo</button>}
+        </span>,
+        huecoCabecera,
+      )}
+
+      {/* Avisos: una línea cada uno, apilados */}
+      {avisos.length > 0 && (
+        <div className="avisos" role="alert">
+          {avisos.map((a) => (
+            <div key={a.clave} className={`aviso-linea ${a.tono ?? ''}`}>
+              <span className="crece">{a.texto}</span>
+              {a.accion}
+              {a.onCerrar && <button type="button" className="aviso-cerrar" aria-label="Cerrar" onClick={a.onCerrar}>✕</button>}
+            </div>
+          ))}
         </div>
       )}
 
@@ -388,42 +424,18 @@ export function Hoy({ hoy }: { hoy: string }) {
       {/* Mi horario: dónde estás ahora y qué sigue (tocar abre la semana) */}
       <LineaDelDia hoy={hoy} />
 
-      {/* Un solo mensaje a las 20:50: marcar lo que falta y completar la revisión */}
-      {enAviso2050 && (
-        <section className="aviso-2050" aria-label="Completá tu revisión ahora">
-          <div className="col" style={{ gap: 2 }}>
-            <b className="grande">Completá tu revisión ahora</b>
-            <span className="chico">Menos de 3 min · es el máximo: a las {d.ventana.horaCierre} lo que falte queda sin cumplir.</span>
-          </div>
-          {pendientesNoche.length > 0 && (
-            <div className="col" style={{ gap: 6 }}>
-              {pendientesNoche.map((p) => (
-                <div key={p.accion.id} className="fila entre">
-                  <span className="chico">Sin marcar: <b>{p.accion.nombre}</b></span>
-                  <div className="fila" style={{ gap: 6 }}>
-                    <button className="boton chico ok" onClick={() => marcarPilar(p)}>Sí lo hice</button>
-                    <button className="boton chico suave" onClick={() => p.compromiso && mutar(() => omitirCompromiso(p.compromiso!.id))}>No</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          <Link to="/revision" className="boton grande primario ancho">{ICONO_REV}Empezar la revisión</Link>
-        </section>
-      )}
-
-      {/* Pilares del día: protagonistas */}
-      <section className="col" style={{ gap: 10 }} aria-label="Pilares de hoy">
+      {/* Pilares del día: una línea cada uno */}
+      <section className="col pilares-hoy" style={{ gap: 6 }} aria-label="Pilares de hoy">
         <div className="fila entre">
-          <span className="seccion-titulo">Pilares de hoy</span>
+          <span className="seccion-titulo">Pilares de hoy <span className="seccion-nota">(tocá para registrar o iniciar)</span></span>
           <span className="mono chico" style={{ fontWeight: 700 }}>
             <span className={d.pilares.cumplidos === d.pilares.aplican && d.pilares.aplican > 0 ? 'ok' : ''}>{d.pilares.cumplidos}</span>
             <span className="texto-3">/{d.pilares.aplican}</span>
           </span>
         </div>
-        <div className="pilares-rejilla">
+        <div className="pilares-filas">
           {d.pilares.pilares.map((p) => (
-            <TarjetaPilar
+            <FilaPilar
               key={p.accion.id}
               p={p}
               suenio={d.suenio}
@@ -435,17 +447,16 @@ export function Hoy({ hoy }: { hoy: string }) {
               onTocar={() => tocarPilar(p)}
               onMas={() => p.compromiso && setPilarSel(p)}
               horaLimiteCelu={ajustes.horaLimiteCelu}
-              rutina={d.rutina}
               entrenoEnCurso={d.entrenoEnCurso}
             />
           ))}
         </div>
-        {ajustes.ninjas !== false && (
+        {ajustes.ninjas !== false && (d.peleas.length > 0 || (batallas && batallas.hechas > 0)) && (
           <div className="fila entre ninja-fila">
             <span className="muy-chico texto-3">
-              {d.peleas.length ? d.peleas.map((p) => `${p.resultado === 'vencido' ? 'Venciste a' : 'Se escapó'} ${nombreDistraccion(distraccionesDe(ajustes), p.distraccion)}`).join(' · ') : ''}
+              {d.peleas.map((p) => selloBatalla(nombreDistraccion(distraccionesDe(ajustes), p.distraccion), p, d.contadores.find((c) => c.contador.id === (ajustes.batalla?.contadorId ?? 'flexiones'))?.contador.nombre.toLowerCase() ?? 'flexiones')).join(' · ')}
             </span>
-            <button type="button" className="enlace chico texto-3" onClick={dudar}>Estoy dudando</button>
+            {batallas && batallas.hechas > 0 && <span className="muy-chico texto-3" style={{ whiteSpace: 'nowrap' }}>Batallas hoy: {batallas.hechas} de {batallas.tope}</span>}
           </div>
         )}
         {!d.suenio && esHoraDeAlistarse && !ventanaCeluCerrada && (
@@ -453,15 +464,9 @@ export function Hoy({ hoy }: { hoy: string }) {
             Dejo celu{minutosHastaCelu > 0 ? ` · faltan ${duracionLegible(minutosHastaCelu)}` : minutosHastaCelu < 0 ? ` · ${duracionLegible(-minutosHastaCelu)} tarde` : ''}
           </button>
         )}
-        {!d.suenio && esHoraDeAlistarse && ventanaCeluCerrada && (
-          <p className="ayuda centro">Pasaron las {ajustes.horaLimiteCelu}: «Dejo celu» ya no se registra y la noche queda sin cumplir.</p>
-        )}
-        {!d.suenio && !esHoraDeAlistarse && (
-          <p className="ayuda centro">Alistarse {ajustes.horaAlistarse} · dejo celu hasta {ajustes.horaDejarCelu} · dormido {ajustes.horaDormido}</p>
-        )}
         {d.suenio && (
-          <p className="ayuda centro">
-            Celu dejado a las {formatoHora(d.suenio.horaReal, ajustes.zonaHoraria)}{d.suenio.cumplido ? ' · a tiempo' : ` · ${d.suenio.retrasoMinutos} min tarde`}. Rutina nocturna registrada.{' '}
+          <p className="muy-chico texto-3 centro" style={{ margin: 0 }}>
+            Celu dejado a las {formatoHora(d.suenio.horaReal, ajustes.zonaHoraria)}{d.suenio.cumplido ? ' · a tiempo' : ` · ${d.suenio.retrasoMinutos} min tarde`}.{' '}
             <button className="enlace" onClick={() => mutar(() => deshacerDejoCelu(d.nocheAbierta)).then(() => avisar('«Dejo celu» deshecho'))}>Deshacer</button>
           </p>
         )}
@@ -470,13 +475,6 @@ export function Hoy({ hoy }: { hoy: string }) {
       {/* Agua como tarjeta aparte (lo normal es la chiquita dentro de Comida) */}
       {ajustes.agua?.enHoy === 'tarjeta' && <TarjetaAgua hoy={hoy} />}
       {tajo && <Tajo onFin={cerrarTajo} />}
-      {avisoDormir && (
-        <button type="button" className="franja-dormir" onClick={() => { cerrarAvisoDormir(d.nocheAbierta); setAvisoDormirAbierto(false) }} aria-label="Recordatorio para dormir. Tocá para cerrarlo por esta noche.">
-          <span className="franja-dormir-kanji" aria-hidden>眠</span>
-          <span className="franja-dormir-texto">{fraseDormir(ajustes, d.nocheAbierta)}</span>
-          <span className="franja-dormir-hora mono">{ajustes.horaDejarCelu}</span>
-        </button>
-      )}
 
       {/* Comida: dos anillos (calorías y proteína) y «+ Comí» */}
       <TarjetaComida hoy={hoy} />
@@ -484,14 +482,14 @@ export function Hoy({ hoy }: { hoy: string }) {
       {/* Metas de la semana: fila mini de 7 días, debajo de los pilares */}
       <SemanaMetas hoy={hoy} />
 
-      {/* Botones importantes: revisión diaria resaltada, 3-2-1 y Siguiente acción */}
+      {/* Botones importantes: rojizos a pincel; al usarlos en el día pasan a verde */}
       <div className="col accesos" style={{ gap: 10 }}>
-        <Link to="/revision" className={`boton grande ${d.revision ? 'hecha' : 'primario'}`}>
+        <Link to="/revision" className={`boton grande ${d.revision ? 'hecha' : 'rojizo'}`}>
           {d.revision ? ICONO_OK : ICONO_REV}{d.revision ? 'Revisión diaria hecha' : 'Revisión diaria'}<span className="chico" style={{ fontWeight: 500, opacity: 0.8 }}>{d.revision ? '· ver' : pasoElCierre ? `· sin hacer a las ${d.ventana.horaCierre}` : `· 3 pasos · hasta ${d.ventana.horaAviso}`}</span>
         </Link>
         <div className="rejilla-2">
-          <Link to="/321" className="boton grande">{ICONO_321}3 · 2 · 1</Link>
-          <Link to="/siguiente" className="boton grande">{ICONO_SIG}Siguiente acción</Link>
+          <Link to="/321" className={`boton grande ${usadoHoy('321', hoy) ? 'hecha' : 'rojizo'}`}>{usadoHoy('321', hoy) ? ICONO_OK : ICONO_321}3 · 2 · 1</Link>
+          <Link to="/siguiente" className={`boton grande ${usadoHoy('siguiente', hoy) ? 'hecha' : 'rojizo'}`}>{usadoHoy('siguiente', hoy) ? ICONO_OK : ICONO_SIG}Siguiente acción</Link>
         </div>
       </div>
 
@@ -543,25 +541,7 @@ export function Hoy({ hoy }: { hoy: string }) {
         </section>
       )}
 
-      {/* Secciones: una línea por sección con su dato clave, sin repetir lo de arriba. */}
-      <div className="lista-nav compacta" style={{ borderTop: '1px solid var(--borde)' }}>
-        <Link to="/juego">
-          <span>Juego<span className="desc">{minutosJuego} de {d.juego.limiteMinutos} min hoy{d.juego.activa ? (d.juego.pausada ? ' · en pausa' : ' · corriendo') : ''} · respetarlo da XP al cerrar el día</span></span>
-          <span className="fila" style={{ gap: 6 }}>
-            {!d.juego.activa && <button className="boton chico" onClick={(e) => { e.preventDefault(); mutar(iniciarJuego).then(() => avisar('Temporizador de juego iniciado')) }}>▶</button>}
-            {d.juego.activa && <button className="boton chico peligro" onClick={(e) => { e.preventDefault(); mutar(() => finalizarJuego()).then(() => avisar('Sesión de juego guardada')) }}>■</button>}
-            <span className="flecha">›</span>
-          </span>
-        </Link>
-        <Link to="/mas/entrenamiento">
-          <span>Entrenamiento<span className="desc">{d.proximoEntreno ? `próximo: ${d.proximoEntreno.esHoy ? 'hoy' : fechaLegible(d.proximoEntreno.fecha)} ${d.proximoEntreno.hora}` : 'sin días elegidos'}</span></span>
-          <span className="flecha">›</span>
-        </Link>
-        <Link to="/calendario">
-          <span>Calendario<span className="desc">el mes, los pilares y las metas</span></span>
-          <span className="flecha">›</span>
-        </Link>
-      </div>
+      {/* Juego, Entrenamiento y Calendario ya están en la barra de abajo: no se repiten acá. */}
 
       <DetalleCompromiso c={seleccion} hoy={hoy} onCerrar={() => setSeleccion(null)} />
       <DetallePilar p={pilarSel} hoy={hoy} onCerrar={() => setPilarSel(null)} onResultado={(id, xp, n) => celebrarYFlash(id, xp, n)} />
@@ -580,10 +560,12 @@ function BotonContador({ r, destello, onToque, onDeshacer }: { r: ResumenContado
   const falta = r.extraHoy - r.hoy
   const detalle = r.extraLogradoHoy ? `${r.hoy} · extra ✓` : r.metaLogradaHoy ? `${r.hoy} · faltan ${falta} al extra` : `${r.hoy} / ${r.cuotaHoy} hoy`
   return (
-    <button type="button" className={`contador-boton ${r.metaLogradaHoy ? 'logrado' : ''} ${r.extraLogradoHoy ? 'extra' : ''} ${destello ? 'destello-extra' : ''}`} onClick={onToque} aria-label={`Sumar ${c.cantidadPorToque} ${c.nombre.toLowerCase()}. Hoy ${r.hoy}, cuota ${r.cuotaHoy}, extra ${r.extraHoy}`}>
-      <span className="mas-n">+{c.cantidadPorToque}</span>
-      <span className="nombre">{c.nombre}</span>
-      {destello ? <span className="detalle mono texto-extra">Extra +{c.xpExtra ?? 5} XP</span> : <span className="detalle mono">{detalle}</span>}
+    <button type="button" className={`contador-boton compacto ${r.metaLogradaHoy ? 'logrado' : ''} ${r.extraLogradoHoy ? 'extra' : ''} ${destello ? 'destello-extra' : ''}`} onClick={onToque} aria-label={`Sumar ${c.cantidadPorToque} ${c.nombre.toLowerCase()}. Hoy ${r.hoy}, cuota ${r.cuotaHoy}, extra ${r.extraHoy}`}>
+      <span className="fila" style={{ gap: 6, alignItems: 'baseline' }}>
+        <span className="mas-n">+{c.cantidadPorToque}</span>
+        <span className="nombre">{c.nombre}</span>
+      </span>
+      {destello ? <span className="detalle mono texto-extra">Extra +{c.xpExtra ?? 5} XP</span> : <span className="detalle mono">{detalle}{r.toquesHoy > 0 ? ` · ${r.toquesHoy} serie${r.toquesHoy === 1 ? '' : 's'}` : ''}</span>}
       <span className="barrita dos-topes">
         <i style={{ width: `${capa1}%` }} />
         <i className="capa-extra" style={{ left: `${marca}%`, width: `${capa2}%` }} />
@@ -594,53 +576,54 @@ function BotonContador({ r, destello, onToque, onDeshacer }: { r: ResumenContado
   )
 }
 
-function iconoPilar(estado: Pilar['estado']): string {
-  switch (estado) {
-    case 'cumplido': return '✓'
-    case 'tarde': return '!'
-    case 'omitido': return '✕'
-    case 'descanso': return '–'
-    default: return ''
-  }
+/** ¿Se usó hoy 3·2·1 o Siguiente acción? (lo anotan esas pantallas al empezar). */
+function usadoHoy(que: '321' | 'siguiente', hoy: string): boolean {
+  try { return !!localStorage.getItem(`usado-${que}:${hoy}`) } catch { return false }
 }
 
-function TarjetaPilar({ p, suenio, zona, tic, flash, marcado, destello, onTocar, onMas, horaLimiteCelu, rutina, entrenoEnCurso }: { p: Pilar; suenio: { horaReal: number } | undefined; zona: string; tic: number; flash?: number; marcado: boolean; destello?: boolean; onTocar: () => void; onMas: () => void; horaLimiteCelu: string; rutina?: { nombre: string; minutos: number } | null; entrenoEnCurso?: boolean }) {
+/** Un pilar en una sola fila: ícono, nombre, el dato que importa y el estado a la derecha (tilde grande hecho, punto ámbar iniciado). */
+function FilaPilar({ p, suenio, zona, tic, flash, marcado, destello, onTocar, onMas, horaLimiteCelu, entrenoEnCurso }: { p: Pilar; suenio: { horaReal: number } | undefined; zona: string; tic: number; flash?: number; marcado: boolean; destello?: boolean; onTocar: () => void; onMas: () => void; horaLimiteCelu: string; entrenoEnCurso?: boolean }) {
   const c = p.compromiso
   const esCelu = p.accion.tipo === 'acostarse'
   const esEntreno = p.accion.tipo === 'entrenamiento'
+  const iniciado = p.estado === 'pendiente' && (c?.estado === 'iniciado' || (esEntreno && !!entrenoEnCurso))
   // Últimos 30 minutos antes de la hora límite: el brillo se nota más.
   const cerca = p.estado === 'pendiente' && !!p.horaLimite && !p.vencido && instanteDe(c?.fecha ?? '', p.horaLimite, zona) - tic <= 30 * 60_000
-  let detalle: string
+  const conExtra = tieneExtra(p.accion) && (p.estado === 'cumplido' || p.estado === 'tarde')
+  let detalle: ReactNode
+  let texto: string
   switch (p.estado) {
     case 'cumplido':
-      detalle = esCelu && suenio ? `${formatoHora(suenio.horaReal, zona)} · +${p.xpPrevisto} XP` : c?.extra ? `${c.minutos ?? p.accion.minutosExtra} min · extra ✓` : c?.minutos ? `${c.minutos} min · +${p.xpPrevisto} XP` : `+${p.xpPrevisto} XP`
+      if (esCelu && suenio) { texto = `${formatoHora(suenio.horaReal, zona)} · +${p.xpPrevisto} XP`; detalle = texto }
+      else if (c?.extra) { texto = `✓ ${c.minutos ?? p.accion.minutosExtra} min · extra ✓`; detalle = texto }
+      else if (conExtra) { texto = `✓ ${c?.minutos ?? p.accion.minutosMinimos} min · ¿${p.accion.minutosExtra} min?`; detalle = <>✓ {c?.minutos ?? p.accion.minutosMinimos} min · <span className="extra-pendiente">¿{p.accion.minutosExtra} min?</span></> }
+      else { const min = c?.minutos ?? p.accion.minutosMinimos; texto = min ? `✓ ${min} min · +${p.xpPrevisto} XP` : `✓ +${p.xpPrevisto} XP`; detalle = texto }
       break
     case 'tarde':
-      detalle = `Tarde · ${c?.retrasoMinutos ?? 0} min`
+      texto = `Tarde · ${c?.retrasoMinutos ?? 0} min`; detalle = texto
       break
     case 'omitido':
-      detalle = 'No cumplido'
+      texto = 'No cumplido'; detalle = texto
       break
     case 'descanso':
-      detalle = 'Descanso'
+      texto = 'Descanso'; detalle = texto
       break
     default:
-      detalle = p.ventanaCerrada ? 'Ya no se registra' : p.vencido ? (esCelu ? `Tarde · hasta ${horaLimiteCelu}` : `Venció ${p.horaLimite}`) : esCelu ? `Dejo celu hasta ${p.horaLimite}` : esEntreno ? `${p.accion.horaLimiteInicio && !entrenoEnCurso ? `Empezar hasta ${p.accion.horaLimiteInicio} · ` : ''}${rutina ? `${p.accion.horaLimiteInicio && !entrenoEnCurso ? rutina.nombre.split(' · ')[0] : rutina.nombre} · ~${rutina.minutos} min` : `mín. ${p.accion.minutosMinimos ?? 0} min`}` : p.accion.tipo === 'comida_plan' ? 'Se mide al cerrar el día' : `Hasta ${p.horaLimite}${p.accion.minutosMinimos ? ` · ${p.accion.minutosMinimos} min` : ''}`
+      texto = p.ventanaCerrada ? 'Ya no se registra' : p.vencido ? (esCelu ? `Tarde · hasta las ${horaLimiteCelu}` : `Venció ${p.horaLimite}`) : esCelu ? `Dejo celu hasta las ${p.horaLimite}` : esEntreno ? (entrenoEnCurso ? 'En curso' : `hasta las ${p.accion.horaLimiteInicio ?? p.horaLimite ?? '—'}`) : p.accion.tipo === 'comida_plan' ? 'se mide al cerrar el día' : `hasta las ${p.horaLimite ?? '—'}${p.accion.minutosMinimos ? ` · ${p.accion.minutosMinimos} min` : ''}`
+      detalle = texto
   }
-  const conExtra = tieneExtra(p.accion) && (p.estado === 'cumplido' || p.estado === 'tarde')
-  const accionTexto = conExtra && !c?.extra ? `A los ${p.accion.minutosExtra} min, tocá de nuevo` : p.estado === 'pendiente' ? (esCelu ? 'Tocá para registrar' : esEntreno ? (entrenoEnCurso ? 'En curso · tocá para seguir' : 'Tocá para empezar') : p.accion.tipo === 'comida_plan' ? 'Tocá para ver tu comida' : 'Tocá si lo hiciste') : ''
   return (
     <button
       type="button"
-      className={`pilar-tarjeta ${p.estado} ${p.vencido ? 'vencido' : ''} ${cerca ? 'cerca' : ''} ${marcado ? 'marcado' : ''} ${c?.extra ? 'extra' : ''} ${destello ? 'destello-extra' : ''}`}
+      className={`pilar-fila ${p.estado} ${p.vencido ? 'vencido' : ''} ${cerca ? 'cerca' : ''} ${marcado ? 'marcado' : ''} ${c?.extra ? 'extra' : ''} ${destello ? 'destello-extra' : ''} ${iniciado ? 'iniciado' : ''}`}
       onClick={onTocar}
-      aria-label={`${p.accion.nombre}: ${detalle}`}
+      aria-label={`${p.accion.nombre}: ${texto}`}
       disabled={p.estado === 'descanso'}
     >
       <span className="icono"><IconoPilar id={p.accion.id} tipo={p.accion.tipo} /></span>
-      <span className="estado-ic" aria-hidden>{iconoPilar(p.estado)}</span>
       <span className="nombre">{p.accion.nombre}</span>
-      <span className="detalle">{detalle}{accionTexto && <><br />{accionTexto}</>}</span>
+      <span className="detalle">{detalle}</span>
+      <span className="estado-ic" aria-hidden>{p.estado === 'cumplido' ? '✓' : p.estado === 'tarde' ? '!' : p.estado === 'omitido' ? '✕' : p.estado === 'descanso' ? '–' : iniciado ? <i className="punto-ambar" /> : ''}</span>
       {flash !== undefined && <span className="flash" aria-hidden>+{flash} XP</span>}
       {c && p.estado !== 'descanso' && !esCelu && <span className="mas" role="button" aria-label="Más opciones" onClick={(e) => { e.stopPropagation(); onMas() }}>…</span>}
     </button>
@@ -869,29 +852,34 @@ function SemanaMetas({ hoy }: { hoy: string }) {
   const proxima = dias.slice(1).flatMap((f) => porDia.get(f) ?? []).find((m) => estadoVisible(m, hoy) === 'pendiente')
   const abrir = (f: string) => navigate(`/calendario?dia=${f}`)
   return (
-    <section className="semana-metas" aria-label="Metas de la semana">
+    <section className="semana-metas tinta" aria-label="Metas de la semana">
       <div className="fila entre">
-        <span className="seccion-titulo">Metas</span>
-        <button className="enlace chico texto-3" onClick={() => abrir(hoy)}>+ meta</button>
+        <span className="semana-titulo"><span className="semana-kanji" aria-hidden>的</span>Metas</span>
+        <button type="button" className="sello-rojo" onClick={() => abrir(hoy)}>Sumar meta</button>
       </div>
       <div className="semana-fila">
         {dias.map((f, i) => {
           const metas = porDia.get(f) ?? []
-          const cumplida = metas.some((m) => estadoEnDia(m, f, hoy) === 'cumplida')
+          const cumplidas = metas.filter((m) => estadoEnDia(m, f, hoy) === 'cumplida').length
           return (
-            <button key={f} className={`semana-dia ${i === 0 ? 'hoy' : ''}`} onClick={() => abrir(f)} aria-label={`${fechaLegible(f)}: ${metas.length ? `${metas.length} meta${metas.length > 1 ? 's' : ''}` : 'sin metas'}`}>
+            <button key={f} type="button" className={`semana-dia ${i === 0 ? 'hoy' : ''}`} onClick={() => abrir(f)} aria-label={`${fechaLegible(f)}: ${metas.length ? `${metas.length} meta${metas.length > 1 ? 's' : ''}` : 'sin metas'}`}>
               <span className="semana-letra">{i === 0 ? 'hoy' : LETRAS[diaSemanaDe(f)]}</span>
               <span className="semana-num">{Number(f.slice(8))}</span>
-              <span className={`semana-punto ${metas.length ? (cumplida ? 'cumplida' : 'con-meta') : ''}`} style={{ '--cerca': String(1 - i / 7) } as React.CSSProperties} />
+              <span className="semana-puntos">
+                {metas.slice(0, 4).map((m, j) => <span key={m.id ?? j} className={`semana-punto ${j < cumplidas ? 'cumplida' : 'con-meta'}`} style={{ '--cerca': String(1 - i / 7) } as React.CSSProperties} />)}
+                {metas.length === 0 && <span className="semana-punto" />}
+              </span>
             </button>
           )
         })}
       </div>
       {deHoy.length > 0 && <div className="semana-hoy">{deHoy.map((m) => <FilaMeta key={m.id} m={m} hoy={hoy} dia={hoy} chica />)}</div>}
-      <div className="muy-chico texto-3 semana-proxima">
-        {deHoy.length === 0 && !proxima && 'Sin metas esta semana. Tocá un día para escribir una.'}
-        {proxima && <>próxima: <b className="texto-2">{proxima.titulo}</b> · {fechaLegible(proxima.fecha)}</>}
-      </div>
+      {(proxima || deHoy.length === 0) && (
+        <div className="muy-chico texto-3 semana-proxima">
+          {deHoy.length === 0 && !proxima && 'Sin metas esta semana.'}
+          {proxima && <>próxima: <b className="texto-2">{proxima.titulo}</b> · {fechaLegible(proxima.fecha)}</>}
+        </div>
+      )}
     </section>
   )
 }

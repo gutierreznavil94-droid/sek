@@ -730,7 +730,7 @@ function Logro({ clase, dur, enemigo }: { clase: 'nivel' | 'racha' | 'fase' | 'r
 // ---------- Capa: superpone la escena actual sobre toda la app ----------
 
 /** Fondo épico: carbón con el cielo de lluvia de Progreso desenfocado y oscurecido, y lluvia fina. Sin paso por blanco. */
-function FondoEpico() {
+export function FondoEpico() {
   const img = `${import.meta.env.BASE_URL}${temaActivo().carpetaFondos}lluvia.jpg`
   return (
     <div className="sh-epico" aria-hidden>
