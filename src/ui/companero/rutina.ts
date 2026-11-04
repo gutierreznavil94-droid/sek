@@ -5,7 +5,9 @@
  * caminar o quieto y se activa solo cuando el clip aparece en la hoja.
  */
 
-export type Clip = { desde: number; n: number; fps?: number }
+/** Un clip de la hoja. `unaVez`: se reproduce una vez y queda en el último cuadro. `bajar`: px CSS que el muñeco va más abajo
+ * (sentado: las piernas cuelgan del borde). `aire`: tramo del clip (0..1) en que está en el aire: la app lo mueve solo ahí. */
+export type Clip = { desde: number; n: number; fps?: number; unaVez?: boolean; bajar?: number; aire?: [number, number] }
 export type Hoja = { celda: [number, number]; columnas: number; filas: number; clips: Record<string, Clip>; pasoCuadro: number; frenoAvance: number }
 
 /** Hoja de respaldo (la actual) por si el JSON no carga. */

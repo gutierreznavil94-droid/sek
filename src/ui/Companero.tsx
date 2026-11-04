@@ -83,14 +83,14 @@ export function Companero({ hoy }: { hoy: string }) {
     const consejo = elegirConsejo(datos.datos, e.consejos)
     if (consejo) {
       guardarEstadoCompanero({ ...e, consejos: [...e.consejos, consejo.clave], hablo: true })
-      const id = window.setTimeout(() => decir({ texto: consejo.texto, accion: consejo.accion }), 1200)
-      return () => window.clearTimeout(id)
+      const id = cuandoLibre(() => decir({ texto: consejo.texto, accion: consejo.accion }), 1200)
+      return () => id.cancelar()
     }
     if (!e.hablo) {
       const f = fraseSuelta(frasesCompanero(ajustes.datos), e.frases)
       guardarEstadoCompanero({ ...e, frases: [...e.frases, f.indice], hablo: true })
-      const id = window.setTimeout(() => decir({ texto: f.texto }), 1500)
-      return () => window.clearTimeout(id)
+      const id = cuandoLibre(() => decir({ texto: f.texto }), 1500)
+      return () => id.cancelar()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, anim, datos.datos, ajustes.datos, hoy])
@@ -208,7 +208,8 @@ export function Companero({ hoy }: { hoy: string }) {
       quedarse(m)
     }
     const ubicar = () => {
-      el.style.transform = `translate(${b.x}px, ${-b.y}px)`
+      const bajar = mov !== 'frenar' ? (clipPara(hojaRef.current, mov).propio ? clipPara(hojaRef.current, mov).clip.bajar ?? 0 : 0) : 0
+      el.style.transform = `translate(${b.x}px, ${-(b.y - bajar)}px)`
       c.style.transform = `${b.dir < 0 ? 'scaleX(-1) ' : ''}${giro ? `rotate(${giro}deg)` : ''}`
     }
     /** El globo se ancla arriba del muñeco (hacia el centro de la pantalla) y lo sigue suave; la punta va a la cabeza. */
@@ -242,7 +243,8 @@ export function Companero({ hoy }: { hoy: string }) {
       if (mov === 'quieto' || mov === 'enEscalon' || mov === 'sentado' || mov === 'estirarse' || mov === 'alerta') {
         t += dt
         const { nombre, clip, propio: suyo } = propio(mov)
-        pintar(nombre, reducido ? 0 : t * (clip.fps ?? 12), suyo && mov !== 'quieto' && mov !== 'enEscalon' && mov !== 'sentado')
+        pintar(nombre, reducido ? 0 : t * (clip.fps ?? 12), clip.unaVez ?? (suyo && (mov === 'estirarse' || mov === 'alerta')))
+        if (suyo && clip.unaVez && dur !== Infinity && dur < clip.n / (clip.fps ?? 12) + 1) dur = clip.n / (clip.fps ?? 12) + 1
         if (escalon) {
           const alto = altoDe(escalon)
           if (alto < SALTO.altoMin || alto > SALTO.altoMax) bajar(); else b.y = alto
@@ -252,7 +254,7 @@ export function Companero({ hoy }: { hoy: string }) {
       } else if (mov === 'caminar' || mov === 'correr') {
         const { nombre, clip } = propio(mov)
         const fps = clip.fps ?? 33.6
-        const vel = mov === 'correr' ? 2.1 : 1
+        const vel = mov === 'correr' ? (propio('correr').propio ? 3.2 : 2.1) : 1
         f += dt * fps * vel
         b.x += b.dir * h.pasoCuadro * dt * fps * vel
         pintar(nombre, f)
@@ -264,12 +266,28 @@ export function Companero({ hoy }: { hoy: string }) {
         if (f >= clip.n) { b.x += b.dir * h.frenoAvance; quedarse('quieto'); siguiente() }
       } else if (mov === 'saltar') {
         t += dt
-        const k = Math.min(1, t / SALTO.duracion)
-        b.x = salto.desde.x + (salto.hasta.x - salto.desde.x) * k
-        b.y = arcoSalto(k, salto.desde.y, salto.hasta.y)
         const { nombre, clip, propio: suyo } = propio('saltar')
+        // Con el clip de Luma: se agacha, salta (solo en el tramo «aire» se mueve) y aterriza; sin clip, un arco corto.
+        const total = suyo ? clip.n / (clip.fps ?? 24) : SALTO.duracion
+        const k = Math.min(1, t / total)
+        const [a0, a1] = suyo && clip.aire ? clip.aire : [0, 1]
+        const kk = Math.max(0, Math.min(1, (k - a0) / (a1 - a0)))
+        b.x = salto.desde.x + (salto.hasta.x - salto.desde.x) * kk
+        b.y = arcoSalto(kk, salto.desde.y, salto.hasta.y)
         pintar(nombre, suyo ? k * clip.n : 0, suyo)
         if (k >= 1) { b.x = salto.hasta.x; b.y = salto.hasta.y; quedarse('enEscalon') }
+      } else if (mov === 'caerRodar' && propio('caerRodar').propio) {
+        // Con el clip de Luma: cae en el tramo «aire», aterriza en cuclillas, se para y se acomoda el sombrero.
+        t += dt
+        const { nombre, clip } = propio('caerRodar')
+        const total = clip.n / (clip.fps ?? 24)
+        const k = Math.min(1, t / total)
+        const [a0, a1] = clip.aire ?? [0, 0.3]
+        const kk = Math.max(0, Math.min(1, (k - a0) / (a1 - a0)))
+        b.y = caida(kk, salto.desde.y)
+        if (k > a0 && k < a1) b.x = Math.max(MARGEN, Math.min(ancho() - W_CELDA - MARGEN, b.x + b.dir * 24 * dt))
+        pintar(nombre, k * clip.n, true)
+        if (k >= 1) { b.y = 0; quedarse('quieto') }
       } else if (mov === 'caerRodar') {
         t += dt
         const { nombre, clip, propio: suyo } = propio('caerRodar')
@@ -351,6 +369,14 @@ export function Companero({ hoy }: { hoy: string }) {
       </div>
     </div>
   )
+}
+
+/** Espera `ms` y llama; si justo está el tajo en pantalla, espera 5 s más (no habla encima del corte). */
+function cuandoLibre(fn: () => void, ms: number): { cancelar: () => void } {
+  let id = 0
+  const intentar = () => { if (document.querySelector('.tajo')) { id = window.setTimeout(intentar, 5000); return } fn() }
+  id = window.setTimeout(intentar, ms)
+  return { cancelar: () => window.clearTimeout(id) }
 }
 
 /** Dónde va según la pantalla: pasea en Hoy, quieto en una esquina en Calendario, Comida y Más; en el resto no está. */
