@@ -5,6 +5,7 @@
  * cae y rueda, voltereta, se estira, alerta. Tocarlo: se frena, mira al frente y habla con un globo a pincel
  * que lo sigue. Otro toque lo cierra.
  */
+import { CompaneroDormido } from './animaciones/Siluetas'
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { obtenerAjustes } from '../services/base'
@@ -16,7 +17,6 @@ import { useRivalActivo } from './Rival'
 import { HOJA_BASE, apoyoEn, arcoSalto, caida, clipPara, duracionDe, elegirMovimiento, escalonCercano, SALTO, type Escalon, type Hoja, type Movimiento } from './companero/rutina'
 import { movimientoReducido } from './componentes'
 import { useDatos, useTic, useVersion } from './estado'
-import { CompaneroDormido } from './animaciones/Siluetas'
 
 const hoja = () => `${import.meta.env.BASE_URL}${temaActivo().sprite}`
 const hojaJson = () => hoja().replace(/\.webp$/, '.json')
@@ -77,6 +77,12 @@ export function Companero({ hoy }: { hoy: string }) {
   const modo = ajustes.datos?.companero ?? 'pasea'
   const lugar = lugarDe(pathname)
   // Después de «Dejo celu» (Hoy lo anota) el compañero no se pasea: duerme en su cama en una esquina.
+  const [, refrescar] = useState(0)
+  useEffect(() => {
+    const f = () => refrescar((x) => x + 1)
+    window.addEventListener('companero-cambio', f)
+    return () => window.removeEventListener('companero-cambio', f)
+  }, [])
   const dormido = companeroDormido()
   // Con el rival escurridizo en pantalla, el shinobi que se ve es el que persigue (Rival.tsx).
   const visible = modo !== 'apagado' && lugar !== null && !dormido && !rivalActivo
@@ -345,7 +351,8 @@ export function Companero({ hoy }: { hoy: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, lugar, pasea, reducido])
 
-  if (dormido && modo !== 'apagado' && lugar !== null) return <div className="companero" aria-hidden><div className="companero-caja dormido"><CompaneroDormido /></div></div>
+  // Dormido: no flota encima de nada. En Hoy la cama va abajo de todo, dentro de la página (ver CamaDelCompanero).
+  if (dormido) return null
   if (!visible) return null
   const [cw, ch] = hojaDatos.celda
   const estilo = { backgroundImage: `url(${hoja()})`, backgroundSize: `${hojaDatos.columnas * cw}px ${hojaDatos.filas * ch}px`, width: cw, height: ch }
@@ -396,4 +403,10 @@ function lugarDe(ruta: string): 'pasea' | 'esquina' | null {
   if (ruta === '/') return 'pasea'
   if (ruta === '/calendario' || ruta.startsWith('/calendario/') || ruta === '/comida' || ruta.startsWith('/comida/') || ruta === '/mas' || ruta.startsWith('/mas/')) return 'esquina'
   return null
+}
+
+/** La cama del compañero, al final de Hoy: ocupa su propio lugar después de la última tarjeta y nunca tapa nada. */
+export function CamaDelCompanero({ dormido, modo }: { dormido: boolean; modo?: string }) {
+  if ((modo ?? 'pasea') === 'apagado' || !dormido) return null
+  return <div className="companero-cama-lugar" aria-hidden><CompaneroDormido /></div>
 }

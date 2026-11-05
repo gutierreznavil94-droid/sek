@@ -44,7 +44,8 @@
     "icono-sincronizar": "同",
     "icono-ciclo": "始", "icono-actualizar": "新", "icono-agua": "水", "icono-fruta": "果", "icono-racha": "炎",
     "icono-organizacion": "陣", "icono-bandeja": "箱", "icono-sueltas-fondo": "散", "icono-sello-hecho": "済",
-    "kanji-quien": "人", "kanji-importancia": "重", "kanji-rapidez": "速", "kanji-donde": "所", "kanji-fecha": "日", "kanji-frente": "陣"
+    "kanji-quien": "人", "kanji-importancia": "重", "kanji-rapidez": "速", "kanji-donde": "所", "kanji-fecha": "日", "kanji-frente": "陣",
+    "icono-batalla-vencido": "斬", "icono-batalla-escapado": "逃", "icono-batalla-robo": "盗", "icono-batalla-duda": "…"
   },
   "orden": 1
 }
