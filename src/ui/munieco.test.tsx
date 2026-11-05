@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { Escena } from './animaciones/Escena'
-import { duracionDe } from './animaciones/motor'
+import { Escena, cuadroEjecucion } from './animaciones/Escena'
+import { configurarAnimaciones, duracionDe } from './animaciones/motor'
 import { NOMBRES_POSE, guardarPosePropia, mezclar, origenDePose, pose, poseBase, poseEn, restaurarPose } from './animaciones/munieco'
 
 describe('shinobi articulado', () => {
@@ -53,8 +53,23 @@ describe('shinobi articulado', () => {
     expect(container.querySelector('.sh-ej-video image')?.getAttribute('href')).toMatch(/animaciones\/ejecucion\/ejecucion-claro\.webp$/)
     expect(container.querySelector('.sh-ej-video .sh-kanji')?.textContent).toBe('鍛')
     expect(container.querySelector('.sh-mancha')).toBeNull()
-    expect(duracionDe({ tipo: 'ejecucion', pilar: 'manga' })).toBe(2900)
+    expect(duracionDe({ tipo: 'ejecucion', pilar: 'manga' })).toBe(1500)
     expect(duracionDe({ tipo: 'ejecucion', pilar: 'manga', vieja: true })).toBe(1500)
+    configurarAnimaciones({ velocidadEjecucion: 'rapida' })
+    expect(duracionDe({ tipo: 'ejecucion', pilar: 'manga' })).toBe(1200)
+    configurarAnimaciones({ velocidadEjecucion: 'lenta' })
+    expect(duracionDe({ tipo: 'ejecucion', pilar: 'manga' })).toBe(2100)
+    expect(duracionDe({ tipo: 'ejecucion', pilar: 'manga', vieja: true })).toBe(1500)
+    configurarAnimaciones({ velocidadEjecucion: 'normal' })
+  })
+
+  it('ritmo de la ejecución: corte hasta el cuadro 39 al 30 %, golpe congelado hasta el 40 %, caída hasta el 72 al 80 %', () => {
+    expect(Math.floor(cuadroEjecucion(0))).toBe(0)
+    expect(Math.floor(cuadroEjecucion(0.299))).toBe(38)
+    expect(Math.floor(cuadroEjecucion(0.3))).toBe(39)
+    expect(Math.floor(cuadroEjecucion(0.39))).toBe(39)
+    expect(Math.floor(cuadroEjecucion(0.8))).toBe(72)
+    expect(Math.floor(cuadroEjecucion(1))).toBe(84)
   })
 
   it('caramelo y logro usan los videos de Luma; los del muñeco quedan guardados', () => {

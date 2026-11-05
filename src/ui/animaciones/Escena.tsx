@@ -534,8 +534,8 @@ function ParryVideo({ dur, oscuro }: { dur: number; oscuro: boolean }) {
 /**
  * Ejecución hecha con los dos videos de Luma de Navil (scripts/ejecucion-sprites.py): el ronin da el paso, carga y
  * corta mientras el rival espera en guardia; en el cuadro en que la hoja queda extendida (46 %, el mismo instante
- * que los efectos de la app) arranca la caída del rival, que termina disolviéndose en tinta. 84 cuadros a 40 fps (2,1 s):
- * antes del impacto el rival respira y se agacha apenas en guardia; la caída dura 0,8 s.
+ * que los efectos de la app) el golpe se congela un instante y arranca la caída del rival, que termina disolviéndose
+ * en tinta. 84 cuadros; en «normal» dura 1,5 s (ver cuadroEjecucion).
  */
 const EJ_HOJA = { w: 436, h: 158, cols: 10, filas: 9, cuadros: 84 }
 const EJ_CAJA = { x: 0, ancho: 360 }
@@ -548,15 +548,20 @@ if (typeof Image !== 'undefined') for (const t of ['claro', 'oscuro']) { const i
 if (typeof document !== 'undefined') document.fonts?.load('64px Pincel', '鍛進描静斬').catch(() => undefined)
 
 /**
- * Cuadro de la tira según la fracción del tiempo. El impacto queda en el 46 % (donde van los destellos); la caída del
- * rival (cuadros 39 a 72) se estira hasta el 92 % para que no se desplome de golpe; el resto es la disolución.
+ * Cuadro de la tira según la fracción del tiempo (en «normal», 1,5 s):
+ * corte rápido 0 → 0,45 s (cuadros 0 a 39), golpe congelado en el cuadro 39 hasta 0,6 s (destello, flash y tinta),
+ * caída del rival 0,6 → 1,2 s (cuadros 39 a 72) y disolución en tinta 1,2 → 1,5 s (cuadros 72 a 84).
+ * Rápida y Lenta estiran o achican todo igual: el golpe cae siempre al 30 %.
  */
+export const TRAMOS_EJECUCION = { impacto: 0.3, finCongelado: 0.4, finCaida: 0.8 }
 export function cuadroEjecucion(f: number): number {
   const IMPACTO = 39
   const FIN_CAIDA = 72
-  if (f < 0.46) return (f / 0.46) * IMPACTO
-  if (f < 0.92) return IMPACTO + ((f - 0.46) / 0.46) * (FIN_CAIDA - IMPACTO)
-  return FIN_CAIDA + ((f - 0.92) / 0.08) * (EJ_HOJA.cuadros - FIN_CAIDA)
+  const { impacto, finCongelado, finCaida } = TRAMOS_EJECUCION
+  if (f < impacto) return (f / impacto) * IMPACTO
+  if (f < finCongelado) return IMPACTO
+  if (f < finCaida) return IMPACTO + ((f - finCongelado) / (finCaida - finCongelado)) * (FIN_CAIDA - IMPACTO)
+  return Math.min(EJ_HOJA.cuadros, FIN_CAIDA + ((f - finCaida) / (1 - finCaida)) * (EJ_HOJA.cuadros - FIN_CAIDA))
 }
 
 function EjecucionVideo({ kanji, dur, oscuro }: { kanji: string; dur: number; oscuro: boolean }) {
@@ -790,8 +795,9 @@ export function Escena({ a, nombre, lento = 1, tema = 'epico', tinta = true, onS
   const parry = a.tipo === 'parry' && !!a.vieja
   const parryVideo = a.tipo === 'parry' && !a.vieja
   const luma = (a.tipo === 'postura' || a.tipo === 'logro') && !a.vieja
+  const ejVideo = a.tipo === 'ejecucion' && !a.vieja
   return (
-    <div className={`sh-capa ${parry ? 'parry-chico' : ''} ${parryVideo ? 'parry-video' : ''} ${luma ? 'luma' : ''} ${a.tipo} ${temaClase}`} style={{ '--dur': `${dur}ms` } as CSSProperties} onPointerDown={parry ? undefined : onSaltar} role="status" aria-label={a.tipo === 'parry' ? 'Parry' : typeof titulo === 'string' ? titulo : 'Animación de logro'}>
+    <div className={`sh-capa ${parry ? 'parry-chico' : ''} ${parryVideo ? 'parry-video' : ''} ${luma ? 'luma' : ''} ${ejVideo ? 'ej-video' : ''} ${a.tipo} ${temaClase}`} style={{ '--dur': `${dur}ms` } as CSSProperties} onPointerDown={parry ? undefined : onSaltar} role="status" aria-label={a.tipo === 'parry' ? 'Parry' : typeof titulo === 'string' ? titulo : 'Animación de logro'}>
       {epico && <FondoEpico />}
       <svg className="sh-escenario" viewBox="0 0 360 240" aria-hidden>
         <Fondo tinte={a.tipo === 'postura' ? color : undefined} lluvia={a.tipo === 'logro' || epico} epico={epico} />

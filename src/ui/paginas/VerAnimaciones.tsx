@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Ajustes } from '../../data/tipos'
 import { guardarAjustes, obtenerAjustes } from '../../services/base'
-import { KANJI, animar, nombreDePilar, configurarAnimaciones, useConfigAnimaciones, type Animacion, type ModoAnimaciones } from '../animaciones/motor'
+import { DURACION_EJECUCION, KANJI, animar, nombreDePilar, configurarAnimaciones, useConfigAnimaciones, type Animacion, type ModoAnimaciones, type VelocidadEjecucion } from '../animaciones/motor'
 import { EditorPose } from '../animaciones/EditorPose'
 import { MuniecoVivo } from '../animaciones/Escena'
 import { Atras, Tarjeta } from '../componentes'
@@ -50,6 +50,7 @@ export function VerAnimaciones() {
   if (!a) return <p className="vacio">Cargando…</p>
   const ver = (x: Animacion) => animar(x, { forzar: true })
   /** Cámara lenta (x4) solo para esa animación; la casilla general no cambia. */
+  const VELOCIDADES: { v: VelocidadEjecucion; t: string }[] = [{ v: 'normal', t: 'Normal' }, { v: 'rapida', t: 'Rápida' }, { v: 'lenta', t: 'Lenta' }]
   const lenta = (x: Animacion) => ver({ ...x, lento: 4 })
   const guardar = (c: Partial<Ajustes>, msg: string) => mutar(() => guardarAjustes(c)).then(() => avisar(msg, { tipo: 'ok' }))
   const EJ: Animacion = { tipo: 'ejecucion', pilar: 'entrenamiento' }
@@ -79,7 +80,15 @@ export function VerAnimaciones() {
           ))}
         </div>
         {comparar(EJ, '斬', 'Ejecución')}
-        <p className="ayuda">El ronin corta y el rival cae (videos de Luma). La anterior, con el muñeco, queda guardada acá.</p>
+        <p className="chico texto-2" style={{ margin: '12px 0 6px' }}>Velocidad de la ejecución</p>
+        <div className="selector-3">
+          {VELOCIDADES.map((v) => (
+            <button key={v.v} className={`boton chico ${config.velocidadEjecucion === v.v ? 'primario' : ''}`} onClick={() => { configurarAnimaciones({ velocidadEjecucion: v.v }); ver(EJ) }}>
+              {v.t} · {(DURACION_EJECUCION[v.v] / 1000).toLocaleString('es-AR')} s
+            </button>
+          ))}
+        </div>
+        <p className="ayuda">El ronin corta, el golpe se congela un instante y el rival cae (videos de Luma). También vale para la batalla. La anterior, con el muñeco, queda guardada acá.</p>
       </Tarjeta>
 
       <Tarjeta titulo="Caramelo de monje">

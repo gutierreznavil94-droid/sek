@@ -1786,10 +1786,23 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .co-punto.p { background: var(--texto-2); }
 .co-item-num { white-space: nowrap; }
 
-/* Ejecución de Luma: destello blanco de un cuadro en el impacto (46 %) */
+/* Ejecución de Luma: el golpe cae al 30 % (0,45 s de 1,5 s) y se congela hasta el 40 % (hit-stop).
+   Destello, flash blanco, tinta roja, kanji y sacudida caen en ese mismo cuadro (39). La versión vieja usa los de arriba. */
 .sh-ejv-flash { opacity: 0; pointer-events: none; animation: sh-ejv-flash var(--dur) linear forwards; }
-@keyframes sh-ejv-flash { 0%, 46% { opacity: 0; transform: scale(.6) } 46.3% { opacity: .95 } 48.5% { opacity: .9 } 49%, 100% { opacity: 0 } }
+@keyframes sh-ejv-flash { 0%, 29.8% { opacity: 0; transform: scale(.6) } 30% { opacity: .95; transform: scale(1) } 33% { opacity: .9; transform: scale(1.15) } 34.5%, 100% { opacity: 0; transform: scale(1.2) } }
 .sh-ej-video .sh-ejv-flash { transform-box: fill-box; transform-origin: center; }
+.sh-ej-video .sh-destello { animation-name: sh-destello-v; }
+@keyframes sh-destello-v { 0%, 29.8% { opacity: 0 } 30.5% { opacity: .6 } 40% { opacity: .35 } 48%, 100% { opacity: 0 } }
+.sh-ej-video .sh-gota { animation-name: sh-gota-v; }
+@keyframes sh-gota-v { 0%, 30% { opacity: 0; transform: none } 31.5% { opacity: 1 } 56% { opacity: 1; transform: translate(var(--gx), var(--gy)) } 100% { opacity: .8; transform: translate(var(--gx), calc(var(--gy) + 18px)) } }
+.sh-ej-video .sh-arco { animation-name: sh-arco-v; }
+@keyframes sh-arco-v { 0%, 30% { stroke-dashoffset: 100; opacity: 0 } 30.3% { opacity: .9 } 39% { stroke-dashoffset: 0; opacity: .9 } 62% { opacity: .6 } 100% { stroke-dashoffset: 0; opacity: 0 } }
+.sh-ej-video .sh-kanji { animation-name: sh-kanji-v; }
+@keyframes sh-kanji-v { 0%, 30% { opacity: 0; transform: scale(1.8) } 35% { opacity: 1; transform: scale(.96) } 40% { transform: scale(1) } 100% { opacity: 1; transform: scale(1) } }
+.sh-capa.ej-video .sh-escenario { animation-name: sh-sacudida-v; }
+@keyframes sh-sacudida-v { 0%, 30% { transform: none } 31.2% { transform: translate(-4px, 2px) } 33.4% { transform: translate(4px, -2px) } 35.6% { transform: translate(-2px, -1px) } 37.8% { transform: translate(2px, 1px) } 40%, 100% { transform: none } }
+.sh-capa.ej-video .sh-titulo { animation-delay: calc(var(--dur) * .3); animation-duration: calc(var(--dur) * .3); }
+.sh-capa.ej-video .sh-sub-texto { animation-delay: calc(var(--dur) * .4); }
 
 /* Caramelo de Luma: el caramelo rojo en la mano (29–47 %) y el aura desde que junta las manos (52 %) */
 .sh-caramelo-v { opacity: 0; pointer-events: none; animation: sh-caramelo-v var(--dur) linear forwards; }
@@ -2098,6 +2111,8 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .bt-vida { position: relative; z-index: 2; width: 100%; max-width: 560px; height: 10px; margin-top: 8px; border-radius: 999px; background: rgba(20, 20, 20, 0.18); border: 1px solid rgba(20, 20, 20, 0.35); overflow: hidden; }
 .bt-vida i { display: block; height: 100%; background: linear-gradient(90deg, #8c1020, #c8102e); border-radius: 999px; transition: width 0.45s cubic-bezier(.2,.8,.2,1); }
 .bt-escena { position: relative; z-index: 1; flex: 1; width: 100%; max-width: 560px; display: flex; align-items: flex-end; justify-content: center; min-height: 0; }
+.bt-golpe-flash { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(circle at 55% 45%, #fffbe8 0, rgba(255, 251, 232, .7) 18%, rgba(200, 16, 46, .35) 40%, transparent 65%); animation: bt-golpe-flash 260ms linear both; }
+@keyframes bt-golpe-flash { 0% { opacity: 0 } 8% { opacity: 1 } 45% { opacity: .6 } 100% { opacity: 0 } }
 .bt-tira { width: 100%; height: auto; max-height: 100%; display: block; }
 .bt-tira.bt-shinobi { width: 62%; align-self: flex-end; margin-right: auto; margin-left: 2%; }
 .bt-tira.bt-pelea { width: 100%; }
