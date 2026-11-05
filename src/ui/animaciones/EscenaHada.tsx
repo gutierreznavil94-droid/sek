@@ -84,7 +84,7 @@ export function EscenaHada({ a, lento = 1, onSaltar }: { a: EnCurso; lento?: num
       escena = (
         <>
           <div className="hd-arcoiris" aria-hidden>
-            {arco.map((s, i) => <span key={i} style={{ '--i': i, '--n': arco.length } as CSSProperties}>{s}</span>)}
+            {arco.map((s, i) => <span key={i} style={{ '--i': i, '--n': arco.length } as CSSProperties}><i>{s}</i></span>)}
           </div>
           <Kitty className="hd-gira" />
         </>
@@ -138,7 +138,7 @@ export function EscenaHada({ a, lento = 1, onSaltar }: { a: EnCurso; lento?: num
   }
 
   return (
-    <div className={`${clases} hd-${variante}`} style={estilo} onPointerDown={onSaltar} role="status" aria-label={typeof titulo === 'string' ? titulo : 'Logro'}>
+    <div className={`${clases} hd-v-${variante}`} style={estilo} onPointerDown={onSaltar} role="status" aria-label={typeof titulo === 'string' ? titulo : 'Logro'}>
       <div className="hd-escena">{escena}</div>
       {titulo && <div className="hd-titulo">{titulo}</div>}
       {sub && <div className="hd-sub">{sub}</div>}
