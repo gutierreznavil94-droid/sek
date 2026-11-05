@@ -6,6 +6,8 @@ import { configurarPrimeraVez, MAX_PILARES, PILARES_DEL_CREADOR, SUGERENCIAS_PIL
 import { TEMAS, TEMAS_PROXIMOS, aplicarTema, saludoDe, temaPorId, type DefinicionTema } from '../../temas/temas'
 import { DiasSemana, movimientoReducido } from '../componentes'
 import { Divisor } from '../Divisor'
+import { FondoLluvia } from '../FondoLluvia'
+import { ShinobiRespira } from '../../temas/shinobi/ShinobiRespira'
 import { avisar, mutar } from '../estado'
 import { temaTieneFormulario } from '../../services/recomendaciones'
 
@@ -171,9 +173,9 @@ export function ListaTemas({ valor, onElegir }: { valor: string; onElegir: (id: 
             {t.vistaPrevia.video && !quieto ? (
               <video src={BASE + t.vistaPrevia.video} poster={BASE + t.vistaPrevia.imagen} autoPlay muted loop playsInline preload="metadata" />
             ) : (
-              <img src={BASE + t.vistaPrevia.imagen} alt="" className="tema-vista-respira" />
+              <img src={BASE + t.vistaPrevia.imagen} alt="" />
             )}
-            {!t.vistaPrevia.video && <span className="tema-vista-lluvia" aria-hidden />}
+            <span className="pv-tema-sprite" style={{ backgroundImage: `url(${BASE + t.sprite})` }} aria-hidden />
           </span>
           <span className="pv-tema-texto">
             <b>{t.nombre}</b>
@@ -275,12 +277,19 @@ function Listo({ tema, nombre, hoy, pilares }: { tema: DefinicionTema; nombre: s
   return (
     <>
       <div className="pv-saludo">
-        <div className="sh-reposo-marco pv-personaje">
-          <Suspense fallback={<div className="pv-personaje-vacio" />}>
-            <MuniecoVivo />
-          </Suspense>
-        </div>
-        <p className="pv-globo"><b>¡Hola, {nombre}!</b> {saludoDe(tema, nombre)}</p>
+        {tema.id === 'shinobi' ? (
+          <div className="pv-escena" aria-hidden>
+            <FondoLluvia variante="hoy" enCaja />
+            <ShinobiRespira hoja={BASE + tema.sprite} quieto={movimientoReducido()} className="pv-escena-shinobi" />
+          </div>
+        ) : (
+          <div className="sh-reposo-marco pv-personaje">
+            <Suspense fallback={<div className="pv-personaje-vacio" />}>
+              <MuniecoVivo />
+            </Suspense>
+          </div>
+        )}
+        <p className={`pv-globo${tema.id === 'shinobi' ? ' al-lado' : ''}`}><b>¡Hola, {nombre}!</b> {saludoDe(tema, nombre)}</p>
       </div>
       <div className="pv-resumen">
         <div><span className="texto-3 chico">Tu ciclo</span><b>90 días desde hoy</b><span className="chico texto-2">Día 1: {fechaLegible(hoy)}</span></div>

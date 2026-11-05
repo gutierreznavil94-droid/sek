@@ -45,7 +45,8 @@ const COLOR = '236, 234, 229'
 /** El temporizador de Juego corriendo (lo marca la página): la lluvia va más lenta y tenue. */
 export const CLASE_JUEGO_CORRIENDO = 'juego-corriendo'
 
-export function FondoLluvia({ variante, calma = false }: { variante: VarianteLluvia; calma?: boolean }) {
+/** `enCaja`: dentro de un recuadro (position: absolute) en lugar de toda la pantalla; mide el recuadro. */
+export function FondoLluvia({ variante, calma = false, enCaja = false }: { variante: VarianteLluvia; calma?: boolean; enCaja?: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null)
   const calmaRef = useRef(calma)
   calmaRef.current = calma
@@ -92,14 +93,15 @@ export function FondoLluvia({ variante, calma = false }: { variante: VarianteLlu
 
     const medir = () => {
       dpr = Math.min(2, window.devicePixelRatio || 1)
-      w = window.innerWidth
-      h = window.innerHeight
+      const caja = enCaja ? c.getBoundingClientRect() : null
+      w = caja && caja.width > 0 ? caja.width : window.innerWidth
+      h = caja && caja.height > 0 ? caja.height : window.innerHeight
       c.width = Math.round(w * dpr)
       c.height = Math.round(h * dpr)
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       ventana = { x: Math.round(w * 0.6), y: Math.round(h * 0.3), w: Math.round(w * 0.34), h: Math.round(h * 0.27) }
       gotas.length = 0
-      const n = Math.round((variante === 'sueno' ? ventana.w * ventana.h : w * h) / perfil.area)
+      const n = Math.round((variante === 'sueno' ? ventana.w * ventana.h : w * h) / perfil.area) * (enCaja ? 6 : 1)
       for (let i = 0; i < n; i++) gotas.push(nueva(true))
       vidrio.length = 0
       if (variante === 'juego') for (let i = 0; i < Math.max(9, Math.round(w / 34)); i++) vidrio.push(nuevaVidrio(true))
@@ -451,6 +453,6 @@ export function FondoLluvia({ variante, calma = false }: { variante: VarianteLlu
     const alMedir = () => { medir(); dibujar(0, performance.now()) }
     window.addEventListener('resize', alMedir)
     return () => { cancelAnimationFrame(id); window.removeEventListener('resize', alMedir) }
-  }, [variante])
-  return <canvas ref={ref} className={`fondo-lluvia ${variante}`} aria-hidden />
+  }, [variante, enCaja])
+  return <canvas ref={ref} className={`fondo-lluvia ${variante}${enCaja ? ' en-caja' : ''}`} aria-hidden />
 }
