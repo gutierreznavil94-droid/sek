@@ -7,24 +7,48 @@
  * - Juego: lluvia vista desde adentro: gotas gruesas que resbalan por un vidrio (bajan, se frenan, siguen) y un charco
  *   abajo donde caen gotas y abren anillos. Mientras corre el temporizador, todo más lento y tenue (concentración).
  * - Sueño: una habitación a tinta: futón abajo, ventana a la derecha con lluvia y gotas en el vidrio, lámpara de papel.
+ * - Comida: lluvia fina sobre hojas de bambú a un costado; cada tanto una gota resbala por una hoja y cae.
+ * - Entreno: tormenta en diagonal con relámpagos lejanos; en el descanso (`calma`) se calma y va más lenta.
+ * - Más: lluvia oblicua con viento que va y viene, y cada tanto una hoja que pasa volando.
+ *
+ * Autocontenido: solo usa React y `movimientoReducido` (se puede llevar a otro proyecto tal cual).
  */
 import { useEffect, useRef } from 'react'
 import { movimientoReducido } from './componentes'
 
-export type VarianteLluvia = 'hoy' | 'calendario' | 'juego' | 'sueno'
+export type VarianteLluvia = 'hoy' | 'calendario' | 'juego' | 'sueno' | 'comida' | 'entreno' | 'mas'
 
 type Gota = { x: number; y: number; largo: number; vel: number; capa: 0 | 1 }
 type Nube = { x: number; y: number; r: number; vel: number; a: number }
 /** Gota en el vidrio: queda quieta un rato, baja, se frena, sigue. Deja un rastro que se borra. */
 type GotaVidrio = { x: number; y: number; r: number; vel: number; quieta: number; moviendo: number; rastro: number }
 type Anillo = { x: number; y: number; t: number; max: number }
+/** Hoja de bambú: sale de un nudo con un ángulo; se mece un poco. */
+type HojaBambu = { x: number; y: number; ang: number; largo: number; ancho: number; fase: number }
+/** Gota que resbala por una hoja (k: 0 base → 1 punta) y después cae. */
+type GotaHoja = { hoja: number; k: number; cae: boolean; x: number; y: number; vy: number }
+/** Hoja suelta que el viento lleva (Más). */
+type HojaVuela = { x: number; y: number; vx: number; giro: number; fase: number; tam: number }
+
+/** Cuánto se ve cada variante (Hoy queda como estaba). */
+const PERFIL: Record<VarianteLluvia, { vel: [number, number]; largo: [number, number]; alfa: [number, number]; ancho: [number, number]; area: number; diagonal: number }> = {
+  hoy: { vel: [150, 85], largo: [30, 16], alfa: [0.55, 0.28], ancho: [1.7, 1.1], area: 6500, diagonal: 0.22 },
+  calendario: { vel: [95, 58], largo: [24, 14], alfa: [0.5, 0.26], ancho: [1.6, 1.1], area: 7000, diagonal: 0.04 },
+  juego: { vel: [80, 48], largo: [18, 11], alfa: [0.46, 0.24], ancho: [1.6, 1.1], area: 12000, diagonal: 0.04 },
+  sueno: { vel: [70, 42], largo: [18, 11], alfa: [0.55, 0.3], ancho: [1.5, 1], area: 380, diagonal: 0.04 },
+  comida: { vel: [78, 48], largo: [15, 9], alfa: [0.48, 0.25], ancho: [1.4, 1], area: 8000, diagonal: 0.07 },
+  entreno: { vel: [270, 175], largo: [40, 22], alfa: [0.55, 0.3], ancho: [1.8, 1.2], area: 5200, diagonal: 0.36 },
+  mas: { vel: [125, 78], largo: [22, 13], alfa: [0.5, 0.27], ancho: [1.6, 1.1], area: 8000, diagonal: 0.5 },
+}
 
 const COLOR = '236, 234, 229'
 /** El temporizador de Juego corriendo (lo marca la página): la lluvia va más lenta y tenue. */
 export const CLASE_JUEGO_CORRIENDO = 'juego-corriendo'
 
-export function FondoLluvia({ variante }: { variante: VarianteLluvia }) {
+export function FondoLluvia({ variante, calma = false }: { variante: VarianteLluvia; calma?: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null)
+  const calmaRef = useRef(calma)
+  calmaRef.current = calma
   useEffect(() => {
     const c = ref.current
     if (!c) return
@@ -39,18 +63,24 @@ export function FondoLluvia({ variante }: { variante: VarianteLluvia }) {
     const vidrio: GotaVidrio[] = []
     const anillos: Anillo[] = []
     let proximoAnillo = 0
-    const diagonal = variante === 'hoy' ? 0.22 : 0.04
+    const perfil = PERFIL[variante]
+    let diagonal = perfil.diagonal
+    const hojas: HojaBambu[] = []
+    const gotasHoja: GotaHoja[] = []
+    let proximaGotaHoja = 0
+    const vuelan: HojaVuela[] = []
+    let proximaHojaVuela = performance.now() + 2500
     /** Ventana de Sueño (y zona de lluvia de afuera). */
     let ventana = { x: 0, y: 0, w: 0, h: 0 }
 
     const nueva = (inicial: boolean): Gota => {
       const capa: 0 | 1 = Math.random() < 0.55 ? 0 : 1
-      const vel = variante === 'hoy' ? (capa ? 150 : 85) : variante === 'calendario' ? (capa ? 70 : 42) : capa ? 60 : 36
+      const vel = perfil.vel[capa ? 0 : 1]
       const zona = variante === 'sueno' ? ventana : { x: 0, y: 0, w, h }
       return {
-        x: zona.x + Math.random() * (zona.w + zona.h * diagonal) - zona.h * diagonal,
+        x: zona.x + Math.random() * (zona.w + zona.h * Math.abs(diagonal)) - zona.h * Math.max(0, diagonal),
         y: inicial ? zona.y + Math.random() * zona.h : zona.y - 20,
-        largo: variante === 'hoy' ? (capa ? 30 : 16) : variante === 'calendario' ? (capa ? 16 : 10) : capa ? 12 : 8,
+        largo: perfil.largo[capa ? 0 : 1],
         vel: vel * (0.85 + Math.random() * 0.3),
         capa,
       }
@@ -69,13 +99,27 @@ export function FondoLluvia({ variante }: { variante: VarianteLluvia }) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       ventana = { x: Math.round(w * 0.6), y: Math.round(h * 0.3), w: Math.round(w * 0.34), h: Math.round(h * 0.27) }
       gotas.length = 0
-      const n = variante === 'hoy' ? Math.round((w * h) / 6500) : variante === 'calendario' ? Math.round((w * h) / 11000) : variante === 'juego' ? Math.round((w * h) / 26000) : Math.round((ventana.w * ventana.h) / 700)
+      const n = Math.round((variante === 'sueno' ? ventana.w * ventana.h : w * h) / perfil.area)
       for (let i = 0; i < n; i++) gotas.push(nueva(true))
       vidrio.length = 0
       if (variante === 'juego') for (let i = 0; i < Math.max(9, Math.round(w / 34)); i++) vidrio.push(nuevaVidrio(true))
       if (variante === 'sueno') for (let i = 0; i < 7; i++) vidrio.push(nuevaVidrio(true))
       nubes.length = 0
-      if (variante === 'calendario') for (let i = 0; i < 3; i++) nubes.push({ x: (w * (i + 0.5)) / 3 + (Math.random() - 0.5) * 80, y: 40 + i * 28 + Math.random() * 30, r: 70 + Math.random() * 50, vel: 3 + Math.random() * 3, a: 0.07 + Math.random() * 0.04 })
+      if (variante === 'calendario') for (let i = 0; i < 4; i++) nubes.push({ x: (w * (i + 0.5)) / 4 + (Math.random() - 0.5) * 80, y: 150 + i * h * 0.17 + Math.random() * 40, r: 70 + Math.random() * 50, vel: 3 + Math.random() * 3, a: 0.16 + Math.random() * 0.07 })
+      if (variante === 'entreno') for (let i = 0; i < 5; i++) nubes.push({ x: (w * (i + 0.5)) / 5, y: 10 + Math.random() * 60, r: 60 + Math.random() * 40, vel: 6 + Math.random() * 5, a: 0.14 + Math.random() * 0.06 })
+      hojas.length = 0
+      gotasHoja.length = 0
+      if (variante === 'comida') {
+        // Dos cañas a la derecha, con nudos y hojas largas que cuelgan hacia el centro.
+        const canas = [w * 0.9, w * 0.97]
+        canas.forEach((cx, j) => {
+          for (let k = 0; k < 5; k++) {
+            const y = h * (0.12 + k * 0.16) + j * 30
+            const n = 2 + (k % 2)
+            for (let q = 0; q < n; q++) hojas.push({ x: cx, y, ang: Math.PI * (0.82 + q * 0.09 + Math.random() * 0.05), largo: 46 + Math.random() * 34, ancho: 6 + Math.random() * 3, fase: Math.random() * 6 })
+          }
+        })
+      }
       if (variante === 'hoy') {
         // Banco denso arriba (detrás de la barra fija) y unas pocas sueltas más abajo que se aclaran.
         const nArriba = Math.max(7, Math.round(w / 55))
@@ -115,11 +159,11 @@ export function FondoLluvia({ variante }: { variante: VarianteLluvia }) {
           g.y += g.vel * dt * lento
           g.x += g.vel * dt * diagonal * lento
           const fondo = variante === 'sueno' ? ventana.y + ventana.h + 20 : h + 20
-          if (g.y > fondo) Object.assign(g, nueva(false))
+          if (g.y > fondo || g.x > w + 60 || g.x < -60) Object.assign(g, nueva(false))
         }
-        const base = g.capa ? (variante === 'hoy' ? 0.55 : variante === 'calendario' ? 0.34 : 0.22) : variante === 'hoy' ? 0.28 : variante === 'calendario' ? 0.17 : 0.12
+        const base = perfil.alfa[g.capa ? 0 : 1]
         ctx.strokeStyle = `rgba(${COLOR}, ${base * alfa})`
-        ctx.lineWidth = g.capa ? 1.7 : 1.1
+        ctx.lineWidth = perfil.ancho[g.capa ? 0 : 1]
         ctx.beginPath()
         ctx.moveTo(g.x, g.y)
         ctx.lineTo(g.x - g.largo * diagonal, g.y - g.largo)
@@ -145,14 +189,14 @@ export function FondoLluvia({ variante }: { variante: VarianteLluvia }) {
           if (g.y > zona.y + zona.h + 8) Object.assign(g, nuevaVidrio(false))
         }
         if (g.rastro > 1) {
-          ctx.strokeStyle = `rgba(${COLOR}, ${0.08 * alfa})`
+          ctx.strokeStyle = `rgba(${COLOR}, ${0.14 * alfa})`
           ctx.lineWidth = g.r * 0.9
           ctx.lineCap = 'round'
           ctx.beginPath(); ctx.moveTo(g.x, g.y - g.r); ctx.lineTo(g.x + Math.sin(g.y * 0.05) * 1.2, g.y - g.r - g.rastro); ctx.stroke()
         }
-        ctx.fillStyle = `rgba(${COLOR}, ${0.16 * alfa})`
+        ctx.fillStyle = `rgba(${COLOR}, ${0.26 * alfa})`
         ctx.beginPath(); ctx.ellipse(g.x, g.y, g.r, g.r * 1.25, 0, 0, Math.PI * 2); ctx.fill()
-        ctx.fillStyle = `rgba(${COLOR}, ${0.4 * alfa})`
+        ctx.fillStyle = `rgba(${COLOR}, ${0.55 * alfa})`
         ctx.beginPath(); ctx.arc(g.x - g.r * 0.35, g.y - g.r * 0.4, g.r * 0.32, 0, Math.PI * 2); ctx.fill()
       }
     }
@@ -162,8 +206,8 @@ export function FondoLluvia({ variante }: { variante: VarianteLluvia }) {
       const y = h - 96
       const x0 = w * 0.08
       const x1 = w * 0.92
-      ctx.strokeStyle = `rgba(${COLOR}, ${0.12 * alfa})`
-      ctx.lineWidth = 1.3
+      ctx.strokeStyle = `rgba(${COLOR}, ${0.24 * alfa})`
+      ctx.lineWidth = 1.6
       ctx.beginPath(); ctx.moveTo(x0, y); ctx.bezierCurveTo(w * 0.35, y + 6, w * 0.65, y - 4, x1, y + 2); ctx.stroke()
       if (!quieto && t >= proximoAnillo) {
         anillos.push({ x: x0 + 20 + Math.random() * (x1 - x0 - 40), y: y + 2, t: 0, max: 26 + Math.random() * 22 })
@@ -175,7 +219,7 @@ export function FondoLluvia({ variante }: { variante: VarianteLluvia }) {
         const k = a.t / 1.8
         if (k >= 1) { anillos.splice(i, 1); continue }
         const r = Math.max(0, a.max * (1 - (1 - k) ** 2))
-        ctx.strokeStyle = `rgba(${COLOR}, ${0.3 * (1 - k) * alfa})`
+        ctx.strokeStyle = `rgba(${COLOR}, ${0.46 * (1 - k) * alfa})`
         ctx.lineWidth = 1.1
         ctx.beginPath(); ctx.ellipse(a.x, a.y, r, r * 0.24, 0, 0, Math.PI * 2); ctx.stroke()
         if (k < 0.3) {
@@ -203,22 +247,22 @@ export function FondoLluvia({ variante }: { variante: VarianteLluvia }) {
       ctx.beginPath(); ctx.moveTo(0, piso); ctx.lineTo(w, piso); ctx.stroke()
       // Ventana: cielo de noche, lluvia adentro del marco, gotas en el vidrio, marco tipo shōji
       const v = ventana
-      ctx.fillStyle = 'rgba(120, 130, 150, 0.09)'
+      ctx.fillStyle = 'rgba(120, 132, 155, 0.15)'
       ctx.fillRect(v.x, v.y, v.w, v.h)
       ctx.save()
       ctx.beginPath(); ctx.rect(v.x, v.y, v.w, v.h); ctx.clip()
       pintarLluvia(dt, 1, 1)
       pintarVidrio(dt, 1, 1)
       ctx.restore()
-      ctx.strokeStyle = tinta(0.32); ctx.lineWidth = 2.4
+      ctx.strokeStyle = tinta(0.52); ctx.lineWidth = 3
       ctx.strokeRect(v.x, v.y, v.w, v.h)
-      ctx.lineWidth = 1.2; ctx.strokeStyle = tinta(0.15)
+      ctx.lineWidth = 1.6; ctx.strokeStyle = tinta(0.3)
       ctx.beginPath()
       ctx.moveTo(v.x + v.w / 2, v.y); ctx.lineTo(v.x + v.w / 2, v.y + v.h)
       ctx.moveTo(v.x, v.y + v.h / 2); ctx.lineTo(v.x + v.w, v.y + v.h / 2)
       ctx.stroke()
       // Alféizar
-      ctx.strokeStyle = tinta(0.18); ctx.lineWidth = 3
+      ctx.strokeStyle = tinta(0.32); ctx.lineWidth = 3.5
       ctx.beginPath(); ctx.moveTo(v.x - 6, v.y + v.h + 3); ctx.lineTo(v.x + v.w + 6, v.y + v.h + 3); ctx.stroke()
       // Futón: colchón bajo, almohada, manta con un pliegue
       const fx = w * 0.06
@@ -255,8 +299,119 @@ export function FondoLluvia({ variante }: { variante: VarianteLluvia }) {
       ctx.stroke()
     }
 
+    /** Bambú de Comida: cañas a tinta con nudos, hojas que se mecen y gotas que resbalan por ellas. */
+    const puntaHoja = (hj: HojaBambu, t: number) => {
+      const a = hj.ang + (quieto ? 0 : Math.sin(t / 1600 + hj.fase) * 0.04)
+      return { a, x: hj.x + Math.cos(a) * hj.largo, y: hj.y + Math.sin(a) * hj.largo * 0.55 + hj.largo * 0.25 }
+    }
+    const pintarBambu = (dt: number, t: number) => {
+      ctx.lineCap = 'round'
+      for (const cx of [w * 0.9, w * 0.97]) {
+        ctx.strokeStyle = `rgba(${COLOR}, 0.2)`; ctx.lineWidth = 5
+        ctx.beginPath(); ctx.moveTo(cx, -10); ctx.lineTo(cx + 3, h + 10); ctx.stroke()
+        ctx.strokeStyle = `rgba(${COLOR}, 0.34)`; ctx.lineWidth = 2
+        for (let y = 40; y < h; y += 92) { ctx.beginPath(); ctx.moveTo(cx - 4, y); ctx.lineTo(cx + 5, y + 1); ctx.stroke() }
+      }
+      for (const hj of hojas) {
+        const p = puntaHoja(hj, t)
+        const mx = (hj.x + p.x) / 2
+        const my = (hj.y + p.y) / 2
+        const nx = -(p.y - hj.y) / hj.largo
+        const ny = (p.x - hj.x) / hj.largo
+        ctx.fillStyle = `rgba(${COLOR}, 0.16)`
+        ctx.beginPath()
+        ctx.moveTo(hj.x, hj.y)
+        ctx.quadraticCurveTo(mx + nx * hj.ancho, my + ny * hj.ancho, p.x, p.y)
+        ctx.quadraticCurveTo(mx - nx * hj.ancho * 0.6, my - ny * hj.ancho * 0.6, hj.x, hj.y)
+        ctx.fill()
+        ctx.strokeStyle = `rgba(${COLOR}, 0.22)`; ctx.lineWidth = 0.8
+        ctx.beginPath(); ctx.moveTo(hj.x, hj.y); ctx.lineTo(p.x, p.y); ctx.stroke()
+      }
+      if (!quieto && hojas.length && t >= proximaGotaHoja) {
+        gotasHoja.push({ hoja: Math.floor(Math.random() * hojas.length), k: 0, cae: false, x: 0, y: 0, vy: 0 })
+        proximaGotaHoja = t + 1400 + Math.random() * 2600
+      }
+      for (let i = gotasHoja.length - 1; i >= 0; i--) {
+        const g = gotasHoja[i]
+        const hj = hojas[g.hoja]
+        if (!g.cae) {
+          g.k = Math.min(1, g.k + dt * 0.7)
+          const p = puntaHoja(hj, t)
+          g.x = hj.x + (p.x - hj.x) * g.k
+          g.y = hj.y + (p.y - hj.y) * g.k
+          if (g.k >= 1) g.cae = true
+        } else {
+          g.vy += 900 * dt
+          g.y += g.vy * dt
+          if (g.y > h + 10) { gotasHoja.splice(i, 1); continue }
+        }
+        ctx.fillStyle = `rgba(${COLOR}, 0.6)`
+        ctx.beginPath(); ctx.ellipse(g.x, g.y, 1.8, g.cae ? 3.4 : 2.2, 0, 0, Math.PI * 2); ctx.fill()
+      }
+    }
+
+    /** Hojas que el viento lleva de un lado al otro (Más). */
+    const pintarHojasVuela = (dt: number, t: number) => {
+      if (!quieto && t >= proximaHojaVuela && vuelan.length < 2) {
+        vuelan.push({ x: -20, y: h * (0.15 + Math.random() * 0.55), vx: 110 + Math.random() * 70, giro: Math.random() * 6, fase: Math.random() * 6, tam: 7 + Math.random() * 5 })
+        proximaHojaVuela = t + 5000 + Math.random() * 7000
+      }
+      for (let i = vuelan.length - 1; i >= 0; i--) {
+        const f = vuelan[i]
+        if (!quieto) {
+          f.x += f.vx * dt * (0.8 + diagonal * 0.6)
+          f.y += Math.sin(t / 400 + f.fase) * 30 * dt + 12 * dt
+          f.giro += dt * 3
+          if (f.x > w + 30) { vuelan.splice(i, 1); continue }
+        }
+        ctx.save()
+        ctx.translate(f.x, f.y)
+        ctx.rotate(f.giro)
+        ctx.scale(1, 0.5 + 0.5 * Math.abs(Math.cos(f.giro * 0.7)))
+        ctx.fillStyle = `rgba(${COLOR}, 0.4)`
+        ctx.beginPath()
+        ctx.moveTo(-f.tam, 0)
+        ctx.quadraticCurveTo(0, -f.tam * 0.55, f.tam, 0)
+        ctx.quadraticCurveTo(0, f.tam * 0.55, -f.tam, 0)
+        ctx.fill()
+        ctx.restore()
+      }
+    }
+
+    const relampagoLejano = (dt: number, t: number) => {
+      if (quieto) return
+      if (t >= proximoRelampago) { relampago = 1; proximoRelampago = t + 12000 + Math.random() * 14000 }
+      if (relampago > 0) {
+        const parpadeo = relampago > 0.6 ? 1 : relampago > 0.45 ? 0.3 : 0.8
+        const g = ctx.createLinearGradient(0, 0, 0, h * 0.6)
+        g.addColorStop(0, `rgba(${COLOR}, ${0.16 * relampago * parpadeo})`)
+        g.addColorStop(1, `rgba(${COLOR}, 0)`)
+        ctx.fillStyle = g
+        ctx.fillRect(0, 0, w, h * 0.6)
+        relampago = Math.max(0, relampago - dt * 2.4)
+      }
+    }
+
     const dibujar = (dt: number, t: number) => {
       ctx.clearRect(0, 0, w, h)
+      if (variante === 'comida') { pintarLluvia(dt, 1, 1); pintarBambu(dt, t); return }
+      if (variante === 'mas') {
+        // Viento que va y viene: la lluvia se inclina más o menos
+        if (!quieto) diagonal = perfil.diagonal + Math.sin(t / 2600) * 0.16 + Math.sin(t / 900) * 0.04
+        pintarLluvia(dt, 1, 1)
+        pintarHojasVuela(dt, t)
+        return
+      }
+      if (variante === 'entreno') {
+        const calmo = calmaRef.current
+        if (!calmo) relampagoLejano(dt, t)
+        for (const nb of nubes) {
+          if (!quieto) { nb.x += nb.vel * dt * (calmo ? 0.3 : 1); if (nb.x - nb.r * 1.6 > w) nb.x = -nb.r * 1.6 }
+          pintarNube(nb)
+        }
+        pintarLluvia(dt, calmo ? 0.55 : 1, calmo ? 0.35 : 1)
+        return
+      }
       if (variante === 'sueno') { pintarHabitacion(dt, t); return }
       if (variante === 'juego') {
         const calma = document.documentElement.classList.contains(CLASE_JUEGO_CORRIENDO)

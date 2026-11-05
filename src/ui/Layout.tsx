@@ -9,7 +9,7 @@ import { useDatos } from './estado'
 import { VERSION_APP } from '../version'
 import { enModoPrueba, salirModoPrueba } from '../data/modoPrueba'
 import { Companero } from './Companero'
-import { FondoLluvia } from './FondoLluvia'
+import { FondoLluvia, type VarianteLluvia } from './FondoLluvia'
 import { useVersion } from './estado'
 
 const ICONOS = {
@@ -39,7 +39,7 @@ export function Layout({ hoy }: { hoy: string }) {
   const { pathname } = useLocation()
   const version = useVersion()
   const lluvia = useDatos(() => obtenerAjustes().then((a) => a.fondoLluvia ?? {}), [version])
-  const varianteLluvia = pathname === '/' ? (lluvia.datos?.hoy !== false ? 'hoy' : null) : pathname === '/calendario' ? (lluvia.datos?.calendario !== false ? 'calendario' : null) : pathname === '/juego' ? (lluvia.datos?.juego !== false ? 'juego' : null) : pathname === '/sueno' ? (lluvia.datos?.sueno !== false ? 'sueno' : null) : null
+  const varianteLluvia = varianteDeRuta(pathname, lluvia.datos ?? {})
   const d = estado.datos
   const e = d?.e
   const diasFaltan = e ? 1 - e.dia : 0
@@ -126,4 +126,18 @@ export function Layout({ hoy }: { hoy: string }) {
       )}
     </div>
   )
+}
+
+/** Qué lluvia va en cada pantalla (Progreso no lleva: ya tiene el video del shinobi). */
+function varianteDeRuta(p: string, apagadas: Partial<Record<VarianteLluvia, boolean>>): VarianteLluvia | null {
+  const v: VarianteLluvia | null =
+    p === '/' ? 'hoy'
+    : p.startsWith('/calendario') ? 'calendario'
+    : p === '/juego' ? 'juego'
+    : p === '/sueno' ? 'sueno'
+    : p === '/comida' || p === '/mas/comida' ? 'comida'
+    : p.startsWith('/mas/rutinas') || p === '/mas/entrenamiento' ? 'entreno'
+    : p.startsWith('/mas') ? 'mas'
+    : null
+  return v && apagadas[v] !== false ? v : null
 }

@@ -10,7 +10,7 @@ import { feriadosEntre, marcarFeriado, quitarFeriado } from '../../services/feri
 import { xpDelDia } from '../../services/xp'
 import { Hoja, IconoPilar, Porcentaje, Tarjeta } from '../componentes'
 import { formatoHora } from '../../domain/fechas'
-import { obtenerAjustes } from '../../services/base'
+import { guardarAjustes, obtenerAjustes } from '../../services/base'
 import { avisar, mutar, useDatos } from '../estado'
 import { agregarFechaClave, borrarFechaClave, editarFechaClave, fechasClavePorDia } from '../../services/fechasClave'
 import type { FechaClave } from '../../data/tipos'
@@ -55,7 +55,8 @@ export function Calendario({ hoy }: { hoy: string }) {
     const acciones = ordenarPilares(await db().acciones.filter((a) => a.activa && !!a.pilar).toArray())
     const claves = await fechasClavePorDia(dias[0], ultimo)
     const bloques = await bloquesEntre(dias[0], ultimo)
-    return { ciclo, pilares, metas, excepciones, feriados, acciones, claves, bloques }
+    const verHorario = (await obtenerAjustes()).calendarioHorario !== false
+    return { ciclo, pilares, metas, excepciones, feriados, acciones, claves, bloques, verHorario }
   }, [mes, hoy])
 
   const d = datos.datos
@@ -100,7 +101,7 @@ export function Calendario({ hoy }: { hoy: string }) {
                   </span>
                 )}
                 {linea && <span className={`linea-meta ${linea}`} aria-hidden />}
-                {franjas.length > 0 && <span className="franjas" aria-hidden>{franjas.slice(0, 3).map((b) => <i key={b.id} className={b.tipo} />)}</span>}
+                {d?.verHorario && franjas.length > 0 && <span className="franjas" aria-hidden>{franjas.slice(0, 3).map((b) => <i key={b.id} className={b.tipo} />)}</span>}
               </div>
             )
           })}
@@ -118,8 +119,12 @@ export function Calendario({ hoy }: { hoy: string }) {
           <span><span className="linea-meta verde muestra" />meta cumplida</span>
           <span><span className="linea-meta roja muestra" />meta no cumplida</span>
           <span><span className="sello-clave muestra">印</span>fecha clave</span>
-          <span><span className="franjas muestra"><i className="obligatorio" /><i className="entreno" /></span>horario</span>
+          <span><span className="franjas muestra"><i className="obligatorio" /><i className="entreno" /></span>horario (gris, arriba)</span>
         </div>
+        <label className="fila cal-ver-horario chico texto-2">
+          <input type="checkbox" checked={d?.verHorario ?? true} onChange={async (e) => { const v = e.target.checked; await mutar(() => guardarAjustes({ calendarioHorario: v })) }} />
+          Mostrar horario en los días
+        </label>
         <p className="ayuda">Los 4 puntos van siempre en ese orden: entrenamiento, empresa, manga, dormir. Tocá un día para ver cuál es cada uno. Borde: hoy. Punto arriba: feriado. Línea abajo: meta (gris pendiente). ▎ inicio de fase.</p>
       </Tarjeta>
 

@@ -60,6 +60,7 @@ import { celebrarNivel, celebrarRecord } from '../animaciones/logros'
 import { animar, sonarTaiko } from '../animaciones/motor'
 import { Avisos, Confirmar, Hoja } from '../componentes'
 import { AguadaFondo, TintaPolvo } from '../TintaPolvo'
+import { FondoLluvia } from '../FondoLluvia'
 import { ShinobiBarra } from '../Shinobi'
 import { avisar, mutar, useDatos, useTic } from '../estado'
 
@@ -157,6 +158,7 @@ export function Entreno({ hoy }: { hoy: string }) {
   usePantallaDespierta(!!d?.sesion)
   return (
     <div className="app entreno-app">
+      {!d?.sesion && <LluviaEntreno />}
       <main className="contenido entreno">
         {resultado ? <Resumen r={resultado} rutina={d?.rutinas.find((x) => x.id === resultado.sesion.rutinaId)} onReabrir={async () => { await mutar(() => reabrirEntreno(resultado.sesion.id!)); setResultado(null) }} />
           : !d ? <p className="vacio">Cargando…</p>
@@ -166,6 +168,13 @@ export function Entreno({ hoy }: { hoy: string }) {
       <Avisos />
     </div>
   )
+}
+
+/** Tormenta de fondo del entreno (se calma en el descanso). Apagable en Ajustes → Fondo con lluvia. */
+function LluviaEntreno({ calma = false }: { calma?: boolean }) {
+  const a = useDatos(() => obtenerAjustes(), [])
+  if (!a.datos || a.datos.fondoLluvia?.entreno === false) return null
+  return <FondoLluvia variante="entreno" calma={calma} />
 }
 
 // ---------- Antes de empezar ----------
@@ -257,6 +266,7 @@ function EnCurso({ s, r, ctx, onTerminado }: { s: SesionEntreno; r: Rutina; ctx:
       <LineaAhora s={s} bloque={bloque} fase={fase} ctx={ctx} />
       <AguadaFondo tenue={!!(s.descanso && fase)} />
       <TintaPolvo bloque={bloque?.id ?? null} visible={!(s.descanso && fase)} tenue={!!(s.descanso && fase)} />
+      <LluviaEntreno calma={!!(s.descanso && fase)} />
 
       {s.descanso && fase ? (
         <Descanso key={s.descanso.inicio} s={s} fase={fase} r={r} ctx={ctx} />

@@ -2376,3 +2376,13 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .co-tarjeta-anillos .co-anillo { height: 34px !important; padding: 0; }
 .co-tarjeta-anillos .co-anillo svg { width: 34px !important; height: 34px !important; display: block; }
 .co-tarjeta .co-comi, .co-tarjeta .co-comi.primario { animation: none; box-shadow: none !important; }
+
+/* ---------- v0.48: en Calendario el horario va en gris tinta fino (el verde es solo de metas, abajo) ---------- */
+.cal-dia .franjas { height: 2px; top: 4px; }
+.cal-dia .franjas i, .franjas.muestra i { opacity: 1; box-shadow: none; filter: none; }
+.franjas.muestra { height: 2px; }
+.cal-dia .franjas i.obligatorio, .franjas.muestra i.obligatorio { background: rgba(var(--papel-rgb), 0.55); }
+.cal-dia .franjas i.entreno, .franjas.muestra i.entreno { background: rgba(var(--papel-rgb), 0.34); }
+.cal-dia .franjas i.otro, .franjas.muestra i.otro { background: rgba(var(--papel-rgb), 0.18); }
+.cal-ver-horario { gap: 8px; align-items: center; margin-top: 2px; }
+.contenido.entreno .fondo-lluvia { z-index: -1; }

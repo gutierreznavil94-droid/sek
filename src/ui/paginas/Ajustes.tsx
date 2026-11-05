@@ -105,10 +105,17 @@ export function Ajustes() {
       <ElegirVideoFondo />
       <Tarjeta titulo="Fondo con lluvia">
         <p className="chico texto-2">Lluvia dibujada detrás de la pantalla (sin video, casi no gasta), distinta en cada lugar. Con «reducir movimiento» queda quieta.</p>
-        <label className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={a.fondoLluvia?.hoy !== false} onChange={async (e) => { const v = { ...a.fondoLluvia, hoy: e.target.checked }; set('fondoLluvia', v); await mutar(() => guardarAjustes({ fondoLluvia: v })); avisar(e.target.checked ? 'Lluvia en Hoy' : 'Hoy sin lluvia') }} /> En Hoy: lluvia en diagonal con un relámpago tenue cada tanto</label>
-        <label className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={a.fondoLluvia?.calendario !== false} onChange={async (e) => { const v = { ...a.fondoLluvia, calendario: e.target.checked }; set('fondoLluvia', v); await mutar(() => guardarAjustes({ fondoLluvia: v })); avisar(e.target.checked ? 'Llovizna en Calendario' : 'Calendario sin llovizna') }} /> En Calendario: llovizna suave con nubes a tinta</label>
-        <label className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={a.fondoLluvia?.juego !== false} onChange={async (e) => { const v = { ...a.fondoLluvia, juego: e.target.checked }; set('fondoLluvia', v); await mutar(() => guardarAjustes({ fondoLluvia: v })); avisar(e.target.checked ? 'Lluvia tranquila en Juego' : 'Juego sin lluvia') }} /> En Juego: gotas que resbalan por el vidrio y un charco (más lenta mientras jugás)</label>
-        <label className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={a.fondoLluvia?.sueno !== false} onChange={async (e) => { const v = { ...a.fondoLluvia, sueno: e.target.checked }; set('fondoLluvia', v); await mutar(() => guardarAjustes({ fondoLluvia: v })); avisar(e.target.checked ? 'Habitación con lluvia en Sueño' : 'Sueño sin fondo') }} /> En Sueño: la habitación con el futón y la lluvia por la ventana</label>
+        {([
+          ['hoy', 'En Hoy: lluvia en diagonal con un relámpago tenue cada tanto'],
+          ['calendario', 'En Calendario: llovizna con nubes a tinta que pasan'],
+          ['juego', 'En Juego: gotas que resbalan por el vidrio y un charco (más lenta mientras jugás)'],
+          ['sueno', 'En Sueño: la habitación con el futón y la lluvia por la ventana'],
+          ['comida', 'En Comida: lluvia fina sobre hojas de bambú'],
+          ['entreno', 'En Entreno y Rutinas: tormenta en diagonal que se calma en el descanso'],
+          ['mas', 'En Más y sus pantallas: lluvia con viento y alguna hoja volando'],
+        ] as const).map(([k, texto]) => (
+          <label key={k} className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={a.fondoLluvia?.[k] !== false} onChange={async (e) => { const v = { ...a.fondoLluvia, [k]: e.target.checked }; set('fondoLluvia', v); await mutar(() => guardarAjustes({ fondoLluvia: v })); avisar(e.target.checked ? 'Lluvia encendida' : 'Lluvia apagada') }} /> {texto}</label>
+        ))}
       </Tarjeta>
       <ElegirMovimiento />
       <Tarjeta titulo="Fondo de las animaciones">

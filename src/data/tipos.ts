@@ -308,7 +308,9 @@ export type Ajustes = {
   /** Adaptación del sueño: desde cuándo, etapas editables y tolerancia de «a horario». */
   adaptacion?: ConfigAdaptacion
   /** Fondo con lluvia dibujada en Hoy, Calendario, Juego y Sueño (todos encendidos si falta). */
-  fondoLluvia?: { hoy?: boolean; calendario?: boolean; juego?: boolean; sueno?: boolean }
+  fondoLluvia?: { hoy?: boolean; calendario?: boolean; juego?: boolean; sueno?: boolean; comida?: boolean; entreno?: boolean; mas?: boolean }
+  /** Calendario: mostrar la franja fina de Mi horario arriba de cada día (gris). */
+  calendarioHorario?: boolean
   /** Pájaro torpe: a veces uno de los pájaros del encabezado se choca con el borde (sí si falta). */
   pajaroTorpe?: boolean
   /** Recordatorio tenue en Hoy para alistarse a dormir: cuántos minutos antes de «Dejo celu» (30 si falta). */
