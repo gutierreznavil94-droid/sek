@@ -9,7 +9,7 @@
   "kanjis": true,
   "carpetaFondos": "fondos/",
   "sprite": "shinobi/camina.webp",
-  "vistaPrevia": { "video": "fondos/lluvia.mp4", "imagen": "fondos/lluvia.jpg" },
+  "vistaPrevia": { "imagen": "temas/shinobi/vista-previa.jpg" },
   "icono": "icono-192.png",
   "frases": [
     "Un paso hoy vale más que diez mañana.",
@@ -27,6 +27,7 @@
   ],
   "iconos": {
     "icono-hoy": "今",
+    "icono-sueno": "眠",
     "icono-buscar": "⌕",
     "icono-copia": "写",
     "icono-animaciones": "動",

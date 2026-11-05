@@ -2349,7 +2349,7 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .enso .juego-segundos.medio { color: var(--medio); }
 .enso .juego-segundos.bajo { color: var(--bajo); }
 /* Sueño: las tarjetas dejan ver un poco la habitación de fondo (sin perder lectura) */
-.pagina-sueno .tarjeta { background: rgba(24, 23, 21, 0.8); }
+.pagina-sueno .tarjeta { background: rgba(24, 23, 21, 0.95); }
 
 /* ---------- v0.47: tarjeta de Comida en Hoy más baja (una fila) y decorada como Metas ---------- */
 .co-tarjeta { position: relative; overflow: hidden; gap: 8px; padding: 5px 8px 5px 10px; min-height: 0; border: 1.5px solid rgba(var(--papel-rgb), 0.4); border-radius: 12px 16px 11px 17px / 16px 11px 17px 12px;

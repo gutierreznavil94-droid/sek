@@ -171,9 +171,9 @@ export function ListaTemas({ valor, onElegir }: { valor: string; onElegir: (id: 
             {t.vistaPrevia.video && !quieto ? (
               <video src={BASE + t.vistaPrevia.video} poster={BASE + t.vistaPrevia.imagen} autoPlay muted loop playsInline preload="metadata" />
             ) : (
-              <img src={BASE + t.vistaPrevia.imagen} alt="" />
+              <img src={BASE + t.vistaPrevia.imagen} alt="" className="tema-vista-respira" />
             )}
-            <span className="pv-tema-sprite" style={{ backgroundImage: `url(${BASE + t.sprite})` }} aria-hidden />
+            {!t.vistaPrevia.video && <span className="tema-vista-lluvia" aria-hidden />}
           </span>
           <span className="pv-tema-texto">
             <b>{t.nombre}</b>

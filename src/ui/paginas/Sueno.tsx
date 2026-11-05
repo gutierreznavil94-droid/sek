@@ -7,9 +7,8 @@ import { guardarAjustes, obtenerAjustes } from '../../services/base'
 import { cicloActivo } from '../../services/ciclo'
 import { corregirNoche, duracionSuenio, horaDeMinutos, nochesDeSuenio, resumenSuenio, volverAEstimado, type NocheDeSuenio, type ResumenSuenio } from '../../services/suenio'
 import { finVentana, LATENCIA_MAX, LATENCIA_MIN } from '../../sueno/estimar'
-import { Hoja, Tarjeta, movimientoReducido } from '../componentes'
-import { PersonajeQuieto } from '../../temas/PersonajeQuieto'
-import { temaActivo } from '../../temas/temas'
+import { Hoja, Tarjeta } from '../componentes'
+import { iconoTema } from '../../temas/temas'
 import { ETAPAS_SUGERIDAS, TOLERANCIA_SUGERIDA, discursoDeSemana, estadoAdaptacion, etapaDe, normalizarEtapas, ultimaSemanaConInfo, veredictoDe, type ConfigEtapa, type EstadoAdaptacion, type Veredicto } from '../../services/adaptacion'
 import { avisar, mutar, useDatos } from '../estado'
 
@@ -65,8 +64,6 @@ export function Sueno({ hoy }: { hoy: string }) {
           <p className="texto-2 chico">Con la primera noche registrada aparece acá el gráfico.</p>
         )}
       </Tarjeta>
-
-      <ShinobiHabla ad={ad} />
 
       <Adaptacion ad={ad} hoy={hoy} onGuardado={datos.recargar} />
 
@@ -222,7 +219,6 @@ function Adaptacion({ ad, hoy, onGuardado }: { ad: EstadoAdaptacion; hoy: FechaD
   const [tolerancia, setTolerancia] = useState(ad.tolerancia)
   const [desde, setDesde] = useState(ad.inicio)
   useEffect(() => { setEtapas(ad.etapas); setTolerancia(ad.tolerancia); setDesde(ad.inicio) }, [ad])
-  const act = ad.actual
   const guardar = async () => {
     if (!/^\d{4}-\d\d-\d\d$/.test(desde) || desde > hoy) return avisar('La fecha de inicio tiene que ser de hoy para atrás', { tipo: 'bajo' })
     await mutar(() => guardarAjustes({ adaptacion: { desde, etapas: normalizarEtapas(etapas), toleranciaMinutos: Math.max(0, Math.min(120, Math.round(tolerancia))) } }))
@@ -240,16 +236,7 @@ function Adaptacion({ ad, hoy, onGuardado }: { ad: EstadoAdaptacion; hoy: FechaD
   const campo = (i: number, k: keyof ConfigEtapa, v: string) => setEtapas(etapas.map((e, j) => (j === i ? { ...e, [k]: k === 'nombre' ? v : Number(v) } : e)))
   return (
     <Tarjeta titulo="Tu adaptación" derecha={<button type="button" className="boton chico" onClick={() => setEditar(!editar)}>{editar ? 'Cerrar' : 'Editar'}</button>}>
-      <div className="sueno-etapas" role="list" aria-label="Etapas de adaptación">
-        {ad.tramos.map((t, i) => (
-          <div key={i} role="listitem" className={`sueno-etapa-chip ${i === act.indice ? 'actual' : i < act.indice ? 'pasada' : ''} ${i === 0 ? 'acostumbrando' : i === ad.tramos.length - 1 ? 'estable' : 'asentando'}`}>
-            <b>{t.etapa.nombre}</b>
-            <span>{t.etapa.semanas > 0 && t.hasta ? `sem ${i === 0 ? 1 : ad.tramos.slice(0, i).reduce((s, x) => s + x.etapa.semanas, 0) + 1}–${ad.tramos.slice(0, i + 1).reduce((s, x) => s + x.etapa.semanas, 0)}` : `sem ${ad.tramos.slice(0, i).reduce((s, x) => s + x.etapa.semanas, 0) + 1}+`}</span>
-          </div>
-        ))}
-      </div>
-      <p className="chico texto-2" style={{ margin: 0 }}>Semana {act.semana} (día {act.dia}) desde el {fechaLegible(ad.inicio)}: <b>{act.etapa.nombre}</b>. Esperado {act.etapa.horasMin}–{act.etapa.horasMax} h; hasta {act.etapa.despertaresNormales} despertar{act.etapa.despertaresNormales === 1 ? '' : 'es'} por noche es normal. «A horario» = hasta {ad.tolerancia} min después de «Dejo celu».</p>
-      <p className="ayuda">Lo que más importa es acostarte a la misma hora y levantarte a la misma hora, aunque la noche haya sido mala. Cada cuerpo es distinto: tocá «Editar» y ajustá las etapas a vos.</p>
+      <ShinobiDice ad={ad} />
       {editar && (
         <div className="col sueno-adaptacion-form" style={{ gap: 10 }}>
           <div className="campo"><label htmlFor="ad-desde">Empecé a mejorar mi sueño el</label><input id="ad-desde" type="date" value={desde} max={hoy} onChange={(e) => setDesde(e.target.value)} /></div>
@@ -317,41 +304,44 @@ function AjustesSueno({ onGuardado }: { onGuardado: () => void }) {
   )
 }
 
-/** El shinobi en su habitación, cerca de la cama, te cuenta la adaptación semana por semana (de las etapas editables). */
-function ShinobiHabla({ ad }: { ad: EstadoAdaptacion }) {
+
+/**
+ * El shinobi te dice cómo va tu adaptación hoy. Arriba, una barra chica de etapas con tu marca; los botoncitos de
+ * más adelante hacen que te hable de esa etapa, y tu marca vuelve a hoy. El texto sale de las etapas editables.
+ */
+function ShinobiDice({ ad }: { ad: EstadoAdaptacion }) {
   const actual = ad.actual.semana
-  const tope = Math.max(actual, ultimaSemanaConInfo(ad.etapas))
   const [sem, setSem] = useState(actual)
   useEffect(() => setSem(actual), [actual])
+  const total = ultimaSemanaConInfo(ad.etapas)
+  // Dónde empieza cada etapa (semana) y su ancho en la barra; la última (sin fin) ocupa una semana.
+  let acum = 0
+  const tramos = ad.etapas.map((e, i) => {
+    const desde = acum + 1
+    const semanas = i === ad.etapas.length - 1 || e.semanas <= 0 ? 1 : e.semanas
+    acum += semanas
+    return { i, nombre: e.nombre, desde, semanas }
+  })
+  const pos = (w: number) => `${(Math.min(total, Math.max(1, w)) - 0.5) / total * 100}%`
   const d = discursoDeSemana(sem, ad.etapas)
-  const completo = `${d.titulo}: ${d.texto}`
-  const quieto = movimientoReducido()
-  const [n, setN] = useState(quieto ? completo.length : 0)
-  useEffect(() => {
-    if (quieto) { setN(completo.length); return }
-    setN(0)
-    const id = window.setInterval(() => setN((x) => { if (x >= completo.length) { window.clearInterval(id); return x } return x + 1 }), 26)
-    return () => window.clearInterval(id)
-  }, [completo, quieto])
-  const visto = completo.slice(0, n)
-  const corte = Math.min(visto.length, d.titulo.length)
+  const viendo = etapaDe(sumarDias(ad.inicio, (sem - 1) * 7), ad.inicio, ad.etapas).indice
   return (
-    <section className="shinobi-habla" aria-label="El shinobi te cuenta">
-      <div className="sh-escena" aria-hidden>
-        <span className="tema-futon" />
-        <PersonajeQuieto hoja={`${import.meta.env.BASE_URL}${temaActivo().sprite}`} escala={2.2} />
+    <div className="sh-dice">
+      <div className="sh-barra" role="group" aria-label="Dónde estás en la adaptación">
+        {tramos.map((t) => (
+          <div key={t.i} className={`sh-tramo ${t.i < ad.actual.indice ? 'pasado' : t.i === ad.actual.indice ? 'actual' : ''}`} style={{ flexGrow: t.semanas }}>
+            <span className="sh-tramo-nombre">{t.nombre}</span>
+          </div>
+        ))}
+        {tramos.filter((t) => t.i > ad.actual.indice).map((t) => (
+          <button key={t.i} type="button" className={`sh-etapa-boton ${viendo === t.i && sem !== actual ? 'viendo' : ''}`} style={{ left: pos(t.desde) }} onClick={() => setSem(t.desde)} aria-label={`Qué pasa en ${t.nombre}`} />
+        ))}
+        <button type="button" className={`sh-marca ${sem === actual ? 'viendo' : ''}`} style={{ left: pos(actual) }} onClick={() => setSem(actual)} aria-label={`Estás en la semana ${actual}: volver a hoy`} />
       </div>
-      <div className="tema-globo sh-globo" onClick={() => setN(completo.length)} role="status">
-        <p className="sh-texto">
-          <b>{visto.slice(0, corte)}</b>{visto.slice(corte)}
-          {n < completo.length && <span className="sh-cursor" aria-hidden>▍</span>}
-        </p>
-        <div className="sh-botones">
-          {sem > 1 && <button type="button" className="boton chico sh-anterior" onClick={(e) => { e.stopPropagation(); setSem(sem - 1) }}>‹ Semana anterior</button>}
-          {sem !== actual && <button type="button" className="boton chico" onClick={(e) => { e.stopPropagation(); setSem(actual) }}>Hoy</button>}
-          {sem < tope && <button type="button" className="boton chico sh-siguiente" onClick={(e) => { e.stopPropagation(); setSem(sem + 1) }}>Semana {sem + 1} ›</button>}
-        </div>
+      <div className="tema-globo sh-globo" role="status">
+        <span className="tema-globo-kanji" aria-hidden>{iconoTema('icono-sueno') || '眠'}</span>
+        <p className="sh-texto"><b>{sem === actual ? `Hoy, ${d.titulo.charAt(0).toLowerCase()}${d.titulo.slice(1)}` : `Más adelante, ${d.titulo.charAt(0).toLowerCase()}${d.titulo.slice(1)}`}.</b> {d.texto}</p>
       </div>
-    </section>
+    </div>
   )
 }
