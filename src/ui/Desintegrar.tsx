@@ -398,6 +398,8 @@ export function Desintegracion({ cabecera, texto, conHorario = false }: { cabece
       window.removeEventListener('resize', redimensionar)
       ro?.disconnect()
       for (const p of ['transform', 'opacity', 'pointer-events', 'transition', 'mask-image', '-webkit-mask-image']) cab.style.removeProperty(p)
+      // Al cambiar de pantalla, el «Día N» chico no queda prendido (si no, tapa la barra de Hoy)
+      for (const p of ['opacity', 'transform', 'transition']) mi.style.removeProperty(p)
     }
   }, [cabecera, conHorario])
   return (
