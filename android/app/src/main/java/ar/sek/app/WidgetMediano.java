@@ -50,9 +50,10 @@ public class WidgetMediano extends WidgetBase {
         }
         v.setViewVisibility(R.id.wm_vacio, n == 0 ? View.VISIBLE : View.GONE);
 
-        v.setTextViewText(R.id.wm_agua, Datos.icono(d, "icono-agua", "💧") + "  " + agua(d));
+        v.setTextViewText(R.id.wm_agua, Datos.icono(d, "icono-agua", "💧") + "  " + agua(d) + "   " + Datos.icono(d, "icono-fruta", "🍎") + " " + fruta(d));
         v.setTextColor(R.id.wm_agua, tinta);
         v.setOnClickPendingIntent(R.id.wm_vaso, difusion(c, WidgetMediano.class, VASO, null, 230));
+        v.setOnClickPendingIntent(R.id.wm_fruta, difusion(c, WidgetMediano.class, FRUTA, null, 231));
 
         String franja = franja(d);
         v.setViewVisibility(R.id.wm_franja, franja.isEmpty() ? View.GONE : View.VISIBLE);

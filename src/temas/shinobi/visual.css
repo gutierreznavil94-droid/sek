@@ -44,3 +44,40 @@
 .pv-escena-shinobi { position: absolute; z-index: 1; left: 50%; bottom: 4px; height: 164px; transform: translateX(-50%); filter: drop-shadow(0 0 1px rgba(236, 234, 229, 0.35)); }
 .pv-globo.al-lado { flex: 1; }
 .pv-globo.al-lado::before { top: 50%; left: -9px; margin: -9px 0 0; border: 9px solid transparent; border-left: 0; border-right-color: var(--papel); }
+
+/* ----- Hoy: brillo por estado (SEK pone data-brillo; acá se decide cómo se ve). Resplandor suave de pincel, no neón. ----- */
+[data-brillo] { position: relative; }
+[data-brillo]::after { content: ''; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; border: 1.5px solid transparent; animation-delay: var(--brillo-desfase, 0s); }
+/* Falta: borde gris que respira cada ~3 s */
+[data-brillo='pendiente']::after { border-color: rgba(var(--papel-rgb), 0.5); animation: tema-respira-gris 3.2s ease-in-out infinite; animation-delay: var(--brillo-desfase, 0s); }
+@keyframes tema-respira-gris { 0%, 100% { opacity: 0.25; box-shadow: 0 0 0 0 rgba(var(--papel-rgb), 0); } 50% { opacity: 1; box-shadow: 0 0 9px 1px rgba(var(--papel-rgb), 0.28), inset 0 0 6px rgba(var(--papel-rgb), 0.12); } }
+/* Hecho: verde fijo con resplandor suave */
+[data-brillo='hecho']::after { border-color: rgba(var(--verde-rgb), 0.85); box-shadow: 0 0 12px 1px rgba(var(--verde-rgb), 0.32), inset 0 0 8px rgba(var(--verde-rgb), 0.14); }
+/* Pasó el 1.er objetivo: verde que sigue titilando (todavía puede llegar al 2.º) */
+[data-brillo='parcial']::after { border-color: rgba(var(--verde-rgb), 0.8); animation: tema-respira-verde 2.6s ease-in-out infinite; animation-delay: var(--brillo-desfase, 0s); }
+@keyframes tema-respira-verde { 0%, 100% { opacity: 0.45; box-shadow: 0 0 5px 0 rgba(var(--verde-rgb), 0.2); } 50% { opacity: 1; box-shadow: 0 0 13px 2px rgba(var(--verde-rgb), 0.42), inset 0 0 7px rgba(var(--verde-rgb), 0.16); } }
+/* Llegó al 2.º objetivo: verde más fuerte y constante */
+[data-brillo='maximo']::after { border: 2px solid rgba(var(--verde-rgb), 1); box-shadow: 0 0 18px 3px rgba(var(--verde-rgb), 0.5), inset 0 0 10px rgba(var(--verde-rgb), 0.22); }
+@media (prefers-reduced-motion: reduce) {
+  [data-brillo='pendiente']::after { animation: none; opacity: 0.7; }
+  [data-brillo='parcial']::after { animation: none; box-shadow: 0 0 10px 1px rgba(var(--verde-rgb), 0.32); }
+}
+
+/* ----- Comida: la manzana a pincel al lado de la cantimplora ----- */
+.fruta-chica { flex: none; display: flex; flex-direction: column; align-items: center; gap: 0; padding: 1px 4px; border-radius: 9px 11px 8px 12px / 11px 8px 12px 9px; border: 1px solid rgba(var(--papel-rgb), 0.22); background: transparent; color: inherit; cursor: pointer; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+.fruta-chica:active { background: var(--fondo-3); }
+.fruta-chica-n { font-size: 0.56rem; line-height: 1; color: var(--texto-2); white-space: nowrap; }
+.fruta-chica.fruta-cumplido .fruta-chica-n, .fruta-chica.fruta-superado .fruta-chica-n { color: var(--verde); font-weight: 700; }
+.tema-manzana { overflow: visible; display: block; }
+.tema-manzana-piel { fill: #b3242f; }
+.tema-manzana-pulpa { fill: #efe4c8; }
+.tema-manzana-trazo { fill: none; stroke: rgba(var(--papel-rgb), 0.9); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.tema-manzana-trazo.cuerpo { stroke-width: 4.5; }
+.tema-manzana.centro .tema-manzana-trazo { stroke: rgba(120, 70, 40, 0.75); stroke-width: 3; }
+.tema-manzana-brillo { fill: none; stroke: rgba(255, 255, 255, 0.45); stroke-width: 4; stroke-linecap: round; }
+.tema-manzana-hoja { fill: var(--verde); }
+.tema-manzana-semilla { fill: #3b2418; }
+.tema-manzana-miga { fill: var(--sh-tinta, #141414); opacity: 0; animation: tema-miga 0.6s ease-out forwards; }
+.tema-manzana-miga:nth-child(odd) { fill: #efe4c8; }
+@keyframes tema-miga { 0% { opacity: 1; transform: translate(0, 0); } 100% { opacity: 0; transform: translate(var(--mx), var(--my)); } }
+@media (prefers-reduced-motion: reduce) { .tema-manzana-migas { display: none; } }

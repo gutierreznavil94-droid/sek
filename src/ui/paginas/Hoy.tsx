@@ -58,6 +58,14 @@ import { obtenerRevision } from '../../services/revisiones'
 import { xpDelDia, xpTotal } from '../../services/xp'
 import { Celebracion, Hoja, IconoPilar } from '../componentes'
 import { avisar, mutar, useDatos, useTic } from '../estado'
+import { brillo, type EstadoBrillo } from '../brillo'
+
+/** Pilar → brillo: pendiente titila, marcado (a tiempo o tarde) verde fijo; omitido y descanso sin brillo. */
+function estadoBrilloPilar(e: Pilar['estado']): EstadoBrillo | null {
+  if (e === 'pendiente') return 'pendiente'
+  if (e === 'cumplido' || e === 'tarde') return 'hecho'
+  return null
+}
 
 async function cargarPanel(hoy: string) {
   const ajustes = await obtenerAjustes()
@@ -265,6 +273,7 @@ export function Hoy({ hoy }: { hoy: string }) {
   }
 
   const { ajustes } = d
+  const conBrillo = ajustes.brilloPendientes !== false
   const faseTerminada = d.estado?.fase && d.estado.dia > d.estado.fase.diaFin
   // La revisión diaria tiene su botón grande arriba: no se repite en la lista.
   const otros = d.compromisos.filter((c) => !c.accion.pilar && c.accion.tipo !== 'limite_juego' && c.accion.tipo !== 'acostarse' && c.accion.tipo !== 'revision_diaria')
@@ -451,9 +460,10 @@ export function Hoy({ hoy }: { hoy: string }) {
           </span>
         </div>
         <div className="pilares-bloques">
-          {d.pilares.pilares.map((p) => (
+          {d.pilares.pilares.map((p, i) => (
             <FilaPilar
               key={p.accion.id}
+              brillo={brillo(estadoBrilloPilar(p.estado), i, conBrillo)}
               p={p}
               suenio={d.suenio}
               zona={ajustes.zonaHoraria}
@@ -499,12 +509,12 @@ export function Hoy({ hoy }: { hoy: string }) {
 
       {/* Botones importantes: rojizos a pincel; al usarlos en el día pasan a verde */}
       <div className="col accesos" style={{ gap: 10 }}>
-        <Link to="/revision" className={`boton grande ${d.revision ? 'hecha' : 'rojizo'}`}>
+        <Link to="/revision" className={`boton grande ${d.revision ? 'hecha' : 'rojizo'}`} {...brillo(d.revision ? 'hecho' : 'pendiente', 4, conBrillo)}>
           {d.revision ? ICONO_OK : ICONO_REV}{d.revision ? 'Revisión diaria hecha' : 'Revisión diaria'}<span className="chico" style={{ fontWeight: 500, opacity: 0.8 }}>{d.revision ? '· ver' : pasoElCierre ? `· sin hacer a las ${d.ventana.horaCierre}` : `· 3 pasos · hasta ${d.ventana.horaAviso}`}</span>
         </Link>
         <div className="rejilla-2">
-          <Link to="/321" className={`boton grande ${usadoHoy('321', hoy) ? 'hecha' : 'rojizo'}`}>{usadoHoy('321', hoy) ? ICONO_OK : ICONO_321}3 · 2 · 1</Link>
-          <Link to="/siguiente" className={`boton grande ${usadoHoy('siguiente', hoy) ? 'hecha' : 'rojizo'}`}>{usadoHoy('siguiente', hoy) ? ICONO_OK : ICONO_SIG}Siguiente acción</Link>
+          <Link to="/321" className={`boton grande ${usadoHoy('321', hoy) ? 'hecha' : 'rojizo'}`} {...brillo(usadoHoy('321', hoy) ? 'hecho' : 'pendiente', 5, conBrillo)}>{usadoHoy('321', hoy) ? ICONO_OK : ICONO_321}3 · 2 · 1</Link>
+          <Link to="/siguiente" className={`boton grande ${usadoHoy('siguiente', hoy) ? 'hecha' : 'rojizo'}`} {...brillo(usadoHoy('siguiente', hoy) ? 'hecho' : 'pendiente', 6, conBrillo)}>{usadoHoy('siguiente', hoy) ? ICONO_OK : ICONO_SIG}Siguiente acción</Link>
         </div>
       </div>
 
@@ -525,8 +535,8 @@ export function Hoy({ hoy }: { hoy: string }) {
             </div>
           ))}
           <div className="rejilla-2">
-            {d.contadores.map((c) => (
-              <BotonContador key={c.contador.id} r={c} destello={destello === c.contador.id} onToque={async () => {
+            {d.contadores.map((c, i) => (
+              <BotonContador key={c.contador.id} r={c} brillo={brillo(c.extraLogradoHoy ? 'maximo' : c.metaLogradaHoy ? 'parcial' : 'pendiente', 7 + i, conBrillo)} destello={destello === c.contador.id} onToque={async () => {
                 const res = await mutar(() => sumarToque(c.contador.id))
                 animar({ tipo: 'parry' })
                 subioNivel(res.nuevoNivel)
@@ -565,7 +575,7 @@ export function Hoy({ hoy }: { hoy: string }) {
   )
 }
 
-function BotonContador({ r, destello, onToque, onDeshacer }: { r: ResumenContador; destello: boolean; onToque: () => void; onDeshacer: () => void }) {
+function BotonContador({ r, brillo: b, destello, onToque, onDeshacer }: { r: ResumenContador; brillo: ReturnType<typeof brillo>; destello: boolean; onToque: () => void; onDeshacer: () => void }) {
   const c = r.contador
   // La barra llega hasta el extra: primera capa hasta la cuota, segunda capa (más brillante) de la cuota al extra.
   const tope = Math.max(1, r.extraHoy)
@@ -575,7 +585,7 @@ function BotonContador({ r, destello, onToque, onDeshacer }: { r: ResumenContado
   const falta = r.extraHoy - r.hoy
   const detalle = r.extraLogradoHoy ? `${r.hoy} · extra ✓` : r.metaLogradaHoy ? `${r.hoy} · faltan ${falta} al extra` : `${r.hoy} / ${r.cuotaHoy} hoy`
   return (
-    <button type="button" className={`contador-boton compacto ${r.metaLogradaHoy ? 'logrado' : ''} ${r.extraLogradoHoy ? 'extra' : ''} ${destello ? 'destello-extra' : ''}`} onClick={onToque} aria-label={`Sumar ${c.cantidadPorToque} ${c.nombre.toLowerCase()}. Hoy ${r.hoy}, cuota ${r.cuotaHoy}, extra ${r.extraHoy}`}>
+    <button type="button" className={`contador-boton compacto ${r.metaLogradaHoy ? 'logrado' : ''} ${r.extraLogradoHoy ? 'extra' : ''} ${destello ? 'destello-extra' : ''}`} {...b} onClick={onToque} aria-label={`Sumar ${c.cantidadPorToque} ${c.nombre.toLowerCase()}. Hoy ${r.hoy}, cuota ${r.cuotaHoy}, extra ${r.extraHoy}`}>
       <span className="fila" style={{ gap: 6, alignItems: 'baseline' }}>
         <span className="mas-n">+{c.cantidadPorToque}</span>
         <span className="nombre">{c.nombre}</span>
@@ -616,7 +626,7 @@ function usadoHoy(que: '321' | 'siguiente', hoy: string): boolean {
 }
 
 /** Un pilar en una sola fila: ícono, nombre, el dato que importa y el estado a la derecha (tilde grande hecho, punto ámbar iniciado). */
-function FilaPilar({ p, suenio, zona, tic, flash, marcado, destello, onTocar, onMas, horaLimiteCelu, entrenoEnCurso }: { p: Pilar; suenio: { horaReal: number } | undefined; zona: string; tic: number; flash?: number; marcado: boolean; destello?: boolean; onTocar: () => void; onMas: () => void; horaLimiteCelu: string; entrenoEnCurso?: boolean }) {
+function FilaPilar({ p, brillo: b, suenio, zona, tic, flash, marcado, destello, onTocar, onMas, horaLimiteCelu, entrenoEnCurso }: { p: Pilar; brillo: ReturnType<typeof brillo>; suenio: { horaReal: number } | undefined; zona: string; tic: number; flash?: number; marcado: boolean; destello?: boolean; onTocar: () => void; onMas: () => void; horaLimiteCelu: string; entrenoEnCurso?: boolean }) {
   const c = p.compromiso
   const esCelu = p.accion.tipo === 'acostarse'
   const esEntreno = p.accion.tipo === 'entrenamiento'
@@ -650,6 +660,7 @@ function FilaPilar({ p, suenio, zona, tic, flash, marcado, destello, onTocar, on
     <button
       type="button"
       className={`pilar-bloque ${p.estado} ${p.vencido ? 'vencido' : ''} ${cerca ? 'cerca' : ''} ${marcado ? 'marcado' : ''} ${c?.extra ? 'extra' : ''} ${destello ? 'destello-extra' : ''} ${iniciado ? 'iniciado' : ''}`}
+      {...b}
       onClick={onTocar}
       aria-label={`${p.accion.nombre}: ${texto}`}
       disabled={p.estado === 'descanso'}

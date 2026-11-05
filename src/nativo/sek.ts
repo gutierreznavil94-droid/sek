@@ -9,7 +9,7 @@
 import { registerPlugin } from '@capacitor/core'
 
 /** Algo que se tocó en el widget con la app cerrada. */
-export type AccionWidget = { tipo: 'pilar'; id: string; instante: number } | { tipo: 'vaso'; instante: number }
+export type AccionWidget = { tipo: 'pilar'; id: string; instante: number } | { tipo: 'vaso'; instante: number } | { tipo: 'fruta'; instante: number }
 
 type PluginSek = {
   guardarWidget(o: { datos: string }): Promise<void>
