@@ -479,6 +479,8 @@ export function Hoy({ hoy }: { hoy: string }) {
             />
           ))}
         </div>
+        {/* Línea simple del horario de la noche */}
+        <p className="linea-horario muy-chico texto-3 centro">Alistarse {ajustes.horaAlistarse} · dejo celu hasta {ajustes.horaDejarCelu} · dormido {ajustes.horaDormido}</p>
         {ajustes.ninjas !== false && (d.peleas.length > 0 || (batallas && batallas.hechas > 0)) && (
           <div className="fila entre ninja-fila">
             <span className="muy-chico texto-3">{resumenPeleas(d.peleas, d.contadores.find((c) => c.contador.id === (ajustes.batalla?.contadorId ?? 'flexiones'))?.contador.nombre.toLowerCase() ?? 'flexiones', (id) => nombreDistraccion(distraccionesDe(ajustes), id))}</span>
@@ -657,9 +659,11 @@ function FilaPilar({ p, brillo: b, suenio, zona, tic, flash, marcado, destello, 
       texto = 'Descanso'; detalle = texto
       break
     default:
-      texto = p.ventanaCerrada ? 'Ya no se registra' : p.vencido ? (esCelu ? `Tarde · hasta las ${horaLimiteCelu}` : `Venció ${p.horaLimite}`) : esCelu ? `Dejo celu hasta las ${p.horaLimite}` : esEntreno ? (entrenoEnCurso ? 'En curso' : `hasta las ${p.accion.horaLimiteInicio ?? p.horaLimite ?? '—'}`) : p.accion.tipo === 'comida_plan' ? 'se mide al cerrar el día' : `hasta las ${p.horaLimite ?? '—'}${p.accion.minutosMinimos ? ` · ${p.accion.minutosMinimos} min` : ''}`
+      texto = p.ventanaCerrada ? 'Ya no se registra' : p.vencido ? (esCelu ? `Tarde · hasta las ${horaLimiteCelu}` : `Venció ${p.horaLimite}`) : esCelu ? `Dejo celu hasta ${p.horaLimite}` : esEntreno ? (entrenoEnCurso ? 'En curso' : `Hasta ${p.accion.horaLimiteInicio ?? p.horaLimite ?? '—'}`) : p.accion.tipo === 'comida_plan' ? 'Se mide al cerrar el día' : `Hasta ${p.horaLimite ?? '—'}${p.accion.minutosMinimos ? ` · ${p.accion.minutosMinimos} min` : ''}`
       detalle = texto
   }
+  // Segunda línea chica, como en la versión guardada: qué hacer con un toque.
+  const pista = p.estado !== 'pendiente' || p.ventanaCerrada || p.accion.tipo === 'comida_plan' ? '' : esEntreno ? (entrenoEnCurso ? 'Tocá para seguir' : 'Tocá para empezar') : esCelu ? 'Tocá para registrar' : 'Tocá si lo hiciste'
   return (
     <button
       type="button"
@@ -669,11 +673,10 @@ function FilaPilar({ p, brillo: b, suenio, zona, tic, flash, marcado, destello, 
       aria-label={`${p.accion.nombre}: ${texto}`}
       disabled={p.estado === 'descanso'}
     >
-      <span className="fila" style={{ gap: 8, alignItems: 'center', minWidth: 0 }}>
-        <span className="icono"><IconoPilar id={p.accion.id} tipo={p.accion.tipo} /></span>
-        <span className="nombre">{p.accion.nombre}</span>
-      </span>
+      <span className="icono"><IconoPilar id={p.accion.id} tipo={p.accion.tipo} /></span>
+      <span className="nombre">{p.accion.nombre}</span>
       <span className="detalle">{detalle}</span>
+      {pista && <span className="pista">{pista}</span>}
       <span className="estado-ic" aria-hidden>{p.estado === 'cumplido' ? '✓' : p.estado === 'tarde' ? '!' : p.estado === 'omitido' ? '✕' : p.estado === 'descanso' ? '–' : iniciado ? <i className="punto-ambar" /> : ''}</span>
       {flash !== undefined && <span className="flash" aria-hidden>+{flash} XP</span>}
       {c && p.estado !== 'descanso' && !esCelu && <span className="mas" role="button" aria-label="Más opciones" onClick={(e) => { e.stopPropagation(); onMas() }}>…</span>}
@@ -903,10 +906,10 @@ function SemanaMetas({ hoy }: { hoy: string }) {
   const proxima = dias.slice(1).flatMap((f) => porDia.get(f) ?? []).find((m) => estadoVisible(m, hoy) === 'pendiente')
   const abrir = (f: string) => navigate(`/calendario?dia=${f}`)
   return (
-    <section className="semana-metas tinta" aria-label="Metas de la semana">
+    <section className="semana-metas simple" aria-label="Metas de la semana">
       <div className="fila entre">
-        <span className="semana-titulo"><span className="semana-kanji" aria-hidden>的</span>Metas{deHoy.length === 0 && !proxima && <span className="semana-sin">sin metas esta semana</span>}</span>
-        <button type="button" className="sello-rojo" onClick={() => abrir(hoy)}>Sumar meta</button>
+        <span className="seccion-titulo semana-titulo-simple"><span className="semana-kanji" aria-hidden>的</span>Metas{deHoy.length === 0 && !proxima && <span className="semana-sin">sin metas esta semana</span>}</span>
+        <button type="button" className="enlace semana-mas" onClick={() => abrir(hoy)} aria-label="Sumar meta">+ meta</button>
       </div>
       <div className="semana-fila">
         {dias.map((f, i) => {
