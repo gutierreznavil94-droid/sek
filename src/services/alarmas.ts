@@ -11,10 +11,25 @@ import { recordatorios, type Recordatorio } from '../reminders/recordatorios'
 import { obtenerAjustes } from './base'
 import { cicloActivo } from './ciclo'
 import { horaFinMargen } from './dia'
+import { fraseDormir, minutosAvisoDormir } from './dormir'
 import { bloquesDelDia } from './horario'
 import { ahora } from './reloj'
 
-export type Alarma = Recordatorio & { fecha: FechaDia; hora: string; tipo: 'entrenamiento' | 'entreno-aviso' | 'revision' | 'celu' | 'dormido' | 'salida' }
+export type Alarma = Recordatorio & { fecha: FechaDia; hora: string; tipo: TipoAlarma }
+
+export type TipoAlarma = 'entrenamiento' | 'entreno-aviso' | 'revision' | 'alistarse' | 'celu' | 'dormido' | 'horario' | 'salida'
+
+/** Los avisos que se pueden apagar uno por uno (Más → Alarmas). */
+export const TIPOS_ALARMA: { tipo: TipoAlarma; nombre: string }[] = [
+  { tipo: 'entrenamiento', nombre: 'Entrenamiento a su hora' },
+  { tipo: 'entreno-aviso', nombre: 'Empezá el entreno (si no empezaste)' },
+  { tipo: 'revision', nombre: 'Revisión diaria (manga y empresa)' },
+  { tipo: 'alistarse', nombre: 'Alistarse para dormir (tenue, antes de «Dejo celu»)' },
+  { tipo: 'celu', nombre: 'Dejo celu' },
+  { tipo: 'dormido', nombre: 'A dormir' },
+  { tipo: 'horario', nombre: 'Mi horario: al empezar cada franja' },
+  { tipo: 'salida', nombre: 'Al salir de un obligatorio: lo que falta' },
+]
 
 /** Las alarmas de una fecha según la configuración actual. Solo dentro del ciclo. */
 export async function alarmasDelDia(fecha: FechaDia): Promise<Alarma[]> {
@@ -42,9 +57,24 @@ export async function alarmasDelDia(fecha: FechaDia): Promise<Alarma[]> {
   const revision = await d.acciones.get('revision_diaria')
   const horaRev = revision?.horaLimite ?? a.horaAlistarse
   lista.push({ id: `alarma:revision:${fecha}`, tipo: 'revision', fecha, hora: horaRev, titulo: 'Completá tu revisión ahora', cuerpo: `Menos de 3 min. Marcá manga y empresa si faltan: a las ${horaFinMargen(horaRev, a.margenNocheMinutos)} queda sin cumplir.`, instante: instanteDe(fecha, horaRev, a.zonaHoraria) })
+  const minAlistarse = minutosAvisoDormir(a)
+  const instCelu = instanteDe(fecha, a.horaDejarCelu, a.zonaHoraria)
+  lista.push({ id: `alarma:alistarse:${fecha}`, tipo: 'alistarse', fecha, hora: horaMenos(a.horaDejarCelu, minAlistarse), titulo: `Dejo celu en ${minAlistarse} min`, cuerpo: fraseDormir(a, fecha), instante: instCelu - minAlistarse * 60_000 })
   lista.push({ id: `alarma:celu:${fecha}`, tipo: 'celu', fecha, hora: a.horaDejarCelu, titulo: 'Dejo celu', cuerpo: 'Celular abajo, fuera del cuarto. Tocá «Dejo celu» en la app.', instante: instanteDe(fecha, a.horaDejarCelu, a.zonaHoraria) })
   lista.push({ id: `alarma:dormido:${fecha}`, tipo: 'dormido', fecha, hora: a.horaDormido, titulo: 'A dormir', cuerpo: 'Hora de estar dormido. Buenas noches.', instante: instanteDe(fecha, a.horaDormido, a.zonaHoraria) })
-  return callarEnObligatorios(fecha, lista, a.zonaHoraria)
+  // Mi horario: un aviso al empezar cada franja (los obligatorios también: «Ahora: Facultad, hasta 18:00»).
+  for (const b of (await bloquesDelDia(fecha)).filter((x) => x.origen === 'bloque')) {
+    lista.push({ id: `alarma:horario:${fecha}:${b.id}`, tipo: 'horario', fecha, hora: b.desde, titulo: `Ahora: ${b.nombre}`, cuerpo: `Hasta las ${b.hasta}.`, instante: instanteDe(fecha, b.desde, a.zonaHoraria) })
+  }
+  const apagadas = new Set(a.alarmasApagadas ?? [])
+  const conHorario = await callarEnObligatorios(fecha, lista.filter((x) => x.tipo === 'horario' || !apagadas.has(x.tipo)), a.zonaHoraria)
+  return conHorario.filter((x) => !apagadas.has(x.tipo))
+}
+
+/** «22:30» menos 30 min → «22:00». */
+function horaMenos(hora: string, minutos: number): string {
+  const m = (((minutosDe(hora) - minutos) % 1440) + 1440) % 1440
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
 }
 
 /**
@@ -58,7 +88,7 @@ async function callarEnObligatorios(fecha: FechaDia, lista: Alarma[], zona: stri
   for (const b of obligatorios) {
     const desde = instanteDe(fecha, b.desde, zona)
     const fin = instanteDe(fecha, b.hasta, zona)
-    const calladas = lista.filter((x) => x.tipo !== 'entrenamiento' && x.instante >= desde && x.instante < fin)
+    const calladas = lista.filter((x) => x.tipo !== 'entrenamiento' && x.tipo !== 'horario' && x.instante >= desde && x.instante < fin)
     if (!calladas.length) continue
     lista = lista.filter((x) => !calladas.includes(x))
     const faltan = calladas.map((x) => x.titulo)

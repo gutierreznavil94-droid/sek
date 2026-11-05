@@ -1,7 +1,13 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Progreso 90</string>
-    <string name="title_activity_main">Progreso 90</string>
-    <string name="package_name">ar.progreso90.app</string>
-    <string name="custom_url_scheme">ar.progreso90.app</string>
+    <string name="app_name">SEK</string>
+    <string name="title_activity_main">SEK</string>
+    <string name="package_name">ar.sek.app</string>
+    <string name="custom_url_scheme">ar.sek.app</string>
+    <string name="widget_chico_desc">Día, racha y pilares de hoy</string>
+    <string name="widget_mediano_desc">Pilares para marcar, agua y Mi horario</string>
+    <string name="atajo_celu">Dejo celu</string>
+    <string name="atajo_vaso">+1 vaso de agua</string>
+    <string name="atajo_batalla">Batalla</string>
+    <string name="atajo_revision">Revisión diaria</string>
 </resources>

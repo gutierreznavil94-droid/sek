@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { db } from '../../data/db'
 import { fechaLegible, nombreDiaSemana } from '../../domain/fechas'
-import { alarmasProximas, programarAlarmas } from '../../services/alarmas'
-import { obtenerAjustes } from '../../services/base'
+import { alarmasProximas, programarAlarmas, TIPOS_ALARMA } from '../../services/alarmas'
+import { guardarAjustes, obtenerAjustes } from '../../services/base'
 import { recordatorios } from '../../reminders/recordatorios'
 import { Atras, Tarjeta } from '../componentes'
 import { avisar, mutar, useDatos } from '../estado'
@@ -54,6 +54,27 @@ export function AlarmasTelefono() {
         {cap.conAppCerrada && !permisoOk && <p className="ayuda">Android va a preguntar dos cosas: si la app puede mostrar notificaciones y si puede usar alarmas exactas (para que suenen a la hora justa, aun con la pantalla apagada). Decí que sí a las dos.</p>}
         {cap.conAppCerrada && d.permiso === 'denied' && <p className="ayuda">El permiso está denegado. Activalo en Ajustes de Android → Aplicaciones → SEK → Notificaciones.</p>}
       </Tarjeta>
+
+      {cap.conAppCerrada && (
+        <Tarjeta titulo="Qué avisos suenan">
+          {TIPOS_ALARMA.map((t) => {
+            const apagada = (d.ajustes.alarmasApagadas ?? []).includes(t.tipo)
+            const cambiar = () => mutar(async () => {
+              const lista = new Set(d.ajustes.alarmasApagadas ?? [])
+              if (apagada) lista.delete(t.tipo); else lista.add(t.tipo)
+              await guardarAjustes({ alarmasApagadas: [...lista] }, 'Alarmas')
+              return programarAlarmas()
+            }).then(() => datos.recargar())
+            return (
+              <label key={t.tipo} className="fila entre chico" style={{ padding: '6px 0', borderTop: '1px solid var(--borde)' }}>
+                <span>{t.nombre}</span>
+                <input type="checkbox" checked={!apagada} onChange={cambiar} />
+              </label>
+            )
+          })}
+          <p className="ayuda">Las alarmas suenan y vibran. «Alistarse para dormir» es tenue: sin sonido.</p>
+        </Tarjeta>
+      )}
 
       {cap.conAppCerrada && (
         <Tarjeta titulo="Próximas alarmas en este teléfono">

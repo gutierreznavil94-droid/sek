@@ -192,6 +192,9 @@ export function idNumerico(id: string): number {
 
 type ModuloNotificaciones = typeof import('@capacitor/local-notifications')
 
+const CANAL_ALARMAS = 'sek-alarmas'
+const CANAL_TENUE = 'sek-tenue'
+
 /** App Android: notificaciones locales programadas en el dispositivo. */
 class RecordatoriosNativo implements Recordatorios {
   private oyentes = new Set<Oyente>()
@@ -200,9 +203,19 @@ class RecordatoriosNativo implements Recordatorios {
   /** Copia local de lo programado, con el id de texto (el plugin solo guarda el numérico). */
   private lista = new Map<string, Recordatorio>()
 
+  private canales: Promise<void> | null = null
+
   private async plugin() {
     if (!this.modulo) this.modulo = import('@capacitor/local-notifications')
     const { LocalNotifications } = await this.modulo
+    // Dos canales de Android: alarmas (sonido y vibración, importancia máxima) y avisos tenues (sin sonido).
+    if (!this.canales) {
+      this.canales = Promise.all([
+        LocalNotifications.createChannel({ id: CANAL_ALARMAS, name: 'Alarmas', description: 'Entreno, Dejo celu, A dormir y Mi horario', importance: 5, visibility: 1, vibration: true }),
+        LocalNotifications.createChannel({ id: CANAL_TENUE, name: 'Avisos tenues', description: 'Alistarse para dormir', importance: 2, visibility: 1, vibration: false }),
+      ]).then(() => {}).catch(() => {})
+    }
+    await this.canales
     if (!this.escuchando) {
       this.escuchando = true
       LocalNotifications.addListener('localNotificationReceived', (n) => {
@@ -259,7 +272,7 @@ class RecordatoriosNativo implements Recordatorios {
         body: r.cuerpo,
         schedule: { at: new Date(r.instante), allowWhileIdle: true },
         extra: { id: r.id },
-        sound: 'default',
+        channelId: r.id.startsWith('alarma:alistarse') ? CANAL_TENUE : CANAL_ALARMAS,
       }],
     })
     this.lista.set(r.id, r)

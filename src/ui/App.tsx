@@ -25,6 +25,8 @@ import { RecomendacionesCreador } from './paginas/RecomendacionesCreador'
 import { reintentarPendientes } from '../services/recomendaciones'
 import { Sueno } from './paginas/Sueno'
 import { AlarmasTelefono } from './paginas/AlarmasTelefono'
+import { Actualizar } from './paginas/Actualizar'
+import { PuenteAndroid } from './PuenteAndroid'
 import { Atributos } from './paginas/Atributos'
 import { Calendario } from './paginas/Calendario'
 import { MiHorario } from './paginas/MiHorario'
@@ -151,6 +153,7 @@ export function App() {
   return (
     <HashRouter>
       <ConSuenio />
+      <PuenteAndroid listo={listo} />
       <CapaAnimacion />
       <NinjaPelea />
       <BatallaCapa />
@@ -229,6 +232,7 @@ function Rutas() {
         <Route path="/mas/rutinas/historial" element={<HistorialEntrenos />} />
         <Route path="/mas/rutinas/:id" element={<EditarRutina />} />
         <Route path="/mas/alarmas" element={<AlarmasTelefono />} />
+        <Route path="/mas/actualizar" element={<Actualizar />} />
         <Route path="/mas/copia" element={<Copia />} />
         <Route path="/mas/sincronizar" element={<Sincronizar />} />
         <Route path="/mas/ajustes" element={<Ajustes />} />

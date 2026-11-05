@@ -309,6 +309,8 @@ export type Ajustes = {
   adaptacion?: ConfigAdaptacion
   /** Fondo con lluvia dibujada en Hoy, Calendario, Juego y Sueño (todos encendidos si falta). */
   fondoLluvia?: { hoy?: boolean; calendario?: boolean; juego?: boolean; sueno?: boolean; comida?: boolean; entreno?: boolean; mas?: boolean }
+  /** Avisos de la app Android apagados uno por uno (tipos de alarma: 'celu', 'horario'…). */
+  alarmasApagadas?: string[]
   /** Calendario: mostrar la franja fina de Mi horario arriba de cada día (gris). */
   calendarioHorario?: boolean
   /** Pájaro torpe: a veces uno de los pájaros del encabezado se choca con el borde (sí si falta). */

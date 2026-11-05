@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Accesos directos: mantener apretado el ícono de SEK. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="dejo-celu" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/atajo_celu">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="ar.sek.app" android:targetClass="ar.sek.app.MainActivity">
+            <extra android:name="ruta" android:value="dejo-celu" />
+        </intent>
+    </shortcut>
+    <shortcut android:shortcutId="vaso" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/atajo_vaso">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="ar.sek.app" android:targetClass="ar.sek.app.MainActivity">
+            <extra android:name="ruta" android:value="vaso" />
+        </intent>
+    </shortcut>
+    <shortcut android:shortcutId="batalla" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/atajo_batalla">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="ar.sek.app" android:targetClass="ar.sek.app.MainActivity">
+            <extra android:name="ruta" android:value="batalla" />
+        </intent>
+    </shortcut>
+    <shortcut android:shortcutId="revision" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/atajo_revision">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="ar.sek.app" android:targetClass="ar.sek.app.MainActivity">
+            <extra android:name="ruta" android:value="revision" />
+        </intent>
+    </shortcut>
+</shortcuts>

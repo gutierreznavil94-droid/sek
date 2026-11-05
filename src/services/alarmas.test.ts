@@ -56,25 +56,29 @@ describe('alarmas directas (etapa 1)', () => {
 
   it('un día de entrenamiento tiene 5 alarmas en orden (con el aviso de las 19:00); un día de descanso, 3', async () => {
     const lunes = await alarmasDelDia('2026-11-02')
-    expect(lunes.map((a) => `${a.hora} ${a.tipo}`)).toEqual(['07:00 entrenamiento', '19:00 entreno-aviso', '20:50 revision', '21:15 celu', '21:20 dormido'])
+    expect(lunes.map((a) => `${a.hora} ${a.tipo}`)).toEqual(['07:00 entrenamiento', '19:00 entreno-aviso', '20:45 alistarse', '20:50 revision', '21:15 celu', '21:20 dormido'])
     expect(lunes[0].instante).toBe(instanteDe('2026-11-02', '07:00', Z))
     const martes = await alarmasDelDia('2026-11-03')
-    expect(martes.map((a) => a.tipo)).toEqual(['revision', 'celu', 'dormido'])
+    expect(martes.map((a) => a.tipo)).toEqual(['alistarse', 'revision', 'celu', 'dormido'])
   })
 
   it('si el entrenamiento ya se hizo, su alarma no suena; y las horas siguen a los ajustes', async () => {
     await completarCompromiso('entrenamiento:2026-11-02', { minutos: 42 })
-    expect((await alarmasDelDia('2026-11-02')).map((a) => a.tipo)).toEqual(['revision', 'celu', 'dormido'])
+    expect((await alarmasDelDia('2026-11-02')).map((a) => a.tipo)).toEqual(['alistarse', 'revision', 'celu', 'dormido'])
     await guardarAjustes({ horaDejarCelu: '22:00', horaDormido: '22:10' })
     const hoy = await alarmasDelDia('2026-11-03')
     expect(hoy.find((a) => a.tipo === 'celu')?.hora).toBe('22:00')
     expect(hoy.find((a) => a.tipo === 'dormido')?.hora).toBe('22:10')
+    // Tenue 30 min antes de «Dejo celu»; y cada aviso se puede apagar.
+    expect(hoy.find((a) => a.tipo === 'alistarse')?.hora).toBe('21:30')
+    await guardarAjustes({ alarmasApagadas: ['alistarse', 'dormido'] })
+    expect((await alarmasDelDia('2026-11-03')).map((a) => a.tipo)).toEqual(['revision', 'celu'])
   })
 
   it('las próximas solo incluyen las que todavía no sonaron, y en la web no se programa nada', async () => {
     fijarAhora(instanteDe('2026-11-02', '21:00', Z))
     const prox = await alarmasProximas(2)
-    expect(prox.map((a) => `${a.fecha} ${a.tipo}`)).toEqual(['2026-11-02 celu', '2026-11-02 dormido', '2026-11-03 revision', '2026-11-03 celu', '2026-11-03 dormido'])
+    expect(prox.map((a) => `${a.fecha} ${a.tipo}`)).toEqual(['2026-11-02 celu', '2026-11-02 dormido', '2026-11-03 alistarse', '2026-11-03 revision', '2026-11-03 celu', '2026-11-03 dormido'])
     expect(await programarAlarmas()).toBe(0)
   })
 })

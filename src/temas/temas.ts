@@ -39,6 +39,8 @@ export interface DefinicionTema {
   frases?: string[]
   /** Íconos por nombre genérico («icono-hoy» → «今»). Lo que falte lo toma de Shinobi. */
   iconos?: Record<string, string>
+  /** Colores por nombre genérico («color-principal», «color-papel», «color-tinta»), para lo que no es CSS (widgets de Android). */
+  colores?: Record<string, string>
 }
 
 export interface TemaProximo { id: string; nombre: string; pista: string }
@@ -108,6 +110,11 @@ export function saludoDe(tema: DefinicionTema, nombre: string): string {
 /** Ícono del tema activo por nombre genérico (texto o kanji). Si el tema no lo tiene, el de Shinobi; si tampoco, vacío. */
 export function iconoTema(nombre: string, tema: DefinicionTema = activo): string {
   return tema.iconos?.[nombre] ?? base.iconos?.[nombre] ?? ''
+}
+
+/** Color del tema activo por nombre genérico. Si el tema no lo tiene, el de Shinobi; «color-principal» cae en el acento. */
+export function colorTema(nombre: string, tema: DefinicionTema = activo): string {
+  return tema.colores?.[nombre] ?? (nombre === 'color-principal' ? tema.acento : undefined) ?? base.colores?.[nombre] ?? ''
 }
 
 export function useTema(): DefinicionTema {
