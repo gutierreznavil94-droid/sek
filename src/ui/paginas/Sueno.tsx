@@ -7,8 +7,10 @@ import { guardarAjustes, obtenerAjustes } from '../../services/base'
 import { cicloActivo } from '../../services/ciclo'
 import { corregirNoche, duracionSuenio, horaDeMinutos, nochesDeSuenio, resumenSuenio, volverAEstimado, type NocheDeSuenio, type ResumenSuenio } from '../../services/suenio'
 import { finVentana, LATENCIA_MAX, LATENCIA_MIN } from '../../sueno/estimar'
-import { Hoja, Tarjeta } from '../componentes'
-import { ETAPAS_SUGERIDAS, TOLERANCIA_SUGERIDA, estadoAdaptacion, etapaDe, fraseDeEtapa, normalizarEtapas, veredictoDe, type ConfigEtapa, type EstadoAdaptacion, type Veredicto } from '../../services/adaptacion'
+import { Hoja, Tarjeta, movimientoReducido } from '../componentes'
+import { PersonajeQuieto } from '../../temas/PersonajeQuieto'
+import { temaActivo } from '../../temas/temas'
+import { ETAPAS_SUGERIDAS, TOLERANCIA_SUGERIDA, discursoDeSemana, estadoAdaptacion, etapaDe, normalizarEtapas, ultimaSemanaConInfo, veredictoDe, type ConfigEtapa, type EstadoAdaptacion, type Veredicto } from '../../services/adaptacion'
 import { avisar, mutar, useDatos } from '../estado'
 
 type Rango = 'semana' | 'mes' | 'ciclo'
@@ -56,7 +58,6 @@ export function Sueno({ hoy }: { hoy: string }) {
       }>
         {noches.length ? (
           <>
-            <p className="chico texto-2 sueno-etapa-frase">{fraseDeEtapa(ad.actual)}</p>
             <GraficoNoches noches={noches} ventana={[a.horaDormido, finVentana(a.horaFinSuenio)]} etapaDe={(f) => etapaDe(f, ad.inicio, ad.etapas).indice} ultimaEtapa={ad.etapas.length - 1} onElegir={(n) => setEditar({ noche: n.noche, n })} />
             <p className="ayuda">Cada barra va de cuando te dormiste a cuando te levantaste; el punto es «Dejo celu» (verde si fue a tiempo). La franja verde es tu ventana ideal ({a.horaDormido} a {finVentana(a.horaFinSuenio)}). Borde claro: corregida a mano. Tocá una barra para corregirla.</p>
           </>
@@ -64,6 +65,8 @@ export function Sueno({ hoy }: { hoy: string }) {
           <p className="texto-2 chico">Con la primera noche registrada aparece acá el gráfico.</p>
         )}
       </Tarjeta>
+
+      <ShinobiHabla ad={ad} />
 
       <Adaptacion ad={ad} hoy={hoy} onGuardado={datos.recargar} />
 
@@ -311,5 +314,44 @@ function AjustesSueno({ onGuardado }: { onGuardado: () => void }) {
       <label className="fila chico texto-3" style={{ gap: 8, marginTop: 4 }}><input type="checkbox" checked={a.relojInteligente} disabled /> Reloj inteligente: no conectado (próximamente)</label>
       <button className="boton primario ancho" onClick={guardar}>Guardar</button>
     </Tarjeta>
+  )
+}
+
+/** El shinobi en su habitación, cerca de la cama, te cuenta la adaptación semana por semana (de las etapas editables). */
+function ShinobiHabla({ ad }: { ad: EstadoAdaptacion }) {
+  const actual = ad.actual.semana
+  const tope = Math.max(actual, ultimaSemanaConInfo(ad.etapas))
+  const [sem, setSem] = useState(actual)
+  useEffect(() => setSem(actual), [actual])
+  const d = discursoDeSemana(sem, ad.etapas)
+  const completo = `${d.titulo}: ${d.texto}`
+  const quieto = movimientoReducido()
+  const [n, setN] = useState(quieto ? completo.length : 0)
+  useEffect(() => {
+    if (quieto) { setN(completo.length); return }
+    setN(0)
+    const id = window.setInterval(() => setN((x) => { if (x >= completo.length) { window.clearInterval(id); return x } return x + 1 }), 26)
+    return () => window.clearInterval(id)
+  }, [completo, quieto])
+  const visto = completo.slice(0, n)
+  const corte = Math.min(visto.length, d.titulo.length)
+  return (
+    <section className="shinobi-habla" aria-label="El shinobi te cuenta">
+      <div className="sh-escena" aria-hidden>
+        <span className="tema-futon" />
+        <PersonajeQuieto hoja={`${import.meta.env.BASE_URL}${temaActivo().sprite}`} escala={2.2} />
+      </div>
+      <div className="tema-globo sh-globo" onClick={() => setN(completo.length)} role="status">
+        <p className="sh-texto">
+          <b>{visto.slice(0, corte)}</b>{visto.slice(corte)}
+          {n < completo.length && <span className="sh-cursor" aria-hidden>▍</span>}
+        </p>
+        <div className="sh-botones">
+          {sem > 1 && <button type="button" className="boton chico sh-anterior" onClick={(e) => { e.stopPropagation(); setSem(sem - 1) }}>‹ Semana anterior</button>}
+          {sem !== actual && <button type="button" className="boton chico" onClick={(e) => { e.stopPropagation(); setSem(actual) }}>Hoy</button>}
+          {sem < tope && <button type="button" className="boton chico sh-siguiente" onClick={(e) => { e.stopPropagation(); setSem(sem + 1) }}>Semana {sem + 1} ›</button>}
+        </div>
+      </div>
+    </section>
   )
 }

@@ -19,6 +19,7 @@ import {
   estadoCronometro,
   historialTiempo,
   terminarCronometro,
+  fijarObjetivoCronometro,
   fijarPeso,
   deshacerSerie,
   faseActual,
@@ -564,14 +565,15 @@ function Cronometro({ s, b, t, hist }: { s: SesionEntreno; b: BloqueTemporizador
   const corriendo = s.reloj?.bloqueId === b.id ? s.reloj : undefined
   const [peso, setPeso] = useState(s.pesos?.[b.id] ?? hist?.ultimo?.peso ?? b.peso ?? 0)
   const e = corriendo ? estadoCronometro(corriendo.inicio, t) : null
-  // Objetivo: tu último tiempo (el mismo los 6 días); sin historial, el de la planilla.
-  const objetivo = hist?.ultimo?.segundos ?? b.segundos
+  // Objetivo en segundos (el de la rutina): si lo superás sube 1 s solo; a mano se cambia con el stepper.
+  const objetivo = b.segundos
   // En pantalla corre el tiempo real; al tocar «Listo» se descuentan 3 s. Se pone verde cuando lo guardado ya supera el objetivo. Sin vibrar.
   const enPantalla = objetivo + DESCUENTO_S
   const fase = !e ? null : e.preparando ? 'prep' : objetivo && e.segundos > enPantalla ? 'objetivo' : 'colgado'
   const listo = async () => {
     const r = await mutar(() => terminarCronometro(s.id!, b.id, peso))
-    avisar(`${b.nombre}: ${reloj(r.tiempo.segundos)}${peso ? ` con ${kg(peso)}` : ''} (ya descontados ${DESCUENTO_S} s)`, { tipo: 'ok' })
+    if (r.subio) avisar(`Récord. Próxima vez: ${r.objetivo} s`, { tipo: 'ok' })
+    else avisar(`${b.nombre}: ${reloj(r.tiempo.segundos)}${peso ? ` con ${kg(peso)}` : ''} (ya descontados ${DESCUENTO_S} s)`, { tipo: 'ok' })
   }
   const pct = e && objetivo ? Math.min(100, (e.segundos / enPantalla) * 100) : 0
   const texto = (x: TiempoHecho) => `${reloj(x.segundos)} · ${kg(x.peso)}`
@@ -580,14 +582,15 @@ function Cronometro({ s, b, t, hist }: { s: SesionEntreno; b: BloqueTemporizador
       <span className="seccion-titulo">{b.nota ?? 'Cronómetro'}</span>
       <h1 className="entreno-titulo">{b.nombre}</h1>
       <p className="texto-2 chico">
-        {hist?.ultimo ? <>La vez pasada: <b>{texto(hist.ultimo)}</b>{hist.record && (hist.record.segundos !== hist.ultimo.segundos || hist.record.peso !== hist.ultimo.peso) ? <> · récord <b>{texto(hist.record)}</b></> : null}</> : `Objetivo de la planilla: ${reloj(objetivo)}${b.peso ? ` con ${kg(b.peso)}` : ''}.`}
+        {hist?.ultimo ? <>La vez pasada: <b>{texto(hist.ultimo)}</b>{hist.record && (hist.record.segundos !== hist.ultimo.segundos || hist.record.peso !== hist.ultimo.peso) ? <> · récord <b>{texto(hist.record)}</b></> : null}</> : `Todavía sin tiempos. Objetivo: ${objetivo} s.`}
       </p>
       {!corriendo ? (
         <>
           <Stepper etiqueta="Peso" valor={peso} paso={0.5} escribible formato={(v) => (v === 0 ? 'corporal' : `${String(v).replace('.', ',')} kg`)} onCambio={(v) => { setPeso(v); void mutar(() => fijarPeso(s.id!, b.id, v)) }} marca={hist?.ultimo ? (peso > hist.ultimo.peso ? 'mejor' : peso === hist.ultimo.peso ? 'igual' : null) : null} />
+          <Stepper etiqueta="Objetivo" valor={objetivo} paso={1} escribible formato={(v) => `${v} s`} onCambio={(v) => { void mutar(() => fijarObjetivoCronometro(b.nombre, v)) }} />
           <div className="entreno-reloj mono">0:00</div>
           <button className="boton primario grande ancho entreno-hecha" onClick={() => mutar(() => iniciarReloj(s.id!, b.id))}>Empezar</button>
-          <p className="ayuda centro">Objetivo: {reloj(objetivo)}{hist?.ultimo ? ' (tu último tiempo)' : ''}. Tenés {PREPARACION_S} s para acomodarte y colgarte. Al tocar «Listo» se descuentan {DESCUENTO_S} s y ese es tu nuevo tiempo.</p>
+          <p className="ayuda centro">Si superás {objetivo} s, la próxima vez el objetivo sube a {objetivo + 1} s (solo 1 s, aunque lo pases por mucho). Tenés {PREPARACION_S} s para colgarte; al tocar «Listo» se descuentan {DESCUENTO_S} s.</p>
         </>
       ) : e!.preparando ? (
         <>
@@ -603,7 +606,7 @@ function Cronometro({ s, b, t, hist }: { s: SesionEntreno; b: BloqueTemporizador
           <p className={`entreno-fase centro ${fase === 'objetivo' ? 'ok' : ''}`}>{fase === 'objetivo' ? `¡Superaste ${reloj(objetivo)}! Seguí` : `Colgado · con ${kg(peso)}`}</p>
           <div className={`entreno-reloj mono ${fase === 'objetivo' ? 'verde' : ''}`}>{reloj(Math.floor(e!.segundos))}</div>
           {objetivo > 0 && <div className="entreno-barra cronometro"><div style={{ width: `${pct}%` }} /></div>}
-          {objetivo > 0 && <p className="ayuda centro">{hist?.ultimo ? 'Tu último tiempo' : 'Objetivo'}: {reloj(objetivo)} · se pone verde en {reloj(enPantalla)} (por los {DESCUENTO_S} s que se descuentan)</p>}
+          {objetivo > 0 && <p className="ayuda centro">Objetivo: {objetivo} s · se pone verde en {reloj(enPantalla)} (por los {DESCUENTO_S} s que se descuentan)</p>}
           <button className="boton primario grande ancho entreno-hecha" onClick={listo}>Listo</button>
           <button className="enlace texto-3" onClick={() => mutar(() => pararReloj(s.id!))}>Reiniciar</button>
         </>

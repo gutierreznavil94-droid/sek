@@ -34,7 +34,7 @@ import {
   terminarEntreno,
   ultimaVez,
 } from './entreno'
-import { DESCUENTO_S, PREPARACION_S, TOPE_SEGUNDOS_SERIE, duracionSerie, estadoCronometro, historialTiempo, iniciarReloj, terminarCronometro, terminarDescanso } from './entreno'
+import { DESCUENTO_S, PREPARACION_S, TOPE_SEGUNDOS_SERIE, duracionSerie, estadoCronometro, fijarObjetivoCronometro, historialTiempo, iniciarReloj, siguienteObjetivo, terminarCronometro, terminarDescanso } from './entreno'
 import { ahora, avanzar, fijarAhora, reiniciarReloj } from './reloj'
 import { xpTotal } from './xp'
 
@@ -427,6 +427,40 @@ describe('colgarse en barra con cronómetro', () => {
     const h = await historialTiempo('Colgarse en barra')
     expect(h.ultimo).toMatchObject({ segundos: 62, peso: 15 })
     expect(h.record).toMatchObject({ segundos: 72, peso: 15 })
+  })
+})
+
+describe('colgarse: el objetivo sube 1 s solo al superarlo (Navil, 5 nov)', () => {
+  it('supera por mucho → +1 s; no supera o empata → igual; nunca baja', () => {
+    expect(siguienteObjetivo(30, 40)).toBe(31)
+    expect(siguienteObjetivo(30, 31)).toBe(31)
+    expect(siguienteObjetivo(30, 30)).toBe(30)
+    expect(siguienteObjetivo(30, 12)).toBe(30)
+  })
+
+  it('al tocar Listo con récord, el objetivo sube 1 s en las 3 rutinas; sin récord queda igual', async () => {
+    let s = await iniciarEntreno('rutina-a')
+    s = await iniciarReloj(s.id!, 'a-colgarse')
+    avanzar((5 + 113) * 1000) // 110 s guardados contra 70 de objetivo
+    const r = await terminarCronometro(s.id!, 'a-colgarse', 15)
+    expect(r).toMatchObject({ objetivo: 71, subio: true })
+    for (const id of ['rutina-a', 'rutina-b', 'rutina-c']) expect((await obtenerRutina(id))!.bloques.find((x) => x.nombre === 'Colgarse en barra')).toMatchObject({ segundos: 71 })
+    await terminarEntreno(s.id!)
+    dia('2026-11-03')
+    s = await iniciarEntreno('rutina-b', '2026-11-03')
+    s = await iniciarReloj(s.id!, 'b-colgarse')
+    avanzar((5 + 23) * 1000) // 20 s: no supera
+    const r2 = await terminarCronometro(s.id!, 'b-colgarse', 15)
+    expect(r2).toMatchObject({ objetivo: 71, subio: false })
+  })
+
+  it('a mano se puede subir o bajar, y el automático sigue desde ahí', async () => {
+    await fijarObjetivoCronometro('Colgarse en barra', 25)
+    expect((await obtenerRutina('rutina-c'))!.bloques.find((x) => x.nombre === 'Colgarse en barra')).toMatchObject({ segundos: 25 })
+    let s = await iniciarEntreno('rutina-a')
+    s = await iniciarReloj(s.id!, 'a-colgarse')
+    avanzar((5 + 60) * 1000)
+    expect((await terminarCronometro(s.id!, 'a-colgarse', 15)).objetivo).toBe(26)
   })
 })
 

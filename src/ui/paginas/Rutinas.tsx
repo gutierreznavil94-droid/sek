@@ -169,7 +169,7 @@ function EditorBloque({ b, onCambio, onQuitar, onGrafico }: { b: BloqueRutina; o
       )}
       {(b.tipo === 'calentamiento' || b.tipo === 'temporizador') && (
         <div className="rejilla-2">
-          <Num etiqueta={b.tipo === 'temporizador' && b.modo === 'cronometro' ? 'Objetivo (s)' : 'Segundos'} valor={b.segundos} paso={5} onCambio={(v) => onCambio({ segundos: v })} />
+          <Num etiqueta={b.tipo === 'temporizador' && b.modo === 'cronometro' ? 'Objetivo (s) · sube 1 s solo al superarlo' : 'Segundos'} valor={b.segundos} paso={b.tipo === 'temporizador' && b.modo === 'cronometro' ? 1 : 5} onCambio={(v) => onCambio({ segundos: v })} />
           <Num etiqueta="Peso (kg)" valor={b.peso} paso={0.5} onCambio={(v) => onCambio({ peso: v || undefined })} />
           {b.tipo === 'temporizador' && b.modo === 'cronometro' && <Num etiqueta="Descanso después, sin sombra (s)" valor={b.descansoDespues ?? 60} paso={15} onCambio={(v) => onCambio({ descansoDespues: v })} />}
           {b.tipo === 'temporizador' && (

@@ -839,8 +839,27 @@ export function tiempoFinal(inicio: number, t: number): number {
   return Math.max(0, Math.round(estadoCronometro(inicio, t).segundos - DESCUENTO_S))
 }
 
-/** «Listo»: guarda el tiempo (con el descuento) y el peso, y pasa al siguiente bloque. */
-export async function terminarCronometro(id: number, bloqueId: string, peso: number): Promise<{ sesion: SesionEntreno; tiempo: TiempoHecho }> {
+/**
+ * Objetivo del cronómetro para la próxima vez: si el tiempo lo superó (récord), sube 1 s, sin importar por
+ * cuánto; si no, queda igual. Nunca baja solo (a mano se puede cambiar).
+ */
+export function siguienteObjetivo(objetivo: number, segundos: number): number {
+  return segundos > objetivo ? objetivo + 1 : objetivo
+}
+
+/** Cambia el objetivo de un cronómetro en todas las rutinas que lo tienen (mismo nombre: es el mismo ejercicio). */
+export async function fijarObjetivoCronometro(nombre: string, segundos: number): Promise<number> {
+  const v = Math.max(1, Math.round(segundos))
+  const d = db()
+  for (const r of await d.rutinas.toArray()) {
+    if (!r.bloques.some((b) => b.tipo === 'temporizador' && b.modo === 'cronometro' && b.nombre === nombre)) continue
+    await d.rutinas.put({ ...r, bloques: r.bloques.map((b) => (b.tipo === 'temporizador' && b.modo === 'cronometro' && b.nombre === nombre ? { ...b, segundos: v } : b)) })
+  }
+  return v
+}
+
+/** «Listo»: guarda el tiempo (con el descuento) y el peso, y pasa al siguiente bloque. Si superó el objetivo, el objetivo sube 1 s. */
+export async function terminarCronometro(id: number, bloqueId: string, peso: number): Promise<{ sesion: SesionEntreno; tiempo: TiempoHecho; objetivo: number; subio: boolean }> {
   const s = await sesion(id)
   const r = await obtenerRutina(s.rutinaId)
   const b = r && bloqueDe(r, bloqueId)
@@ -853,7 +872,11 @@ export async function terminarCronometro(id: number, bloqueId: string, peso: num
   // Ronda 8: después de colgarse hay descanso, sin sombra («Descanso 1:00»), si queda algo por hacer.
   const pausa = b.tipo === 'temporizador' ? b.descansoDespues ?? 60 : 0
   if (pausa > 0 && nueva.paso < nueva.orden.length) nueva.descanso = { inicio: t, fases: [{ tipo: 'descanso', segundos: pausa, texto: 'Descanso' }], origen: bloqueId }
-  return { sesion: await guardarSesion(nueva), tiempo }
+  const esCrono = b.tipo === 'temporizador' && b.modo === 'cronometro'
+  const antes = esCrono ? b.segundos : 0
+  const objetivo = esCrono ? siguienteObjetivo(antes, segundos) : antes
+  if (objetivo !== antes) await fijarObjetivoCronometro(b.nombre, objetivo)
+  return { sesion: await guardarSesion(nueva), tiempo, objetivo, subio: objetivo > antes }
 }
 
 /** Corrige el tiempo registrado (por si tocó tarde). */

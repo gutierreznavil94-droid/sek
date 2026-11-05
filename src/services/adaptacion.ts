@@ -127,6 +127,29 @@ export function fraseDeEtapa(e: EtapaActual): string {
   return `Semana ${e.semana} · ${e.etapa.nombre}: una noche mala suelta ya no es adaptación; buscá la causa.`
 }
 
+/** Hasta qué semana se puede leer con «Semana siguiente»: la primera de la última etapa (Estable). */
+export function ultimaSemanaConInfo(etapas: ConfigEtapa[]): number {
+  return etapas.slice(0, -1).reduce((s, e) => s + Math.max(0, e.semanas), 0) + 1
+}
+
+const enHoras = (h: number) => String(h).replace('.', ',')
+
+/**
+ * Lo que te cuenta el shinobi en Sueño sobre una semana (sale de las etapas editables: si cambian las semanas
+ * o las horas, el texto cambia).
+ */
+export function discursoDeSemana(semana: number, etapas: ConfigEtapa[] = ETAPAS_SUGERIDAS): { titulo: string; texto: string; etapa: number } {
+  const s = Math.max(1, Math.round(semana))
+  const e = etapaDe(sumarDias('2026-01-05', (s - 1) * 7), '2026-01-05', etapas)
+  const { nombre, horasMin, horasMax, despertaresNormales: d } = e.etapa
+  const esperado = `Esperá ${enHoras(horasMin)} a ${enHoras(horasMax)} h`
+  const desp = d === 0 ? 'ya casi no deberías despertarte' : d === 1 ? 'despertarte una vez es normal' : `despertarte hasta ${d} veces es normal`
+  const titulo = `Semana ${s} · ${nombre}`
+  if (e.indice === 0) return { etapa: 0, titulo, texto: `Lo importante es acostarte a horario. ${esperado}; ${desp}. Si dormís menos, no pasa nada: el cuerpo se está acostumbrando.` }
+  if (!e.esUltima) return { etapa: e.indice, titulo, texto: `El cuerpo se asienta. ${esperado}; ${desp}. Si hay varias noches cortas seguidas, fijate qué las cambia.` }
+  return { etapa: e.indice, titulo, texto: `Ya es tu ritmo. ${esperado}; ${desp}. Una noche mala suelta ya no es adaptación: buscá la causa.` }
+}
+
 /** Valida y acota lo editado: semanas 0–12, horas 3–14 (mín ≤ máx), despertares 0–5, tolerancia 0–120. */
 export function normalizarEtapas(etapas: ConfigEtapa[]): ConfigEtapa[] {
   return etapas.map((e) => {

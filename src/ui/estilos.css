@@ -2388,3 +2388,21 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .contenido.entreno .fondo-lluvia { z-index: -1; }
 /* v0.49: el polvo y los pájaros del encabezado pasan por detrás de las tarjetas (contenido z 3) */
 .motas-tinta { z-index: 2; }
+.motas-torpe { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; z-index: 27; pointer-events: none; }
+
+/* ---------- v0.50: Más con búsqueda, lo de sistema arriba y 3 grupos ---------- */
+.mas-buscar { display: flex; align-items: center; gap: 8px; padding: 0 10px; min-height: 44px; border: 1.5px solid rgba(var(--papel-rgb), 0.38); border-radius: 12px 15px 11px 16px / 15px 11px 16px 12px; background: var(--fondo-2); }
+.mas-buscar input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--texto); font: inherit; font-size: 1rem; outline: none; padding: 10px 0; }
+.mas-buscar input::-webkit-search-cancel-button { display: none; }
+.mas-lupa { font-size: 1.15rem; color: var(--texto-2); }
+.mas-borrar { appearance: none; border: 0; background: transparent; color: var(--texto-2); font-size: 1.4rem; line-height: 1; padding: 4px 6px; cursor: pointer; }
+.mas-sistema { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.mas-sis { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px 9px; text-align: center; color: var(--texto); background: var(--fondo-2); border: 1.5px solid rgba(var(--papel-rgb), 0.36); border-radius: 11px 14px 10px 15px / 14px 10px 15px 11px; }
+.mas-sis:active { background: var(--fondo-3); }
+.mas-sis-icono { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 1.45rem; line-height: 1.1; color: var(--acento); }
+.mas-sis-nombre { font-weight: 800; font-size: 0.86rem; }
+.mas-sis-desc { font-size: 0.66rem; color: var(--texto-3); line-height: 1.15; }
+.mas-sis.pendiente::after { content: ''; position: absolute; top: 7px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--acento); box-shadow: 0 0 6px rgba(var(--acento-rgb, 200, 16, 46), 0.7); }
+.mas-nada { display: flex; flex-direction: column; gap: 10px; padding: 8px 0; }
+.mas-pie { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: space-between; padding: 4px 0; }
+.mas-pie .texto-3 { flex: 1; min-width: 90px; }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, type RefObject } from 'react'
 import { movimientoReducido } from './componentes'
 import { PapelMojado } from '../temas/PapelMojado'
+import { dibujarPajaroTorpe } from '../temas/shinobi/pajaroTorpe'
 import { obtenerAjustes } from '../services/base'
 import { sonarToc } from './animaciones/motor'
 
@@ -47,7 +48,7 @@ function tocaPajaroTorpe(activo: boolean): boolean {
 }
 
 /** Tramos del pájaro torpe (s, desde que empieza la animación). */
-const TORPE = { sale: 2.15, choca: 2.75, globo: 2.8, finGlobo: 3.3, sacude: 3.3, vuela: 3.5, fin: 4.3 }
+const TORPE = { sale: 2.15, choca: 2.95, globo: 3.0, finGlobo: 3.7, sacude: 3.6, vuela: 3.9, fin: 4.9 }
 
 const AVES = 5
 const POLVO = 260
@@ -102,6 +103,8 @@ function dibujarAve(ctx: CanvasRenderingContext2D, x: number, y: number, e: numb
 
 export function Desintegracion({ cabecera, texto, conHorario = false }: { cabecera: RefObject<HTMLElement | null>; texto: string; conHorario?: boolean }) {
   const lienzo = useRef<HTMLCanvasElement>(null)
+  /** El pájaro torpe va en su propio lienzo, por delante de todo (tarjetas, polvo y barra). */
+  const lienzoTorpe = useRef<HTMLCanvasElement>(null)
   const mini = useRef<HTMLDivElement>(null)
   const barra = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -110,6 +113,8 @@ export function Desintegracion({ cabecera, texto, conHorario = false }: { cabece
     const mi = mini.current
     if (!cab || !cv || !mi) return
     const ctx = cv.getContext('2d')
+    const cvT = lienzoTorpe.current
+    const ctxT = cvT?.getContext('2d') ?? null
     const quieto = movimientoReducido()
     const ba = conHorario ? barra.current : null
     let torpeActivo = true
@@ -146,6 +151,7 @@ export function Desintegracion({ cabecera, texto, conHorario = false }: { cabece
       dpr = Math.min(2, window.devicePixelRatio || 1)
       cv.width = Math.round(ancho * dpr)
       cv.height = Math.round(window.innerHeight * dpr)
+      if (cvT) { cvT.width = cv.width; cvT.height = cv.height }
     }
     const avance = () => Math.max(0, window.scrollY) / alto
     const topeCabecera = () => arriba - Math.max(0, window.scrollY) * 0.65
@@ -196,9 +202,9 @@ export function Desintegracion({ cabecera, texto, conHorario = false }: { cabece
 
     /** El pájaro torpe: vuela al borde derecho, se choca (dos plumitas), «¡agh!», se sacude y se va para arriba. */
     const dibujarTorpe = (c: CanvasRenderingContext2D, t: number) => {
-      const e = 30
-      const x0 = ancho * 0.35, y0 = Math.max(90, fijo + alto * 0.45)
-      const borde = ancho - e * 0.55
+      const e = 50
+      const x0 = -e * 0.8, y0 = Math.max(110, fijo + alto * 0.5)
+      const borde = ancho - e * 0.66
       let x = x0, y = y0, cuadro = Math.floor((t * 10) % 3), giro = 0
       if (t < TORPE.choca) {
         const k = suave((t - TORPE.sale) / (TORPE.choca - TORPE.sale))
@@ -220,7 +226,7 @@ export function Desintegracion({ cabecera, texto, conHorario = false }: { cabece
       c.save()
       c.translate(x, y); c.rotate(giro)
       c.globalAlpha = 1
-      dibujarAve(c, 0, 0, e, cuadro)
+      dibujarPajaroTorpe(c, e, cuadro, t >= TORPE.choca && t < TORPE.vuela)
       c.restore()
       // Dos plumitas que caen después del choque
       if (t > TORPE.choca && t < TORPE.choca + 1.2) {
@@ -230,7 +236,7 @@ export function Desintegracion({ cabecera, texto, conHorario = false }: { cabece
           const py = y0 + k * 70
           c.globalAlpha = 1 - k
           c.save(); c.translate(px, py); c.rotate(Math.sin(k * 5 + fase) * 0.8)
-          c.beginPath(); c.ellipse(0, 0, 5, 1.6, 0, 0, Math.PI * 2)
+          c.beginPath(); c.ellipse(0, 0, 8, 2.6, 0, 0, Math.PI * 2)
           c.fillStyle = '#121110'; c.fill(); c.strokeStyle = 'rgba(241, 235, 223, 0.85)'; c.lineWidth = 0.8; c.stroke()
           c.restore()
         }
@@ -238,14 +244,21 @@ export function Desintegracion({ cabecera, texto, conHorario = false }: { cabece
       // Globito de papel «¡agh!»
       if (t >= TORPE.globo && t < TORPE.finGlobo + 0.1) {
         const a = t < TORPE.finGlobo ? clamp((t - TORPE.globo) / 0.08) : 1 - clamp((t - TORPE.finGlobo) / 0.1)
-        const gx = borde - 74, gy = y0 - 40
+        const gw = 66, gh = 28
+        const gx = borde - gw - 34, gy = y0 - 74
         c.globalAlpha = a
-        c.beginPath()
-        if (typeof c.roundRect === 'function') c.roundRect(gx, gy, 50, 22, 8); else c.rect(gx, gy, 50, 22)
-        c.fillStyle = '#F4EFE6'; c.fill(); c.strokeStyle = '#151413'; c.lineWidth = 1.6; c.stroke()
-        c.beginPath(); c.moveTo(gx + 38, gy + 22); c.lineTo(gx + 46, gy + 30); c.lineTo(gx + 30, gy + 22); c.closePath(); c.fill(); c.stroke()
-        c.fillStyle = '#151413'; c.font = '800 13px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'
-        c.fillText('¡agh!', gx + 25, gy + 11.5)
+        // Globo de papel con borde a pincel (dos trazos apenas corridos) y la punta hacia el pájaro
+        const globo = () => {
+          c.beginPath()
+          if (typeof c.roundRect === 'function') c.roundRect(gx, gy, gw, gh, [11, 14, 10, 13]); else c.rect(gx, gy, gw, gh)
+          c.moveTo(gx + gw - 18, gy + gh); c.lineTo(gx + gw + 4, gy + gh + 14); c.lineTo(gx + gw - 32, gy + gh)
+        }
+        globo(); c.fillStyle = '#F4EFE6'; c.fill()
+        c.strokeStyle = '#151413'; c.lineWidth = 2.4; c.stroke()
+        c.save(); c.translate(0.8, -0.6); c.globalAlpha = a * 0.45; c.lineWidth = 1; globo(); c.stroke(); c.restore()
+        c.globalAlpha = a
+        c.fillStyle = '#151413'; c.font = "900 16px 'Pincel', system-ui, sans-serif"; c.textAlign = 'center'; c.textBaseline = 'middle'
+        c.fillText('¡agh!', gx + gw / 2, gy + gh / 2 + 1)
       }
       c.globalAlpha = 1
     }
@@ -317,12 +330,19 @@ export function Desintegracion({ cabecera, texto, conHorario = false }: { cabece
             dibujarAve(ctx, x, y, a.envergadura * (1 - 0.45 * clamp(vuelo / 1.1)), vuelo > 0 ? cuadro : 1)
           }
         }
-        if (torpe && t >= TORPE.sale) dibujarTorpe(ctx, t)
         ctx.globalAlpha = 1
+      }
+      if (ctxT) {
+        ctxT.setTransform(dpr, 0, 0, dpr, 0, 0)
+        ctxT.clearRect(0, 0, ancho, window.innerHeight)
+        if (torpe && t >= TORPE.sale) dibujarTorpe(ctxT, t)
+        ctxT.globalAlpha = 1
       }
       if (t < (torpe ? TORPE.fin : DUR)) { rafAnim = requestAnimationFrame(cuadroAnimacion); return }
       // Terminó
       ctx?.clearRect(0, 0, cv.width, cv.height)
+      ctxT?.setTransform(1, 0, 0, 1, 0, 0)
+      ctxT?.clearRect(0, 0, cvT!.width, cvT!.height)
       cab.style.removeProperty('-webkit-mask-image')
       cab.style.removeProperty('mask-image')
       estado = siguienteEstado(estado, avance(), true, false)
@@ -408,6 +428,7 @@ export function Desintegracion({ cabecera, texto, conHorario = false }: { cabece
   return (
     <>
       <canvas ref={lienzo} className="motas-tinta" aria-hidden="true" />
+      <canvas ref={lienzoTorpe} className="motas-torpe" aria-hidden="true" />
       <div ref={mini} className="dia-mini" aria-hidden="true">{texto}</div>
       {conHorario && (
         <div ref={barra} className="barra-horario-fija">
