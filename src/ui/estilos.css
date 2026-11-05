@@ -1706,6 +1706,7 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .co-anillo .fondo { stroke: var(--fondo-3); }
 .co-anillo .valor { stroke: var(--verde); stroke-linecap: round; transition: stroke-dashoffset 0.8s cubic-bezier(.2,.8,.2,1), stroke 0.3s; }
 .co-anillo.pasado .valor { stroke: var(--ambar); }
+.co-anillo.vacio { padding: 0; }
 .co-anillo.vacio .fondo { stroke-dasharray: 3 5; stroke: var(--borde); }
 .co-anillo-centro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.05; text-align: center; }
 .co-anillo-centro b { font-size: 0.95em; font-variant-numeric: tabular-nums; }
@@ -2349,3 +2350,29 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .enso .juego-segundos.bajo { color: var(--bajo); }
 /* Sueño: las tarjetas dejan ver un poco la habitación de fondo (sin perder lectura) */
 .pagina-sueno .tarjeta { background: rgba(24, 23, 21, 0.8); }
+
+/* ---------- v0.47: tarjeta de Comida en Hoy más baja (una fila) y decorada como Metas ---------- */
+.co-tarjeta { position: relative; overflow: hidden; gap: 8px; padding: 5px 8px 5px 10px; min-height: 0; border: 1.5px solid rgba(var(--papel-rgb), 0.4); border-radius: 12px 16px 11px 17px / 16px 11px 17px 12px;
+  background:
+    radial-gradient(120% 90% at 15% 0%, rgba(var(--papel-rgb), 0.05), transparent 60%),
+    repeating-linear-gradient(97deg, rgba(var(--papel-rgb), 0.018) 0 2px, transparent 2px 7px),
+    var(--fondo-2); }
+.co-tarjeta-link { gap: 8px; }
+.co-tarjeta .co-kanji { font-size: 21px; color: var(--acento); flex: none; }
+.co-tarjeta-texto { line-height: 1.15; }
+.co-tarjeta-texto b { position: relative; align-self: flex-start; font-size: 0.95rem; z-index: 0; }
+/* Pincelada fina de tinta detrás del título */
+.co-tarjeta-texto b::after { content: ''; position: absolute; left: -3px; right: -8px; bottom: 1px; height: 5px; z-index: -1; border-radius: 3px 6px 2px 5px; background: linear-gradient(90deg, rgba(var(--papel-rgb), 0.16), rgba(var(--papel-rgb), 0.05) 85%, transparent); transform: skewX(-12deg); }
+.co-tarjeta-estado { font-size: 0.7rem; color: var(--texto-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.co-tarjeta-anillos { gap: 3px; flex: none; }
+.co-tarjeta-anillos .co-anillo-centro { display: none; }
+.co-tarjeta .agua-chica { padding: 1px 4px; gap: 0; border-color: rgba(var(--papel-rgb), 0.22); }
+.co-tarjeta .agua-chica .agua-sello { font-size: 40px; }
+.co-tarjeta .agua-chica-ml { font-size: 0.56rem; }
+.co-tarjeta .co-comi { padding: 5px 11px; min-height: 0; font-size: 0.82rem; border: 1.5px solid rgba(var(--papel-rgb), 0.38); border-radius: 10px 13px 9px 14px / 13px 9px 14px 10px; background: transparent; color: var(--texto); box-shadow: none; }
+.co-tarjeta .co-comi.primario { background: rgba(var(--papel-rgb), 0.1); }
+.co-tarjeta-anillos .co-anillo circle { stroke-width: 13; }
+.co-tarjeta-anillos .co-anillo .fondo, .co-tarjeta-anillos .co-anillo.vacio .fondo { stroke: rgba(var(--papel-rgb), 0.2); stroke-dasharray: none; }
+.co-tarjeta-anillos .co-anillo { height: 34px !important; padding: 0; }
+.co-tarjeta-anillos .co-anillo svg { width: 34px !important; height: 34px !important; display: block; }
+.co-tarjeta .co-comi, .co-tarjeta .co-comi.primario { animation: none; box-shadow: none !important; }

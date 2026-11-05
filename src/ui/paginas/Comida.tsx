@@ -5,7 +5,7 @@ import { fechaLegible, sumarDias } from '../../domain/fechas'
 import { obtenerAjustes } from '../../services/base'
 import {
   FRANJAS, FUENTES_TABLA, ID_PILAR_COMIDA, TABLA_ALIMENTOS, activarPilarComida, alimentoPorId, borrarComida, borrarGuardada, buscarCodigo, buscarEn, calcularObjetivo, cambiarCantidad,
-  cargarGuardada, comidasDelDia, crearPropioDesdePorcion, estadoKcal, franjaAhora, frecuentes, guardarComida, guardarObjetivo, listarGuardadas, macrosDe, registrarComida, registrarPeso,
+  cargarGuardada, comidasDelDia, crearPropioDesdePorcion, franjaAhora, frecuentes, guardarComida, guardarObjetivo, listarGuardadas, macrosDe, registrarComida, registrarPeso,
   repetirAyer, resumenComida, todosLosAlimentos, type Alimento, type ResumenComida, type Totales,
 } from '../../services/comidas'
 import { db } from '../../data/db'
@@ -55,14 +55,14 @@ export function TarjetaComida({ hoy }: { hoy: string }) {
         <span className="co-kanji" aria-hidden>食</span>
         <span className="co-tarjeta-texto">
           <b>Comida</b>
-          <span className="chico texto-2">
-            {!o ? 'Configurá tu objetivo' : t.kcal === 0 ? 'Cargá tu primera comida' : estadoKcal(t.kcal, o.kcal) === 'pasado' ? `Te pasaste ${t.kcal - o.kcal} kcal` : `Faltan ${Math.max(0, o.kcal - t.kcal).toLocaleString('es-AR')} kcal`}
+          <span className="co-tarjeta-estado">
+            {!o ? 'Configurá tu objetivo' : t.kcal === 0 ? 'Sin comidas aún' : `${t.kcal.toLocaleString('es-AR')} / ${o.kcal.toLocaleString('es-AR')} kcal · ${t.p} g prot.`}
           </span>
         </span>
         {o && (
           <span className="co-tarjeta-anillos">
-            <AnilloComida valor={t.kcal} objetivo={o.kcal} etiqueta="Calorías" unidad="kcal" tam={60} />
-            <AnilloComida valor={t.p} objetivo={o.proteina} etiqueta="Proteína" unidad="g" tam={60} alPasarse={false} />
+            <AnilloComida valor={t.kcal} objetivo={o.kcal} etiqueta="Calorías" unidad="kcal" tam={34} />
+            <AnilloComida valor={t.p} objetivo={o.proteina} etiqueta="Proteína" unidad="g" tam={34} alPasarse={false} />
           </span>
         )}
       </Link>
