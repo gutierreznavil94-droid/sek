@@ -4,6 +4,7 @@ import { useDatos } from '../estado'
 import { cargarPoses } from './munieco'
 import { adorno } from '../../temas/temas'
 import { Chispazo } from './Chispazo'
+import { EscenaHada } from './EscenaHada'
 import { configurarAnimaciones, duracionDe, lentoDe, saltar, terminar, useAnimacionActual, useConfigAnimaciones } from './motor'
 
 // La escena (SVG y poses) se carga recién la primera vez que hace falta: no suma al arranque.
@@ -30,6 +31,8 @@ export function CapaAnimacion() {
     return () => window.clearTimeout(id)
   }, [a, config.lento])
   if (!a) return null
+  // Temas con animaciones propias (hada): las mismas animaciones, con su personaje.
+  if (adorno('animaciones') === 'hada') return <EscenaHada key={a.id} a={a} lento={lentoDe(a)} onSaltar={saltar} />
   // Temas con chispazo: al cumplir un pilar, estrellitas en vez del corte.
   if (a.tipo === 'ejecucion' && adorno('cumplir') === 'chispazo') return <Chispazo key={a.id} onFin={() => terminar(a.id)} />
   return (

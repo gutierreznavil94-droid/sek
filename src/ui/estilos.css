@@ -1836,3 +1836,76 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 @keyframes chispazo-vida { 0%, 80% { opacity: 1 } 100% { opacity: 0 } }
 @keyframes chispazo-centro { 0% { transform: scale(0) rotate(-40deg); opacity: 0 } 35% { transform: scale(1.2) rotate(0); opacity: 1 } 100% { transform: scale(0.8) rotate(30deg); opacity: 0 } }
 @keyframes chispazo-sale { 0% { opacity: 0; transform: rotate(var(--ang)) translateY(0) scale(0.4) } 25% { opacity: 1 } 100% { opacity: 0; transform: rotate(var(--ang)) translateY(calc(-1 * var(--dist))) scale(1.1) } }
+
+/* ===== Animaciones del hada (temas con adornos.animaciones = "hada"; Shinobi no las usa) ===== */
+.hd-capa { --hd-rosa: #FBD3E4; --hd-lila: #E6D3F5; --hd-violeta: #4A2A63; --hd-fucsia: #D6608F; position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: radial-gradient(circle at 50% 40%, #FFF5FA 0, var(--hd-rosa) 45%, var(--hd-lila) 100%); color: var(--hd-violeta); font-family: ui-rounded, 'SF Pro Rounded', 'Nunito', 'Varela Round', 'Quicksand', system-ui, sans-serif; cursor: pointer; overflow: hidden; user-select: none; -webkit-tap-highlight-color: transparent; animation: hd-entra 220ms ease-out both, hd-sale 260ms ease-in calc(var(--dur) - 260ms) forwards; }
+.hd-escena { position: relative; width: min(86vw, 360px); height: min(86vw, 360px); display: grid; place-items: center; }
+.hd-titulo { font-size: 2rem; font-weight: 900; letter-spacing: -0.01em; text-align: center; padding: 0 16px; text-shadow: 0 2px 0 #fff, 0 0 18px rgba(255, 255, 255, 0.9); animation: hd-pop 420ms cubic-bezier(.3,1.6,.5,1) calc(var(--dur) * .28) both; }
+.hd-sub { font-size: 1.05rem; font-weight: 700; color: #6E4C8C; animation: hd-pop 420ms ease calc(var(--dur) * .36) both; }
+.hd-kitty { width: 150px; height: auto; filter: drop-shadow(0 6px 14px rgba(214, 96, 143, 0.35)); pointer-events: none; }
+.hd-kitty-emoji { font-size: 110px; line-height: 1; }
+.hd-lluvia { position: fixed; inset: 0; pointer-events: none; }
+.hd-lluvia span { position: absolute; top: -30px; font-size: 22px; color: #FFC93C; text-shadow: 0 0 1px var(--hd-fucsia), 0 0 10px #fff; animation: hd-cae calc(var(--dur) * var(--caida)) linear calc(var(--dur) * .3 + var(--demora)) both; }
+.hd-lluvia span:nth-child(4n) { color: #EC6FA5; }
+@keyframes hd-entra { from { opacity: 0 } to { opacity: 1 } }
+@keyframes hd-sale { to { opacity: 0 } }
+@keyframes hd-pop { 0% { opacity: 0; transform: scale(.6) } 100% { opacity: 1; transform: scale(1) } }
+@keyframes hd-cae { 0% { opacity: 0; transform: translateY(0) rotate(0) } 10% { opacity: 1 } 100% { opacity: 0; transform: translateY(105vh) rotate(200deg) } }
+
+/* 1. Pilar: pasa volando, toca con la varita y llueven estrellitas */
+.hd-vuela { position: absolute; animation: hd-vuela calc(var(--dur) * .75) cubic-bezier(.4,.1,.3,1) both; }
+.hd-toque { position: absolute; font-size: 90px; color: #FFC93C; text-shadow: 0 0 2px var(--hd-fucsia), 0 0 30px #fff, 0 0 50px #F4A6C8; opacity: 0; animation: hd-toque calc(var(--dur) * .4) ease-out calc(var(--dur) * .3) both; }
+@keyframes hd-vuela { 0% { transform: translate(-90vw, 40px) rotate(-8deg) } 40% { transform: translate(-10px, -10px) rotate(4deg) } 55% { transform: translate(10px, -16px) rotate(-6deg) } 100% { transform: translate(90vw, -60px) rotate(8deg) } }
+@keyframes hd-toque { 0% { opacity: 0; transform: scale(.2) rotate(-30deg) } 30% { opacity: 1; transform: scale(1.2) rotate(0) } 100% { opacity: 0; transform: scale(1.6) rotate(40deg) } }
+
+/* 2. Nivel: aparece girando y un arcoíris de corazones y estrellas */
+.hd-gira { animation: hd-gira calc(var(--dur) * .45) cubic-bezier(.3,1.3,.5,1) both; }
+.hd-arcoiris { position: absolute; inset: 0; }
+.hd-arcoiris span { position: absolute; left: 50%; top: 58%; font-size: 30px; transform: rotate(calc(-90deg + 180deg * var(--i) / (var(--n) - 1))) translateY(-150px) rotate(calc(90deg - 180deg * var(--i) / (var(--n) - 1))); margin: -18px 0 0 -12px; opacity: 0; animation: hd-pop 300ms ease calc(var(--dur) * .3 + var(--i) * 70ms) both; }
+.hd-arcoiris span:nth-child(5n+1) { color: #F49AC1 } .hd-arcoiris span:nth-child(5n+2) { color: #FFC93C } .hd-arcoiris span:nth-child(5n+3) { color: #9EDBC0 } .hd-arcoiris span:nth-child(5n+4) { color: #9EC5F2 } .hd-arcoiris span:nth-child(5n) { color: #C9A6E3 }
+@keyframes hd-gira { 0% { opacity: 0; transform: scale(.1) rotate(-540deg) } 100% { opacity: 1; transform: scale(1) rotate(0) } }
+
+/* 3. Racha: 7 corazoncitos que se llenan y pétalos */
+.hd-flota { animation: hd-flota calc(var(--dur) * .5) ease-in-out infinite alternate; }
+.hd-corazones { position: absolute; bottom: 6px; display: flex; gap: 6px; }
+.hd-corazones span { position: relative; font-size: 34px; width: 34px; text-align: center; color: var(--hd-fucsia); }
+.hd-corazones i { font-style: normal; }
+.hd-corazones b { position: absolute; inset: 0; color: #EC6FA5; opacity: 0; animation: hd-late 380ms cubic-bezier(.3,1.6,.5,1) calc(var(--dur) * .2 + var(--i) * var(--dur) * .07) both; }
+@keyframes hd-late { 0% { opacity: 0; transform: scale(.2) } 100% { opacity: 1; transform: scale(1) } }
+@keyframes hd-flota { from { transform: translateY(-36px) } to { transform: translateY(-52px) } }
+
+/* 4. Fase: abre un regalo con moño y salen mariposas */
+.hd-al-lado { position: absolute; width: 120px; left: -6px; top: 20px; animation: hd-flota calc(var(--dur) * .5) ease-in-out infinite alternate; }
+.hd-regalo { position: absolute; right: 40px; bottom: 50px; width: 120px; height: 120px; }
+.hd-caja { position: absolute; inset: 0; font-size: 110px; line-height: 1; animation: hd-sacude calc(var(--dur) * .3) ease-in-out both; }
+.hd-tapa { position: absolute; left: 30px; top: -10px; font-size: 56px; animation: hd-tapa calc(var(--dur) * .35) ease-out calc(var(--dur) * .3) both; }
+.hd-mariposa { position: absolute; left: 40px; top: 20px; font-size: 30px; opacity: 0; animation: hd-mariposa calc(var(--dur) * .55) ease-out calc(var(--dur) * .35 + var(--i) * 60ms) both; }
+.hd-mariposa:nth-of-type(1) { --x: -150px; --y: -170px } .hd-mariposa:nth-of-type(2) { --x: -60px; --y: -220px } .hd-mariposa:nth-of-type(3) { --x: 40px; --y: -200px } .hd-mariposa:nth-of-type(4) { --x: 100px; --y: -120px } .hd-mariposa:nth-of-type(5) { --x: -110px; --y: -90px } .hd-mariposa:nth-of-type(6) { --x: 10px; --y: -260px }
+@keyframes hd-sacude { 0%, 100% { transform: rotate(0) } 20% { transform: rotate(-8deg) } 40% { transform: rotate(8deg) } 60% { transform: rotate(-5deg) } 80% { transform: rotate(4deg) } }
+@keyframes hd-tapa { 0% { transform: translateY(0) rotate(0) } 100% { transform: translate(-40px, -90px) rotate(-30deg); opacity: 0.9 } }
+@keyframes hd-mariposa { 0% { opacity: 0; transform: translate(0, 0) scale(.4) } 20% { opacity: 1 } 100% { opacity: 0; transform: translate(var(--x), var(--y)) scale(1.1) rotate(15deg) } }
+
+/* 5. Récord: levanta una pesita rosa con brillitos y medalla */
+.hd-levanta { position: relative; display: grid; place-items: center; }
+.hd-pesa { position: absolute; top: -18px; width: 150px; animation: hd-pesa calc(var(--dur) * .25) ease-in-out 3 alternate both; }
+.hd-medalla { position: absolute; right: 26px; top: 10px; font-size: 64px; animation: hd-medalla 520ms cubic-bezier(.3,1.6,.5,1) calc(var(--dur) * .45) both; }
+@keyframes hd-pesa { from { transform: translateY(24px) } to { transform: translateY(-16px) } }
+@keyframes hd-medalla { 0% { opacity: 0; transform: translateY(-120px) scale(.5) } 100% { opacity: 1; transform: translateY(0) scale(1) } }
+
+/* 6. 3-2-1 y Siguiente acción: junta las manitos y aparece un cupcake con aura */
+.hd-manitos { position: absolute; bottom: 0; width: 130px; animation: hd-manitos calc(var(--dur) * .35) ease-in-out infinite alternate; }
+.hd-cupcake { position: absolute; top: 30px; font-size: 96px; animation: hd-pop 480ms cubic-bezier(.3,1.6,.5,1) calc(var(--dur) * .15) both; }
+.hd-aura { position: absolute; top: 20px; width: 170px; height: 170px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0, rgba(255, 201, 60, 0.45) 40%, rgba(244, 166, 200, 0) 70%); animation: hd-aura calc(var(--dur) * .5) ease-in-out infinite alternate; }
+@keyframes hd-manitos { from { transform: rotate(-4deg) } to { transform: rotate(4deg) translateY(-6px) } }
+@keyframes hd-aura { from { transform: scale(.85); opacity: .7 } to { transform: scale(1.15); opacity: 1 } }
+
+/* 7. Serie: corazoncito que rebota con «+1» (no tapa la pantalla ni frena toques) */
+.hd-capa.hd-parry { inset: auto 0 calc(var(--nav-alto) + 24px) 0; background: none; pointer-events: none; animation: none; }
+.hd-corazon-salta { position: relative; font-size: 64px; line-height: 1; color: #EC6FA5; text-shadow: 0 0 2px #fff, 0 4px 14px rgba(214, 96, 143, 0.45); animation: hd-salta var(--dur) cubic-bezier(.3,1.5,.5,1) both; }
+.hd-corazon-salta b { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -48%); font-size: 18px; font-weight: 900; color: #fff; font-family: ui-rounded, 'Nunito', system-ui, sans-serif; }
+@keyframes hd-salta { 0% { opacity: 0; transform: translateY(30px) scale(.3) } 20% { opacity: 1; transform: translateY(-20px) scale(1.15) } 35% { transform: translateY(0) scale(.95) } 50% { transform: translateY(-8px) scale(1) } 80% { opacity: 1 } 100% { opacity: 0; transform: translateY(-40px) scale(.9) } }
+
+/* Reducir movimiento: la imagen final, quieta */
+.hd-capa.quieto, .hd-capa.quieto * { animation: none !important; }
+.hd-capa.quieto .hd-vuela, .hd-capa.quieto .hd-lluvia, .hd-capa.quieto .hd-mariposa, .hd-capa.quieto .hd-toque { display: none; }
+.hd-capa.quieto .hd-arcoiris span, .hd-capa.quieto .hd-corazones b { opacity: 1; }

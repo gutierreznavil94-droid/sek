@@ -45,6 +45,10 @@ export interface AdornosTema {
   simbolos?: Record<string, string>
   /** `true`: Mi código numera con 1, 2, 3 en vez de 一, 二, 三. */
   numerosComunes?: boolean
+  /** Animaciones grandes (pilar, nivel, racha, fase, récord, 3-2-1, serie): las de Shinobi o las del hada. */
+  animaciones?: 'shinobi' | 'hada'
+  /** Imagen del personaje de las animaciones del hada (dentro de `public/`, fondo transparente). */
+  imagenAnimaciones?: string
 }
 
 export interface TemaProximo { id: string; nombre: string; pista: string }
@@ -132,8 +136,8 @@ export function simbolo(s: string, tema: DefinicionTema = activo): string {
 }
 
 /** Adorno elegido por el tema activo, con el de Shinobi si no eligió. */
-export function adorno<K extends 'aves' | 'cumplir'>(clave: K, tema: DefinicionTema = activo): NonNullable<AdornosTema[K]> {
-  const porDefecto = { aves: 'pajaros', cumplir: 'corte' } as const
+export function adorno<K extends 'aves' | 'cumplir' | 'animaciones'>(clave: K, tema: DefinicionTema = activo): NonNullable<AdornosTema[K]> {
+  const porDefecto = { aves: 'pajaros', cumplir: 'corte', animaciones: 'shinobi' } as const
   return (tema.adornos?.[clave] ?? porDefecto[clave]) as NonNullable<AdornosTema[K]>
 }
 
