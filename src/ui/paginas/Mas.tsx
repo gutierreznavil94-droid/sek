@@ -21,6 +21,7 @@ const SISTEMA: Seccion[] = [
   { a: '/mas/ajustes', t: 'Ajustes', d: 'Juego, racha, lluvia', icono: 'icono-ajustes', claves: 'ajustes configuracion limite juego racha niveles zona horaria lluvia fondo movimiento' },
   { a: '/mas/historial', t: 'Historial', d: 'Lo que cambió', icono: 'icono-historial', claves: 'historial cambios registro corregir' },
   { a: '/mas/sincronizar', t: 'Sincronizar', d: 'Celu y compu', icono: 'icono-sincronizar', claves: 'sincronizar compu celu nube' },
+  { a: '/mas/actualizar', t: 'Buscar actualización', d: 'Versión nueva', icono: 'icono-actualizar', claves: 'buscar actualizacion actualizar version nueva apk instalar descargar' },
   { a: '/mas/nuevo-ciclo', t: 'Nuevo ciclo', d: 'Día 1 y otros 90', icono: 'icono-ciclo', claves: 'fecha inicio nuevo ciclo dia 1 empezar 90 dias reiniciar' },
 ]
 

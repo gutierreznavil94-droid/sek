@@ -5,13 +5,15 @@ import { App } from './ui/App'
 import './ui/estilos.css'
 import { aplicarMovimiento } from './ui/componentes'
 import { iniciarSincronizacion } from './sync/sincronizar'
+import { esAndroid } from './nativo/sek'
 
 aplicarMovimiento()
 void iniciarSincronizacion()
 
 // Busca una versión nueva al abrir, al volver a primer plano y cada hora.
 // Con «autoUpdate», cuando la hay se instala y la página se recarga sola.
-registerSW({
+// En la app Android no: ahí la versión viene adentro del APK (y se actualiza con «Buscar actualización»).
+if (!esAndroid()) registerSW({
   immediate: true,
   onRegisteredSW(_url, registro) {
     if (!registro) return

@@ -6,7 +6,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
  * y los recordatorios usan notificaciones locales del teléfono.
  */
 const config: CapacitorConfig = {
-  appId: 'ar.progreso90.app',
+  appId: 'ar.sek.app',
   appName: 'SEK',
   webDir: 'dist',
   android: {
@@ -15,7 +15,7 @@ const config: CapacitorConfig = {
   plugins: {
     LocalNotifications: {
       smallIcon: 'ic_stat_icon',
-      iconColor: '#4f8cff',
+      iconColor: '#C8102E',
     },
   },
 }

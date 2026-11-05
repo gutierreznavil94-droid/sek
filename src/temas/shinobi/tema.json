@@ -25,6 +25,7 @@
     "Un día más en el camino. Seguimos.",
     "La montaña se sube con pasos chicos."
   ],
+  "colores": { "color-principal": "#C8102E", "color-papel": "#F1EBDF", "color-tinta": "#121110", "color-tinta-suave": "#6B655C" },
   "iconos": {
     "icono-hoy": "今",
     "icono-sueno": "眠",
@@ -35,7 +36,7 @@
     "icono-ajustes": "設",
     "icono-historial": "歴",
     "icono-sincronizar": "同",
-    "icono-ciclo": "始"
+    "icono-ciclo": "始", "icono-actualizar": "新", "icono-agua": "水", "icono-racha": "炎"
   },
   "orden": 1
 }

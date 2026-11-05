@@ -1,0 +1,95 @@
+# Arma el APK de Android de SEK.
+# - En cada push a main (y a mano con «Run workflow»): APK firmado con la clave de los secretos, publicado como
+#   Release de GitHub. Link fijo: https://github.com/gutierreznavil94-droid/sek/releases/latest/download/sek.apk
+# - En la rama apk-android: solo prueba que compile (APK de prueba como artefacto, sin Release).
+name: APK Android
+
+on:
+  push:
+    branches: [main, apk-android]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npx cap sync android
+
+      - name: Versión (de src/version.ts)
+        id: v
+        run: |
+          V=$(grep -oE "[0-9]+\.[0-9]+" src/version.ts | head -1)
+          MA=${V%%.*}; MI=${V#*.}
+          echo "nombre=$V" >> "$GITHUB_OUTPUT"
+          echo "codigo=$((10#$MA * 1000 + 10#$MI))" >> "$GITHUB_OUTPUT"
+          echo "Versión $V"
+
+      - name: Clave de firma
+        env:
+          SEK_KEYSTORE_BASE64: ${{ secrets.SEK_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$SEK_KEYSTORE_BASE64" ]; then
+            if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+              echo "::error::Faltan los secretos de la firma (SEK_KEYSTORE_BASE64, SEK_KEYSTORE_PASSWORD, SEK_KEY_ALIAS, SEK_KEY_PASSWORD). Ver android/COMO-COMPILAR-APK.md"
+              exit 1
+            fi
+            echo "Sin clave en esta rama: APK de prueba con la clave de depuración."
+            echo "SIN_CLAVE=1" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          echo "$SEK_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/sek.jks"
+          echo "SEK_KEYSTORE_FILE=$RUNNER_TEMP/sek.jks" >> "$GITHUB_ENV"
+
+      - name: Compilar el APK
+        working-directory: android
+        env:
+          SEK_KEYSTORE_PASSWORD: ${{ secrets.SEK_KEYSTORE_PASSWORD }}
+          SEK_KEY_ALIAS: ${{ secrets.SEK_KEY_ALIAS }}
+          SEK_KEY_PASSWORD: ${{ secrets.SEK_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          if [ "$SIN_CLAVE" = "1" ]; then TAREA=assembleDebug; else TAREA=assembleRelease; fi
+          ./gradlew "$TAREA" --no-daemon --stacktrace -PsekVersionCode=${{ steps.v.outputs.codigo }} -PsekVersionName=${{ steps.v.outputs.nombre }}
+          APK=$(find app/build/outputs/apk -name "*.apk" | head -1)
+          echo "APK: $APK"
+          cp "$APK" "$RUNNER_TEMP/sek.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sek-${{ steps.v.outputs.nombre }}
+          path: ${{ runner.temp }}/sek.apk
+
+      - name: Qué cambió
+        if: github.ref == 'refs/heads/main' && env.SIN_CLAVE != '1'
+        run: git log -1 --format=%B | grep -vE "^(Co-Authored-By|Claude-Session|🤖)|claude\.ai" > "$RUNNER_TEMP/notas.md"
+
+      - name: Publicar el Release
+        if: github.ref == 'refs/heads/main' && env.SIN_CLAVE != '1'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.v.outputs.nombre }}
+          name: SEK v${{ steps.v.outputs.nombre }}
+          body_path: ${{ runner.temp }}/notas.md
+          files: ${{ runner.temp }}/sek.apk
+          make_latest: true
+          overwrite_files: true

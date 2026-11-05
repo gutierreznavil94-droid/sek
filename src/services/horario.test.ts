@@ -125,11 +125,12 @@ describe('avisos', () => {
   it('durante un bloque obligatorio no suenan los avisos; al salir llega uno solo; el del entreno sigue', async () => {
     await guardarBloque({ nombre: 'Trabajo', tipo: 'obligatorio', dias: [1], desde: '18:30', hasta: '21:00' })
     const l = await alarmasDelDia(LUNES)
-    expect(l.map((a) => `${a.hora} ${a.tipo}`)).toEqual(['19:00 entrenamiento', '21:00 salida', '21:15 celu', '21:20 dormido'])
+    expect(l.map((a) => `${a.hora} ${a.tipo}`)).toEqual(['18:30 horario', '19:00 entrenamiento', '21:00 salida', '21:15 celu', '21:20 dormido'])
     const salida = l.find((a) => a.tipo === 'salida')!
     expect(salida.titulo).toBe('Saliste de Trabajo')
     expect(salida.cuerpo).toContain('Empezá el entreno')
     expect(salida.cuerpo).toContain('revisión')
+    expect(l[0].titulo).toBe('Ahora: Trabajo')
     expect(await finDeObligatorio(LUNES, instanteDe(LUNES, '20:50', Z))).toMatchObject({ fin: instanteDe(LUNES, '21:00', Z) })
     expect(await finDeObligatorio(LUNES, instanteDe(LUNES, '10:00', Z))).toBeNull()
   })

@@ -1,14 +1,15 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "ar.progreso90.app"
+    namespace = "ar.sek.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "ar.progreso90.app"
+        applicationId "ar.sek.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // La versión sale de src/version.ts (la pasa el workflow): «0.52» → código 52, «1.0» → 1000.
+        versionCode((project.findProperty("sekVersionCode") ?: "1") as Integer)
+        versionName((project.findProperty("sekVersionName") ?: "0.0") as String)
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +17,21 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Firma: siempre la misma clave (sin ella no se puede instalar encima). La pasa el workflow desde los secretos.
+    def claveArchivo = System.getenv("SEK_KEYSTORE_FILE")
+    signingConfigs {
+        if (claveArchivo) {
+            sek {
+                storeFile file(claveArchivo)
+                storePassword System.getenv("SEK_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("SEK_KEY_ALIAS")
+                keyPassword System.getenv("SEK_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
+            if (claveArchivo) signingConfig signingConfigs.sek
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
