@@ -32,7 +32,8 @@ export function ChipsBatallas({ hoy, ajustes, unidad, hechas, tope }: { hoy: str
   const caidas = useDatos(() => caidasDelDia(hoy), [hoy])
   const [abierto, setAbierto] = useState<number | null>(null)
   const [caidaAbierta, setCaidaAbierta] = useState<string | null>(null)
-  const chips = datos.datos ?? []
+  // Solo lo que ya se definió: vencido, se escapó o robó. Los «en duda» no ocupan lugar.
+  const chips = (datos.datos ?? []).filter((c) => c.estado !== 'duda')
   const listaCaidas: Caida[] = caidas.datos ?? []
   if (!chips.length && !hechas && !listaCaidas.length) return null
   const nombre = (id: string) => nombreDistraccion(distraccionesDe(ajustes), id)
