@@ -34,6 +34,7 @@ import {
   kg,
   listarRutinas,
   marcarBloque,
+  obtenerRutina,
   moverBloque,
   objetivoSerie,
   pesoInicial,
@@ -122,7 +123,8 @@ async function cargar(hoy: string) {
   const sesion = await sesionEnCurso()
   const rutinas = await listarRutinas()
   const delDia = await rutinaDelDia(hoy)
-  const rutina = sesion ? rutinas.find((r) => r.id === sesion.rutinaId) ?? null : null
+  // La rutina del entreno en curso aunque la hayan pausado o borrado mientras tanto.
+  const rutina = sesion ? rutinas.find((r) => r.id === sesion.rutinaId) ?? (await obtenerRutina(sesion.rutinaId)) ?? null : null
   const ctx: Contexto = { anterior: [] }
   if (sesion && rutina) {
     const bloque = rutina.bloques.find((b) => b.id === sesion.orden[sesion.paso])
@@ -158,7 +160,7 @@ export function Entreno({ hoy }: { hoy: string }) {
   return (
     <div className="app entreno-app">
       <main className="contenido entreno">
-        {resultado ? <Resumen r={resultado} rutina={d?.rutinas.find((x) => x.id === resultado.sesion.rutinaId)} onReabrir={async () => { await mutar(() => reabrirEntreno(resultado.sesion.id!)); setResultado(null) }} />
+        {resultado ? <Resumen r={resultado} rutina={d?.rutinas.find((x) => x.id === resultado.sesion.rutinaId) ?? d?.rutina ?? undefined} onReabrir={async () => { await mutar(() => reabrirEntreno(resultado.sesion.id!)); setResultado(null) }} />
           : !d ? <p className="vacio">Cargando…</p>
           : d.sesion && d.rutina ? <EnCurso s={d.sesion} r={d.rutina} ctx={d.ctx} onTerminado={setResultado} />
           : <Empezar hoy={hoy} rutinas={d.rutinas} delDia={d.delDia} limiteInicio={d.limiteInicio} tarde={d.tarde} />}
@@ -188,6 +190,8 @@ function Empezar({ hoy, rutinas, delDia, limiteInicio, tarde }: { hoy: string; r
       <div className="chips">
         {rutinas.map((x) => <button key={x.id} className={x.id === elegida ? 'activo' : ''} onClick={() => setElegida(x.id)}>{x.nombre.split(' · ')[0]}</button>)}
       </div>
+      {!rutinas.length && <p className="ayuda">Todavía no tenés rutinas. Armá la tuya o elegí un plan en Mis rutinas.</p>}
+      {!rutinas.length && <Link to="/mas/rutinas" className="boton primario grande ancho">Ir a Mis rutinas</Link>}
       {r && (
         <ol className="entreno-lista">
           {r.bloques.map((b) => (

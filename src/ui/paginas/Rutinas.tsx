@@ -3,38 +3,72 @@
  * mini gráfico de cada ejercicio (peso × repeticiones a lo largo del ciclo).
  */
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { IDEAS_DE_A_POCO, diasDeEleccion, planPorId, type EleccionEntreno } from '../../data/planes'
 import type { BloqueEjercicio, BloqueRutina, Rutina, SerieHecha, SesionEntreno } from '../../data/tipos'
 import { nombreDiaSemana } from '../../domain/fechas'
-import { corregirSerie, guardarRutina, historialEjercicio, kg, listarRutinas, obtenerRutina, sesionEnCurso, type PuntoEjercicio } from '../../services/entreno'
+import { aplicarEleccionEntreno, borrarRutina, corregirSerie, crearRutina, diasDeRutinas, guardarRutina, historialEjercicio, igualarDiasEntrenar, kg, listarRutinas, obtenerRutina, sesionEnCurso, type PuntoEjercicio } from '../../services/entreno'
 import { db } from '../../data/db'
 import { fechaLegible } from '../../domain/fechas'
 import { nuevoId } from '../../services/reloj'
 import { Atras, DiasSemana, Hoja, Tarjeta } from '../componentes'
+import { ComoEmpezar, diasCortos, nombreEleccion } from '../ComoEmpezar'
 import { avisar, mutar, useDatos } from '../estado'
 
 function dias(d: number[]): string {
   return [...d].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((x) => nombreDiaSemana(x, true)).join(' y ')
 }
 
+const IDEAS_OCULTAS = 'rutinas-ideas-ocultas'
+
 export function Rutinas() {
-  const datos = useDatos(() => listarRutinas(true), [])
+  const datos = useDatos(async () => {
+    const rutinas = await listarRutinas(true)
+    const entreno = await db().acciones.get('entrenamiento')
+    return { rutinas, diasRutinas: await diasDeRutinas(), pilar: entreno?.activa && entreno.pilar ? entreno.dias : null }
+  }, [])
+  const navegar = useNavigate()
+  const [elegir, setElegir] = useState(false)
+  const [ideasOcultas, setIdeasOcultas] = useState(() => { try { return localStorage.getItem(IDEAS_OCULTAS) === '1' } catch { return false } })
+  const d = datos.datos
+  const rutinas = d?.rutinas ?? []
+  const nueva = async () => {
+    const r = await mutar(() => crearRutina())
+    navegar(`/mas/rutinas/${r.id}`)
+  }
+  const ocultarIdeas = () => { setIdeasOcultas(true); try { localStorage.setItem(IDEAS_OCULTAS, '1') } catch { /* sin almacenamiento */ } }
+  const distintos = !!d?.pilar && d.diasRutinas.length > 0 && [...d.pilar].sort().join() !== [...d.diasRutinas].sort().join()
+  const conEjemplo = rutinas.some((r) => r.id === 'rutina-ejemplo' && r.activa)
   return (
     <>
       <Atras a="/mas" texto="Más" />
       <h1>Mis rutinas</h1>
-      <p className="texto-2 chico">Tus 3 rutinas, cada una 2 veces por semana. Tocá una para ver y editar sus bloques, ejercicios y días. Los cambios valen desde el próximo entreno.</p>
+      <p className="texto-2 chico">{rutinas.length ? `${rutinas.length === 1 ? 'Tu rutina' : `Tus ${rutinas.length} rutinas`}, cada una con sus días. Tocá una para ver y editar sus bloques, ejercicios y días. Los cambios valen desde el próximo entreno.` : 'Todavía no tenés rutinas. Sumá una y armala a tu manera, o elegí un plan listo.'}</p>
       <Link to="/mas/rutinas/historial" className="tarjeta rutina-item">
         <div className="fila entre"><h2>Historial de entrenos</h2><span aria-hidden>›</span></div>
         <span className="texto-2 chico">Todos los entrenos quedan guardados, aunque ese día bajes reps o peso. Ahí podés corregir una serie mal anotada.</span>
       </Link>
-      {(datos.datos ?? []).map((r) => {
+      {distintos && (
+        <Tarjeta compacta>
+          <span className="texto-2 chico">Tu pilar Entrenar toca <b>{diasCortos(d!.pilar!)}</b>, pero tus rutinas son <b>{diasCortos(d!.diasRutinas)}</b>.</span>
+          <button className="boton chico" onClick={async () => { await mutar(() => igualarDiasEntrenar()); avisar(`Entrenar: ${diasCortos(d!.diasRutinas)}`, { tipo: 'ok' }) }}>Usar los días de mis rutinas</button>
+        </Tarjeta>
+      )}
+      {conEjemplo && !ideasOcultas && (
+        <Tarjeta compacta>
+          <b>Ideas para ir agrandándola</b>
+          <ul className="texto-2 chico rutinas-ideas">{IDEAS_DE_A_POCO.map((x) => <li key={x}>{x}</li>)}</ul>
+          <span className="texto-3 chico">Son solo ideas: vos decidís cuándo.</span>
+          <button className="boton chico suave" onClick={ocultarIdeas}>Ocultar ideas</button>
+        </Tarjeta>
+      )}
+      {rutinas.map((r) => {
         const ej = r.bloques.filter((b): b is BloqueEjercicio => b.tipo === 'ejercicio')
         return (
           <Link key={r.id} to={`/mas/rutinas/${r.id}`} className="tarjeta rutina-item">
             <div className="fila entre">
               <h2>{r.nombre.split(' · ')[0]}</h2>
-              <span className="texto-3 chico">{dias(r.dias)} · ~{r.minutos} min</span>
+              <span className="texto-3 chico">{r.dias.length ? dias(r.dias) : 'Sin días'} · ~{r.minutos} min</span>
             </div>
             <span className="texto-2">{r.nombre.split(' · ')[1] ?? ''}</span>
             <div className="chips-mini">{ej.map((e) => <span key={e.id}>{e.nombre}</span>)}</div>
@@ -42,8 +76,56 @@ export function Rutinas() {
           </Link>
         )
       })}
-      <Link to="/entreno" className="boton primario grande ancho">Empezar entreno</Link>
+      <div className="rutinas-acciones">
+        <button className="boton" onClick={nueva}>+ Nueva rutina</button>
+        <button className="boton" onClick={() => setElegir(true)}>Elegir cómo empezar</button>
+      </div>
+      {rutinas.length > 0 && <Link to="/entreno" className="boton primario grande ancho">Empezar entreno</Link>}
+      <Hoja abierta={elegir} onCerrar={() => setElegir(false)} titulo="Elegir cómo empezar">
+        {elegir && <ElegirComoEmpezar hay={rutinas.length} onListo={() => setElegir(false)} />}
+      </Hoja>
     </>
+  )
+}
+
+/** Hoja para cargar un plan, la rutina cortita o empezar de cero. Si ya hay rutinas, confirma antes de reemplazarlas. */
+function ElegirComoEmpezar({ hay, onListo }: { hay: number; onListo: () => void }) {
+  const [e, setE] = useState<EleccionEntreno>({ modo: 'plan', planId: 'plan-nay' })
+  const [confirmar, setConfirmar] = useState(false)
+  const [igualar, setIgualar] = useState(true)
+  const dias = diasDeEleccion(e)
+  const aplicar = async (reemplazar: boolean) => {
+    try {
+      const r = await mutar(() => aplicarEleccionEntreno(e, { reemplazar, igualarDias: igualar && !!dias }))
+      avisar(e.modo === 'cero' ? 'Listo: sin rutinas. Sumá la primera con «+ Nueva rutina».' : `${nombreEleccion(e)}: ${r.cargadas === 1 ? '1 rutina cargada' : `${r.cargadas} rutinas cargadas`}`, { tipo: 'ok' })
+      onListo()
+    } catch (x) {
+      avisar(x instanceof Error ? x.message : String(x), { tipo: 'bajo' })
+    }
+  }
+  if (confirmar) {
+    const plan = e.modo === 'plan' ? planPorId(e.planId) : undefined
+    return (
+      <div className="col" style={{ gap: 10 }}>
+        <p>{e.modo === 'cero' ? `¿Borrar tus ${hay === 1 ? 'rutina' : `${hay} rutinas`} y empezar desde cero?` : `Ya tenés ${hay === 1 ? '1 rutina' : `${hay} rutinas`}. ¿Qué hacemos con ${hay === 1 ? 'ella' : 'ellas'}?`}</p>
+        <p className="texto-2 chico">Tus entrenos, récords e historial quedan guardados igual.</p>
+        {dias && (
+          <button className={`boton chico ${igualar ? 'ok' : ''}`} aria-pressed={igualar} onClick={() => setIgualar(!igualar)}>
+            {igualar ? '✓ ' : ''}Pasar el pilar Entrenar a {diasCortos(dias)}
+          </button>
+        )}
+        {e.modo !== 'cero' && <button className="boton primario" onClick={() => aplicar(false)}>Sumar {plan ? 'el plan' : 'la rutina'} a las mías</button>}
+        <button className={`boton ${e.modo === 'cero' ? 'primario' : ''}`} onClick={() => aplicar(true)}>{e.modo === 'cero' ? 'Sí, empezar desde cero' : 'Reemplazar mis rutinas'}</button>
+        <button className="boton suave" onClick={() => setConfirmar(false)}>‹ Volver</button>
+      </div>
+    )
+  }
+  return (
+    <div className="col" style={{ gap: 10 }}>
+      <ComoEmpezar valor={e} onChange={setE} />
+      <p className="ayuda">Después podés editar todo: días, ejercicios, series y pesos.</p>
+      <button className="boton primario" onClick={() => (hay > 0 ? setConfirmar(true) : aplicar(true))}>{e.modo === 'cero' ? 'Seguir' : 'Cargar'}</button>
+    </div>
   )
 }
 
@@ -53,10 +135,22 @@ export function EditarRutina() {
   const [r, setR] = useState<Rutina | null>(null)
   const [abierto, setAbierto] = useState<string | null>(null)
   const [grafico, setGrafico] = useState<BloqueEjercicio | null>(null)
+  const [borrar, setBorrar] = useState(false)
+  const navegar = useNavigate()
   useEffect(() => { if (datos.datos) setR(datos.datos) }, [datos.datos])
   const [enCurso, setEnCurso] = useState(false)
   useEffect(() => { void sesionEnCurso().then((s) => setEnCurso(!!s && s.rutinaId === id)) }, [id])
+  if (!r && datos.datos === undefined && !datos.cargando) return <><Atras a="/mas/rutinas" texto="Rutinas" /><p className="vacio">Esta rutina ya no está.</p></>
   if (!r) return <p className="vacio">Cargando…</p>
+  const confirmarBorrar = async () => {
+    try {
+      const como = await mutar(() => borrarRutina(r.id))
+      avisar(como === 'eliminada' ? 'Rutina borrada' : 'Rutina borrada. Sus entrenos siguen en el historial.', { tipo: 'ok' })
+      navegar('/mas/rutinas')
+    } catch (e) {
+      avisar(e instanceof Error ? e.message : String(e), { tipo: 'bajo' })
+    }
+  }
   const cambiarBloque = (bid: string, cambios: Partial<BloqueRutina>) => setR({ ...r, bloques: r.bloques.map((b) => (b.id === bid ? ({ ...b, ...cambios } as BloqueRutina) : b)) })
   const mover = (i: number, delta: number) => {
     const j = i + delta
@@ -123,6 +217,15 @@ export function EditarRutina() {
       </div>
       <p className="ayuda">Los cambios valen desde el próximo entreno.{enCurso ? ' Tenés esta rutina en curso: si la cambiás ahora, el entreno de hoy ya toma los cambios.' : ''}</p>
       <button className="boton primario grande ancho" onClick={guardar}>Guardar rutina</button>
+      <button className="boton suave ancho" onClick={() => setBorrar(true)}>Borrar rutina</button>
+      <Hoja abierta={borrar} onCerrar={() => setBorrar(false)} titulo="¿Borrar esta rutina?">
+        <div className="col" style={{ gap: 10 }}>
+          <p>«{r.nombre}» deja de aparecer en tus rutinas y en el entreno.</p>
+          <p className="texto-2 chico">Los entrenos que ya hiciste con ella quedan guardados en el historial, con sus récords.{enCurso ? ' El entreno de hoy, si lo tenés empezado, lo podés terminar igual.' : ''}</p>
+          <button className="boton primario" onClick={confirmarBorrar}>Sí, borrar</button>
+          <button className="boton suave" onClick={() => setBorrar(false)}>No, dejarla</button>
+        </div>
+      </Hoja>
       <Hoja abierta={!!grafico} onCerrar={() => setGrafico(null)} titulo={grafico?.nombre}>
         {grafico && <HistorialEjercicio b={grafico} />}
       </Hoja>
@@ -255,7 +358,7 @@ export function GraficoEjercicio({ puntos }: { puntos: PuntoEjercicio[] }) {
 export function HistorialEntrenos() {
   const datos = useDatos(async () => {
     const sesiones = (await db().sesionesEntreno.filter((s) => s.estado === 'terminada').toArray()).sort((a, b) => (b.fin ?? b.inicio) - (a.fin ?? a.inicio))
-    const rutinas = new Map((await listarRutinas(true)).map((r) => [r.id, r]))
+    const rutinas = new Map((await listarRutinas(true, true)).map((r) => [r.id, r]))
     return { sesiones, rutinas }
   }, [])
   const [corregir, setCorregir] = useState<{ s: SesionEntreno; x: SerieHecha; b?: BloqueEjercicio } | null>(null)

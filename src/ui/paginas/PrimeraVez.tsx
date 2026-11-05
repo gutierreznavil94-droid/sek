@@ -1,10 +1,12 @@
 import { lazy, Suspense, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { diasDeEleccion, type EleccionEntreno } from '../../data/planes'
 import { AJUSTES_INICIALES } from '../../data/semilla'
 import { fechaLegible } from '../../domain/fechas'
 import { configurarPrimeraVez, MAX_PILARES, SUGERENCIAS_PILARES, validarPrimeraVez, type ClavePilar, type EleccionPilar } from '../../services/primeraVez'
 import { TEMAS, TEMAS_PROXIMOS, aplicarTema, saludoDe, temaPorId, type DefinicionTema, simbolo } from '../../temas/temas'
 import { DiasSemana, movimientoReducido } from '../componentes'
+import { ComoEmpezar, nombreEleccion } from '../ComoEmpezar'
 import { Divisor } from '../Divisor'
 import { avisar, mutar } from '../estado'
 
@@ -33,11 +35,12 @@ export function PrimeraVez({ hoy }: { hoy: string }) {
   const [horarios, setHorarios] = useState({ alistarse: AJUSTES_INICIALES.horaAlistarse, dejarCelu: AJUSTES_INICIALES.horaDejarCelu, dormir: AJUSTES_INICIALES.horaDormido })
   const [vision, setVision] = useState('')
   const [obstaculo, setObstaculo] = useState('')
+  const [entreno, setEntreno] = useState<EleccionEntreno>({ modo: 'poco' })
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
   const navegar = useNavigate()
 
-  const config = { hoy, nombrePersona: nombre, nombreApp, tema, pilares, horarios, vision, obstaculo }
+  const config = { hoy, nombrePersona: nombre, nombreApp, tema, pilares, horarios, vision, obstaculo, entreno }
   const errorDelPaso = (): string | null => {
     if (paso === 0 && !nombre.trim()) return 'Escribí tu nombre para seguir.'
     if (paso === 2) {
@@ -105,7 +108,7 @@ export function PrimeraVez({ hoy }: { hoy: string }) {
           </>
         )}
 
-        {paso === 2 && <ElegirPilares valor={pilares} onChange={setPilares} />}
+        {paso === 2 && <ElegirPilares valor={pilares} onChange={setPilares} entreno={entreno} onEntreno={setEntreno} />}
 
         {paso === 3 && (
           <>
@@ -131,7 +134,7 @@ export function PrimeraVez({ hoy }: { hoy: string }) {
           </>
         )}
 
-        {paso === 5 && <Listo tema={temaPorId(tema)} nombre={nombre.trim()} hoy={hoy} pilares={pilares} />}
+        {paso === 5 && <Listo tema={temaPorId(tema)} nombre={nombre.trim()} hoy={hoy} pilares={pilares} entreno={entreno} />}
 
         {(error || (bloqueo && paso !== 0)) && <p className="error chico">{error || bloqueo}</p>}
       </main>
@@ -194,16 +197,23 @@ export function ListaTemas({ valor, onElegir }: { valor: string; onElegir: (id: 
   )
 }
 
-function ElegirPilares({ valor, onChange }: { valor: EleccionPilar[]; onChange: (v: EleccionPilar[]) => void }) {
+function ElegirPilares({ valor, onChange, entreno, onEntreno }: { valor: EleccionPilar[]; onChange: (v: EleccionPilar[]) => void; entreno: EleccionEntreno; onEntreno: (e: EleccionEntreno) => void }) {
   const elegido = (c: ClavePilar) => valor.find((p) => p.clave === c)
   const lleno = valor.length >= MAX_PILARES
   const alternar = (c: ClavePilar) => {
     if (elegido(c)) return onChange(valor.filter((p) => p.clave !== c))
     if (lleno) return avisar(`Máximo ${MAX_PILARES} pilares: pocos y firmes.`)
     const s = SUGERENCIAS_PILARES.find((x) => x.clave === c)!
-    onChange([...valor, { clave: c, nombre: c === 'otro' ? '' : s.nombre, dias: [...s.dias], horaLimite: s.pideHora ? s.horaLimite : undefined, minutos: s.pideMinutos ? s.minutos : undefined }])
+    const dias = (c === 'entrenar' && diasDeEleccion(entreno)) || s.dias
+    onChange([...valor, { clave: c, nombre: c === 'otro' ? '' : s.nombre, dias: [...dias], horaLimite: s.pideHora ? s.horaLimite : undefined, minutos: s.pideMinutos ? s.minutos : undefined }])
   }
   const cambiar = (c: ClavePilar, cambios: Partial<EleccionPilar>) => onChange(valor.map((p) => (p.clave === c ? { ...p, ...cambios } : p)))
+  // Un plan completo trae sus días: el pilar Entrenar los toma (se pueden cambiar igual).
+  const elegirEntreno = (e: EleccionEntreno) => {
+    onEntreno(e)
+    const dias = diasDeEleccion(e)
+    if (dias) cambiar('entrenar', { dias: [...dias] })
+  }
   return (
     <>
       <p className="pv-lead">Tildá lo que querés cumplir cada día. Pocos y firmes: hasta {MAX_PILARES}. <b className="pv-cuenta">{valor.length}/{MAX_PILARES}</b></p>
@@ -237,6 +247,13 @@ function ElegirPilares({ valor, onChange }: { valor: EleccionPilar[]; onChange: 
                     </div>
                   )}
                   {s.clave === 'dormir' && <span className="texto-3 chico">La hora sale del paso siguiente («Dejo el celu»).</span>}
+                  {s.clave === 'entrenar' && (
+                    <>
+                      <span className="texto-3 chico">¿Cómo querés empezar a entrenar?</span>
+                      <ComoEmpezar valor={entreno} onChange={elegirEntreno} />
+                      <span className="texto-3 chico">Todo se puede cambiar después en Más → Mis rutinas.</span>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -248,7 +265,7 @@ function ElegirPilares({ valor, onChange }: { valor: EleccionPilar[]; onChange: 
   )
 }
 
-function Listo({ tema, nombre, hoy, pilares }: { tema: DefinicionTema; nombre: string; hoy: string; pilares: EleccionPilar[] }) {
+function Listo({ tema, nombre, hoy, pilares, entreno }: { tema: DefinicionTema; nombre: string; hoy: string; pilares: EleccionPilar[]; entreno: EleccionEntreno }) {
   return (
     <>
       <div className="pv-saludo">
@@ -262,6 +279,7 @@ function Listo({ tema, nombre, hoy, pilares }: { tema: DefinicionTema; nombre: s
       <div className="pv-resumen">
         <div><span className="texto-3 chico">Tu ciclo</span><b>90 días desde hoy</b><span className="chico texto-2">Día 1: {fechaLegible(hoy)}</span></div>
         <div><span className="texto-3 chico">Tus pilares</span><b>{pilares.map((p) => p.nombre.trim()).join(' · ')}</b></div>
+        {pilares.some((p) => p.clave === 'entrenar') && <div><span className="texto-3 chico">Tu entreno</span><b>{nombreEleccion(entreno)}</b></div>}
       </div>
       <p className="ayuda">Todo se puede cambiar después desde Más. Los datos viven solo en este teléfono: hacé una copia cada semana.</p>
     </>

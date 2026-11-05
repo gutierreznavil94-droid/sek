@@ -5,7 +5,8 @@
  */
 
 import { db } from '../data/db'
-import { ACCIONES_INICIALES, rutinaDeEjemplo } from '../data/semilla'
+import { planPorId, rutinasDeEleccion, type EleccionEntreno } from '../data/planes'
+import { ACCIONES_INICIALES } from '../data/semilla'
 import type { Accion } from '../data/tipos'
 import { esHoraValida, type FechaDia } from '../domain/fechas'
 import { temaPorId } from '../temas/temas'
@@ -45,6 +46,8 @@ export type ConfigPrimeraVez = {
   horarios: { alistarse: string; dejarCelu: string; dormir: string }
   vision: string
   obstaculo: string
+  /** Cómo arrancar a entrenar. Si falta: «de a poco» (la rutina de ejemplo). */
+  entreno?: EleccionEntreno
 }
 
 /** ¿Hay que mostrar la primera vez? Solo si nunca hubo un ciclo y no se completó antes. */
@@ -63,6 +66,7 @@ export function validarPrimeraVez(c: ConfigPrimeraVez): string[] {
     if (p.dias.length === 0) e.push(`«${p.nombre}»: elegí al menos un día.`)
     if (p.horaLimite && !esHoraValida(p.horaLimite)) e.push(`«${p.nombre}»: la hora no es válida.`)
   }
+  if (c.entreno?.modo === 'plan' && !planPorId(c.entreno.planId)) e.push('Elegí un plan de entrenamiento.')
   for (const h of [c.horarios.alistarse, c.horarios.dejarCelu, c.horarios.dormir]) if (!esHoraValida(h)) e.push('Revisá los horarios.')
   return [...new Set(e)]
 }
@@ -132,13 +136,17 @@ export async function configurarPrimeraVez(c: ConfigPrimeraVez): Promise<void> {
     await guardarAccion({ ...e.accion, minutosExtra: undefined, xpExtra: undefined }, existe ? undefined : e.xp, c.hoy)
   }
 
-  // Entreno: si no hay sesiones, las rutinas de Navil se cambian por la de ejemplo.
+  // Entreno: si no hay sesiones, las rutinas de Navil se cambian por lo elegido (de a poco: la de ejemplo).
   if ((await d.sesionesEntreno.count()) === 0) {
     const entrenar = c.pilares.find((p) => p.clave === 'entrenar')
+    const eleccion = c.entreno ?? { modo: 'poco' }
+    const rutinas = rutinasDeEleccion(eleccion, entrenar?.dias ?? [1, 3, 5])
+    const t = ahora()
     await d.transaction('rw', [d.rutinas, d.eventos], async () => {
       await d.rutinas.clear()
-      await d.rutinas.put({ ...rutinaDeEjemplo(entrenar?.dias ?? [1, 3, 5]), creado: ahora() })
-      await registrarEvento({ tipo: 'crear', entidad: 'rutina', entidadId: 'rutina-ejemplo', motivo: 'Primera vez: rutina de ejemplo' })
+      await d.rutinas.bulkPut(rutinas.map((r) => ({ ...r, creado: t })))
+      const motivo = eleccion.modo === 'poco' ? 'Primera vez: rutina de ejemplo' : eleccion.modo === 'cero' ? 'Primera vez: desde cero' : `Primera vez: plan ${eleccion.planId}`
+      for (const r of rutinas) await registrarEvento({ tipo: 'crear', entidad: 'rutina', entidadId: r.id, motivo })
     })
   }
   // «Mi código» arranca vacío (los ejemplos eran de Navil).
