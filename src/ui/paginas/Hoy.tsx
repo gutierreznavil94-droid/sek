@@ -45,6 +45,7 @@ import {
   type Pilar,
 } from '../../services/dia'
 import { duracionSuenio, entrarModoSuenio, horaDeMinutos, resumenSuenio } from '../../services/suenio'
+import { estadoAdaptacion, veredictoDe } from '../../services/adaptacion'
 import { celebrarFase, celebrarNivel, celebrarPilar, celebrarRacha } from '../animaciones/logros'
 import { animar, configuracionAnimaciones } from '../animaciones/motor'
 import { resumenJuego } from '../../services/juego'
@@ -89,11 +90,12 @@ async function cargarPanel(hoy: string) {
   let buenosDias: string | null = null
   try { buenosDias = localStorage.getItem('buenos-dias') } catch { /* sin almacenamiento */ }
   const anoche = buenosDias ? (await resumenSuenio(hoy, 2)).anoche : null
+  const veredictoAnoche = anoche ? veredictoDe(anoche, await estadoAdaptacion(hoy)) : null
   const ajusteDeAyer = revisionAyer?.respuestas.ajuste?.trim() || null
   const rutina = (await rutinaDelDia(hoy)) ?? null
   const entrenoEnCurso = !!(await sesionEnCurso())
   const peleas = await peleasDelDia(hoy)
-  return { antes: false as const, peleas, rutina, entrenoEnCurso, metasSemana, ajustes, estado, compromisos, nivel, atributos, racha, juego, semana, xpHoy, revision, nocheAbierta, suenio, pilares, propuestas, contadores, ventana, ajusteDeAyer, buenosDias, anoche }
+  return { antes: false as const, peleas, rutina, entrenoEnCurso, metasSemana, ajustes, estado, compromisos, nivel, atributos, racha, juego, semana, xpHoy, revision, nocheAbierta, suenio, pilares, propuestas, contadores, ventana, ajusteDeAyer, buenosDias, anoche, veredictoAnoche }
 }
 
 
@@ -425,6 +427,7 @@ export function Hoy({ hoy }: { hoy: string }) {
           <div className="col" style={{ gap: 2 }}>
             <b>Buenos días · Día {d.estado?.dia} de {d.estado?.ciclo.duracionDias}</b>
             {d.anoche && <span className="chico"><Link to="/sueno" className="texto-2">Dormiste {duracionSuenio(d.anoche.minutos)}{d.anoche.estimado ? ' aprox.' : ''} · celu {horaDeMinutos(d.anoche.acostado)} · arriba {horaDeMinutos(d.anoche.levantado)} ›</Link></span>}
+            {d.veredictoAnoche && <span className={`chico sueno-veredicto-linea ${d.veredictoAnoche.tono}`}>{d.veredictoAnoche.texto}</span>}
             <span className="chico texto-2">{d.ajusteDeAyer ? `Tu ajuste para hoy: ${d.ajusteDeAyer}` : `Hoy, de nuevo, los ${d.pilares.pilares.length || 4} pilares.`}</span>
           </div>
           <button className="boton chico suave" aria-label="Cerrar" onClick={() => { try { localStorage.removeItem('buenos-dias') } catch { /* nada */ } panel.recargar() }}>✕</button>

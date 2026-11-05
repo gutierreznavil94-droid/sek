@@ -305,6 +305,10 @@ export type Ajustes = {
   tension?: ConfigTension
   /** Rival escurridizo: modo y XP que roba. */
   rival?: ConfigRival
+  /** Adaptación del sueño: desde cuándo, etapas editables y tolerancia de «a horario». */
+  adaptacion?: ConfigAdaptacion
+  /** Fondo con lluvia dibujada en Hoy y Calendario (los dos encendidos si falta). */
+  fondoLluvia?: { hoy?: boolean; calendario?: boolean }
   /** Recordatorio tenue en Hoy para alistarse a dormir: cuántos minutos antes de «Dejo celu» (30 si falta). */
   minutosAvisoDormir?: number
   /** Frases del recordatorio, rotan una por noche. Si falta, las tres de la app. */
@@ -398,6 +402,8 @@ export type RegistroSuenio = {
   despertarPrevisto?: number
   /** Instante en que se levantó de verdad (primera vez que abre la app a la mañana, o «Ya me levanté»). */
   levantado?: number
+  /** Cuántas veces se despertó en la noche, si la persona lo cargó (0, 1, 2, 3 = «3 o más»). */
+  despertares?: number
   /** Minutos dormido: de `dormido` a `levantado` (o al despertar previsto si no abrió la app). */
   minutosDormido?: number
   /** De dónde sale cada dato (v0.34). Sin el campo, cuenta como «estimado» (o «corregido» si levantadoCorregido). */
@@ -733,4 +739,5 @@ export type ConfigBatalla = { /** Sí si falta. */ activa?: boolean; /** Contado
 /** Cinemática «Tensión»: kanji y frase del final (editables en Más → Ver animaciones). */
 export type ConfigTension = { kanji?: string; frase?: string }
 /** Rival escurridizo: cómo aparece una distracción y cuánto XP roba si se lo ignora. */
+export type ConfigAdaptacion = { desde?: FechaDia; etapas?: { nombre: string; semanas: number; horasMin: number; horasMax: number; despertaresNormales: number }[]; toleranciaMinutos?: number }
 export type ConfigRival = { /** «escurridizo» (muñequito en Hoy, se lo atrapa) o «carta» (la carta directa). Escurridizo si falta. */ modo?: 'escurridizo' | 'carta'; /** XP que roba si se lo ignora (10 si falta, 0 a 30). */ xpRobo?: number }

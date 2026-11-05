@@ -8,6 +8,7 @@ import { cicloActivo } from '../../services/ciclo'
 import { corregirNoche, duracionSuenio, horaDeMinutos, nochesDeSuenio, resumenSuenio, volverAEstimado, type NocheDeSuenio, type ResumenSuenio } from '../../services/suenio'
 import { finVentana, LATENCIA_MAX, LATENCIA_MIN } from '../../sueno/estimar'
 import { Hoja, Tarjeta } from '../componentes'
+import { ETAPAS_SUGERIDAS, TOLERANCIA_SUGERIDA, estadoAdaptacion, etapaDe, fraseDeEtapa, normalizarEtapas, veredictoDe, type ConfigEtapa, type EstadoAdaptacion, type Veredicto } from '../../services/adaptacion'
 import { avisar, mutar, useDatos } from '../estado'
 
 type Rango = 'semana' | 'mes' | 'ciclo'
@@ -25,11 +26,11 @@ export function Sueno({ hoy }: { hoy: string }) {
     const ciclo = await cicloActivo()
     const desdeCiclo = ciclo && ciclo.inicio <= hoy ? ciclo.inicio : sumarDias(hoy, -14)
     const desde = rango === 'semana' ? sumarDias(hoy, -7) : rango === 'mes' ? sumarDias(hoy, -30) : desdeCiclo
-    return { r: await resumenSuenio(hoy, 14), noches: await nochesDeSuenio(desde, hoy, hoy), a: await obtenerAjustes() }
+    return { r: await resumenSuenio(hoy, 14), noches: await nochesDeSuenio(desde, hoy, hoy), a: await obtenerAjustes(), ad: await estadoAdaptacion(hoy) }
   }, [hoy, rango])
   const [editar, setEditar] = useState<{ noche: FechaDia; n: NocheDeSuenio | null } | null>(null)
   if (!datos.datos) return <p className="vacio">Cargando…</p>
-  const { r, noches, a } = datos.datos
+  const { r, noches, a, ad } = datos.datos
   const anocheFecha = sumarDias(hoy, -1)
   return (
     <div className="pagina-sueno">
@@ -37,7 +38,7 @@ export function Sueno({ hoy }: { hoy: string }) {
 
       <Tarjeta titulo="Anoche">
         {r.anoche ? (
-          <Anoche n={r.anoche} objetivo={r.objetivoMinutos} onEditar={() => setEditar({ noche: r.anoche!.noche, n: r.anoche })} />
+          <Anoche n={r.anoche} objetivo={r.objetivoMinutos} veredicto={veredictoDe(r.anoche, ad, r.noches)} onEditar={() => setEditar({ noche: r.anoche!.noche, n: r.anoche })} />
         ) : (
           <div className="col" style={{ gap: 8 }}>
             <p className="texto-2 chico">Todavía no hay registro de anoche. Se completa solo cuando tocás «Dejo celu» en Hoy.</p>
@@ -55,13 +56,16 @@ export function Sueno({ hoy }: { hoy: string }) {
       }>
         {noches.length ? (
           <>
-            <GraficoNoches noches={noches} ventana={[a.horaDormido, finVentana(a.horaFinSuenio)]} onElegir={(n) => setEditar({ noche: n.noche, n })} />
+            <p className="chico texto-2 sueno-etapa-frase">{fraseDeEtapa(ad.actual)}</p>
+            <GraficoNoches noches={noches} ventana={[a.horaDormido, finVentana(a.horaFinSuenio)]} etapaDe={(f) => etapaDe(f, ad.inicio, ad.etapas).indice} ultimaEtapa={ad.etapas.length - 1} onElegir={(n) => setEditar({ noche: n.noche, n })} />
             <p className="ayuda">Cada barra va de cuando te dormiste a cuando te levantaste; el punto es «Dejo celu» (verde si fue a tiempo). La franja verde es tu ventana ideal ({a.horaDormido} a {finVentana(a.horaFinSuenio)}). Borde claro: corregida a mano. Tocá una barra para corregirla.</p>
           </>
         ) : (
           <p className="texto-2 chico">Con la primera noche registrada aparece acá el gráfico.</p>
         )}
       </Tarjeta>
+
+      <Adaptacion ad={ad} hoy={hoy} onGuardado={datos.recargar} />
 
       <Mejora r={r} />
 
@@ -72,13 +76,14 @@ export function Sueno({ hoy }: { hoy: string }) {
   )
 }
 
-function Anoche({ n, objetivo, onEditar }: { n: NocheDeSuenio; objetivo: number; onEditar: () => void }) {
+function Anoche({ n, objetivo, veredicto, onEditar }: { n: NocheDeSuenio; objetivo: number; veredicto: Veredicto; onEditar: () => void }) {
   const ok = n.minutos >= objetivo - 15
   const dormido = n.dormidoRango ? `${horaDeMinutos(n.dormidoRango[0])}–${horaDeMinutos(n.dormidoRango[1])}` : horaDeMinutos(n.dormido)
   return (
     <div className="col" style={{ gap: 6 }}>
       <div className="sueno-grande">{duracionSuenio(n.minutos)}<span>{n.estimado ? ' aprox.' : ''}</span></div>
-      <span className={`chico ${ok ? 'texto-verde' : 'texto-2'}`}>{ok ? 'Llegaste al objetivo' : `${duracionSuenio(objetivo - n.minutos)} menos que el objetivo de ${duracionSuenio(objetivo)}`}</span>
+      <p className={`sueno-veredicto ${veredicto.tono}`} role="status">{veredicto.texto}</p>
+      <span className={`muy-chico ${ok ? 'texto-verde' : 'texto-3'}`}>{ok ? 'Llegaste al objetivo' : `${duracionSuenio(objetivo - n.minutos)} menos que el objetivo de ${duracionSuenio(objetivo)}`}{n.despertares !== undefined ? ` · despertares: ${n.despertares === 3 ? '3 o más' : n.despertares}` : ''}</span>
       <div className="sueno-linea">
         <button className="sueno-dato" onClick={onEditar}><b>{horaDeMinutos(n.acostado)}</b><span>acostado{n.fuentes.acostado !== 'estimado' ? ` · ${NOMBRE_FUENTE[n.fuentes.acostado]}` : n.cumplido ? '' : n.sinDejoCelu ? ' · a mano' : ' · tarde'}</span></button>
         <button className="sueno-dato" onClick={onEditar}><b>{dormido}</b><span>dormido{n.fuentes.dormido !== 'estimado' ? ` · ${NOMBRE_FUENTE[n.fuentes.dormido]}` : ''}</span></button>
@@ -90,7 +95,7 @@ function Anoche({ n, objetivo, onEditar }: { n: NocheDeSuenio; objetivo: number;
 }
 
 /** Una barra por noche sobre un eje de 20:00 a 08:00. Listo para pintar etapas cuando una fuente las traiga. */
-function GraficoNoches({ noches, ventana, onElegir }: { noches: NocheDeSuenio[]; ventana: [string, string]; onElegir: (n: NocheDeSuenio) => void }) {
+function GraficoNoches({ noches, ventana, etapaDe: indiceEtapa, ultimaEtapa, onElegir }: { noches: NocheDeSuenio[]; ventana: [string, string]; etapaDe?: (f: FechaDia) => number; ultimaEtapa?: number; onElegir: (n: NocheDeSuenio) => void }) {
   const min = 20 * 60
   const max = 32 * 60
   const W = 340
@@ -119,9 +124,12 @@ function GraficoNoches({ noches, ventana, onElegir }: { noches: NocheDeSuenio[];
         const y = 3 + i * fila
         const fecha = fechaLegible(n.noche).split(' ').slice(0, 2).join(' ')
         const clase = n.reloj ? 'reloj' : n.corregido ? 'corregida' : 'estimada'
+        const ie = indiceEtapa ? indiceEtapa(n.noche) : -1
+        const claseEtapa = ie < 0 ? '' : ie === 0 ? 'acostumbrando' : ie === ultimaEtapa ? 'estable' : 'asentando'
         return (
           <g key={n.noche} className="sueno-noche" role="button" tabIndex={0} aria-label={`${fecha}: ${duracionSuenio(n.minutos)}. Tocá para corregir`} onClick={() => onElegir(n)} onKeyDown={(e) => e.key === 'Enter' && onElegir(n)}>
             <rect x={0} y={y - 2} width={W} height={fila} fill="transparent" />
+            {claseEtapa && <rect x={x0} y={y - 2} width={W - x0 - 4} height={fila} className={`sueno-etapa ${claseEtapa}`} />}
             {i % cadaEtiqueta === 0 && <text x={0} y={y + alto - 3} className="sueno-hora">{fecha}</text>}
             <rect x={x(n.dormido)} y={y} width={Math.max(3, x(n.levantado) - x(n.dormido))} height={alto} rx={alto / 2.5} className={`sueno-barra ${clase}`} />
             {/* Etapas: cuando una fuente (reloj) las traiga, se pintan acá como tramos dentro de la barra. */}
@@ -156,10 +164,13 @@ function Mejora({ r }: { r: ResumenSuenio }) {
 function EditarNoche({ noche, n, onCerrar, onGuardado }: { noche: FechaDia; n: NocheDeSuenio | null; onCerrar: () => void; onGuardado: () => void }) {
   const inicial = { acostado: n ? horaDeMinutos(n.acostado) : '', dormido: n ? horaDeMinutos(n.dormido) : '', levantado: n ? horaDeMinutos(n.levantado) : '' }
   const [v, setV] = useState(inicial)
+  const [despertares, setDespertares] = useState<string>(n?.despertares !== undefined ? String(n.despertares) : '')
   const campos: { k: 'acostado' | 'dormido' | 'levantado'; t: string }[] = [{ k: 'acostado', t: 'Me acosté' }, { k: 'dormido', t: 'Me dormí' }, { k: 'levantado', t: 'Me levanté' }]
   const guardar = async () => {
-    const cambios: Record<string, string> = {}
+    const cambios: Record<string, string | number | null> = {}
     for (const c of campos) if (v[c.k] && v[c.k] !== inicial[c.k]) cambios[c.k] = v[c.k]
+    const dAntes = n?.despertares !== undefined ? String(n.despertares) : ''
+    if (despertares !== dAntes) cambios.despertares = despertares === '' ? null : Number(despertares)
     if (!Object.keys(cambios).length) return onCerrar()
     try {
       await mutar(() => corregirNoche(noche, cambios))
@@ -184,9 +195,80 @@ function EditarNoche({ noche, n, onCerrar, onGuardado }: { noche: FechaDia; n: N
           {c.k === 'dormido' && n?.dormidoRango && <span className="ayuda">Estimado entre {horaDeMinutos(n.dormidoRango[0])} y {horaDeMinutos(n.dormidoRango[1])}.</span>}
         </div>
       ))}
+      <div className="campo">
+        <label htmlFor="sueno-despertares">¿Te despertaste? <span className="texto-3">· opcional</span></label>
+        <select id="sueno-despertares" value={despertares} onChange={(e) => setDespertares(e.target.value)}>
+          <option value="">No lo cargo</option>
+          <option value="0">No, dormí de corrido</option>
+          <option value="1">1 vez</option>
+          <option value="2">2 veces</option>
+          <option value="3">3 o más</option>
+        </select>
+        <span className="ayuda">Si lo cargás, entra en el veredicto de la noche según tu etapa de adaptación. Si no, no se asume nada.</span>
+      </div>
       {!n && <p className="ayuda">Si no ponés «me dormí», se calcula con tu latencia. Una noche cargada a mano no cuenta para «Dormir a horario».</p>}
       <button className="boton primario ancho" onClick={guardar}>Guardar</button>
     </Hoja>
+  )
+}
+
+/** «Tu adaptación»: tira de etapas y todo editable (semanas, horas, despertares, tolerancia, desde cuándo). */
+function Adaptacion({ ad, hoy, onGuardado }: { ad: EstadoAdaptacion; hoy: FechaDia; onGuardado: () => void }) {
+  const [editar, setEditar] = useState(false)
+  const [etapas, setEtapas] = useState<ConfigEtapa[]>(ad.etapas)
+  const [tolerancia, setTolerancia] = useState(ad.tolerancia)
+  const [desde, setDesde] = useState(ad.inicio)
+  useEffect(() => { setEtapas(ad.etapas); setTolerancia(ad.tolerancia); setDesde(ad.inicio) }, [ad])
+  const act = ad.actual
+  const guardar = async () => {
+    if (!/^\d{4}-\d\d-\d\d$/.test(desde) || desde > hoy) return avisar('La fecha de inicio tiene que ser de hoy para atrás', { tipo: 'bajo' })
+    await mutar(() => guardarAjustes({ adaptacion: { desde, etapas: normalizarEtapas(etapas), toleranciaMinutos: Math.max(0, Math.min(120, Math.round(tolerancia))) } }))
+    avisar('Adaptación guardada', { tipo: 'ok' })
+    setEditar(false)
+    onGuardado()
+  }
+  const restaurar = async () => {
+    await mutar(() => guardarAjustes({ adaptacion: { desde: undefined, etapas: undefined, toleranciaMinutos: undefined } }))
+    setEtapas(ETAPAS_SUGERIDAS.map((e) => ({ ...e }))); setTolerancia(TOLERANCIA_SUGERIDA)
+    avisar('Volvió lo sugerido', { tipo: 'ok' })
+    setEditar(false)
+    onGuardado()
+  }
+  const campo = (i: number, k: keyof ConfigEtapa, v: string) => setEtapas(etapas.map((e, j) => (j === i ? { ...e, [k]: k === 'nombre' ? v : Number(v) } : e)))
+  return (
+    <Tarjeta titulo="Tu adaptación" derecha={<button type="button" className="boton chico" onClick={() => setEditar(!editar)}>{editar ? 'Cerrar' : 'Editar'}</button>}>
+      <div className="sueno-etapas" role="list" aria-label="Etapas de adaptación">
+        {ad.tramos.map((t, i) => (
+          <div key={i} role="listitem" className={`sueno-etapa-chip ${i === act.indice ? 'actual' : i < act.indice ? 'pasada' : ''} ${i === 0 ? 'acostumbrando' : i === ad.tramos.length - 1 ? 'estable' : 'asentando'}`}>
+            <b>{t.etapa.nombre}</b>
+            <span>{t.etapa.semanas > 0 && t.hasta ? `sem ${i === 0 ? 1 : ad.tramos.slice(0, i).reduce((s, x) => s + x.etapa.semanas, 0) + 1}–${ad.tramos.slice(0, i + 1).reduce((s, x) => s + x.etapa.semanas, 0)}` : `sem ${ad.tramos.slice(0, i).reduce((s, x) => s + x.etapa.semanas, 0) + 1}+`}</span>
+          </div>
+        ))}
+      </div>
+      <p className="chico texto-2" style={{ margin: 0 }}>Semana {act.semana} (día {act.dia}) desde el {fechaLegible(ad.inicio)}: <b>{act.etapa.nombre}</b>. Esperado {act.etapa.horasMin}–{act.etapa.horasMax} h; hasta {act.etapa.despertaresNormales} despertar{act.etapa.despertaresNormales === 1 ? '' : 'es'} por noche es normal. «A horario» = hasta {ad.tolerancia} min después de «Dejo celu».</p>
+      <p className="ayuda">Lo que más importa es acostarte a la misma hora y levantarte a la misma hora, aunque la noche haya sido mala. Cada cuerpo es distinto: tocá «Editar» y ajustá las etapas a vos.</p>
+      {editar && (
+        <div className="col sueno-adaptacion-form" style={{ gap: 10 }}>
+          <div className="campo"><label htmlFor="ad-desde">Empecé a mejorar mi sueño el</label><input id="ad-desde" type="date" value={desde} max={hoy} onChange={(e) => setDesde(e.target.value)} /></div>
+          {etapas.map((e, i) => (
+            <div key={i} className="sueno-etapa-edicion">
+              <input aria-label={`Nombre de la etapa ${i + 1}`} value={e.nombre} onChange={(ev) => campo(i, 'nombre', ev.target.value)} />
+              <div className="rejilla-2">
+                <div className="campo"><label htmlFor={`ad-sem-${i}`}>Semanas{i === etapas.length - 1 ? ' (0 = sin fin)' : ''}</label><input id={`ad-sem-${i}`} type="number" inputMode="numeric" min={0} max={12} value={e.semanas} onChange={(ev) => campo(i, 'semanas', ev.target.value)} /></div>
+                <div className="campo"><label htmlFor={`ad-desp-${i}`}>Despertares normales</label><input id={`ad-desp-${i}`} type="number" inputMode="numeric" min={0} max={5} value={e.despertaresNormales} onChange={(ev) => campo(i, 'despertaresNormales', ev.target.value)} /></div>
+                <div className="campo"><label htmlFor={`ad-min-${i}`}>Horas mínimas</label><input id={`ad-min-${i}`} type="number" inputMode="decimal" step={0.5} min={3} max={14} value={e.horasMin} onChange={(ev) => campo(i, 'horasMin', ev.target.value)} /></div>
+                <div className="campo"><label htmlFor={`ad-max-${i}`}>Horas máximas</label><input id={`ad-max-${i}`} type="number" inputMode="decimal" step={0.5} min={3} max={14} value={e.horasMax} onChange={(ev) => campo(i, 'horasMax', ev.target.value)} /></div>
+              </div>
+            </div>
+          ))}
+          <div className="campo"><label htmlFor="ad-tol">«A horario»: minutos de tolerancia después de «Dejo celu»</label><input id="ad-tol" type="number" inputMode="numeric" min={0} max={120} value={tolerancia} onChange={(e) => setTolerancia(Number(e.target.value))} style={{ width: 110 }} /></div>
+          <div className="rejilla-2">
+            <button type="button" className="boton" onClick={restaurar}>Restaurar lo sugerido</button>
+            <button type="button" className="boton primario" onClick={guardar}>Guardar</button>
+          </div>
+        </div>
+      )}
+    </Tarjeta>
   )
 }
 

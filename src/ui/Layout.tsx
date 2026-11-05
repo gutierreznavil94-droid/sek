@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { NavLink, Outlet, Link } from 'react-router-dom'
+import { NavLink, Outlet, Link, useLocation } from 'react-router-dom'
 import { fechaDelDiaDelCiclo, fechaLegible } from '../domain/fechas'
 import { estadoDelCiclo, fasesDelCiclo, objetivosDelCiclo } from '../services/ciclo'
 import { Hoja } from './componentes'
@@ -9,6 +9,8 @@ import { useDatos } from './estado'
 import { VERSION_APP } from '../version'
 import { enModoPrueba, salirModoPrueba } from '../data/modoPrueba'
 import { Companero } from './Companero'
+import { FondoLluvia } from './FondoLluvia'
+import { useVersion } from './estado'
 
 const ICONOS = {
   sueno: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" /></svg>,
@@ -33,6 +35,11 @@ export function Layout({ hoy }: { hoy: string }) {
   }, [hoy])
   const [detalle, setDetalle] = useState(false)
   const cabRef = useRef<HTMLElement>(null)
+  // Fondo con lluvia dibujada en Hoy y Calendario (Ajustes → Fondo con lluvia).
+  const { pathname } = useLocation()
+  const version = useVersion()
+  const lluvia = useDatos(() => obtenerAjustes().then((a) => a.fondoLluvia ?? {}), [version])
+  const varianteLluvia = pathname === '/' ? (lluvia.datos?.hoy !== false ? 'hoy' : null) : pathname === '/calendario' ? (lluvia.datos?.calendario !== false ? 'calendario' : null) : null
   const d = estado.datos
   const e = d?.e
   const diasFaltan = e ? 1 - e.dia : 0
@@ -78,6 +85,7 @@ export function Layout({ hoy }: { hoy: string }) {
         <Divisor className="divisor-cabecera" />
       </header>
       <Desintegracion cabecera={cabRef} texto={e ? (e.noEmpezado ? `Día 1 en ${diasFaltan} día${diasFaltan === 1 ? '' : 's'}` : e.terminado ? 'Ciclo terminado' : `Día ${e.dia}`) : ''} />
+      {lluvia.datos && varianteLluvia && <FondoLluvia variante={varianteLluvia} />}
       <main className="contenido">
         <Outlet />
       </main>
