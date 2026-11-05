@@ -102,6 +102,8 @@ final class Datos {
                 d.put("pilares", nuevos);
                 JSONObject agua = d.optJSONObject("agua");
                 if (agua != null) agua.put("ml", 0);
+                JSONObject fruta = d.optJSONObject("fruta");
+                if (fruta != null) fruta.put("n", 0);
                 d.put("fecha", hoy);
             } catch (JSONException ignorado) {
                 // Queda lo que había.

@@ -117,6 +117,10 @@ export function Ajustes() {
           <label key={k} className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={a.fondoLluvia?.[k] !== false} onChange={async (e) => { const v = { ...a.fondoLluvia, [k]: e.target.checked }; set('fondoLluvia', v); await mutar(() => guardarAjustes({ fondoLluvia: v })); avisar(e.target.checked ? 'Lluvia encendida' : 'Lluvia apagada') }} /> {texto}</label>
         ))}
       </Tarjeta>
+      <Tarjeta titulo="Brillo de pendientes">
+        <label className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={a.brilloPendientes !== false} onChange={async (e) => { set('brilloPendientes', e.target.checked); await mutar(() => guardarAjustes({ brilloPendientes: e.target.checked })); avisar(e.target.checked ? 'Brillo de pendientes encendido' : 'Brillo de pendientes apagado') }} /> En Hoy, lo que falta titila en gris y lo hecho brilla en verde</label>
+        <p className="ayuda">Pilares, Revisión diaria, 3·2·1, Siguiente acción, series rápidas y la fruta. Con «reducir movimiento» no titila: queda el color fijo.</p>
+      </Tarjeta>
       <ElegirMovimiento />
       <Tarjeta titulo="Fondo de las animaciones">
         <div className="fondos-opciones" role="radiogroup" aria-label="Fondo de las animaciones">

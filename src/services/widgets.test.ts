@@ -30,6 +30,7 @@ describe('widgets de Android', () => {
     expect(d.pilares.find((p) => p.id === 'acostarse')?.marcable).toBe(false)
     expect(d.pilares.find((p) => p.id === 'entrenamiento')).toMatchObject({ estado: 'pendiente', marcable: true })
     expect(d.agua.ml).toBe(0)
+    expect(d.fruta).toEqual({ n: 0, objetivo: 2 })
     expect(d.colores['color-principal']).toMatch(/^#/)
   })
 
@@ -38,9 +39,11 @@ describe('widgets de Android', () => {
     const n = await aplicarAccionesWidget([
       { tipo: 'pilar', id: 'entrenamiento', instante: t },
       { tipo: 'vaso', instante: t },
+      { tipo: 'fruta', instante: t },
       { tipo: 'vaso', instante: instanteDe('2026-11-01', '22:00', Z) },
     ], LUNES, (x) => fechaDe(x, Z))
-    expect(n).toBe(2)
+    expect(n).toBe(3)
+    expect((await datosWidget(LUNES)).fruta).toEqual({ n: 1, objetivo: 2 })
     expect((await datosWidget(LUNES)).pilares.find((p) => p.id === 'entrenamiento')?.estado).toBe('hecho')
     expect((await aguaDelDia(LUNES)).tomas).toHaveLength(1)
   })

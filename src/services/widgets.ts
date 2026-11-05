@@ -9,6 +9,7 @@ import { colorTema, iconoTema } from '../temas/temas'
 import type { AccionWidget } from '../nativo/sek'
 import { aguaDelDia, configAgua, tomarAgua } from './agua'
 import { cicloActivo } from './ciclo'
+import { comerFruta, frutaDelDia } from './fruta'
 import { completarCompromiso, pilaresDelDia, rachaActual } from './dia'
 import { horarioActivo } from './horario'
 
@@ -20,6 +21,8 @@ export type DatosWidget = {
   racha: number
   pilares: PilarWidget[]
   agua: { ml: number; objetivo: number; vasoMl: number }
+  /** Fruta del día: cuántas y el 2.º objetivo («+1 fruta» del widget mediano). */
+  fruta: { n: number; objetivo: number }
   /** Mi horario por día de la semana (0 dom..6 sáb): nombre, desde y hasta. */
   horario: Record<string, { n: string; d: string; h: string }[]>
   colores: Record<string, string>
@@ -31,6 +34,7 @@ export async function datosWidget(hoy: FechaDia): Promise<DatosWidget> {
   const { pilares } = ciclo ? await pilaresDelDia(hoy) : { pilares: [] }
   const agua = await aguaDelDia(hoy)
   const { principal } = await configAgua()
+  const fruta = await frutaDelDia(hoy)
   const horario: DatosWidget['horario'] = {}
   for (const b of (await horarioActivo()).bloques) {
     for (const d of b.dias) (horario[String(d)] ??= []).push({ n: b.nombre, d: b.desde, h: b.hasta })
@@ -50,9 +54,10 @@ export async function datosWidget(hoy: FechaDia): Promise<DatosWidget> {
       dias: p.accion.dias,
     })),
     agua: { ml: agua.ml, objetivo: agua.objetivo, vasoMl: principal.ml },
+    fruta: { n: fruta.n, objetivo: fruta.objetivo2 },
     horario,
     colores: Object.fromEntries(['color-papel', 'color-tinta', 'color-tinta-suave', 'color-principal'].map((n) => [n, colorTema(n)])),
-    iconos: Object.fromEntries(['icono-racha', 'icono-agua', 'icono-hoy'].map((n) => [n, iconoTema(n)])),
+    iconos: Object.fromEntries(['icono-racha', 'icono-agua', 'icono-fruta', 'icono-hoy'].map((n) => [n, iconoTema(n)])),
   }
 }
 
@@ -64,6 +69,7 @@ export async function aplicarAccionesWidget(acciones: AccionWidget[], hoy: Fecha
     if (dia !== hoy) continue
     try {
       if (a.tipo === 'vaso') { await tomarAgua(hoy); n++; continue }
+      if (a.tipo === 'fruta') { await comerFruta(hoy); n++; continue }
       const c = await db().compromisos.get(`${a.id}:${hoy}`)
       if (!c || (c.estado !== 'pendiente' && c.estado !== 'iniciado')) continue
       const accion = await db().acciones.get(a.id)

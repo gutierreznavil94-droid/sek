@@ -27,6 +27,7 @@ import java.util.Locale;
 public abstract class WidgetBase extends AppWidgetProvider {
     static final String MARCAR = "ar.sek.app.MARCAR";
     static final String VASO = "ar.sek.app.VASO";
+    static final String FRUTA = "ar.sek.app.FRUTA";
     static final String EXTRA_PILAR = "pilar";
 
     static final int PAPEL = Color.parseColor("#F1EBDF");
@@ -53,6 +54,11 @@ public abstract class WidgetBase extends AppWidgetProvider {
         }
         if (VASO.equals(accion)) {
             sumarVaso(c);
+            Datos.actualizarWidgets(c);
+            return;
+        }
+        if (FRUTA.equals(accion)) {
+            sumarFruta(c);
             Datos.actualizarWidgets(c);
             return;
         }
@@ -90,6 +96,27 @@ public abstract class WidgetBase extends AppWidgetProvider {
         } catch (JSONException ignorado) {
             // Sin cambios.
         }
+    }
+
+    private static void sumarFruta(Context c) {
+        JSONObject d = Datos.leer(c);
+        try {
+            JSONObject f = d.optJSONObject("fruta");
+            if (f == null) f = new JSONObject().put("n", 0).put("objetivo", 2);
+            f.put("n", f.optInt("n") + 1);
+            d.put("fruta", f);
+            Datos.guardar(c, d);
+            Datos.encolar(c, new JSONObject().put("tipo", "fruta").put("instante", System.currentTimeMillis()));
+        } catch (JSONException ignorado) {
+            // Sin cambios.
+        }
+    }
+
+    /** Fruta: «1/2». */
+    static String fruta(JSONObject d) {
+        JSONObject f = d.optJSONObject("fruta");
+        if (f == null) return "0/2";
+        return f.optInt("n") + "/" + f.optInt("objetivo", 2);
     }
 
     /** A las 00:01 se redibuja para cambiar de día aunque la app no se abra. */

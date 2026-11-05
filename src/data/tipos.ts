@@ -297,6 +297,10 @@ export type Ajustes = {
   distracciones?: Distraccion[]
   /** Ninjas de la distracción y el tajo: sí / no (sí si falta). */
   ninjas?: boolean
+  /** Brillo de pendientes en Hoy (pilares, reglas y series titilan según el estado). Encendido si falta. */
+  brilloPendientes?: boolean
+  /** Fruta del día (la manzana al lado del agua): nombre y dos objetivos. Si falta: «Fruta», 1 y 2. */
+  fruta?: ConfigFruta
   /** Tira «Ninjas vencidos esta semana» en Progreso (sí si falta). */
   ninjasEnProgreso?: boolean
   /** Batalla contra la distracción (minijuego): activa, contador y reps por toque. */
@@ -720,6 +724,12 @@ export type Recomendacion = {
   enviada?: number
   intentos: number
 }
+
+/** Fruta del día: dos objetivos, como las series (cuota y extra). */
+export type ConfigFruta = { nombre: string; objetivo1: number; objetivo2: number }
+
+/** Una fruta comida (un toque en la manzana de Hoy). */
+export type TomaFruta = { id: string; fecha: FechaDia; instante: number }
 
 /** Una toma de agua (un toque). */
 export type TomaAgua = { id: string; fecha: FechaDia; ml: number; envase?: string; instante: number }
