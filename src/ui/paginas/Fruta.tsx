@@ -15,7 +15,7 @@ const BRILLO: Record<EstadoFruta, EstadoBrillo> = { pendiente: 'pendiente', cump
 
 export function TarjetaFruta({ hoy, conBrillo = true, indice = 0 }: { hoy: FechaDia; conBrillo?: boolean; indice?: number }) {
   const datos = useDatos(() => frutaDelDia(hoy), [hoy])
-  const [mordiendo, setMordiendo] = useState(false)
+  const [suma, setSuma] = useState(false)
   const largo = useRef<number | null>(null)
   const fueLargo = useRef(false)
   useEffect(() => () => { if (largo.current) window.clearTimeout(largo.current) }, [])
@@ -23,15 +23,15 @@ export function TarjetaFruta({ hoy, conBrillo = true, indice = 0 }: { hoy: Fecha
   if (!d) return null
   const comer = async () => {
     const r = await mutar(() => comerFruta(hoy))
-    setMordiendo(true)
-    window.setTimeout(() => setMordiendo(false), 700)
+    setSuma(true)
+    window.setTimeout(() => setSuma(false), 1400)
     if (r.recienSuperado) avisar(`${r.dia.objetivo2} ${r.dia.objetivo2 === 1 ? 'fruta' : 'frutas'} hoy: segundo objetivo. 果`, { tipo: 'ok' })
     else if (r.recienCumplido) avisar(`${r.dia.nombre}: primer objetivo cumplido`, { tipo: 'ok' })
   }
   const deshacer = async () => {
     if (d.n === 0) return
-    await mutar(() => deshacerFruta(hoy))
-    avisar('Última fruta deshecha')
+    const r = await mutar(() => deshacerFruta(hoy))
+    avisar(`${r.nombre}: ${r.n} de ${r.objetivo2} (deshecha la última)`)
   }
   const empezar = () => {
     fueLargo.current = false
@@ -43,7 +43,7 @@ export function TarjetaFruta({ hoy, conBrillo = true, indice = 0 }: { hoy: Fecha
   return (
     <button
       type="button"
-      className={`fruta-chica fruta-${d.estado}`}
+      className={`agua-boton agua-chica fruta-chica fruta-${d.estado}`}
       {...b}
       onPointerDown={empezar}
       onPointerUp={soltar}
@@ -53,8 +53,8 @@ export function TarjetaFruta({ hoy, conBrillo = true, indice = 0 }: { hoy: Fecha
       onClick={click}
       aria-label={`${d.nombre}: ${d.n} de ${d.objetivo2}. Tocá para sumar una; mantené apretado para deshacer`}
     >
-      <Manzana mordido={d.mordido} ancho={22} mordiendo={mordiendo} />
-      <span className="fruta-chica-n mono">{d.n} de {d.objetivo2} {d.objetivo2 === 1 ? 'fruta' : 'frutas'}</span>
+      <Manzana mordido={d.mordido} ancho={20} />
+      <span className={`agua-chica-ml mono ${suma ? 'suma' : ''}`}>{suma ? '+1' : `${d.n}/${d.objetivo2}`}</span>
     </button>
   )
 }
