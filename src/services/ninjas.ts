@@ -180,3 +180,33 @@ export function tajoMostradoHoy(hoy: FechaDia): boolean {
 export function marcarTajo(hoy: FechaDia): void {
   try { localStorage.setItem(CLAVE_TAJO, hoy) } catch { /* sin almacenamiento */ }
 }
+
+// ---------- Registro del día en una línea (chips) ----------
+
+/** vencido: hizo las reps y además un 3·2·1 o un Siguiente acción · duda: le falta algo (todavía puede) · escapado · robo. */
+export type EstadoChipBatalla = 'vencido' | 'duda' | 'escapado' | 'robo'
+export type ChipBatalla = { pelea: PeleaNinja; estado: EstadoChipBatalla; repsDespues: number; hizoReps: boolean; hizoAccion: boolean }
+
+/**
+ * Cuándo cuenta como vencido: solo si después de la pelea hizo las reps (las de la batalla o una serie del contador)
+ * y además al menos un 3·2·1 o un Siguiente acción. Si falta algo queda en duda hasta que lo haga; si el día terminó, escapó.
+ */
+export function estadoChip(p: PeleaNinja, info: { repsDespues: number; ultimaAccion: number; diaTerminado: boolean }): EstadoChipBatalla {
+  if (p.robo) return 'robo'
+  if (p.resultado === 'escapo') return 'escapado'
+  const hizoReps = (p.reps ?? 0) > 0 || info.repsDespues > 0
+  const hizoAccion = info.ultimaAccion >= p.instante
+  if (hizoReps && hizoAccion) return 'vencido'
+  return info.diaTerminado ? 'escapado' : 'duda'
+}
+
+/** Chips del día, en orden. `ultimaAccion`: último instante en que se usó 3·2·1 o Siguiente acción (0 si no). */
+export async function registroBatallas(fecha: FechaDia, contadorId: string, ultimaAccion: number, diaTerminado = false): Promise<ChipBatalla[]> {
+  const peleas = await peleasDelDia(fecha)
+  const registros = await db().registrosContador.where('fecha').equals(fecha).filter((r) => r.contadorId === contadorId).toArray()
+  return peleas.map((p) => {
+    const repsDespues = registros.filter((r) => r.instante >= p.instante).reduce((s, r) => s + r.cantidad, 0)
+    const estado = estadoChip(p, { repsDespues, ultimaAccion, diaTerminado })
+    return { pelea: p, estado, repsDespues, hizoReps: (p.reps ?? 0) > 0 || repsDespues > 0, hizoAccion: ultimaAccion >= p.instante }
+  })
+}

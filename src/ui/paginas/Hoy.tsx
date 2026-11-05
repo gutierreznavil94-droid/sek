@@ -9,10 +9,10 @@ import { NOMBRES_FASES_INICIALES } from '../../data/semilla'
 import { TarjetaComida } from './Comida'
 import { TarjetaAgua } from './Agua'
 import { cerrarAvisoDormir, minutosAvisoDormir, mostrarAvisoDormir } from '../../services/dormir'
-import { debeMostrarTajo, distraccionesDe, marcarTajo, momentoActivo, nombreDistraccion, peleasDelDia, prepararPelea, tajoMostradoHoy, vistaAnterior, type Pelea } from '../../services/ninjas'
+import { debeMostrarTajo, marcarTajo, momentoActivo, peleasDelDia, prepararPelea, tajoMostradoHoy, vistaAnterior, type Pelea } from '../../services/ninjas'
 import { hayPelea, pedirPelea } from '../Ninja'
 import { hayRival, pedirRival } from '../Rival'
-import { modoRival, selloRobo } from '../../services/rival'
+import { modoRival } from '../../services/rival'
 import { Tajo } from '../Tajo'
 import { LineaDelDia } from './MiHorario'
 import { finDeObligatorio } from '../../services/horario'
@@ -58,6 +58,8 @@ import { obtenerRevision } from '../../services/revisiones'
 import { xpDelDia, xpTotal } from '../../services/xp'
 import { Celebracion, Hoja, IconoPilar } from '../componentes'
 import { avisar, mutar, useDatos, useTic } from '../estado'
+import { CamaDelCompanero } from '../Companero'
+import { ChipsBatallas } from '../ChipsBatallas'
 import { brillo, type EstadoBrillo } from '../brillo'
 
 /** Pilar → brillo: pendiente titila, marcado (a tiempo o tarde) verde fijo; omitido y descanso sin brillo. */
@@ -136,14 +138,17 @@ export function Hoy({ hoy }: { hoy: string }) {
   useEffect(() => { setHuecoHorario(document.getElementById('barra-horario-slot')) }, [])
   const clipsTension = useClipsTension()
   const batallas = useDatos(() => puedeBatallar(hoy), [hoy]).datos
-  // El compañero duerme después de «Dejo celu» (y vuelve a pasear al deshacerlo o al otro día).
+  // El compañero duerme después de «Dejo celu», pero solo de noche: desde la hora de alistarse (20:00 si no hay)
+  // hasta la mañana. Si «Dejo celu» se toca de tarde, sigue paseando hasta esa hora.
+  const deNoche = !!d && !d.antes && tic >= instanteDe(d.nocheAbierta, d.ajustes.horaAlistarse || '20:00', d.ajustes.zonaHoraria)
   useEffect(() => {
     if (!d || d.antes) return
     try {
-      if (d.suenio) localStorage.setItem('companero-dormido', d.nocheAbierta)
+      if (d.suenio && deNoche) localStorage.setItem('companero-dormido', d.nocheAbierta)
       else localStorage.removeItem('companero-dormido')
     } catch { /* sin almacenamiento */ }
-  }, [d])
+    window.dispatchEvent(new Event('companero-cambio'))
+  }, [d, deNoche])
   // A las 20:50 en punto (y al cierre) la pantalla se actualiza sola, sin esperar al reloj de 30 s.
   const [, forzar] = useState(0)
   useEffect(() => {
@@ -481,10 +486,7 @@ export function Hoy({ hoy }: { hoy: string }) {
         {/* Línea simple del horario de la noche */}
         <p className="linea-horario muy-chico texto-3 centro">Alistarse {ajustes.horaAlistarse} · dejo celu hasta {ajustes.horaDejarCelu} · dormido {ajustes.horaDormido}</p>
         {ajustes.ninjas !== false && (d.peleas.length > 0 || (batallas && batallas.hechas > 0)) && (
-          <div className="fila entre ninja-fila">
-            <span className="muy-chico texto-3">{resumenPeleas(d.peleas, d.contadores.find((c) => c.contador.id === (ajustes.batalla?.contadorId ?? 'flexiones'))?.contador.nombre.toLowerCase() ?? 'flexiones', (id) => nombreDistraccion(distraccionesDe(ajustes), id))}</span>
-            {batallas && batallas.hechas > 0 && <span className="muy-chico texto-3" style={{ whiteSpace: 'nowrap' }}>Batallas hoy: {batallas.hechas} de {batallas.tope}</span>}
-          </div>
+          <ChipsBatallas hoy={hoy} ajustes={ajustes} unidad={d.contadores.find((c) => c.contador.id === (ajustes.batalla?.contadorId ?? 'flexiones'))?.contador.nombre.toLowerCase() ?? 'flexiones'} hechas={batallas?.hechas} tope={batallas?.tope} />
         )}
         {!d.suenio && esHoraDeAlistarse && !ventanaCeluCerrada && (
           <button className="boton celu ancho grande" onClick={dejoCelu}>
@@ -570,6 +572,9 @@ export function Hoy({ hoy }: { hoy: string }) {
 
       {/* Juego, Entrenamiento y Calendario ya están en la barra de abajo: no se repiten acá. */}
 
+      {/* De noche, después de «Dejo celu»: la cama del compañero, abajo de todo sin tapar nada */}
+      <CamaDelCompanero dormido={!!d.suenio && deNoche} modo={ajustes.companero} />
+
       <DetalleCompromiso c={seleccion} hoy={hoy} onCerrar={() => setSeleccion(null)} />
       <DetallePilar p={pilarSel} hoy={hoy} onCerrar={() => setPilarSel(null)} onResultado={(id, xp, n) => celebrarYFlash(id, xp, n)} />
       <Celebracion nivel={nivelNuevo} onFin={cerrarCelebracion} />
@@ -610,17 +615,6 @@ function lanzarDistraccion(p: Pelea, modo: 'escurridizo' | 'carta'): void {
 }
 
 /** Una sola línea chica: la última batalla ganada con sus reps, cuántos se escaparon y si alguno se llevó XP. */
-function resumenPeleas(peleas: { resultado: 'vencido' | 'escapo'; reps?: number; robo?: number; distraccion: string }[], unidad: string, nombre: (id: string) => string = (id) => id): string {
-  const vencidos = peleas.filter((p) => p.resultado === 'vencido')
-  const robos = peleas.filter((p) => p.robo)
-  const escapados = peleas.length - vencidos.length - robos.length
-  const conReps = [...vencidos].reverse().find((p) => p.reps)
-  const partes: string[] = []
-  if (vencidos.length) partes.push(conReps ? `${vencidos.length === 1 ? 'Venciste' : `${vencidos.length} vencidos, el último`} con ${conReps.reps} ${unidad}` : `${vencidos.length} ninja${vencidos.length === 1 ? '' : 's'} vencido${vencidos.length === 1 ? '' : 's'}`)
-  if (escapados) partes.push(`${escapados} se escap${escapados === 1 ? 'ó' : 'aron'} hoy`)
-  for (const r of robos) partes.push(selloRobo(nombre(r.distraccion), r))
-  return partes.join(' · ')
-}
 
 /** ¿Se usó hoy 3·2·1 o Siguiente acción? (lo anotan esas pantallas al empezar). */
 function usadoHoy(que: '321' | 'siguiente', hoy: string): boolean {

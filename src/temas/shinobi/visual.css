@@ -82,3 +82,19 @@
 .tema-manzana-trazo { fill: none; stroke: var(--papel); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .tema-manzana-trazo.fino { stroke-width: 1.8; opacity: 0.75; }
 .fruta-chica[data-brillo='parcial'] .agua-chica-ml, .fruta-chica[data-brillo='maximo'] .agua-chica-ml { color: var(--verde); }
+
+/* ----- Hoy: chips del registro de batallas (estilo tinta) ----- */
+.tema-chip-batalla { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px 2px 6px; border-radius: 7px 9px 6px 10px / 9px 6px 10px 7px; border: 1px solid rgba(var(--papel-rgb), 0.3); background: rgba(var(--papel-rgb), 0.04); color: var(--texto-2); font: inherit; font-size: 0.68rem; line-height: 1.3; cursor: pointer; }
+.tema-chip-k { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 0.82rem; line-height: 1; }
+.tema-chip-batalla[data-chip='vencido'] { border-color: rgba(var(--verde-rgb), 0.75); color: var(--texto); }
+.tema-chip-batalla[data-chip='vencido'] .tema-chip-k { color: rgba(200, 16, 46, 0.9); }
+.tema-chip-batalla[data-chip='escapado'] { border-color: rgba(var(--papel-rgb), 0.22); color: var(--texto-3); }
+.tema-chip-batalla[data-chip='escapado'] .tema-chip-k { color: var(--texto-3); }
+/* Robo: vacío y sin vida. Kanji en contorno hueco desteñido y borde punteado casi transparente, sin rojo. */
+.tema-chip-batalla[data-chip='robo'] { border-style: dashed; border-color: rgba(var(--papel-rgb), 0.16); background: transparent; color: rgba(var(--papel-rgb), 0.32); }
+.tema-chip-batalla[data-chip='robo'] .tema-chip-k { color: transparent; -webkit-text-stroke: 0.6px rgba(var(--papel-rgb), 0.4); }
+/* Duda: gris que titila como los pendientes */
+.tema-chip-batalla[data-chip='duda'] { border-color: rgba(var(--papel-rgb), 0.4); color: var(--texto-2); animation: tema-chip-duda 3.4s ease-in-out infinite; }
+@keyframes tema-chip-duda { 0%, 100% { box-shadow: 0 0 0 0 rgba(var(--papel-rgb), 0); opacity: 0.7; } 50% { box-shadow: 0 0 8px 1px rgba(var(--papel-rgb), 0.2); opacity: 1; } }
+.tema-chip-batalla.abierto { outline: 1px solid rgba(var(--papel-rgb), 0.35); outline-offset: 1px; }
+@media (prefers-reduced-motion: reduce) { .tema-chip-batalla[data-chip='duda'] { animation: none; } }

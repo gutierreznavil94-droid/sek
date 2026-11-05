@@ -2439,3 +2439,12 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .semana-titulo-simple .semana-sin { font-weight: 500; letter-spacing: 0; text-transform: none; margin-left: 6px; }
 .semana-mas { color: var(--texto); font-size: 0.95rem; font-weight: 600; text-underline-offset: 3px; }
 .semana-metas.simple .semana-proxima { font-size: 0.72rem; }
+/* La cama del compañero, en su propio lugar al final de Hoy (nunca encima de una tarjeta) */
+.companero-cama-lugar { display: flex; justify-content: flex-end; padding: 4px 6px 0; color: var(--texto-2); opacity: 0.9; }
+.companero-cama-lugar .companero-cama { max-width: 40%; height: auto; }
+/* Registro de batallas en una línea (lo de SEK: el orden y que se deslice de costado) */
+.chips-batallas { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.chips-batallas-fila { display: flex; align-items: center; gap: 5px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 1px 1px 2px; }
+.chips-batallas-fila::-webkit-scrollbar { display: none; }
+.chips-batallas-cuenta { flex: none; margin-left: 2px; }
+.chips-batallas-globo { align-self: flex-start; padding: 4px 8px; border-radius: 8px; background: var(--fondo-3); color: var(--texto-2); }
