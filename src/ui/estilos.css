@@ -2038,7 +2038,7 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .pilares-bloques { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .pilar-bloque { position: relative; appearance: none; text-align: left; display: flex; flex-direction: column; gap: 3px; min-height: 60px; padding: 8px 30px 8px 10px; border-radius: 11px 14px 10px 15px / 14px 10px 15px 11px; background: var(--fondo-2); border: 1.5px solid rgba(var(--papel-rgb), 0.3); color: var(--texto); font: inherit; cursor: pointer; transition: transform 0.15s ease, background 0.3s ease, border-color 0.3s ease; }
 .pilar-bloque:active { transform: scale(0.98); }
-.pilar-bloque .icono { width: 26px; height: 26px; flex: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: rgba(200, 16, 46, 0.12); color: #d8384f; }
+.pilar-bloque .icono { width: 26px; height: 26px; flex: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: var(--fondo-3); color: var(--texto-2); }
 .pilar-bloque .icono svg { width: 15px; height: 15px; }
 .pilar-bloque .nombre { font-weight: 700; font-size: 0.84rem; line-height: 1.15; min-width: 0; }
 .pilar-bloque .detalle { font-size: 0.68rem; color: var(--texto-3); line-height: 1.2; }
@@ -2066,7 +2066,7 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .co-anillo[style*="60px"] .co-anillo-centro span { font-size: 0.56rem; }
 .co-anillo[style*="60px"] circle { stroke-width: 10; }
 /* Metas: tarjeta baja con borde de tinta, kanji 的 y sello rojo «Sumar meta» */
-.semana-metas.tinta { padding: 8px 10px 8px; border: 1.5px solid rgba(var(--papel-rgb), 0.4); border-radius: 12px 16px 11px 17px / 16px 11px 17px 12px; background: var(--fondo-2); gap: 5px; }
+.semana-metas.tinta { padding: 6px 10px 7px; border: 1.5px solid rgba(var(--papel-rgb), 0.4); border-radius: 12px 16px 11px 17px / 16px 11px 17px 12px; background: var(--fondo-2); gap: 5px; }
 .semana-titulo { display: inline-flex; align-items: center; gap: 6px; font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 1.15rem; line-height: 1; color: var(--texto); }
 .semana-kanji { font-size: 1.05rem; color: rgba(200, 16, 46, 0.9); }
 .sello-rojo { appearance: none; font: inherit; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.04em; color: #f6d9d9; background: rgba(200, 16, 46, 0.92); border: 1.5px solid rgba(246, 217, 217, 0.5); border-radius: 3px 4px 3px 5px; padding: 3px 7px; transform: rotate(-3deg); box-shadow: 0 0 0 1px rgba(200, 16, 46, 0.5), 0 0 8px rgba(200, 16, 46, 0.35); cursor: pointer; }
@@ -2078,8 +2078,8 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .semana-puntos .semana-punto { width: 6px; height: 6px; margin-top: 1px; }
 .semana-metas.tinta .semana-hoy { gap: 2px; }
 /* Botones importantes: rojizos a pincel; usados en el día → verde */
-.accesos .boton.rojizo { background: linear-gradient(160deg, rgba(200, 16, 46, .16), var(--fondo-2)); border: 1.5px solid rgba(200, 16, 46, .55); border-radius: 12px 15px 11px 16px / 15px 11px 16px 12px; color: var(--texto); }
-.accesos .boton.rojizo svg { color: #d8384f; }
+.accesos .boton.rojizo { background: var(--fondo-2); border: 1.5px solid rgba(var(--papel-rgb), 0.35); border-radius: 12px 15px 11px 16px / 15px 11px 16px 12px; color: var(--texto); }
+.accesos .boton.rojizo svg { color: var(--texto-2); }
 .accesos .boton.hecha { border: 1.5px solid rgba(60, 207, 122, 0.6); border-radius: 12px 15px 11px 16px / 15px 11px 16px 12px; }
 /* Series rápidas: lado a lado y más bajas */
 .contador-boton.compacto { min-height: 0; padding: 8px 10px 8px; gap: 1px; border: 1.5px solid rgba(var(--papel-rgb), 0.3); border-radius: 11px 14px 10px 15px / 14px 10px 15px 11px; }
@@ -2207,3 +2207,16 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .companero-cama-cuerpo { transform-origin: 70px 36px; animation: sl-respira 4s ease-in-out infinite; }
 .companero-cama-z { animation: sl-z 3s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { :root:not(.movimiento-siempre) .sl-casa *, :root:not(.movimiento-siempre) .sl-noche *, :root:not(.movimiento-siempre) .companero-cama * { animation: none !important; opacity: 1; } }
+
+/* Metas a la mitad de alto: días como fichas de una línea (letra + número + puntitos) */
+.semana-metas.tinta .semana-fila { gap: 3px; }
+.semana-metas.tinta .semana-dia { flex-direction: row; justify-content: center; gap: 3px; padding: 4px 0; min-height: 26px; }
+.semana-metas.tinta .semana-letra { font-size: 0.55rem; }
+.semana-metas.tinta .semana-num { font-size: 0.78rem; }
+.semana-metas.tinta .semana-puntos { min-height: 0; gap: 1px; }
+.semana-metas.tinta .semana-puntos .semana-punto { width: 4px; height: 4px; margin: 0; }
+.semana-metas.tinta .semana-puntos .semana-punto:not(.con-meta):not(.cumplida) { display: none; }
+.semana-metas.tinta .semana-titulo { font-size: 1.05rem; }
+.semana-metas.tinta .sello-rojo { font-size: 0.62rem; padding: 2px 6px; }
+.semana-sin { font-size: 0.66rem; color: var(--texto-3); margin-left: 8px; font-family: var(--fuente); }
+.semana-metas.tinta .semana-proxima { padding: 0; min-height: 0; }

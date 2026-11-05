@@ -873,7 +873,7 @@ function SemanaMetas({ hoy }: { hoy: string }) {
   return (
     <section className="semana-metas tinta" aria-label="Metas de la semana">
       <div className="fila entre">
-        <span className="semana-titulo"><span className="semana-kanji" aria-hidden>的</span>Metas</span>
+        <span className="semana-titulo"><span className="semana-kanji" aria-hidden>的</span>Metas{deHoy.length === 0 && !proxima && <span className="semana-sin">sin metas esta semana</span>}</span>
         <button type="button" className="sello-rojo" onClick={() => abrir(hoy)}>Sumar meta</button>
       </div>
       <div className="semana-fila">
@@ -893,11 +893,8 @@ function SemanaMetas({ hoy }: { hoy: string }) {
         })}
       </div>
       {deHoy.length > 0 && <div className="semana-hoy">{deHoy.map((m) => <FilaMeta key={m.id} m={m} hoy={hoy} dia={hoy} chica />)}</div>}
-      {(proxima || deHoy.length === 0) && (
-        <div className="muy-chico texto-3 semana-proxima">
-          {deHoy.length === 0 && !proxima && 'Sin metas esta semana.'}
-          {proxima && <>próxima: <b className="texto-2">{proxima.titulo}</b> · {fechaLegible(proxima.fecha)}</>}
-        </div>
+      {proxima && (
+        <div className="muy-chico texto-3 semana-proxima">próxima: <b className="texto-2">{proxima.titulo}</b> · {fechaLegible(proxima.fecha)}</div>
       )}
     </section>
   )
