@@ -167,7 +167,7 @@ export function Hoy({ hoy }: { hoy: string }) {
         instante = t
       }
       recordatorios.programar({ id: 'revision-2050', titulo: x ? `Saliste de ${x.bloque.nombre}: completá tu revisión` : 'Completá tu revisión ahora', cuerpo: `Menos de 3 min${pendientes.length ? ` · sin marcar: ${pendientes.map((p) => p.accion.nombre).join(', ')}` : ''}`, instante })
-    })
+    }).catch(() => {})
   }, [d, hoy])
 
   // Aviso de entreno (19:00): si es día de entreno y todavía no empezó. En la web suena solo con la app abierta
@@ -235,7 +235,7 @@ export function Hoy({ hoy }: { hoy: string }) {
     const clave = `${hoy}:${m.momento}`
     if (intentoNinja.current === clave) return
     intentoNinja.current = clave
-    void prepararPelea(hoy, m).then((p) => { if (p) lanzarDistraccion(p, modoRival(d.ajustes)) })
+    void prepararPelea(hoy, m).then((p) => { if (p) lanzarDistraccion(p, modoRival(d.ajustes)) }).catch(() => {})
   }, [tic, hoy, d])
 
   if (!d) return <p className="vacio">{panel.error ?? 'Cargando…'}</p>
