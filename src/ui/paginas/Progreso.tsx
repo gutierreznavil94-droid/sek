@@ -14,6 +14,8 @@ import { duracionSuenio, resumenSuenio, type ResumenSuenio } from '../../service
 import { kg, progresionEjercicio, resumenFuerza, type ResumenFuerza } from '../../services/entreno'
 import { Hoja, clasePorcentaje, elegirMovimiento, movimientoReducido } from '../componentes'
 import { useDatos } from '../estado'
+import { todasLasCaidas } from '../../services/caidas'
+import { TumbaRota } from '../../temas/shinobi/TumbaRota'
 import { graficoMetas, lineaDeMetas, metasPorDia } from '../../services/metas'
 import { ninjasVencidosSemana } from '../../services/ninjas'
 import { FilaMeta } from '../metas'
@@ -145,7 +147,8 @@ export function Progreso({ hoy }: { hoy: string }) {
       comida: comida.pesos.slice(-8).map((p) => p.kg),
     }
     const ninjas = await ninjasVencidosSemana(hoy)
-    return { ninjas, ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados, conExtra, reglasCodigo: await db().codigo.count(), comida, metasSemana: { cumplidas: metasSemana.filter((m) => m.cumplida).length, total: metasSemana.length }, mini }
+    const caidas = await todasLasCaidas()
+    return { caidas, ninjas, ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados, conExtra, reglasCodigo: await db().codigo.count(), comida, metasSemana: { cumplidas: metasSemana.filter((m) => m.cumplida).length, total: metasSemana.length }, mini }
   }, [hoy])
   const reducido = useMemo(() => movimientoReducido(), [])
   const modo = useModoFondo()
@@ -302,6 +305,14 @@ export function Progreso({ hoy }: { hoy: string }) {
             </section>
             {d.ajustes.ninjas !== false && d.ajustes.ninjasEnProgreso !== false && d.ninjas.peleas > 0 && (
               <div className="av-ninjas av-nota" aria-label="Ninjas vencidos esta semana"><span className="av-ninjas-k">忍</span> Ninjas vencidos esta semana: <b>{d.ninjas.vencidos}</b><span className="texto-3"> de {d.ninjas.peleas}</span></div>
+            )}
+
+            {/* Caídas: se ve que hubo una falla, pero también que seguiste */}
+            {d.caidas.length > 0 && (
+              <div className="av-ninjas av-nota" aria-label={`Caídas superadas: ${d.caidas.length}`}>
+                <span className="caidas-fila" aria-hidden>{d.caidas.slice(-12).map((c) => <TumbaRota key={c.id} ancho={12} />)}</span>
+                Caídas superadas: <b>{d.caidas.length}</b><span className="texto-3"> · nuevo round cada vez</span>
+              </div>
             )}
 
             {/* Los 4 pilares en una fila compacta; tocar abre el detalle con la tira del manga y los atributos */}

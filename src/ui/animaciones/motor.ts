@@ -318,6 +318,34 @@ export function sonarChoque(retrasoS = 0): void {
   try { choque(ac, ac.currentTime + 0.01 + retrasoS) } catch { /* sin sonido */ }
 }
 
+/** Estampida (caída): muchos pasos graves que se aceleran y metal suelto, ~2,5 s. Respeta el ajuste de sonido. */
+export function sonarEstampida(segundos = 2.5): void {
+  if (!config.sonido) return
+  const ac = audio()
+  if (!ac) return
+  try {
+    const t0 = ac.currentTime + 0.02
+    let t = t0
+    let paso = 0.22
+    while (t < t0 + segundos) {
+      const src = ac.createBufferSource()
+      src.buffer = ruido(ac, 0.08)
+      const f = ac.createBiquadFilter()
+      f.type = 'lowpass'
+      f.frequency.value = 260 + Math.random() * 160
+      const g = ac.createGain()
+      const vol = 0.25 + 0.45 * ((t - t0) / segundos)
+      g.gain.setValueAtTime(vol, t)
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.08)
+      src.connect(f).connect(g).connect(ac.destination)
+      src.start(t)
+      if (Math.random() < 0.18) choque(ac, t + 0.03)
+      t += paso * (0.6 + Math.random() * 0.6)
+      paso = Math.max(0.05, paso * 0.93)
+    }
+  } catch { /* sin sonido */ }
+}
+
 /** Golpe de taiko grave: un solo aviso a 10 s del fin del descanso (independiente del sonido de animaciones). */
 export function sonarTaiko(): void {
   const ac = audio()

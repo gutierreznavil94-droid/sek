@@ -25,6 +25,7 @@ export type OrigenXp =
   | 'extra'
   | 'manual'
   | 'rival'
+  | 'caida'
 
 export type ReglaXp = {
   id: string
@@ -67,10 +68,10 @@ export type RegistroXp = {
   motivoAnulacion?: string
 }
 
-/** Suma del XP válido (no anulado). Nunca baja de 0. El único descuento es el robo del rival (origen «rival»). */
+/** Suma del XP válido (no anulado). Nunca baja de 0. Los únicos descuentos son el robo del rival y la caída (el precio de volver). */
 export function totalXp(registros: (Pick<RegistroXp, 'cantidad' | 'anulado'> & { origen?: OrigenXp })[]): number {
   let total = 0
-  for (const r of registros) if (!r.anulado) total += r.origen === 'rival' ? r.cantidad : Math.max(0, r.cantidad)
+  for (const r of registros) if (!r.anulado) total += r.origen === 'rival' || r.origen === 'caida' ? r.cantidad : Math.max(0, r.cantidad)
   return Math.max(0, total)
 }
 

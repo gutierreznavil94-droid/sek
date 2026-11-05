@@ -15,6 +15,7 @@ import { CapaAnimacion } from './animaciones/CapaAnimacion'
 import { NinjaPelea } from './Ninja'
 import { BatallaCapa } from './Batalla'
 import { TensionCapa } from './Tension'
+import { CaidaCapa } from './Caida'
 import { RivalCapa } from './Rival'
 import { avisar, mutar, notificarCambio, useDatos, useVersion } from './estado'
 import { Layout } from './Layout'
@@ -159,6 +160,7 @@ export function App() {
       <NinjaPelea />
       <BatallaCapa />
       <TensionCapa />
+      <CaidaCapa />
       <RivalCapa />
       <Avisos />
     </HashRouter>

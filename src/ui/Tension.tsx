@@ -1,11 +1,12 @@
 /**
  * Botón 「進」 Tensión: cinemática con los clips de Luma (public/animaciones/tension/):
  * T1 la mirada → T2 el ejército → T3 la mano → T3b la espera (bucle hasta tocar) → T4 la carga → kanji 進 y «Avanzá igual.».
- * Sin tope ni XP. El botón solo aparece cuando los clips existen (hayClipsTension). Kanji y frase editables en Ajustes.
+ * Sin tope ni XP. Si no le das la mano («No le doy la mano», a los 5 s de espera): caída y nuevo round. El botón solo aparece cuando los clips existen (hayClipsTension). Kanji y frase editables en Ajustes.
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { obtenerAjustes } from '../services/base'
 import { configuracionAnimaciones, sonarLluvia, sonarTaiko } from './animaciones/motor'
+import { pedirCaida } from './Caida'
 
 export const CLIPS_TENSION = ['t1-mirada', 't2-ejercito', 't3-mano', 't3b-espera', 't4-carga'] as const
 type Clip = (typeof CLIPS_TENSION)[number]
@@ -82,6 +83,14 @@ function Tension({ onFin }: { onFin: () => void }) {
   }, [fase])
   const espera = fase === 't3b-espera'
   const final = fase === 'final'
+  // Si no le das la mano: a los 5 s de espera aparece «Soltar la mano», que lleva a la caída (nuevo round).
+  const [puedeSoltar, setPuedeSoltar] = useState(false)
+  useEffect(() => {
+    if (!espera) return
+    const id = window.setTimeout(() => setPuedeSoltar(true), 5000)
+    return () => window.clearTimeout(id)
+  }, [espera])
+  const soltar = () => { onFin(); void pedirCaida('tension') }
   const tocar = () => {
     if (espera) setFase('t4-carga')
     else if (final) onFin()
@@ -97,6 +106,7 @@ function Tension({ onFin }: { onFin: () => void }) {
           <span className="tn-tocalo">Tocalo</span>
         </div>
       )}
+      {espera && puedeSoltar && <button type="button" className="tn-soltar" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); soltar() }}>No le doy la mano</button>}
       {final && (
         <div className="tn-final">
           <div className="tn-kanji" aria-label={texto.kanji}>{texto.kanji}</div>

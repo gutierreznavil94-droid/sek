@@ -307,6 +307,7 @@ export type Ajustes = {
   batalla?: ConfigBatalla
   /** Cinemática «Tensión»: kanji y frase del final. */
   tension?: ConfigTension
+  caida?: ConfigCaida
   /** Rival escurridizo: modo y XP que roba. */
   rival?: ConfigRival
   /** Adaptación del sueño: desde cuándo, etapas editables y tolerancia de «a horario». */
@@ -730,6 +731,11 @@ export type ConfigFruta = { nombre: string; objetivo1: number; objetivo2: number
 
 /** Una fruta comida (un toque en la manzana de Hoy). */
 export type TomaFruta = { id: string; fecha: FechaDia; instante: number }
+
+/** Una caída («No cumplí mi palabra» o soltar la mano en Tensión): no reinicia nada, saca XP y deja una tumba rota. */
+export type Caida = { id: string; fecha: FechaDia; instante: number; origen: 'boton' | 'tension'; xp: number }
+/** Caída: cuánta XP saca (el precio de volver). */
+export type ConfigCaida = { xp?: number }
 
 /** Una toma de agua (un toque). */
 export type TomaAgua = { id: string; fecha: FechaDia; ml: number; envase?: string; instante: number }
