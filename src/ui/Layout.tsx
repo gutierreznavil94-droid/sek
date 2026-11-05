@@ -39,7 +39,7 @@ export function Layout({ hoy }: { hoy: string }) {
   const { pathname } = useLocation()
   const version = useVersion()
   const lluvia = useDatos(() => obtenerAjustes().then((a) => a.fondoLluvia ?? {}), [version])
-  const varianteLluvia = pathname === '/' ? (lluvia.datos?.hoy !== false ? 'hoy' : null) : pathname === '/calendario' ? (lluvia.datos?.calendario !== false ? 'calendario' : null) : null
+  const varianteLluvia = pathname === '/' ? (lluvia.datos?.hoy !== false ? 'hoy' : null) : pathname === '/calendario' ? (lluvia.datos?.calendario !== false ? 'calendario' : null) : pathname === '/juego' ? (lluvia.datos?.juego !== false ? 'juego' : null) : pathname === '/sueno' ? (lluvia.datos?.sueno !== false ? 'sueno' : null) : null
   const d = estado.datos
   const e = d?.e
   const diasFaltan = e ? 1 - e.dia : 0
@@ -81,10 +81,12 @@ export function Layout({ hoy }: { hoy: string }) {
             })}
           </button>
         )}
+        {/* Hueco para la barra del horario de Hoy: la barra va encima (fija) y queda arriba cuando la cabecera se hace polvo */}
+        <div id="hueco-horario" className={`hueco-horario ${pathname === '/' ? 'con' : ''}`} aria-hidden />
         {/* Franja de pincel: separa la cabecera de papel del contenido en tinta */}
         <Divisor className="divisor-cabecera" />
       </header>
-      <Desintegracion cabecera={cabRef} texto={e ? (e.noEmpezado ? `Día 1 en ${diasFaltan} día${diasFaltan === 1 ? '' : 's'}` : e.terminado ? 'Ciclo terminado' : `Día ${e.dia}`) : ''} />
+      <Desintegracion cabecera={cabRef} conHorario={pathname === '/'} texto={e ? (e.noEmpezado ? `Día 1 en ${diasFaltan} día${diasFaltan === 1 ? '' : 's'}` : e.terminado ? 'Ciclo terminado' : `Día ${e.dia}`) : ''} />
       {lluvia.datos && varianteLluvia && <FondoLluvia variante={varianteLluvia} />}
       <main className="contenido">
         <Outlet />

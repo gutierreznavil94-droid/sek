@@ -12,6 +12,8 @@ import { pedirPelea } from '../Ninja'
 import { Tajo } from '../Tajo'
 import { pedirBatalla } from '../Batalla'
 import { pedirRival } from '../Rival'
+import { forzarPajaroTorpe } from '../Desintegrar'
+import { useNavigate } from 'react-router-dom'
 import { XP_ROBO_MAX, modoRival, xpRoboDe } from '../../services/rival'
 import { FRASE_TENSION, KANJI_TENSION, pedirTension, useClipsTension } from '../Tension'
 import { REPS_POR_TOQUE, TOPE_BATALLAS_DIA, objetivoBatalla, prepararBatalla } from '../../services/batalla'
@@ -161,6 +163,15 @@ export function VerAnimaciones() {
       </Tarjeta>
 
       <Tarjeta>
+        <h2>Pájaro torpe</h2>
+        <label className="fila chico" style={{ gap: 8 }}>
+          <input type="checkbox" checked={a.pajaroTorpe !== false} onChange={(e) => guardar({ pajaroTorpe: e.target.checked }, e.target.checked ? 'Pájaro torpe encendido' : 'Pájaro torpe apagado')} /> A veces, cuando el encabezado de Hoy se hace pájaros, uno se choca con el borde, dice «¡agh!» y se va para arriba
+        </label>
+        <p className="ayuda">Sale 1 de cada 10 veces, nunca dos seguidas.</p>
+        <PajaroTorpeProbar />
+      </Tarjeta>
+
+      <Tarjeta>
         <h2>El rival escurridizo</h2>
         <div className="campo">
           <label>Cuando aparece una distracción</label>
@@ -223,6 +234,12 @@ export function VerAnimaciones() {
       </Tarjeta>
     </>
   )
+}
+
+/** «Probar»: el próximo encabezado que se haga polvo trae al pájaro torpe; vuelve a Hoy arriba de todo. */
+function PajaroTorpeProbar() {
+  const navegar = useNavigate()
+  return <button className="boton ancho" onClick={() => { forzarPajaroTorpe(); navegar('/'); window.scrollTo(0, 0); avisar('Bajá un poco en Hoy para verlo', { tipo: 'bajo' }) }}>Probar (bajá en Hoy)</button>
 }
 
 const MOMENTOS: (MomentoNinja | 'cualquiera')[] = ['cualquiera', 'pilar', 'noche', 'duda', 'juego', 'batalla']

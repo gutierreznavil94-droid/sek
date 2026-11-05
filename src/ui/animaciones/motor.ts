@@ -358,3 +358,23 @@ export function sonar(a: Animacion): void {
     // Sin sonido: no pasa nada.
   }
 }
+
+/** «Toc» chiquito de madera (el pájaro torpe se choca con el borde). Respeta el ajuste de sonido. */
+export function sonarToc(): void {
+  if (!config.sonido) return
+  const ac = audio()
+  if (!ac) return
+  try {
+    const t = ac.currentTime + 0.01
+    const o = ac.createOscillator()
+    o.type = 'triangle'
+    o.frequency.setValueAtTime(820, t)
+    o.frequency.exponentialRampToValueAtTime(380, t + 0.07)
+    const g = ac.createGain()
+    g.gain.setValueAtTime(0.18, t)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.1)
+    o.connect(g).connect(ac.destination)
+    o.start(t)
+    o.stop(t + 0.12)
+  } catch { /* sin sonido */ }
+}

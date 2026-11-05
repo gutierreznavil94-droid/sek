@@ -2292,3 +2292,61 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .sueno-etapa-chip.pasada { text-decoration: line-through; opacity: 0.5; }
 .sueno-etapa-edicion { display: flex; flex-direction: column; gap: 6px; padding: 8px; border: 1px dashed rgba(var(--papel-rgb), 0.3); border-radius: 10px; }
 .sueno-etapa-edicion > input { font-weight: 700; }
+
+/* ---------- v0.46: barra del horario fija arriba (5 nov 2026) ---------- */
+.contenido { position: relative; z-index: 1; }
+.hueco-horario { height: 0; }
+.hueco-horario.con { height: 50px; }
+.barra-horario-fija { position: fixed; left: 0; right: 0; top: 0; z-index: 24; pointer-events: none; will-change: transform; }
+.barra-horario-int { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; padding: 4px 16px 0; display: flex; align-items: center; gap: 10px; }
+.barra-horario-slot { flex: 1; min-width: 0; pointer-events: auto; }
+.barra-dia { display: none; flex: none; font-weight: 900; font-size: 0.78rem; letter-spacing: 0.02em; color: #151413; white-space: nowrap; pointer-events: none; }
+/* Dentro de la cabecera: una franja de papel un poco más oscuro, como un recorte */
+.barra-horario-fija .hor-linea { background: #E2DACB; color: #151413; border-radius: 10px 13px 9px 12px / 12px 9px 13px 10px; padding: 6px 10px; box-shadow: inset 0 0 0 1px rgba(20, 20, 20, 0.14), 0 1px 0 rgba(20, 20, 20, 0.08); transition: background 0.25s ease, padding 0.25s ease, box-shadow 0.25s ease; }
+.barra-horario-fija .hor-linea-link { color: #151413; }
+.barra-horario-fija .hor-texto, .barra-horario-fija .texto-2 { color: #4a4743; }
+.barra-horario-fija .hor-barra { background: rgba(20, 20, 20, 0.12); height: 8px; }
+.barra-horario-fija .hor-tramo.obligatorio { background: rgba(20, 20, 20, 0.6); }
+.barra-horario-fija .hor-tramo.otro { background: rgba(20, 20, 20, 0.3); }
+.barra-horario-fija .hor-ahora { top: -3px; height: 14px; }
+.barra-horario-fija .boton { color: #151413; border-color: rgba(20, 20, 20, 0.35); background: transparent; box-shadow: none; }
+/* Fija arriba: banda de papel de todo el ancho, borde de abajo a pincel y sombra de tinta */
+.barra-horario-fija.fija { background: #E2DACB; padding-top: env(safe-area-inset-top); box-shadow: 0 8px 16px -6px rgba(0, 0, 0, 0.6); }
+.barra-horario-fija.fija .barra-horario-int { padding-top: 3px; padding-bottom: 1px; }
+.barra-horario-fija.fija .barra-dia { display: inline; }
+.barra-horario-fija.fija .hor-linea { background: transparent; box-shadow: none; padding: 5px 0 4px; }
+.barra-horario-fija.fija .hor-linea-link { flex-direction: row; align-items: center; gap: 8px; }
+.barra-horario-fija.fija .hor-barra { flex: 1; height: 6px; }
+.barra-horario-fija.fija .hor-texto { max-width: 50%; font-size: 0.72rem; }
+.barra-horario-fija.fija .hor-correr { padding: 3px 8px; font-size: 0.72rem; min-height: 0; }
+.barra-pincel { display: none; position: absolute; left: 0; right: 0; bottom: -7px; width: 100%; height: 8px; pointer-events: none; }
+.barra-pincel path { fill: #E2DACB; }
+.barra-horario-fija.fija .barra-pincel { display: block; }
+@media (prefers-reduced-motion: reduce) { .barra-horario-fija, .barra-horario-fija .hor-linea { transition: none !important; } }
+
+/* ---------- v0.46: Juego más estético ---------- */
+.juego-titulo { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 -4px; }
+.juego-kanji { font-family: 'Noto Serif JP', serif; color: var(--acento); font-size: 1.4rem; font-weight: 700; }
+.juego-temporizador { display: flex; align-items: center; gap: 14px; margin: 4px 0 8px; }
+.enso { position: relative; width: 108px; height: 108px; flex: none; }
+.enso svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.enso-fantasma { fill: none; stroke: rgba(var(--papel-rgb), 0.09); stroke-width: 5; }
+.enso-trazo { fill: none; stroke: var(--papel); stroke-width: 7.5; stroke-linecap: round; opacity: 0.92; transition: d 0.6s ease; }
+.enso-seco { fill: none; stroke: #121110; stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 1.2 4.2; opacity: 0.5; transition: d 0.6s ease; }
+.enso.cerca .enso-trazo { stroke: var(--medio); }
+.enso.superado .enso-trazo { stroke: var(--bajo); }
+.enso-centro { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.enso .juego-segundos { font-family: 'Noto Serif JP', Georgia, serif; font-weight: 700; font-size: 1.4rem; letter-spacing: 0; }
+.juego-lado { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.boton.pincel { border-width: 1.5px; border-radius: 12px 16px 11px 17px / 16px 11px 17px 12px; }
+.juego-shoji { position: relative; padding: 12px 9px; border-radius: 4px; background: #1d1a16; border: 2px solid rgba(var(--papel-rgb), 0.38); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6); }
+.juego-shoji::before, .juego-shoji::after { content: ''; position: absolute; left: 9px; right: 9px; height: 8px; background: repeating-linear-gradient(90deg, rgba(var(--papel-rgb), 0.4) 0 1.5px, transparent 1.5px 24px); border-top: 1.5px solid rgba(var(--papel-rgb), 0.3); border-bottom: 1.5px solid rgba(var(--papel-rgb), 0.3); pointer-events: none; }
+.juego-shoji::before { top: 2px; }
+.juego-shoji::after { bottom: 2px; }
+.juego-shoji .sl-casa { border-radius: 2px; border: 1.5px solid rgba(0, 0, 0, 0.7); }
+.juego-shoji .sl-casa-nota { margin-top: 6px; }
+.enso .juego-segundos { color: var(--texto); }
+.enso .juego-segundos.medio { color: var(--medio); }
+.enso .juego-segundos.bajo { color: var(--bajo); }
+/* Sueño: las tarjetas dejan ver un poco la habitación de fondo (sin perder lectura) */
+.pagina-sueno .tarjeta { background: rgba(24, 23, 21, 0.8); }

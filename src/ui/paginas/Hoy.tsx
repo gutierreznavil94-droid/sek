@@ -123,6 +123,9 @@ export function Hoy({ hoy }: { hoy: string }) {
   // «Dudo» y 「進」 van en la cabecera, al lado de la fecha (hueco que deja Layout).
   const [huecoCabecera, setHuecoCabecera] = useState<HTMLElement | null>(null)
   useEffect(() => { setHuecoCabecera(document.getElementById('cabecera-extra')) }, [])
+  // La barra del horario vive arriba, en la franja que queda fija cuando el encabezado se hace polvo (Layout/Desintegrar).
+  const [huecoHorario, setHuecoHorario] = useState<HTMLElement | null>(null)
+  useEffect(() => { setHuecoHorario(document.getElementById('barra-horario-slot')) }, [])
   const clipsTension = useClipsTension()
   const batallas = useDatos(() => puedeBatallar(hoy), [hoy]).datos
   // El compañero duerme después de «Dejo celu» (y vuelve a pasear al deshacerlo o al otro día).
@@ -435,8 +438,8 @@ export function Hoy({ hoy }: { hoy: string }) {
       )}
       {!d.buenosDias && d.ajusteDeAyer && <p className="ajuste-ayer">Ajuste de hoy: <b>{d.ajusteDeAyer}</b></p>}
 
-      {/* Mi horario: dónde estás ahora y qué sigue (tocar abre la semana) */}
-      <LineaDelDia hoy={hoy} />
+      {/* Mi horario: dónde estás ahora y qué sigue (tocar abre la semana). Arriba, en la barra fija; sin ella, acá. */}
+      {huecoHorario ? createPortal(<LineaDelDia hoy={hoy} />, huecoHorario) : <LineaDelDia hoy={hoy} />}
 
       {/* Pilares del día: una línea cada uno */}
       <section className="col pilares-hoy" style={{ gap: 6 }} aria-label="Pilares de hoy">

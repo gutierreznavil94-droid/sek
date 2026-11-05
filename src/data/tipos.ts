@@ -307,8 +307,10 @@ export type Ajustes = {
   rival?: ConfigRival
   /** Adaptación del sueño: desde cuándo, etapas editables y tolerancia de «a horario». */
   adaptacion?: ConfigAdaptacion
-  /** Fondo con lluvia dibujada en Hoy y Calendario (los dos encendidos si falta). */
-  fondoLluvia?: { hoy?: boolean; calendario?: boolean }
+  /** Fondo con lluvia dibujada en Hoy, Calendario, Juego y Sueño (todos encendidos si falta). */
+  fondoLluvia?: { hoy?: boolean; calendario?: boolean; juego?: boolean; sueno?: boolean }
+  /** Pájaro torpe: a veces uno de los pájaros del encabezado se choca con el borde (sí si falta). */
+  pajaroTorpe?: boolean
   /** Recordatorio tenue en Hoy para alistarse a dormir: cuántos minutos antes de «Dejo celu» (30 si falta). */
   minutosAvisoDormir?: number
   /** Frases del recordatorio, rotan una por noche. Si falta, las tres de la app. */

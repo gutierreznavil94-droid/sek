@@ -104,9 +104,11 @@ export function Ajustes() {
       <ElegirFranja />
       <ElegirVideoFondo />
       <Tarjeta titulo="Fondo con lluvia">
-        <p className="chico texto-2">Lluvia fina dibujada detrás de la pantalla (sin video, casi no gasta). Con «reducir movimiento» queda quieta.</p>
+        <p className="chico texto-2">Lluvia dibujada detrás de la pantalla (sin video, casi no gasta), distinta en cada lugar. Con «reducir movimiento» queda quieta.</p>
         <label className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={a.fondoLluvia?.hoy !== false} onChange={async (e) => { const v = { ...a.fondoLluvia, hoy: e.target.checked }; set('fondoLluvia', v); await mutar(() => guardarAjustes({ fondoLluvia: v })); avisar(e.target.checked ? 'Lluvia en Hoy' : 'Hoy sin lluvia') }} /> En Hoy: lluvia en diagonal con un relámpago tenue cada tanto</label>
         <label className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={a.fondoLluvia?.calendario !== false} onChange={async (e) => { const v = { ...a.fondoLluvia, calendario: e.target.checked }; set('fondoLluvia', v); await mutar(() => guardarAjustes({ fondoLluvia: v })); avisar(e.target.checked ? 'Llovizna en Calendario' : 'Calendario sin llovizna') }} /> En Calendario: llovizna suave con nubes a tinta</label>
+        <label className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={a.fondoLluvia?.juego !== false} onChange={async (e) => { const v = { ...a.fondoLluvia, juego: e.target.checked }; set('fondoLluvia', v); await mutar(() => guardarAjustes({ fondoLluvia: v })); avisar(e.target.checked ? 'Lluvia tranquila en Juego' : 'Juego sin lluvia') }} /> En Juego: gotas que resbalan por el vidrio y un charco (más lenta mientras jugás)</label>
+        <label className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={a.fondoLluvia?.sueno !== false} onChange={async (e) => { const v = { ...a.fondoLluvia, sueno: e.target.checked }; set('fondoLluvia', v); await mutar(() => guardarAjustes({ fondoLluvia: v })); avisar(e.target.checked ? 'Habitación con lluvia en Sueño' : 'Sueño sin fondo') }} /> En Sueño: la habitación con el futón y la lluvia por la ventana</label>
       </Tarjeta>
       <ElegirMovimiento />
       <Tarjeta titulo="Fondo de las animaciones">

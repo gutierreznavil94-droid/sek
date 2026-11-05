@@ -1,5 +1,7 @@
 import { useEffect, useRef, type RefObject } from 'react'
 import { movimientoReducido } from './componentes'
+import { obtenerAjustes } from '../services/base'
+import { sonarToc } from './animaciones/motor'
 
 /**
  * La cabecera es parte del fondo. Al bajar (pasado el 30 % de su alto) se
@@ -9,7 +11,42 @@ import { movimientoReducido } from './componentes'
  *   3. Vuelo (1,1–2,2 s): los pájaros aletean y se van arriba y al costado, cada uno a su ritmo.
  * Al volver arriba, la cabecera se rearma con un fundido tranquilo, sin partículas.
  * Nunca hay dos animaciones a la vez. Con «reducir movimiento», solo fundidos.
+ *
+ * En Hoy, la barra del horario está en la cabecera (sobre el hueco `#hueco-horario`) pero NO se va con ella:
+ * cuando la cabecera se deshace, la barra «aterriza» arriba en 0,25 s y queda fija; el polvo pasa por delante.
+ * Pájaro torpe: el 10 % de las veces (nunca dos seguidas), cuando los demás ya se fueron, uno se choca con el
+ * borde derecho, dice «¡agh!» y se va volando para arriba. Apagable en Ver animaciones.
  */
+
+export const PROB_PAJARO_TORPE = 0.1
+const CLAVE_TORPE_ULTIMO = 'pajaro-torpe-ultimo'
+const CLAVE_TORPE_FORZAR = 'pajaro-torpe-forzar'
+
+/** ¿Sale el pájaro torpe esta vez? 10 %, nunca dos veces seguidas; «forzar» (Probar) gana. */
+export function decidirPajaroTorpe(x: { activo: boolean; ultimoFueTorpe: boolean; forzar?: boolean; azar?: () => number }): boolean {
+  if (!x.activo) return false
+  if (x.forzar) return true
+  if (x.ultimoFueTorpe) return false
+  return (x.azar ?? Math.random)() < PROB_PAJARO_TORPE
+}
+
+/** «Probar»: el próximo encabezado que se haga polvo trae al pájaro torpe. */
+export function forzarPajaroTorpe(): void {
+  try { localStorage.setItem(CLAVE_TORPE_FORZAR, '1') } catch { /* sin almacenamiento */ }
+}
+
+/** Sortea (y anota) si esta vez sale el torpe. */
+function tocaPajaroTorpe(activo: boolean): boolean {
+  let ultimo = false
+  let forzar = false
+  try { ultimo = localStorage.getItem(CLAVE_TORPE_ULTIMO) === '1'; forzar = localStorage.getItem(CLAVE_TORPE_FORZAR) === '1'; localStorage.removeItem(CLAVE_TORPE_FORZAR) } catch { /* sin almacenamiento */ }
+  const sale = decidirPajaroTorpe({ activo, ultimoFueTorpe: ultimo, forzar })
+  try { localStorage.setItem(CLAVE_TORPE_ULTIMO, sale ? '1' : '0') } catch { /* sin almacenamiento */ }
+  return sale
+}
+
+/** Tramos del pájaro torpe (s, desde que empieza la animación). */
+const TORPE = { sale: 2.15, choca: 2.75, globo: 2.8, finGlobo: 3.3, sacude: 3.3, vuela: 3.5, fin: 4.3 }
 
 const AVES = 5
 const POLVO = 260
@@ -62,9 +99,10 @@ function dibujarAve(ctx: CanvasRenderingContext2D, x: number, y: number, e: numb
   ctx.fill()
 }
 
-export function Desintegracion({ cabecera, texto }: { cabecera: RefObject<HTMLElement | null>; texto: string }) {
+export function Desintegracion({ cabecera, texto, conHorario = false }: { cabecera: RefObject<HTMLElement | null>; texto: string; conHorario?: boolean }) {
   const lienzo = useRef<HTMLCanvasElement>(null)
   const mini = useRef<HTMLDivElement>(null)
+  const barra = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const cab = cabecera.current
     const cv = lienzo.current
@@ -72,6 +110,23 @@ export function Desintegracion({ cabecera, texto }: { cabecera: RefObject<HTMLEl
     if (!cab || !cv || !mi) return
     const ctx = cv.getContext('2d')
     const quieto = movimientoReducido()
+    const ba = conHorario ? barra.current : null
+    let torpeActivo = true
+    let torpe = false
+    let tocado = false
+    void obtenerAjustes().then((a) => { torpeActivo = a.pajaroTorpe !== false }).catch(() => undefined)
+    // ---- La barra del horario: sigue al hueco mientras está la cabecera; fija arriba cuando no ----
+    let barraFija = false
+    let hastaTransicion = 0
+    const ponerBarra = (fija: boolean, animar = false) => {
+      if (!ba) return
+      const h = document.getElementById('hueco-horario')
+      const y = fija || !h ? 0 : Math.max(0, h.getBoundingClientRect().top)
+      if (animar && !quieto) hastaTransicion = performance.now() + 270
+      ba.style.transition = performance.now() < hastaTransicion ? 'transform 0.25s ease-out, box-shadow 0.25s ease-out' : ''
+      ba.style.transform = `translate3d(0, ${y.toFixed(1)}px, 0)`
+      if (fija !== barraFija) { barraFija = fija; ba.classList.toggle('fija', fija) }
+    }
     let ancho = 0, alto = 0, arriba = 0, dpr = 1
     let estado: EstadoCabecera = 'armada'
     let t0 = 0, tRearme = 0, rafAnim = 0, rafScroll = 0, ultimo = 0, fijo = 0
@@ -95,6 +150,7 @@ export function Desintegracion({ cabecera, texto }: { cabecera: RefObject<HTMLEl
     const topeCabecera = () => arriba - Math.max(0, window.scrollY) * 0.65
 
     const mostrarMini = (v: boolean) => {
+      if (ba) { mi.style.opacity = '0'; return }
       mi.style.transition = 'opacity 0.45s ease, transform 0.45s ease'
       mi.style.opacity = v ? '1' : '0'
       mi.style.transform = v ? 'translate3d(0,0,0)' : 'translate3d(0,-6px,0)'
@@ -103,6 +159,8 @@ export function Desintegracion({ cabecera, texto }: { cabecera: RefObject<HTMLEl
     function pedir() { if (!rafScroll) rafScroll = requestAnimationFrame(alDesplazar) }
 
     const prepararAnimacion = () => {
+      torpe = tocaPajaroTorpe(torpeActivo)
+      tocado = false
       const r = azar(97 + (corrida++ % 7))
       const top = fijo
       aves = Array.from({ length: AVES }, (_, k) => {
@@ -135,6 +193,62 @@ export function Desintegracion({ cabecera, texto }: { cabecera: RefObject<HTMLEl
       return [a.cx + dx + a.vx * imp, a.cy - tf * 14 + a.vy * imp]
     }
 
+    /** El pájaro torpe: vuela al borde derecho, se choca (dos plumitas), «¡agh!», se sacude y se va para arriba. */
+    const dibujarTorpe = (c: CanvasRenderingContext2D, t: number) => {
+      const e = 30
+      const x0 = ancho * 0.35, y0 = Math.max(90, fijo + alto * 0.45)
+      const borde = ancho - e * 0.55
+      let x = x0, y = y0, cuadro = Math.floor((t * 10) % 3), giro = 0
+      if (t < TORPE.choca) {
+        const k = suave((t - TORPE.sale) / (TORPE.choca - TORPE.sale))
+        x = x0 + (borde - x0) * k
+        y = y0 - 10 * Math.sin(k * Math.PI)
+      } else if (t < TORPE.vuela) {
+        if (!tocado) { tocado = true; sonarToc() }
+        const k = clamp((t - TORPE.choca) / 0.18)
+        x = borde - 18 * Math.sin(k * Math.PI * 0.5)
+        y = y0 + 8 * k
+        cuadro = 2
+        giro = -0.35 * (1 - k)
+        if (t >= TORPE.sacude) { const s2 = (t - TORPE.sacude) / 0.2; x += Math.sin(s2 * Math.PI * 6) * 3 * (1 - clamp(s2)); cuadro = Math.floor((t * 16) % 3) }
+      } else {
+        const k = (t - TORPE.vuela) / (TORPE.fin - TORPE.vuela)
+        x = borde - 18 - 30 * k
+        y = y0 + 8 - (y0 + 80) * k ** 1.3
+      }
+      c.save()
+      c.translate(x, y); c.rotate(giro)
+      c.globalAlpha = 1
+      dibujarAve(c, 0, 0, e, cuadro)
+      c.restore()
+      // Dos plumitas que caen después del choque
+      if (t > TORPE.choca && t < TORPE.choca + 1.2) {
+        const k = (t - TORPE.choca) / 1.2
+        for (const [dx, fase] of [[-6, 0], [7, 1.7]] as const) {
+          const px = borde - 10 + dx + Math.sin(k * 6 + fase) * 6
+          const py = y0 + k * 70
+          c.globalAlpha = 1 - k
+          c.save(); c.translate(px, py); c.rotate(Math.sin(k * 5 + fase) * 0.8)
+          c.beginPath(); c.ellipse(0, 0, 5, 1.6, 0, 0, Math.PI * 2)
+          c.fillStyle = '#121110'; c.fill(); c.strokeStyle = 'rgba(241, 235, 223, 0.85)'; c.lineWidth = 0.8; c.stroke()
+          c.restore()
+        }
+      }
+      // Globito de papel «¡agh!»
+      if (t >= TORPE.globo && t < TORPE.finGlobo + 0.1) {
+        const a = t < TORPE.finGlobo ? clamp((t - TORPE.globo) / 0.08) : 1 - clamp((t - TORPE.finGlobo) / 0.1)
+        const gx = borde - 74, gy = y0 - 40
+        c.globalAlpha = a
+        c.beginPath()
+        if (typeof c.roundRect === 'function') c.roundRect(gx, gy, 50, 22, 8); else c.rect(gx, gy, 50, 22)
+        c.fillStyle = '#F4EFE6'; c.fill(); c.strokeStyle = '#151413'; c.lineWidth = 1.6; c.stroke()
+        c.beginPath(); c.moveTo(gx + 38, gy + 22); c.lineTo(gx + 46, gy + 30); c.lineTo(gx + 30, gy + 22); c.closePath(); c.fill(); c.stroke()
+        c.fillStyle = '#151413'; c.font = '800 13px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'
+        c.fillText('¡agh!', gx + 25, gy + 11.5)
+      }
+      c.globalAlpha = 1
+    }
+
     const cuadroAnimacion = (ahora: number) => {
       rafAnim = 0
       const t = (ahora - t0) / 1000
@@ -147,6 +261,8 @@ export function Desintegracion({ cabecera, texto }: { cabecera: RefObject<HTMLEl
       cab.style.setProperty('mask-image', mascara)
       if (t > 0.6) cab.style.opacity = '0'
       if (t > 0.45 && mi.style.opacity !== '1') mostrarMini(true)
+      // La barra aterriza arriba mientras la cabecera termina de irse (el polvo, en el lienzo, pasa por delante)
+      if (t > 0.5 && !barraFija) ponerBarra(true, true)
       if (ctx) {
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
         ctx.clearRect(0, 0, ancho, window.innerHeight)
@@ -199,9 +315,10 @@ export function Desintegracion({ cabecera, texto }: { cabecera: RefObject<HTMLEl
             dibujarAve(ctx, x, y, a.envergadura * (1 - 0.45 * clamp(vuelo / 1.1)), vuelo > 0 ? cuadro : 1)
           }
         }
+        if (torpe && t >= TORPE.sale) dibujarTorpe(ctx, t)
         ctx.globalAlpha = 1
       }
-      if (t < DUR) { rafAnim = requestAnimationFrame(cuadroAnimacion); return }
+      if (t < (torpe ? TORPE.fin : DUR)) { rafAnim = requestAnimationFrame(cuadroAnimacion); return }
       // Terminó
       ctx?.clearRect(0, 0, cv.width, cv.height)
       cab.style.removeProperty('-webkit-mask-image')
@@ -216,6 +333,7 @@ export function Desintegracion({ cabecera, texto }: { cabecera: RefObject<HTMLEl
       cab.style.opacity = '0'
       cab.style.pointerEvents = 'none'
       mostrarMini(true)
+      ponerBarra(true)
       t0 = performance.now()
       const fin = () => {
         if (estado !== 'animando') return
@@ -230,6 +348,7 @@ export function Desintegracion({ cabecera, texto }: { cabecera: RefObject<HTMLEl
       cab.style.opacity = '1'
       cab.style.pointerEvents = ''
       mostrarMini(false)
+      ponerBarra(false, true)
       tRearme = performance.now()
       setTimeout(() => {
         if (estado !== 'rearmando' || performance.now() - tRearme < 690) return
@@ -246,6 +365,8 @@ export function Desintegracion({ cabecera, texto }: { cabecera: RefObject<HTMLEl
       // Mientras se deshace, la cabecera queda quieta en pantalla (aunque se baje de golpe), para que se vea entera la animación
       if (estado === 'animando') cab.style.transform = `translate3d(0, ${(fijo - arriba + s).toFixed(1)}px, 0)`
       else cab.style.transform = s > 0 ? `translate3d(0, ${(s * 0.35).toFixed(1)}px, 0)` : ''
+      if (estado === 'armada' || estado === 'rearmando') ponerBarra(false)
+      else if (estado === 'ausente') ponerBarra(true)
       const antes = estado
       if (estado === 'animando' || estado === 'rearmando') return
       estado = siguienteEstado(estado, avance(), false, false)
@@ -278,11 +399,22 @@ export function Desintegracion({ cabecera, texto }: { cabecera: RefObject<HTMLEl
       ro?.disconnect()
       for (const p of ['transform', 'opacity', 'pointer-events', 'transition', 'mask-image', '-webkit-mask-image']) cab.style.removeProperty(p)
     }
-  }, [cabecera])
+  }, [cabecera, conHorario])
   return (
     <>
       <canvas ref={lienzo} className="motas-tinta" aria-hidden="true" />
       <div ref={mini} className="dia-mini" aria-hidden="true">{texto}</div>
+      {conHorario && (
+        <div ref={barra} className="barra-horario-fija">
+          <div className="barra-horario-int">
+            <span className="barra-dia" aria-hidden="true">{texto}</span>
+            <div id="barra-horario-slot" className="barra-horario-slot" />
+          </div>
+          <svg className="barra-pincel" viewBox="0 0 400 8" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0,2.5 C40,1.5 70,4 120,3 C170,2 210,4.6 260,3.4 C310,2.2 350,4.2 400,2.8 L400,5.2 C350,6.6 300,5 250,6 C200,7 150,4.8 100,5.8 C60,6.4 30,5 0,5.6 Z" />
+          </svg>
+        </div>
+      )}
     </>
   )
 }
