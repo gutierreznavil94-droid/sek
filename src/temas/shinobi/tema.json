@@ -25,7 +25,13 @@
     "Un día más en el camino. Seguimos.",
     "La montaña se sube con pasos chicos."
   ],
-  "colores": { "color-principal": "#C8102E", "color-papel": "#F1EBDF", "color-tinta": "#121110", "color-tinta-suave": "#6B655C" },
+  "colores": {
+    "color-principal": "#C8102E", "color-papel": "#F1EBDF", "color-tinta": "#121110", "color-tinta-suave": "#6B655C",
+    "color-fondo": "#121110", "color-tarjeta": "#1b1918", "color-tarjeta-2": "#262321", "color-borde": "#3A3836",
+    "color-texto": "#EEECE7", "color-texto-2": "#b9b4ac", "color-texto-3": "#8E8A84",
+    "color-hecho": "#78BD97", "color-aviso": "#e0a23a", "color-con-alguien": "#9b7bd4",
+    "color-importancia-alta": "#d2384f", "color-importancia-media": "#e0b23a", "color-importancia-baja": "#8E8A84"
+  },
   "iconos": {
     "icono-hoy": "今",
     "icono-sueno": "眠",
@@ -36,7 +42,9 @@
     "icono-ajustes": "設",
     "icono-historial": "歴",
     "icono-sincronizar": "同",
-    "icono-ciclo": "始", "icono-actualizar": "新", "icono-agua": "水", "icono-racha": "炎"
+    "icono-ciclo": "始", "icono-actualizar": "新", "icono-agua": "水", "icono-racha": "炎",
+    "icono-organizacion": "陣", "icono-bandeja": "箱", "icono-sueltas-fondo": "散", "icono-sello-hecho": "済",
+    "kanji-quien": "人", "kanji-importancia": "重", "kanji-rapidez": "速", "kanji-donde": "所", "kanji-fecha": "日", "kanji-frente": "陣"
   },
   "orden": 1
 }

@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import proximamente from './proximamente.json'
 import './shinobi/visual.css'
+import { activarTemaVisual } from './registro'
 
 /**
  * Temas: la cara de la app (personaje, fondos, sprite, color de acento, kanjis).
@@ -78,6 +79,7 @@ function rgb(hex: string): string | null {
 /** Activa un tema: color de acento, kanjis y título de la pestaña. Con Shinobi no cambia nada de lo que ya se ve. */
 export function aplicarTema(id: string | undefined, nombreApp?: string): DefinicionTema {
   activo = temaPorId(id)
+  activarTemaVisual(activo.id)
   if (typeof document !== 'undefined') {
     const raiz = document.documentElement
     const c = rgb(activo.acento)

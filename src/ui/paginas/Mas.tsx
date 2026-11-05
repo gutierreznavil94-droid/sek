@@ -15,6 +15,7 @@ type Seccion = { a: string; t: string; d: string; claves: string; icono?: string
 
 /** Lo de la app en sí: primera fila, cada uno con su botón. */
 const SISTEMA: Seccion[] = [
+  { a: '/organizacion', t: 'Organización', d: 'Notas y tareas', icono: 'icono-organizacion', claves: 'organizacion tareas notas pendientes frentes bandeja anotar me toca hoy' },
   { a: '/mas/copia', t: 'Copia', d: 'Exportar e importar', icono: 'icono-copia', claves: 'copia seguridad backup exportar importar json csv texto guardar datos' },
   { a: '/mas/animaciones', t: 'Animaciones', d: 'Ver y elegir', icono: 'icono-animaciones', claves: 'animaciones shinobi pajaro torpe rival batalla sonido video' },
   { a: '/mas/tema', t: 'Tema', d: 'Tema y nombres', icono: 'icono-tema', claves: 'tema nombres nombre app fases color' },
