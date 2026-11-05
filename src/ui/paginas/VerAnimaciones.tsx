@@ -16,6 +16,8 @@ import { forzarPajaroTorpe } from '../Desintegrar'
 import { useNavigate } from 'react-router-dom'
 import { XP_ROBO_MAX, modoRival, xpRoboDe } from '../../services/rival'
 import { FRASE_TENSION, KANJI_TENSION, pedirTension, useClipsTension } from '../Tension'
+import { pedirCaida } from '../Caida'
+import { XP_CAIDA_MAX, xpCaidaDe } from '../../services/caidas'
 import { REPS_POR_TOQUE, TOPE_BATALLAS_DIA, objetivoBatalla, prepararBatalla } from '../../services/batalla'
 import { listarContadores } from '../../services/contadores'
 import { fechaDe } from '../../domain/fechas'
@@ -227,6 +229,16 @@ export function VerAnimaciones() {
         {clipsTension
           ? <button className="boton ancho" onClick={() => pedirTension()}>Ver la cinemática</button>
           : <p className="ayuda">Todavía no están los videos: el botón 「進」 aparece en Hoy (al lado de «Dudo») cuando los clips de Luma estén en animaciones/tension/ (t1-mirada, t2-ejercito, t3-mano, t3b-espera, t4-carga).</p>}
+      </Tarjeta>
+
+      <Tarjeta titulo="Caída · Nuevo round 「甦」">
+        <p className="chico texto-2" style={{ margin: 0 }}>Cuando tocás «No cumplí mi palabra» (abajo de todo en Hoy) o no le das la mano en Tensión: los rivales te pasan por encima, la tumba bajo el árbol seco, la mano que sale de la tierra y «NUEVO ROUND». No reinicia nada: el día sigue igual.</p>
+        <div className="campo">
+          <label>XP que saca una caída (0 a {XP_CAIDA_MAX})</label>
+          <input type="number" inputMode="numeric" min={0} max={XP_CAIDA_MAX} value={xpCaidaDe(a)} onChange={(e) => { const v = Number(e.target.value); if (!Number.isNaN(v)) { const x = Math.max(0, Math.min(XP_CAIDA_MAX, Math.round(v))); guardar({ caida: { ...a.caida, xp: x } }, `Una caída saca ${x} XP`) } }} style={{ width: 90 }} />
+        </div>
+        <button className="boton ancho" onClick={() => void pedirCaida('boton', { prueba: true })}>Ver la escena (sin perder XP)</button>
+        <p className="ayuda">Queda una tumba rota en el Calendario, en Progreso («Caídas superadas») y en el registro de batallas del día. Al cerrar la escena tenés 10 s para «Deshacer». El video de la tumba (t6-tumba-regreso.mp4) todavía no está: mientras tanto se ve la tumba dibujada.</p>
       </Tarjeta>
 
       <Tarjeta titulo="Nombre del personaje">

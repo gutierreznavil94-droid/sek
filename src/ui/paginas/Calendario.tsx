@@ -12,6 +12,8 @@ import { Hoja, IconoPilar, Porcentaje, Tarjeta } from '../componentes'
 import { formatoHora } from '../../domain/fechas'
 import { guardarAjustes, obtenerAjustes } from '../../services/base'
 import { avisar, mutar, useDatos } from '../estado'
+import { caidasDelDia, caidasPorDia } from '../../services/caidas'
+import { TumbaRota } from '../../temas/shinobi/TumbaRota'
 import { agregarFechaClave, borrarFechaClave, editarFechaClave, fechasClavePorDia } from '../../services/fechasClave'
 import type { FechaClave } from '../../data/tipos'
 import { Confirmar } from '../componentes'
@@ -57,7 +59,8 @@ export function Calendario({ hoy }: { hoy: string }) {
     const claves = await fechasClavePorDia(dias[0], ultimo)
     const bloques = await bloquesEntre(dias[0], ultimo)
     const verHorario = (await obtenerAjustes()).calendarioHorario !== false
-    return { ciclo, pilares, metas, excepciones, feriados, acciones, claves, bloques, verHorario }
+    const caidas = await caidasPorDia(dias[0], ultimo)
+    return { ciclo, pilares, metas, excepciones, feriados, acciones, claves, bloques, verHorario, caidas }
   }, [mes, hoy])
 
   const d = datos.datos
@@ -92,11 +95,12 @@ export function Calendario({ hoy }: { hoy: string }) {
                 className={`cal-dia ${!enCiclo ? 'fuera' : ''} ${f === hoy ? 'hoy tema-remarque-hoy' : ''} ${sel === f ? 'seleccionado' : ''} ${d?.excepciones.has(f) ? 'excepcion' : ''} ${d?.feriados.has(f) ? 'feriado' : ''} ${inicioFase ? 'fase-inicio' : ''} ${f <= hoy && puntos.length > 0 && puntos.every((p) => p.estado === 'cumplido' || p.estado === 'descanso') && puntos.some((p) => p.estado === 'cumplido') ? 'completo' : ''}`}
                 onClick={() => { setSel(sel === f ? null : f); setEnfocar(sel !== f) }}
                 role="button"
-                aria-label={`${fechaLegible(f, false)}${enCiclo ? `, día ${dia}` : ''}${claves.length ? `, fecha clave: ${claves.map((c) => c.titulo).join(', ')}` : ''}`}
+                aria-label={`${fechaLegible(f, false)}${enCiclo ? `, día ${dia}` : ''}${(d?.caidas.get(f) ?? 0) > 0 ? ', caída superada' : ''}${claves.length ? `, fecha clave: ${claves.map((c) => c.titulo).join(', ')}` : ''}`}
               >
                 <span className="num">{Number(f.slice(8))}</span>
                 {f === hoy && <span className="tema-icono-hoy" aria-hidden>{iconoTema('icono-hoy')}</span>}
                 {claves.length > 0 && <span className="sello-clave" aria-hidden>印</span>}
+                {(d?.caidas.get(f) ?? 0) > 0 && <span className="cal-caida" aria-hidden><TumbaRota ancho={10} /></span>}
                 {puntos.length > 0 && (
                   <span className="puntos" aria-hidden>
                     {puntos.map((p) => <i key={p.accionId} className={f > hoy ? '' : p.estado} />)}
@@ -120,6 +124,7 @@ export function Calendario({ hoy }: { hoy: string }) {
           <span><span className="puntos"><i /></span>pendiente</span>
           <span><span className="linea-meta verde muestra" />meta cumplida</span>
           <span><span className="linea-meta roja muestra" />meta no cumplida</span>
+          <span><TumbaRota ancho={9} /> caída (seguiste)</span>
           <span><span className="sello-clave muestra">印</span>fecha clave</span>
           <span><span className="franjas muestra"><i className="obligatorio" /><i className="entreno" /></span>horario (gris, arriba)</span>
         </div>
@@ -164,7 +169,8 @@ function PilaresDelDiaSel({ fecha, hoy, ciclo, enfocar, onMas }: { fecha: string
     ])
     const acciones = new Map((await db().acciones.toArray()).map((a) => [a.id, a]))
     const metas = (await metasPorDia(fecha, fecha)).get(fecha) ?? []
-    return { fila: pilares.get(fecha) ?? [], compromisos, suenio, xp, cerrado, zona, acciones, metas }
+    const caidas = await caidasDelDia(fecha)
+    return { fila: pilares.get(fecha) ?? [], compromisos, suenio, xp, cerrado, zona, acciones, metas, caidas }
   }, [fecha, hoy])
   const d = datos.datos
   const dia = ciclo ? diaDelCiclo(ciclo.inicio, fecha) : 0
@@ -184,6 +190,12 @@ function PilaresDelDiaSel({ fecha, hoy, ciclo, enfocar, onMas }: { fecha: string
         {d.metas.map((m) => <FilaMeta key={m.id} m={m} hoy={hoy} dia={fecha} />)}
         {fecha < hoy && d.metas.length === 0 && <p className="muy-chico texto-3">Sin metas ese día. En días pasados no se agregan.</p>}
       </div>
+      {d.caidas.length > 0 && (
+        <p className="muy-chico texto-2 fila" style={{ gap: 6, margin: '2px 0' }}>
+          <span className="caidas-fila">{d.caidas.map((c) => <TumbaRota key={c.id} ancho={12} />)}</span>
+          {d.caidas.length === 1 ? 'Una caída' : `${d.caidas.length} caídas`} ese día{d.caidas.some((c) => c.xp > 0) ? ` (−${d.caidas.reduce((s, c) => s + c.xp, 0)} XP)` : ''} · nuevo round, seguiste
+        </p>
+      )}
       <FechasClaveDelDia fecha={fecha} />
       <HorarioDelDia fecha={fecha} hoy={hoy} />
       {!enCiclo && <p className="texto-3 chico">Fuera del ciclo: ese día no se registra nada.</p>}

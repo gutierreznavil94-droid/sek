@@ -60,6 +60,7 @@ import { Celebracion, Hoja, IconoPilar } from '../componentes'
 import { avisar, mutar, useDatos, useTic } from '../estado'
 import { CamaDelCompanero } from '../Companero'
 import { ChipsBatallas } from '../ChipsBatallas'
+import { BotonNoCumpli } from '../Caida'
 import { brillo, type EstadoBrillo } from '../brillo'
 
 /** Pilar → brillo: pendiente titila, marcado (a tiempo o tarde) verde fijo; omitido y descanso sin brillo. */
@@ -574,6 +575,9 @@ export function Hoy({ hoy }: { hoy: string }) {
 
       {/* De noche, después de «Dejo celu»: la cama del compañero, abajo de todo sin tapar nada */}
       <CamaDelCompanero dormido={!!d.suenio && deNoche} modo={ajustes.companero} />
+
+      {/* Discreto, abajo de todo: una caída no reinicia nada, saca un poco de XP y deja la marca */}
+      <div className="no-cumpli-lugar"><BotonNoCumpli fecha={hoy} /></div>
 
       <DetalleCompromiso c={seleccion} hoy={hoy} onCerrar={() => setSeleccion(null)} />
       <DetallePilar p={pilarSel} hoy={hoy} onCerrar={() => setPilarSel(null)} onResultado={(id, xp, n) => celebrarYFlash(id, xp, n)} />

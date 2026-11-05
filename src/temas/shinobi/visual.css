@@ -98,3 +98,37 @@
 @keyframes tema-chip-duda { 0%, 100% { box-shadow: 0 0 0 0 rgba(var(--papel-rgb), 0); opacity: 0.7; } 50% { box-shadow: 0 0 8px 1px rgba(var(--papel-rgb), 0.2); opacity: 1; } }
 .tema-chip-batalla.abierto { outline: 1px solid rgba(var(--papel-rgb), 0.35); outline-offset: 1px; }
 @media (prefers-reduced-motion: reduce) { .tema-chip-batalla[data-chip='duda'] { animation: none; } }
+
+/* ----- Caída y «Nuevo round» (escena del evento genérico «caida») ----- */
+.tema-caida { position: fixed; inset: 0; z-index: 230; background: #1a1a1a; overflow: hidden; user-select: none; -webkit-tap-highlight-color: transparent; animation: sh-entrar 200ms ease-out both; }
+.tema-caida-fuente { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.tema-caida-lienzo { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.tema-caida-tinta { position: absolute; inset: 0; background: #262626; }
+.tema-caida-tinta::before { content: ''; position: absolute; left: 50%; top: 55%; width: 40vmax; height: 40vmax; margin: -20vmax 0 0 -20vmax; border-radius: 47% 53% 44% 56% / 52% 45% 55% 48%; background: radial-gradient(circle, #050505 0 55%, rgba(5,5,5,0.85) 70%, rgba(5,5,5,0) 72%); animation: tema-caida-tinta 0.5s cubic-bezier(.5,0,.8,.5) forwards; }
+@keyframes tema-caida-tinta { from { transform: scale(0.2); } to { transform: scale(4.5); } }
+.tema-caida-video, .tema-caida-tumba { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; animation: tema-caida-acercar 5s ease-out both, sh-entrar 0.6s ease-out both; }
+@keyframes tema-caida-acercar { from { transform: scale(1); } to { transform: scale(1.14) translateY(-2%); } }
+.tema-caida.renacer .tema-caida-video, .tema-caida.renacer .tema-caida-tumba { animation: none; transform: scale(1.14) translateY(-2%); filter: brightness(0.55); transition: filter 0.6s; }
+.tema-caida-mano { transform-box: fill-box; transform-origin: 50% 100%; clip-path: inset(0 0 0 0); animation: tema-caida-mano 1.2s cubic-bezier(.3,.7,.3,1) 2.6s both; }
+@keyframes tema-caida-mano { from { transform: translateY(100%); opacity: 0; } 30% { opacity: 1; } to { transform: translateY(0); opacity: 1; } }
+.tema-caida.renacer .tema-caida-mano { animation: none; }
+.tema-caida-lluvia { animation: tema-caida-lluvia 0.5s linear infinite; }
+@keyframes tema-caida-lluvia { from { transform: translate(0, -40px); } to { transform: translate(-9px, 0); } }
+.tema-caida-final { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 24px 16px; text-align: center; color: #f3efe6; }
+.tema-caida-kanji { font-family: 'Noto Serif JP', 'Pincel', serif; font-size: min(42vmin, 230px); line-height: 1; color: #f3efe6; text-shadow: 0 0 2px #fff, 3px 3px 0 rgba(200, 16, 46, 0.9), 0 0 34px rgba(200, 16, 46, 0.55); animation: tema-caida-latido 1.1s ease-in-out infinite, sh-entrar 0.5s ease-out both; }
+@keyframes tema-caida-latido { 0%, 100% { text-shadow: 0 0 2px #fff, 3px 3px 0 rgba(200, 16, 46, 0.9), 0 0 22px rgba(200, 16, 46, 0.35); transform: scale(1); } 14% { text-shadow: 0 0 2px #fff, 3px 3px 0 rgba(200, 16, 46, 1), 0 0 48px rgba(200, 16, 46, 0.85); transform: scale(1.04); } 28% { transform: scale(1); } 42% { text-shadow: 0 0 2px #fff, 3px 3px 0 rgba(200, 16, 46, 1), 0 0 40px rgba(200, 16, 46, 0.7); transform: scale(1.025); } }
+.tema-caida-frase { font-size: 1.05rem; opacity: 0.9; margin-top: 8px; animation: sh-entrar 0.6s ease-out 0.3s both; }
+.tema-caida-round { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: clamp(2.2rem, 11vw, 3.6rem); letter-spacing: 0.08em; line-height: 1.05; color: #fff; text-shadow: 0 0 18px rgba(200, 16, 46, 0.5); animation: sh-entrar 0.6s ease-out 0.5s both; }
+.tema-caida-precio { font-size: 0.78rem; color: rgba(200, 90, 96, 0.85); animation: sh-entrar 0.6s ease-out 0.7s both; }
+.tema-caida-boton { margin-top: 18px; padding: 10px 28px; border-radius: 10px; border: 1.5px solid rgba(243, 239, 230, 0.8); background: rgba(0, 0, 0, 0.35); color: #f3efe6; font: inherit; font-weight: 700; cursor: pointer; animation: sh-entrar 0.6s ease-out 0.9s both; }
+.tema-caida-saltar { position: absolute; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom)); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(243, 239, 230, 0.35); background: rgba(0, 0, 0, 0.3); color: rgba(243, 239, 230, 0.75); font: inherit; font-size: 0.75rem; cursor: pointer; }
+.tema-caida.quieta *, .tema-caida.quieta { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { :root:not(.movimiento-siempre) .tema-caida * { animation: none !important; } }
+
+/* Tumba rota: marca de una caída (Calendario, Progreso, batallas) */
+.tema-tumba-rota { display: inline-block; vertical-align: -2px; overflow: visible; }
+.tema-tumba-piedra { fill: rgba(var(--papel-rgb), 0.16); stroke: rgba(var(--papel-rgb), 0.6); stroke-width: 1.2; stroke-linejoin: round; }
+.tema-tumba-grieta { fill: none; stroke: rgba(200, 16, 46, 0.85); stroke-width: 0.9; stroke-linejoin: round; }
+.tema-tumba-suelo { stroke: rgba(var(--papel-rgb), 0.45); stroke-width: 1.2; stroke-linecap: round; }
+.tema-chip-batalla[data-chip='caida'] { border-color: rgba(var(--papel-rgb), 0.3); color: var(--texto-2); }
+.tema-chip-batalla[data-chip='caida'] .tema-chip-k { color: rgba(var(--papel-rgb), 0.7); }

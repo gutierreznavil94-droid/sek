@@ -8,6 +8,8 @@ import { formatoHora } from '../domain/fechas'
 import { distraccionesDe, nombreDistraccion, registroBatallas, type ChipBatalla, type EstadoChipBatalla } from '../services/ninjas'
 import { iconoTema } from '../temas/temas'
 import { useDatos } from './estado'
+import { caidasDelDia } from '../services/caidas'
+import type { Caida } from '../data/tipos'
 
 /** Último uso de 3·2·1 o Siguiente acción hoy (lo anotan esas pantallas al empezar). */
 function ultimaAccion(hoy: string): number {
@@ -27,9 +29,12 @@ const ICONO: Record<EstadoChipBatalla, [string, string]> = {
 export function ChipsBatallas({ hoy, ajustes, unidad, hechas, tope }: { hoy: string; ajustes: Ajustes; unidad: string; hechas?: number; tope?: number }) {
   const contador = ajustes.batalla?.contadorId ?? 'flexiones'
   const datos = useDatos(() => registroBatallas(hoy, contador, ultimaAccion(hoy)), [hoy, contador])
+  const caidas = useDatos(() => caidasDelDia(hoy), [hoy])
   const [abierto, setAbierto] = useState<number | null>(null)
+  const [caidaAbierta, setCaidaAbierta] = useState<string | null>(null)
   const chips = datos.datos ?? []
-  if (!chips.length && !hechas) return null
+  const listaCaidas: Caida[] = caidas.datos ?? []
+  if (!chips.length && !hechas && !listaCaidas.length) return null
   const nombre = (id: string) => nombreDistraccion(distraccionesDe(ajustes), id)
   const detalle = (c: ChipBatalla): string => {
     const hora = formatoHora(c.pelea.instante, ajustes.zonaHoraria)
@@ -41,21 +46,30 @@ export function ChipsBatallas({ hoy, ajustes, unidad, hechas, tope }: { hoy: str
     return c.estado === 'vencido' ? `Venciste: ${partes.join(' · ')}` : `En duda: ${partes.join(' · ')}`
   }
   const sel = abierto !== null ? chips[abierto] : null
+  const selCaida = listaCaidas.find((c) => c.id === caidaAbierta) ?? null
+  const detalleCaida = (c: Caida) => `${formatoHora(c.instante, ajustes.zonaHoraria)} · caída${c.origen === 'tension' ? ' en Tensión' : ''}${c.xp > 0 ? ` · −${c.xp} XP` : ''} · nuevo round, seguiste`
   return (
     <div className="chips-batallas">
       <div className="chips-batallas-fila" role="list" aria-label="Batallas de hoy">
         {chips.map((c, i) => {
           const [nombreIcono, defecto] = ICONO[c.estado]
           return (
-            <button key={c.pelea.id ?? i} type="button" role="listitem" className={`tema-chip-batalla ${abierto === i ? 'abierto' : ''}`} data-chip={c.estado} onClick={() => setAbierto(abierto === i ? null : i)} aria-label={detalle(c)}>
+            <button key={c.pelea.id ?? i} type="button" role="listitem" className={`tema-chip-batalla ${abierto === i ? 'abierto' : ''}`} data-chip={c.estado} onClick={() => { setCaidaAbierta(null); setAbierto(abierto === i ? null : i) }} aria-label={detalle(c)}>
               <span className="tema-chip-k" aria-hidden>{iconoTema(nombreIcono) || defecto}</span>
               <span className="tema-chip-t">{c.estado === 'robo' ? `−${c.pelea.robo ?? 0} XP` : nombre(c.pelea.distraccion)}</span>
             </button>
           )
         })}
+        {listaCaidas.map((c) => (
+          <button key={c.id} type="button" role="listitem" className={`tema-chip-batalla ${caidaAbierta === c.id ? 'abierto' : ''}`} data-chip="caida" onClick={() => { setAbierto(null); setCaidaAbierta(caidaAbierta === c.id ? null : c.id) }} aria-label={detalleCaida(c)}>
+            <span className="tema-chip-k" aria-hidden>{iconoTema('icono-caida') || '墓'}</span>
+            <span className="tema-chip-t">caída</span>
+          </button>
+        ))}
         {hechas !== undefined && hechas > 0 && <span className="chips-batallas-cuenta muy-chico texto-3">{hechas}/{tope} batallas</span>}
       </div>
       {sel && <div className="chips-batallas-globo muy-chico" role="status">{detalle(sel)}</div>}
+      {selCaida && <div className="chips-batallas-globo muy-chico" role="status">{detalleCaida(selCaida)}</div>}
     </div>
   )
 }
