@@ -12,6 +12,7 @@ import { datosConsejo, elegirConsejo, estadoCompanero, fraseSuelta, frasesCompan
 import { anotarVista, cambioVisibilidad } from '../services/ninjas'
 import { temaActivo } from '../temas/temas'
 import { useAnimacionActual } from './animaciones/motor'
+import { useRivalActivo } from './Rival'
 import { HOJA_BASE, apoyoEn, arcoSalto, caida, clipPara, duracionDe, elegirMovimiento, escalonCercano, SALTO, type Escalon, type Hoja, type Movimiento } from './companero/rutina'
 import { movimientoReducido } from './componentes'
 import { useDatos, useTic, useVersion } from './estado'
@@ -36,6 +37,7 @@ export function Companero({ hoy }: { hoy: string }) {
   const version = useVersion()
   const ajustes = useDatos(() => obtenerAjustes(), [version])
   const anim = useAnimacionActual()
+  const rivalActivo = useRivalActivo()
   const tic = useTic(60_000)
   const reducido = movimientoReducido()
   const [globo, setGlobo] = useState<Globo | null>(null)
@@ -76,7 +78,8 @@ export function Companero({ hoy }: { hoy: string }) {
   const lugar = lugarDe(pathname)
   // Después de «Dejo celu» (Hoy lo anota) el compañero no se pasea: duerme en su cama en una esquina.
   const dormido = companeroDormido()
-  const visible = modo !== 'apagado' && lugar !== null && !dormido
+  // Con el rival escurridizo en pantalla, el shinobi que se ve es el que persigue (Rival.tsx).
+  const visible = modo !== 'apagado' && lugar !== null && !dormido && !rivalActivo
   const pasea = visible && lugar === 'pasea' && modo === 'pasea' && !reducido && !hablando && !anim
 
   // Habla solo: al abrir (una vez por día) y cuando se dispara un consejo. Nunca con una animación en pantalla.

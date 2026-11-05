@@ -303,6 +303,8 @@ export type Ajustes = {
   batalla?: ConfigBatalla
   /** Cinemática «Tensión»: kanji y frase del final. */
   tension?: ConfigTension
+  /** Rival escurridizo: modo y XP que roba. */
+  rival?: ConfigRival
   /** Recordatorio tenue en Hoy para alistarse a dormir: cuántos minutos antes de «Dejo celu» (30 si falta). */
   minutosAvisoDormir?: number
   /** Frases del recordatorio, rotan una por noche. Si falta, las tres de la app. */
@@ -723,10 +725,12 @@ export type MomentoNinja = 'pilar' | 'noche' | 'duda' | 'juego' | 'batalla'
 export type Distraccion = { id: string; nombre: string; momento?: MomentoNinja | 'cualquiera' }
 
 /** Una pelea con un ninja de la distracción: vencido (tocó «Empezar») o se escapó. Sin XP. */
-export type PeleaNinja = { id?: number; fecha: FechaDia; distraccion: string; momento: MomentoNinja; resultado: 'vencido' | 'escapo'; pilar?: string; instante: number; /** Batalla: reps hechas (la serie que se anotó en el contador). */ reps?: number }
+export type PeleaNinja = { id?: number; fecha: FechaDia; distraccion: string; momento: MomentoNinja; resultado: 'vencido' | 'escapo'; pilar?: string; instante: number; /** Batalla: reps hechas (la serie que se anotó en el contador). */ reps?: number; /** Rival escurridizo ignorado: XP que se llevó. */ robo?: number }
 
 /** Batalla contra la distracción (minijuego de flexiones). Todo editable en Más → Ver animaciones. */
 export type ConfigBatalla = { /** Sí si falta. */ activa?: boolean; /** Contador de reps que se usa (flexiones si falta). */ contadorId?: string; /** Reps por toque (5 si falta). */ repsPorToque?: number }
 
 /** Cinemática «Tensión»: kanji y frase del final (editables en Más → Ver animaciones). */
 export type ConfigTension = { kanji?: string; frase?: string }
+/** Rival escurridizo: cómo aparece una distracción y cuánto XP roba si se lo ignora. */
+export type ConfigRival = { /** «escurridizo» (muñequito en Hoy, se lo atrapa) o «carta» (la carta directa). Escurridizo si falta. */ modo?: 'escurridizo' | 'carta'; /** XP que roba si se lo ignora (10 si falta, 0 a 30). */ xpRobo?: number }

@@ -11,6 +11,8 @@ import { NOMBRE_MOMENTO, distraccionesDe, guardarDistracciones, nuevaDistraccion
 import { pedirPelea } from '../Ninja'
 import { Tajo } from '../Tajo'
 import { pedirBatalla } from '../Batalla'
+import { pedirRival } from '../Rival'
+import { XP_ROBO_MAX, modoRival, xpRoboDe } from '../../services/rival'
 import { FRASE_TENSION, KANJI_TENSION, pedirTension, useClipsTension } from '../Tension'
 import { REPS_POR_TOQUE, TOPE_BATALLAS_DIA, objetivoBatalla, prepararBatalla } from '../../services/batalla'
 import { listarContadores } from '../../services/contadores'
@@ -156,6 +158,23 @@ export function VerAnimaciones() {
         </div>
         {tajo && <Tajo onFin={() => setTajo(false)} />}
         <p className="ayuda">Un ninja gris con el nombre de la distracción; el shinobi lo bloquea y queda una frase con «Empezar» / «Ahora no» / «⚔ Batalla». Sin XP por la pelea. Máximo 2 por día solos. El tajo aparece solo al volver a la app después de 3 h con un pilar pendiente; acá lo ves cuando quieras.</p>
+      </Tarjeta>
+
+      <Tarjeta>
+        <h2>El rival escurridizo</h2>
+        <div className="campo">
+          <label>Cuando aparece una distracción</label>
+          <select value={modoRival(a)} onChange={(e) => guardar({ rival: { ...a.rival, modo: e.target.value as 'escurridizo' | 'carta' } }, e.target.value === 'carta' ? 'Carta directa' : 'Rival escurridizo')}>
+            <option value="escurridizo">Rival escurridizo (atraparlo en Hoy)</option>
+            <option value="carta">Carta directa</option>
+          </select>
+        </div>
+        <div className="campo">
+          <label>XP que roba si lo ignorás (0 a {XP_ROBO_MAX})</label>
+          <input type="number" inputMode="numeric" min={0} max={XP_ROBO_MAX} value={xpRoboDe(a)} onChange={(e) => { const v = Number(e.target.value); if (!Number.isNaN(v)) guardar({ rival: { ...a.rival, xpRobo: Math.max(0, Math.min(XP_ROBO_MAX, Math.round(v))) } }, `Roba ${Math.max(0, Math.min(XP_ROBO_MAX, Math.round(v)))} XP`) }} style={{ width: 90 }} />
+        </div>
+        <button className="boton ancho" onClick={() => { const l = distraccionesDe(a); if (!l.length) return avisar('Agregá una distracción primero'); const r = l[Math.floor(Math.random() * l.length)]; if (!pedirRival({ fecha: fechaDe(ahora(), a.zonaHoraria), distraccion: r, momento: { momento: 'duda' } })) avisar('Ya hay un rival en pantalla'); else avisar(`${r.nombre} anda por Hoy`, { tipo: 'bajo' }) }}>Probar rival (aparece en Hoy)</button>
+        <p className="ayuda">Un muñeco gris con el nombre de la distracción se pasea por abajo de Hoy, sin tapar nada. Tocalo: el shinobi corre y salta; la mitad de las veces lo atrapa al primer toque, a veces se escabulle una o dos veces. Al atraparlo arranca la batalla. Si lo dejás 60 s (o cerrás la app con él en pantalla), avisa rompiendo la pantalla, con 10 s para atraparlo; si no, te roba esa XP (nunca te baja de nivel) y queda el sello «se llevó N XP». Es la única penalización de la app: por eso es chica y editable.</p>
       </Tarjeta>
 
       <Tarjeta titulo="Batalla contra la distracción">

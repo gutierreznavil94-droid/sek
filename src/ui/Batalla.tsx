@@ -22,6 +22,10 @@ export function pedirBatalla(b: Batalla): boolean {
   return true
 }
 export function hayBatalla(): boolean { return pendiente !== null }
+/** Para pruebas y para quien quiera saber contra quién es. */
+export function batallaEnCurso(): Batalla | null { return pendiente }
+/** Saca la batalla de pantalla sin anotar nada (pruebas). */
+export function descartarBatalla(): void { pendiente = null; avisarOyentes() }
 function useBatalla(): Batalla | null {
   return useSyncExternalStore((o) => { oyentes.add(o); return () => oyentes.delete(o) }, () => pendiente, () => pendiente)
 }

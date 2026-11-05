@@ -120,8 +120,8 @@ export async function prepararPelea(fecha: FechaDia, momento: MomentoActivo, aza
 }
 
 /** Sello del día: vencido («Empezar») o se escapó («Ahora no»). */
-export async function registrarPelea(p: Pelea, resultado: PeleaNinja['resultado'], extra: { reps?: number } = {}): Promise<PeleaNinja> {
-  const x: PeleaNinja = { fecha: p.fecha, distraccion: p.distraccion.id, momento: p.momento.momento, resultado, pilar: p.momento.pilar?.id, instante: ahora(), ...(extra.reps ? { reps: extra.reps } : {}) }
+export async function registrarPelea(p: Pelea, resultado: PeleaNinja['resultado'], extra: { reps?: number; robo?: number } = {}): Promise<PeleaNinja> {
+  const x: PeleaNinja = { fecha: p.fecha, distraccion: p.distraccion.id, momento: p.momento.momento, resultado, pilar: p.momento.pilar?.id, instante: ahora(), ...(extra.reps ? { reps: extra.reps } : {}), ...(extra.robo ? { robo: extra.robo } : {}) }
   x.id = await db().ninjas.add(x) as number
   return x
 }

@@ -9,8 +9,10 @@ import { NOMBRES_FASES_INICIALES } from '../../data/semilla'
 import { TarjetaComida } from './Comida'
 import { TarjetaAgua } from './Agua'
 import { cerrarAvisoDormir, minutosAvisoDormir, mostrarAvisoDormir } from '../../services/dormir'
-import { debeMostrarTajo, marcarTajo, momentoActivo, peleasDelDia, prepararPelea, tajoMostradoHoy, vistaAnterior } from '../../services/ninjas'
+import { debeMostrarTajo, distraccionesDe, marcarTajo, momentoActivo, nombreDistraccion, peleasDelDia, prepararPelea, tajoMostradoHoy, vistaAnterior, type Pelea } from '../../services/ninjas'
 import { hayPelea, pedirPelea } from '../Ninja'
+import { hayRival, pedirRival } from '../Rival'
+import { modoRival, selloRobo } from '../../services/rival'
 import { Tajo } from '../Tajo'
 import { LineaDelDia } from './MiHorario'
 import { finDeObligatorio } from '../../services/horario'
@@ -219,7 +221,7 @@ export function Hoy({ hoy }: { hoy: string }) {
     }
   }, [hoy, d])
   useEffect(() => {
-    if (!d || d.antes || hayPelea()) return
+    if (!d || d.antes || hayPelea() || hayRival()) return
     const pendientes = d.pilares.pilares.filter((p) => p.estado === 'pendiente').map((p) => ({ id: p.accion.id, nombre: p.accion.nombre, horaLimite: p.accion.tipo === 'entrenamiento' ? p.accion.horaLimiteInicio ?? p.horaLimite : p.horaLimite, entreno: p.accion.tipo === 'entrenamiento' }))
     const instDejar = instanteDe(d.nocheAbierta, d.ajustes.horaDejarCelu, d.ajustes.zonaHoraria)
     const pl = partesLocales(tic, d.ajustes.zonaHoraria)
@@ -228,7 +230,7 @@ export function Hoy({ hoy }: { hoy: string }) {
     const clave = `${hoy}:${m.momento}`
     if (intentoNinja.current === clave) return
     intentoNinja.current = clave
-    void prepararPelea(hoy, m).then((p) => { if (p) pedirPelea(p) })
+    void prepararPelea(hoy, m).then((p) => { if (p) lanzarDistraccion(p, modoRival(d.ajustes)) })
   }, [tic, hoy, d])
 
   if (!d) return <p className="vacio">{panel.error ?? 'Cargando…'}</p>
@@ -279,11 +281,12 @@ export function Hoy({ hoy }: { hoy: string }) {
     const m = { momento: 'duda' as const, pilar: pendientesConHora[0] }
     const p = await prepararPelea(hoy, m)
     if (!p) return avisar(ajustes.ninjas === false ? 'Los ninjas están apagados (Más → Ver animaciones).' : 'Sin distracciones en la lista (Más → Ver animaciones → Mis distracciones).')
-    pedirPelea(p)
+    lanzarDistraccion(p, modoRival(ajustes))
   }
-  // «Dudo»: arranca la batalla (minijuego de flexiones). Si la batalla está apagada, la pelea corta de antes.
+  // «Dudo»: con el rival escurridizo, aparece el muñeco (atraparlo lleva a la batalla). Con la carta directa, la batalla
+  // (minijuego de flexiones); si la batalla está apagada, la pelea corta de antes.
   const batallar = async () => {
-    if (ajustes.batalla?.activa === false) return dudar()
+    if (modoRival(ajustes) === 'escurridizo' || ajustes.batalla?.activa === false) return dudar()
     const r = await prepararBatalla(hoy)
     if (r.batalla) pedirBatalla(r.batalla)
     else avisar(r.motivo)
@@ -461,7 +464,7 @@ export function Hoy({ hoy }: { hoy: string }) {
         </div>
         {ajustes.ninjas !== false && (d.peleas.length > 0 || (batallas && batallas.hechas > 0)) && (
           <div className="fila entre ninja-fila">
-            <span className="muy-chico texto-3">{resumenPeleas(d.peleas, d.contadores.find((c) => c.contador.id === (ajustes.batalla?.contadorId ?? 'flexiones'))?.contador.nombre.toLowerCase() ?? 'flexiones')}</span>
+            <span className="muy-chico texto-3">{resumenPeleas(d.peleas, d.contadores.find((c) => c.contador.id === (ajustes.batalla?.contadorId ?? 'flexiones'))?.contador.nombre.toLowerCase() ?? 'flexiones', (id) => nombreDistraccion(distraccionesDe(ajustes), id))}</span>
             {batallas && batallas.hechas > 0 && <span className="muy-chico texto-3" style={{ whiteSpace: 'nowrap' }}>Batallas hoy: {batallas.hechas} de {batallas.tope}</span>}
           </div>
         )}
@@ -582,14 +585,22 @@ function BotonContador({ r, destello, onToque, onDeshacer }: { r: ResumenContado
   )
 }
 
-/** Una sola línea chica: la última batalla ganada con sus reps, y cuántos se escaparon. */
-function resumenPeleas(peleas: { resultado: 'vencido' | 'escapo'; reps?: number }[], unidad: string): string {
+/** Según el ajuste: el rival escurridizo en Hoy (atraparlo → batalla) o la carta directa de antes. */
+function lanzarDistraccion(p: Pelea, modo: 'escurridizo' | 'carta'): void {
+  if (modo === 'escurridizo') pedirRival(p)
+  else pedirPelea(p)
+}
+
+/** Una sola línea chica: la última batalla ganada con sus reps, cuántos se escaparon y si alguno se llevó XP. */
+function resumenPeleas(peleas: { resultado: 'vencido' | 'escapo'; reps?: number; robo?: number; distraccion: string }[], unidad: string, nombre: (id: string) => string = (id) => id): string {
   const vencidos = peleas.filter((p) => p.resultado === 'vencido')
-  const escapados = peleas.length - vencidos.length
+  const robos = peleas.filter((p) => p.robo)
+  const escapados = peleas.length - vencidos.length - robos.length
   const conReps = [...vencidos].reverse().find((p) => p.reps)
   const partes: string[] = []
   if (vencidos.length) partes.push(conReps ? `${vencidos.length === 1 ? 'Venciste' : `${vencidos.length} vencidos, el último`} con ${conReps.reps} ${unidad}` : `${vencidos.length} ninja${vencidos.length === 1 ? '' : 's'} vencido${vencidos.length === 1 ? '' : 's'}`)
   if (escapados) partes.push(`${escapados} se escap${escapados === 1 ? 'ó' : 'aron'} hoy`)
+  for (const r of robos) partes.push(selloRobo(nombre(r.distraccion), r))
   return partes.join(' · ')
 }
 
