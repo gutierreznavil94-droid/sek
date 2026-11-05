@@ -1,5 +1,6 @@
 import { useEffect, useRef, type RefObject } from 'react'
 import { movimientoReducido } from './componentes'
+import { PapelMojado } from '../temas/PapelMojado'
 import { obtenerAjustes } from '../services/base'
 import { sonarToc } from './animaciones/motor'
 
@@ -259,7 +260,8 @@ export function Desintegracion({ cabecera, texto, conHorario = false }: { cabece
       const mascara = `linear-gradient(100deg, transparent ${frente.toFixed(1)}%, #000 ${(frente + 18).toFixed(1)}%)`
       cab.style.setProperty('-webkit-mask-image', mascara)
       cab.style.setProperty('mask-image', mascara)
-      if (t > 0.6) cab.style.opacity = '0'
+      // Además del frente, la cabecera se apaga rápido: no quedan pestañas ni papel asomando entre las tarjetas
+      cab.style.opacity = String(Math.max(0, 1 - suave(t / 0.45)).toFixed(3))
       if (t > 0.45 && mi.style.opacity !== '1') mostrarMini(true)
       // La barra aterriza arriba mientras la cabecera termina de irse (el polvo, en el lienzo, pasa por delante)
       if (t > 0.5 && !barraFija) ponerBarra(true, true)
@@ -364,7 +366,8 @@ export function Desintegracion({ cabecera, texto, conHorario = false }: { cabece
       const s = Math.max(0, window.scrollY)
       // Mientras se deshace, la cabecera queda quieta en pantalla (aunque se baje de golpe), para que se vea entera la animación
       if (estado === 'animando') cab.style.transform = `translate3d(0, ${(fijo - arriba + s).toFixed(1)}px, 0)`
-      else cab.style.transform = s > 0 ? `translate3d(0, ${(s * 0.35).toFixed(1)}px, 0)` : ''
+      // Sin parallax: la cabecera sube con la página (si se quedaba atrás, asomaba entre las tarjetas)
+      else cab.style.transform = ''
       if (estado === 'armada' || estado === 'rearmando') ponerBarra(false)
       else if (estado === 'ausente') ponerBarra(true)
       const antes = estado
@@ -408,12 +411,15 @@ export function Desintegracion({ cabecera, texto, conHorario = false }: { cabece
       <div ref={mini} className="dia-mini" aria-hidden="true">{texto}</div>
       {conHorario && (
         <div ref={barra} className="barra-horario-fija">
+          <PapelMojado />
           <div className="barra-horario-int">
             <span className="barra-dia" aria-hidden="true">{texto}</span>
             <div id="barra-horario-slot" className="barra-horario-slot" />
           </div>
-          <svg className="barra-pincel" viewBox="0 0 400 8" preserveAspectRatio="none" aria-hidden="true">
+          <svg className="barra-pincel" viewBox="0 0 400 12" preserveAspectRatio="none" aria-hidden="true">
             <path d="M0,2.5 C40,1.5 70,4 120,3 C170,2 210,4.6 260,3.4 C310,2.2 350,4.2 400,2.8 L400,5.2 C350,6.6 300,5 250,6 C200,7 150,4.8 100,5.8 C60,6.4 30,5 0,5.6 Z" />
+            {/* Tinta corrida (papel mojado): un borde irregular con chorreaduras cortas */}
+            <path className="barra-corrida" d="M0,5.6 C30,5 60,6.4 100,5.8 C150,4.8 200,7 250,6 C300,5 350,6.6 400,5.2 L400,6.6 C380,7.4 372,7 366,7.6 C364,10 362,10.6 361,8 C340,8.2 320,7.2 290,7.8 C276,8 270,7.6 262,8.4 C261,11.4 258,11.6 257,8.6 C230,8.8 200,8.2 170,7.6 C150,7.4 132,8.6 120,8 C118,10.2 116,10.4 115,8 C80,7.6 60,8.2 40,7.4 C34,7.4 30,7.8 26,8.2 C25,11 22,11.2 22,8 C14,7.6 6,7.2 0,7 Z" />
           </svg>
         </div>
       )}

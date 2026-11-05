@@ -17,6 +17,7 @@ import type { FechaClave } from '../../data/tipos'
 import { Confirmar } from '../componentes'
 import { bloquesEntre } from '../../services/horario'
 import { HorarioDelDia } from './MiHorario'
+import { iconoTema } from '../../temas/temas'
 
 function primerDiaMes(fecha: string): string {
   return fecha.slice(0, 8) + '01'
@@ -88,12 +89,13 @@ export function Calendario({ hoy }: { hoy: string }) {
             return (
               <div
                 key={f}
-                className={`cal-dia ${!enCiclo ? 'fuera' : ''} ${f === hoy ? 'hoy' : ''} ${sel === f ? 'seleccionado' : ''} ${d?.excepciones.has(f) ? 'excepcion' : ''} ${d?.feriados.has(f) ? 'feriado' : ''} ${inicioFase ? 'fase-inicio' : ''} ${f <= hoy && puntos.length > 0 && puntos.every((p) => p.estado === 'cumplido' || p.estado === 'descanso') && puntos.some((p) => p.estado === 'cumplido') ? 'completo' : ''}`}
+                className={`cal-dia ${!enCiclo ? 'fuera' : ''} ${f === hoy ? 'hoy tema-remarque-hoy' : ''} ${sel === f ? 'seleccionado' : ''} ${d?.excepciones.has(f) ? 'excepcion' : ''} ${d?.feriados.has(f) ? 'feriado' : ''} ${inicioFase ? 'fase-inicio' : ''} ${f <= hoy && puntos.length > 0 && puntos.every((p) => p.estado === 'cumplido' || p.estado === 'descanso') && puntos.some((p) => p.estado === 'cumplido') ? 'completo' : ''}`}
                 onClick={() => { setSel(sel === f ? null : f); setEnfocar(sel !== f) }}
                 role="button"
                 aria-label={`${fechaLegible(f, false)}${enCiclo ? `, día ${dia}` : ''}${claves.length ? `, fecha clave: ${claves.map((c) => c.titulo).join(', ')}` : ''}`}
               >
                 <span className="num">{Number(f.slice(8))}</span>
+                {f === hoy && <span className="tema-icono-hoy" aria-hidden>{iconoTema('icono-hoy')}</span>}
                 {claves.length > 0 && <span className="sello-clave" aria-hidden>印</span>}
                 {puntos.length > 0 && (
                   <span className="puntos" aria-hidden>

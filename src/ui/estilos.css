@@ -2386,3 +2386,5 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .cal-dia .franjas i.otro, .franjas.muestra i.otro { background: rgba(var(--papel-rgb), 0.18); }
 .cal-ver-horario { gap: 8px; align-items: center; margin-top: 2px; }
 .contenido.entreno .fondo-lluvia { z-index: -1; }
+/* v0.49: el polvo y los pájaros del encabezado pasan por detrás de las tarjetas (contenido z 3) */
+.motas-tinta { z-index: 2; }

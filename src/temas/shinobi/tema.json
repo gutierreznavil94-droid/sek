@@ -25,5 +25,6 @@
     "Un día más en el camino. Seguimos.",
     "La montaña se sube con pasos chicos."
   ],
+  "iconos": { "icono-hoy": "今" },
   "orden": 1
 }

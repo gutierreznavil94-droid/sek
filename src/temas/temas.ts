@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import proximamente from './proximamente.json'
+import './shinobi/visual.css'
 
 /**
  * Temas: la cara de la app (personaje, fondos, sprite, color de acento, kanjis).
@@ -36,6 +37,8 @@ export interface DefinicionTema {
   recomendaciones?: { formulario: string; campos: { texto: string; parte: string; contacto: string; app: string } }
   /** Frases sueltas del compañero (cortas, alentadoras). Editables desde Ajustes. */
   frases?: string[]
+  /** Íconos por nombre genérico («icono-hoy» → «今»). Lo que falte lo toma de Shinobi. */
+  iconos?: Record<string, string>
 }
 
 export interface TemaProximo { id: string; nombre: string; pista: string }
@@ -100,6 +103,11 @@ export function rutaTema(archivo: string, tema: DefinicionTema = activo): string
 /** Texto del saludo con el personaje y el nombre de la persona. */
 export function saludoDe(tema: DefinicionTema, nombre: string): string {
   return tema.saludo.replace(/\{personaje\}/g, tema.personaje).replace(/\{nombre\}/g, nombre)
+}
+
+/** Ícono del tema activo por nombre genérico (texto o kanji). Si el tema no lo tiene, el de Shinobi; si tampoco, vacío. */
+export function iconoTema(nombre: string, tema: DefinicionTema = activo): string {
+  return tema.iconos?.[nombre] ?? base.iconos?.[nombre] ?? ''
 }
 
 export function useTema(): DefinicionTema {

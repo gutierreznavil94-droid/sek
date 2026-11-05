@@ -1,0 +1,18 @@
+/* Visual del tema Shinobi pedido por nombre genérico (la app solo pone las clases tema-*). */
+
+/* ----- Calendario: remarque del día de hoy (borde a pincel que brilla y late, como luz de farol) ----- */
+.cal-dia.tema-remarque-hoy { border-color: transparent !important; box-shadow: none !important; overflow: visible; }
+.cal-dia.tema-remarque-hoy::before { content: '' !important; position: absolute; inset: -1px !important; border: 1.6px solid rgba(var(--papel-rgb), 0.85) !important; border-radius: 9px 12px 8px 13px / 12px 8px 13px 9px !important; transform: none !important; pointer-events: none; box-shadow: 0 0 6px 1px rgba(var(--papel-rgb), 0.35), inset 0 0 7px rgba(var(--papel-rgb), 0.18); animation: tema-farol 3s ease-in-out infinite; }
+@keyframes tema-farol { 0%, 100% { box-shadow: 0 0 5px 0 rgba(var(--papel-rgb), 0.28), inset 0 0 6px rgba(var(--papel-rgb), 0.14); } 50% { box-shadow: 0 0 11px 2px rgba(var(--papel-rgb), 0.5), inset 0 0 9px rgba(var(--papel-rgb), 0.24); } }
+.cal-dia.tema-remarque-hoy .franjas { right: 32%; }
+.tema-icono-hoy { position: absolute; top: 1px; right: 2px; font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 0.62rem; line-height: 1; font-weight: 700; color: rgba(var(--acento-rgb, 200, 16, 46), 0.82); text-shadow: 0 0 4px rgba(var(--acento-rgb, 200, 16, 46), 0.35); pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .cal-dia.tema-remarque-hoy::before { animation: none; box-shadow: 0 0 8px 1px rgba(var(--papel-rgb), 0.4), inset 0 0 7px rgba(var(--papel-rgb), 0.18); } }
+
+/* ----- Hoy: la barra del horario fija, papel blanco mojado por la lluvia ----- */
+.tema-papel-mojado { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; display: none; }
+.barra-horario-fija.fija .tema-papel-mojado { display: block; }
+.barra-horario-fija.fija { background: rgba(226, 218, 203, 0.9) !important; -webkit-backdrop-filter: blur(6px) saturate(0.6); backdrop-filter: blur(6px) saturate(0.6); }
+.barra-horario-fija.fija .barra-pincel path { fill: rgba(226, 218, 203, 0.9); }
+.barra-horario-fija.fija .barra-pincel path.barra-corrida { fill: rgba(20, 20, 20, 0.62); }
+.barra-pincel path.barra-corrida { fill: none; }
+.barra-horario-fija.fija .barra-pincel { height: 14px; bottom: -13px; }
