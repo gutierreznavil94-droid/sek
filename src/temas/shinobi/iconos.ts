@@ -1,0 +1,32 @@
+/**
+ * Íconos shinobi en SVG, por nombre genérico (los pide Organización y cualquier pantalla nueva).
+ * Cada valor es el contenido de un <svg viewBox="0 0 24 24"> con trazo en `currentColor`.
+ * Los huecos usan `var(--ico-hueco)`, que pone quien muestra el ícono (el color del fondo).
+ */
+const H = 'var(--ico-hueco, #121110)'
+
+export const iconosShinobi: Record<string, string> = {
+  // Importancia: ■ sello hanko, ▲ kasa, ● shuriken
+  'icono-importancia-alta': `<rect x="4" y="4" width="16" height="16" rx="2.5" fill="currentColor" stroke="none" transform="rotate(-6 12 12)"/><path d="M8.5 9.5h7M12 7.5v9M8.5 14.5h7" stroke="${H}" stroke-width="1.6" transform="rotate(-6 12 12)"/>`,
+  'icono-importancia-media': '<path d="M12 4.5 2.5 17h19z" fill="currentColor" stroke="none"/><path d="M1.5 18h21" stroke-width="2"/><circle cx="12" cy="4" r="1.3" fill="currentColor" stroke="none"/>',
+  'icono-importancia-baja': `<path d="M12 1.5 14.6 9.4 22.5 12 14.6 14.6 12 22.5 9.4 14.6 1.5 12 9.4 9.4z" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="2" fill="${H}" stroke="none"/>`,
+  // Rapidez: kunai (rápida), makimono (lleva tiempo)
+  'icono-rapida': '<path d="M21.5 2.5 10 11l3 3z" fill="currentColor" stroke="none"/><path d="M11 13 5.5 18.5" stroke-width="2.2"/><circle cx="4" cy="20" r="1.8"/><path d="M15 20h5M17 17h4" stroke-width="1.4" opacity=".7"/>',
+  'icono-lenta': '<rect x="3" y="4.5" width="3.4" height="15" rx="1.7" fill="currentColor" stroke="none"/><rect x="17.6" y="4.5" width="3.4" height="15" rx="1.7" fill="currentColor" stroke="none"/><path d="M6.5 6.5h11v11h-11z"/><path d="M9 10h6M9 13.5h4" stroke-width="1.4"/>',
+  // Dónde
+  'icono-celu': '<rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M10.5 18.5h3"/>',
+  'icono-compu': '<rect x="4" y="4.5" width="16" height="11" rx="1.4"/><path d="M1.5 19.5h21"/>',
+  'icono-calle': `<ellipse cx="8.5" cy="15.5" rx="2.6" ry="4.6" fill="currentColor" stroke="none"/><ellipse cx="15.5" cy="8.5" rx="2.6" ry="4.6" fill="currentColor" stroke="none"/><path d="M7.2 13.5h2.6M14.2 6.5h2.6" stroke="${H}" stroke-width="1.3"/>`,
+  'icono-sin-donde': '<circle cx="12" cy="12" r="7.5" stroke-dasharray="2 3"/>',
+  // Quién
+  'icono-yo': `<circle cx="12" cy="8.5" r="5" fill="currentColor" stroke="none"/><path d="M7.4 8.2h9.2" stroke="${H}" stroke-width="2.2"/><path d="M4 21c.8-4 4-6.5 8-6.5s7.2 2.5 8 6.5"/>`,
+  'icono-delegar': '<path d="M3.5 19c1.5-7 6.5-11 15-11.5" stroke-width="2"/><path d="M14.5 3.5 19 7.5 14.8 11.8" stroke-width="2"/><circle cx="4" cy="19.5" r="1.6" fill="currentColor" stroke="none"/>',
+  'icono-con-alguien': '<path d="M12 12c-2.2-2.6-3.8-4-6-4a4 4 0 0 0 0 8c2.2 0 3.8-1.4 6-4s3.8-4 6-4a4 4 0 0 1 0 8c-2.2 0-3.8-1.4-6-4z" stroke-width="2"/>',
+  'icono-flecha': '<path d="M3 12h16" stroke-width="2"/><path d="M14 6.5 19.5 12 14 17.5" stroke-width="2"/>',
+  // Estado y fecha
+  'icono-hecho': '<path d="M4.5 12.5 9.5 17.5 20 6.5" stroke-width="2.8"/>',
+  'icono-por-hacer': '<path d="M18.5 7.5A8 8 0 1 0 20 13.5" stroke-width="2.2" stroke-dasharray="3 2.4"/>',
+  'icono-libre': '<path d="M2.5 10.5c3.5-.5 6 1.2 8.2 4.5 1.8-4.6 5-7.6 10.8-8.5-3.4 2.4-5.4 5.6-6.4 10.2" stroke-width="1.9"/><path d="M10.7 15 9 19.5" stroke-width="1.5"/>',
+  'icono-punto': '<circle cx="12" cy="12" r="5" fill="currentColor" stroke="none"/>',
+  'icono-sueltas': '<path d="M2.5 10.5c3.5-.5 6 1.2 8.2 4.5 1.8-4.6 5-7.6 10.8-8.5-3.4 2.4-5.4 5.6-6.4 10.2" stroke-width="1.9"/><path d="M10.7 15 9 19.5" stroke-width="1.5"/>',
+}

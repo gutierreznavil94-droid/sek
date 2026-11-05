@@ -58,6 +58,7 @@ import { obtenerRevision } from '../../services/revisiones'
 import { xpDelDia, xpTotal } from '../../services/xp'
 import { Celebracion, Hoja, IconoPilar } from '../componentes'
 import { avisar, mutar, useDatos, useTic } from '../estado'
+import { TiraOrganizacion } from './Organizacion'
 
 async function cargarPanel(hoy: string) {
   const ajustes = await obtenerAjustes()
@@ -555,6 +556,9 @@ export function Hoy({ hoy }: { hoy: string }) {
           </div>
         </section>
       )}
+
+      {/* Organización: lo que me toca hoy (tareas de los frentes). */}
+      <TiraOrganizacion hoy={hoy} />
 
       {/* Juego, Entrenamiento y Calendario ya están en la barra de abajo: no se repiten acá. */}
 

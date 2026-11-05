@@ -137,7 +137,7 @@ function varianteDeRuta(p: string, apagadas: Partial<Record<VarianteLluvia, bool
     : p === '/sueno' ? 'sueno'
     : p === '/comida' || p === '/mas/comida' ? 'comida'
     : p.startsWith('/mas/rutinas') || p === '/mas/entrenamiento' ? 'entreno'
-    : p.startsWith('/mas') ? 'mas'
+    : p.startsWith('/mas') || p === '/organizacion' ? 'mas'
     : null
   return v && apagadas[v] !== false ? v : null
 }
