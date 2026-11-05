@@ -40,8 +40,17 @@
       "忍": "🎨",
       "柱": "🌸",
       "時": "⏰",
-      "志": "🌟"
-    }
+      "志": "🌟",
+      "斬": "🪄",
+      "弾": "💗",
+      "進": "🚀",
+      "描": "🎨",
+      "静": "🌙",
+      "次": "➡️",
+      "段": "🎁"
+    },
+    "animaciones": "hada",
+    "imagenAnimaciones": "temas/nay/hada.webp"
   },
   "vidrio": "claro",
   "oculto": true
