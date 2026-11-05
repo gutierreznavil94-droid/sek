@@ -80,7 +80,7 @@ export function Copia() {
       <Atras />
       <h1>Copia de seguridad</h1>
       <Tarjeta titulo="Exportar">
-        <p className="chico texto-2">Los datos viven solo en este teléfono. Si borrás los datos del navegador (Chrome → Configuración → Privacidad → Borrar datos), desinstalás la app o perdés el teléfono, se pierden. Una copia por semana alcanza.</p>
+        <p className="chico texto-2">Los datos viven solo en este teléfono. Si borrás los datos del navegador (Chrome → Configuración → Privacidad → Borrar datos), desinstalás la app o perdés el teléfono, se pierden. Una copia por semana alcanza. Lo único que sale del teléfono es lo que mandás vos desde «Recomendar algo»: va a un formulario de Google del dueño de la app.</p>
         <div className="fila entre chico"><span className="texto-2">Última copia</span><b>{ultima ? fechaLegible(fechaDe(ultima)) : 'nunca'}</b></div>
         <button className="boton primario ancho" onClick={exportar}>Exportar todo (JSON)</button>
         <button className="boton ancho" onClick={copiarTexto}>Copiar todo como texto</button>

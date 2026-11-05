@@ -19,6 +19,7 @@ import {
   estadoCronometro,
   historialTiempo,
   terminarCronometro,
+  fijarObjetivoCronometro,
   fijarPeso,
   deshacerSerie,
   faseActual,
@@ -54,11 +55,13 @@ import {
   type ResultadoTerminar,
 } from '../../services/entreno'
 import { db } from '../../data/db'
+import { obtenerAjustes } from '../../services/base'
 import { ahora } from '../../services/reloj'
 import { celebrarNivel, celebrarRecord } from '../animaciones/logros'
-import { animar } from '../animaciones/motor'
+import { animar, sonarTaiko } from '../animaciones/motor'
 import { Avisos, Confirmar, Hoja } from '../componentes'
 import { AguadaFondo, TintaPolvo } from '../TintaPolvo'
+import { FondoLluvia } from '../FondoLluvia'
 import { ShinobiBarra } from '../Shinobi'
 import { avisar, mutar, useDatos, useTic } from '../estado'
 
@@ -156,6 +159,7 @@ export function Entreno({ hoy }: { hoy: string }) {
   usePantallaDespierta(!!d?.sesion)
   return (
     <div className="app entreno-app">
+      {!d?.sesion && <LluviaEntreno />}
       <main className="contenido entreno">
         {resultado ? <Resumen r={resultado} rutina={d?.rutinas.find((x) => x.id === resultado.sesion.rutinaId)} onReabrir={async () => { await mutar(() => reabrirEntreno(resultado.sesion.id!)); setResultado(null) }} />
           : !d ? <p className="vacio">Cargando…</p>
@@ -165,6 +169,13 @@ export function Entreno({ hoy }: { hoy: string }) {
       <Avisos />
     </div>
   )
+}
+
+/** Tormenta de fondo del entreno (se calma en el descanso). Apagable en Ajustes → Fondo con lluvia. */
+function LluviaEntreno({ calma = false }: { calma?: boolean }) {
+  const a = useDatos(() => obtenerAjustes(), [])
+  if (!a.datos || a.datos.fondoLluvia?.entreno === false) return null
+  return <FondoLluvia variante="entreno" calma={calma} />
 }
 
 // ---------- Antes de empezar ----------
@@ -256,6 +267,7 @@ function EnCurso({ s, r, ctx, onTerminado }: { s: SesionEntreno; r: Rutina; ctx:
       <LineaAhora s={s} bloque={bloque} fase={fase} ctx={ctx} />
       <AguadaFondo tenue={!!(s.descanso && fase)} />
       <TintaPolvo bloque={bloque?.id ?? null} visible={!(s.descanso && fase)} tenue={!!(s.descanso && fase)} />
+      <LluviaEntreno calma={!!(s.descanso && fase)} />
 
       {s.descanso && fase ? (
         <Descanso key={s.descanso.inicio} s={s} fase={fase} r={r} ctx={ctx} />
@@ -403,19 +415,20 @@ function Ejercicio({ s, b, anterior, record }: { s: SesionEntreno; b: BloqueEjer
       <h1 className="entreno-titulo">{b.nombre}</h1>
       {b.nota && <p className="entreno-nota">«{b.nota}»</p>}
       <p className="texto-2 chico">{anterior.length ? <>La vez pasada: <b>{textoSeries(anterior)}</b></> : 'Primera vez con la app: arrancá con lo de tu planilla.'}{record && <> · <span className="entreno-record">Récord: <b>{record.reps} × {kg(record.peso)}</b></span></>}</p>
-      {primera && sug?.subirPeso && <div className="entreno-sugerencia peso"><span>▲ {sug.texto}</span><span className="chico">Si subís, poné el peso nuevo con − / + o tocando el número. El objetivo vuelve a {b.reps}.</span></div>}
+      {primera && sug?.subirPeso && <div className="entreno-sugerencia peso"><span>▲ {sug.texto}</span><span className="chico">Si subís, poné el peso nuevo con − / + o tocando el número. Lo que hagas hoy con el peso nuevo queda como tus reps actuales.</span></div>}
       <Stepper etiqueta={primera ? 'Peso de hoy' : 'Peso'} valor={peso} paso={0.5} escribible compacto={!primera} formato={(v) => (v === 0 ? 'corporal' : `${String(v).replace('.', ',')} kg`)} onCambio={cambiarPeso} marca={anterior.length ? (peso > pesoAntes ? 'mejor' : peso === pesoAntes ? 'igual' : null) : null} />
       <div className="entreno-objetivo">
         <span className="entreno-serie">Serie {Math.min(n, b.series)} de {b.series}</span>
         <span className="mono"><b>{objetivo}</b>{b.repsExtra ? (b.admiteAyuda ? <b className="entreno-ayuda"> +{b.repsExtra} ayuda</b> : <b>+{b.repsExtra}</b>) : null} reps</span>
       </div>
-      {n === 1 && sug && !sug.subirPeso && <p className="ayuda">{sug.texto}</p>}
+      {n === 1 && sug && !sug.subirPeso && <p className="ayuda">{sug.texto} Una más que las actuales ya es récord.</p>}
+      {n === 1 && anterior.length > 0 && peso !== b.peso && <p className="ayuda">Peso nuevo: tramo nuevo. Lo que hagas hoy en la serie 1 queda como tus reps actuales con {kg(peso)}.</p>}
       {n > 1 && anterior.find((x) => x.n === n) && <p className="ayuda">Objetivo de la serie {n}: lo que hiciste en la serie {n} la vez pasada. Si sale un poco menos, no resta.</p>}
       <button className="boton primario grande ancho entreno-hecha" onClick={guardar}>Serie hecha</button>
       <p className="ayuda centro">Las repeticiones las anotás en el descanso.</p>
       {hechas.length > 0 && (
         <div className="entreno-hoy chico">
-          {hechas.map((x) => <button key={x.n} className={`marca ${marcaSerie(x, anterior.find((a) => a.n === x.n)) ?? ''}`} onClick={() => setCorregir(x)}>S{x.n}: {reps(x)} × {kg(x.peso)} ✎</button>)}
+          {hechas.map((x) => <button key={x.n} className={`marca ${marcaSerie(x, anterior.find((a) => a.n === x.n)) ?? ''}`} onClick={() => setCorregir(x)}>S{x.n}: {reps(x)} × {kg(x.peso)}{x.segundos !== undefined ? <span className="texto-3"> · {x.segundos} s</span> : null} ✎</button>)}
         </div>
       )}
       {b.admiteAyuda && <p className="ayuda">Las reps con ayuda quedan en el historial y suman al volumen, pero no cuentan para el récord ni para subir peso.</p>}
@@ -483,12 +496,15 @@ function Descanso({ s, fase, r, ctx }: { s: SesionEntreno; fase: NonNullable<Ret
   // Ámbar a 10 s del final (con una vibración) y otra vibración a 3 s: para alistarse.
   const ambar = fase.totalRestante <= AVISO_FIN_DESCANSO_S && f.tipo !== 'preparar'
   const avisado = useRef<Set<string>>(new Set())
+  const ajustes = useDatos(() => obtenerAjustes(), [])
+  const conTaiko = ajustes.datos?.sonidoAviso10s !== false
   useEffect(() => {
     const k = (x: string) => `${s.descanso!.inicio}:${x}`
     if (f.tipo === 'preparar' && !avisado.current.has(k(`p${fase.restante}`))) { avisado.current.add(k(`p${fase.restante}`)); vibrar(fase.restante === 1 ? 160 : 70) }
-    if (fase.totalRestante <= AVISO_FIN_DESCANSO_S && fase.totalRestante > 3 && !avisado.current.has(k('10'))) { avisado.current.add(k('10')); vibrar(120) }
+    // A 10 s: vibra y, una sola vez, un golpe de taiko para alistarse (a 3 s y al final no suena).
+    if (fase.totalRestante <= AVISO_FIN_DESCANSO_S && fase.totalRestante > 3 && !avisado.current.has(k('10'))) { avisado.current.add(k('10')); vibrar(120); if (conTaiko) sonarTaiko() }
     if (fase.totalRestante <= 3 && fase.totalRestante > 0 && !avisado.current.has(k('3'))) { avisado.current.add(k('3')); vibrar([80, 60, 80]) }
-  }, [f.tipo, fase.restante, fase.totalRestante, s.descanso])
+  }, [f.tipo, fase.restante, fase.totalRestante, s.descanso, conTaiko])
   const despuesDeBarra = !!s.descanso!.origen
   const total = s.descanso!.fases.reduce((t, x) => t + x.segundos, 0)
   const capaParry = useCapaParry(f.tipo === 'preparar')
@@ -521,7 +537,7 @@ function Descanso({ s, fase, r, ctx }: { s: SesionEntreno; fase: NonNullable<Ret
       ) : (
         <TarjetaSigue x={ctx.sigueDescanso} grande titulo={despuesDeBarra ? 'Sigue' : undefined} />
       )}
-      {u && <div className="entreno-cuantas"><CorregirSerie s={s} b={u.bloque} x={u.serie} ref_={u.anterior.find((a) => a.n === u.serie.n)} conPeso={false} titulo={`${u.bloque.nombre} · serie ${u.serie.n} · ¿cuántas hiciste?`} /></div>}
+      {u && <div className="entreno-cuantas"><CorregirSerie s={s} b={u.bloque} x={u.serie} ref_={u.anterior.find((a) => a.n === u.serie.n)} conPeso={false} titulo={`${u.bloque.nombre} · serie ${u.serie.n}${u.serie.segundos !== undefined ? ` · ${u.serie.segundos} s` : ''} · ¿cuántas hiciste?`} /></div>}
       <div className="botonera">
         <button className="boton grande" onClick={() => mutar(() => alargarDescanso(s.id!, 30))}>+30 s</button>
         <button className="boton grande primario" onClick={() => mutar(() => terminarDescanso(s.id!))}>Saltar descanso</button>
@@ -549,14 +565,15 @@ function Cronometro({ s, b, t, hist }: { s: SesionEntreno; b: BloqueTemporizador
   const corriendo = s.reloj?.bloqueId === b.id ? s.reloj : undefined
   const [peso, setPeso] = useState(s.pesos?.[b.id] ?? hist?.ultimo?.peso ?? b.peso ?? 0)
   const e = corriendo ? estadoCronometro(corriendo.inicio, t) : null
-  // Objetivo: tu último tiempo (el mismo los 6 días); sin historial, el de la planilla.
-  const objetivo = hist?.ultimo?.segundos ?? b.segundos
+  // Objetivo en segundos (el de la rutina): si lo superás sube 1 s solo; a mano se cambia con el stepper.
+  const objetivo = b.segundos
   // En pantalla corre el tiempo real; al tocar «Listo» se descuentan 3 s. Se pone verde cuando lo guardado ya supera el objetivo. Sin vibrar.
   const enPantalla = objetivo + DESCUENTO_S
   const fase = !e ? null : e.preparando ? 'prep' : objetivo && e.segundos > enPantalla ? 'objetivo' : 'colgado'
   const listo = async () => {
     const r = await mutar(() => terminarCronometro(s.id!, b.id, peso))
-    avisar(`${b.nombre}: ${reloj(r.tiempo.segundos)}${peso ? ` con ${kg(peso)}` : ''} (ya descontados ${DESCUENTO_S} s)`, { tipo: 'ok' })
+    if (r.subio) avisar(`Récord. Próxima vez: ${r.objetivo} s`, { tipo: 'ok' })
+    else avisar(`${b.nombre}: ${reloj(r.tiempo.segundos)}${peso ? ` con ${kg(peso)}` : ''} (ya descontados ${DESCUENTO_S} s)`, { tipo: 'ok' })
   }
   const pct = e && objetivo ? Math.min(100, (e.segundos / enPantalla) * 100) : 0
   const texto = (x: TiempoHecho) => `${reloj(x.segundos)} · ${kg(x.peso)}`
@@ -565,14 +582,15 @@ function Cronometro({ s, b, t, hist }: { s: SesionEntreno; b: BloqueTemporizador
       <span className="seccion-titulo">{b.nota ?? 'Cronómetro'}</span>
       <h1 className="entreno-titulo">{b.nombre}</h1>
       <p className="texto-2 chico">
-        {hist?.ultimo ? <>La vez pasada: <b>{texto(hist.ultimo)}</b>{hist.record && (hist.record.segundos !== hist.ultimo.segundos || hist.record.peso !== hist.ultimo.peso) ? <> · récord <b>{texto(hist.record)}</b></> : null}</> : `Objetivo de la planilla: ${reloj(objetivo)}${b.peso ? ` con ${kg(b.peso)}` : ''}.`}
+        {hist?.ultimo ? <>La vez pasada: <b>{texto(hist.ultimo)}</b>{hist.record && (hist.record.segundos !== hist.ultimo.segundos || hist.record.peso !== hist.ultimo.peso) ? <> · récord <b>{texto(hist.record)}</b></> : null}</> : `Todavía sin tiempos. Objetivo: ${objetivo} s.`}
       </p>
       {!corriendo ? (
         <>
           <Stepper etiqueta="Peso" valor={peso} paso={0.5} escribible formato={(v) => (v === 0 ? 'corporal' : `${String(v).replace('.', ',')} kg`)} onCambio={(v) => { setPeso(v); void mutar(() => fijarPeso(s.id!, b.id, v)) }} marca={hist?.ultimo ? (peso > hist.ultimo.peso ? 'mejor' : peso === hist.ultimo.peso ? 'igual' : null) : null} />
+          <Stepper etiqueta="Objetivo" valor={objetivo} paso={1} escribible formato={(v) => `${v} s`} onCambio={(v) => { void mutar(() => fijarObjetivoCronometro(b.nombre, v)) }} />
           <div className="entreno-reloj mono">0:00</div>
           <button className="boton primario grande ancho entreno-hecha" onClick={() => mutar(() => iniciarReloj(s.id!, b.id))}>Empezar</button>
-          <p className="ayuda centro">Objetivo: {reloj(objetivo)}{hist?.ultimo ? ' (tu último tiempo)' : ''}. Tenés {PREPARACION_S} s para acomodarte y colgarte. Al tocar «Listo» se descuentan {DESCUENTO_S} s y ese es tu nuevo tiempo.</p>
+          <p className="ayuda centro">Si superás {objetivo} s, la próxima vez el objetivo sube a {objetivo + 1} s (solo 1 s, aunque lo pases por mucho). Tenés {PREPARACION_S} s para colgarte; al tocar «Listo» se descuentan {DESCUENTO_S} s.</p>
         </>
       ) : e!.preparando ? (
         <>
@@ -588,7 +606,7 @@ function Cronometro({ s, b, t, hist }: { s: SesionEntreno; b: BloqueTemporizador
           <p className={`entreno-fase centro ${fase === 'objetivo' ? 'ok' : ''}`}>{fase === 'objetivo' ? `¡Superaste ${reloj(objetivo)}! Seguí` : `Colgado · con ${kg(peso)}`}</p>
           <div className={`entreno-reloj mono ${fase === 'objetivo' ? 'verde' : ''}`}>{reloj(Math.floor(e!.segundos))}</div>
           {objetivo > 0 && <div className="entreno-barra cronometro"><div style={{ width: `${pct}%` }} /></div>}
-          {objetivo > 0 && <p className="ayuda centro">{hist?.ultimo ? 'Tu último tiempo' : 'Objetivo'}: {reloj(objetivo)} · se pone verde en {reloj(enPantalla)} (por los {DESCUENTO_S} s que se descuentan)</p>}
+          {objetivo > 0 && <p className="ayuda centro">Objetivo: {objetivo} s · se pone verde en {reloj(enPantalla)} (por los {DESCUENTO_S} s que se descuentan)</p>}
           <button className="boton primario grande ancho entreno-hecha" onClick={listo}>Listo</button>
           <button className="enlace texto-3" onClick={() => mutar(() => pararReloj(s.id!))}>Reiniciar</button>
         </>
@@ -692,26 +710,26 @@ function Resumen({ r, rutina, onReabrir }: { r: ResultadoTerminar; rutina?: Ruti
       </div>
       <div className="tarjeta compacta col">
         <div className="fila entre"><span>Pilar Entrenamiento</span><b className="mono">{r.xpPilar > 0 ? `+${r.xpPilar} XP` : '—'}</b></div>
-        <div className="fila entre"><span>Por mejorar <span className="texto-3 chico">(+5 mejora · +10 récord)</span></span><b className="mono">{x.xpExtra > 0 ? `+${x.xpExtra} XP` : '—'}</b></div>
+        <div className="fila entre"><span>Por mejorar <span className="texto-3 chico">(+5 récord · +10 subir peso)</span></span><b className="mono">{x.xpExtra > 0 ? `+${x.xpExtra} XP` : '—'}</b></div>
         {x.xpSinTope > x.xpExtra && <p className="ayuda">Llegaste al tope de {TOPE_XP_EXTRA} XP extra por entreno (sumabas {x.xpSinTope}).</p>}
         {r.motivoSinXp && <p className="ayuda">{r.motivoSinXp}</p>}
       </div>
       <ul className="entreno-lista resumen">
         {x.ejercicios.map((e) => (
-          <li key={e.bloqueId} className={e.mejora || e.record ? 'mejor' : e.igual ? 'igual' : ''}>
+          <li key={e.bloqueId} className={e.record || e.subioPeso ? 'mejor' : e.igual ? 'igual' : ''}>
             <div className="fila entre" style={{ width: '100%' }}>
-              <span className="crece">{e.record ? '★ ' : e.mejora ? '▲ ' : e.igual ? '= ' : ''}{e.nombre}</span>
+              <span className="crece">{e.record ? '★ ' : e.subioPeso ? '▲ ' : e.igual ? '= ' : ''}{e.nombre}</span>
               <b className="mono">{e.xp ? `+${e.xp} XP` : ''}</b>
             </div>
             <span className="chico texto-3 mono">S1 {e.marca.reps} × {kg(e.marca.peso)}{e.antes ? ` · antes ${e.antes.reps} × ${kg(e.antes.peso)}` : ''}</span>
-            <span className="chico xp-detalle">{[e.mejora ? `+5 mejora (${e.motivo})` : null, e.record ? '+10 récord de serie 1' : null].filter(Boolean).join(' · ') || (e.igual ? 'Igual que la vez pasada' : 'Sin mejora esta vez (no resta)')}</span>
+            <span className="chico xp-detalle">{[e.record ? `+5 récord: superaste tus ${e.actuales} actuales` : null, e.subioPeso ? '+10 subiste el peso: tramo nuevo' : null].filter(Boolean).join(' · ') || (e.antes ? (e.marca.peso === e.antes.peso && e.marca.reps >= e.actuales ? `Igual que tus ${e.actuales} actuales` : 'Sin récord esta vez (no resta)') : 'Primera vez: queda como tus reps actuales')}</span>
           </li>
         ))}
       </ul>
       {(r.sesion.tiempos ?? []).map((x) => (
         <div key={x.bloqueId} className="fila entre entreno-tiempo"><span>{x.nombre}</span><b className="mono">{reloj(x.segundos)} · {kg(x.peso)}</b></div>
       ))}
-      <p className="ayuda centro">Verde: superaste la vez pasada · gris: igualaste · ★ récord personal.</p>
+      <p className="ayuda centro">★ récord: superaste tus reps actuales · ▲ subiste el peso · gris: igualaste.</p>
       <button className="boton primario grande ancho" onClick={() => navegar('/')}>Volver a Hoy</button>
       <button className="enlace texto-3 centro" onClick={onReabrir}>Reabrir para corregir una serie</button>
     </section>

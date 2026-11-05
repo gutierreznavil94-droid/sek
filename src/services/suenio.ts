@@ -151,7 +151,7 @@ export async function registrarDespertar(noche: FechaDia, instante = ahora()): P
   return { ...reg, ...cambios }
 }
 
-export type CorreccionNoche = { acostado?: string; dormido?: string; levantado?: string }
+export type CorreccionNoche = { acostado?: string; dormido?: string; levantado?: string; /** 0–3 (3 = «3 o más»); null lo borra. */ despertares?: number | null }
 
 /** «HH:MM» de una noche a instante: de 12:00 a 23:59 es el día de la noche; de 00:00 a 11:59, la mañana siguiente. */
 export function instanteDeNoche(noche: FechaDia, hm: string, zona: string): number {
@@ -194,6 +194,7 @@ export async function corregirNoche(noche: FechaDia, c: CorreccionNoche): Promis
     cambios.fuenteLevantado = 'corregido'
     cambios.levantadoCorregido = true
   }
+  if (c.despertares !== undefined) cambios.despertares = c.despertares === null ? undefined : Math.max(0, Math.min(3, Math.round(c.despertares)))
   const despues = { ...reg, ...cambios }
   const n = nocheDesdeRegistro(despues, a)
   if (n.dormido!.valor < n.acostado!.valor) throw new Error('Te dormiste antes de acostarte: revisá las horas')
@@ -257,6 +258,8 @@ export type NocheDeSuenio = {
   cumplido: boolean
   sinDejoCelu: boolean
   aperturas: number
+  /** Despertares cargados a mano (si no se cargaron, no se asume nada). */
+  despertares?: number
   etapas?: EtapaSuenio[]
 }
 
@@ -321,6 +324,7 @@ export async function nochesDeSuenio(desde: FechaDia, hasta: FechaDia, hoy: Fech
       cumplido: !!reg?.cumplido,
       sinDejoCelu: !!reg?.sinDejoCelu,
       aperturas: reg?.aperturas ?? 0,
+      despertares: reg?.despertares,
       etapas: n.etapas,
     })
   }

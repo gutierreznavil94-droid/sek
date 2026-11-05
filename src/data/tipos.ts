@@ -130,6 +130,8 @@ export type Meta = {
   /** XP que da al cumplirse (metas propias). */
   xp?: number
   resueltaEn?: number
+  /** Día en que se marcó cumplida. Si se cumplió antes de la fecha, el sello y el XP van a este día. */
+  cumplidaEl?: FechaDia
   /** Compatibilidad con versiones anteriores; `estado` manda. */
   cumplida?: boolean
   nota?: string
@@ -154,6 +156,8 @@ export type Contador = {
   pasoSubida?: number
   /** Series por día (por defecto 5). La cuota es reps por serie × series. */
   seriesPorDia?: number
+  /** Cuota fijada a mano: no se recalcula al subir las reps por serie. */
+  cuotaAMano?: boolean
   /** Cuántas reps por serie sube cuando la app lo propone (por defecto 1). */
   pasoReps?: number
   /** Cambios de cuota: cada uno vale desde su fecha. Los días anteriores conservan la que tenían. */
@@ -191,7 +195,35 @@ export type FechaClave = {
   titulo: string
   nota?: string
   anual?: boolean
+  /** Con hora (examen, trámite) se trata como bloque obligatorio ese día en Mi horario. */
+  hora?: string
+  horaFin?: string
   creada: number
+}
+
+// ---------- Mi horario ----------
+
+export type TipoBloque = 'obligatorio' | 'entreno' | 'otro'
+
+/** Bloque fijo de la semana: colegio, facultad, trabajo, entreno, otro. */
+export type BloqueHorario = {
+  id: string
+  nombre: string
+  tipo: TipoBloque
+  /** Días de la semana (0 dom..6 sáb). */
+  dias: number[]
+  desde: string
+  hasta: string
+}
+
+export type Horario = { id: string; nombre: string; bloques: BloqueHorario[] }
+
+export type ConfigHorario = {
+  /** Id del horario en uso («Cuatrimestre», «Vacaciones»). */
+  activo: string
+  horarios: Horario[]
+  /** Por fecha, ids de bloques que ese día no van («hoy no hay cursada»). */
+  excepciones: Record<FechaDia, string[]>
 }
 
 /** Regla de «Mi código» (掟): solo se lee, no se marca ni da XP. */
@@ -257,10 +289,43 @@ export type Ajustes = {
   animaciones: 'todas' | 'logros' | 'ninguna'
   /** Sonido de las animaciones (generado por la app). Apagado al inicio. */
   sonidoAnimaciones: boolean
+  /** Compañero del tema (el shinobi que se pasea): se pasea / quieto / apagado. Se pasea si falta. */
+  companero?: ModoCompanero
+  /** Frases sueltas del compañero (si falta, las del tema). */
+  frasesCompanero?: string[]
+  /** Ninjas de la distracción: lista editable. Si falta, las 3 de muestra; vacía = no aparecen. */
+  distracciones?: Distraccion[]
+  /** Ninjas de la distracción y el tajo: sí / no (sí si falta). */
+  ninjas?: boolean
+  /** Tira «Ninjas vencidos esta semana» en Progreso (sí si falta). */
+  ninjasEnProgreso?: boolean
+  /** Batalla contra la distracción (minijuego): activa, contador y reps por toque. */
+  batalla?: ConfigBatalla
+  /** Cinemática «Tensión»: kanji y frase del final. */
+  tension?: ConfigTension
+  /** Rival escurridizo: modo y XP que roba. */
+  rival?: ConfigRival
+  /** Adaptación del sueño: desde cuándo, etapas editables y tolerancia de «a horario». */
+  adaptacion?: ConfigAdaptacion
+  /** Fondo con lluvia dibujada en Hoy, Calendario, Juego y Sueño (todos encendidos si falta). */
+  fondoLluvia?: { hoy?: boolean; calendario?: boolean; juego?: boolean; sueno?: boolean; comida?: boolean; entreno?: boolean; mas?: boolean }
+  /** Calendario: mostrar la franja fina de Mi horario arriba de cada día (gris). */
+  calendarioHorario?: boolean
+  /** Pájaro torpe: a veces uno de los pájaros del encabezado se choca con el borde (sí si falta). */
+  pajaroTorpe?: boolean
+  /** Recordatorio tenue en Hoy para alistarse a dormir: cuántos minutos antes de «Dejo celu» (30 si falta). */
+  minutosAvisoDormir?: number
+  /** Frases del recordatorio, rotan una por noche. Si falta, las tres de la app. */
+  frasesDormir?: string[]
+  /** Golpe de taiko una sola vez a 10 s del fin del descanso (independiente del sonido de animaciones). Encendido si falta. */
+  sonidoAviso10s?: boolean
   /** Nombre del personaje de las animaciones (provisional). */
   nombrePersonaje: string
   /** Fondo de las escenas: papel claro (como la referencia) u oscuro. */
-  temaAnimaciones: 'claro' | 'oscuro'
+  /** Fondo de las escenas: épico (oscuro con cielo de lluvia), papel claro u oscuro liso. */
+  temaAnimaciones: 'claro' | 'oscuro' | 'epico'
+  /** Ya se pasó al fondo épico por defecto (4 nov 2026). */
+  fondoEpicoAplicado?: boolean
   ultimaExportacion?: number
   diaInicioSemana: 1
   /** Tema elegido (carpeta de src/temas). Por defecto «shinobi». */
@@ -275,6 +340,12 @@ export type Ajustes = {
   primeraVezHecha?: boolean
   /** Objetivo de comida (Más → Comida). Sin esto, la tarjeta de Hoy invita a configurarlo. */
   comida?: ObjetivoComida
+  /** Agua: envases propios, cuál es el del toque y objetivo a mano (sin esto, 35 ml por kilo del peso de Comida). */
+  agua?: ConfigAgua
+  /** Mi horario (Calendario): bloques fijos de la semana, horarios guardados y excepciones por fecha. */
+  horario?: ConfigHorario
+  /** Link del formulario de Google para «Recomendar algo» (pisa el del tema). Vacío = botón oculto. */
+  formularioRecomendaciones?: string
   /** La app se armó en la primera vez: las migraciones de los pilares de Navil no se aplican. */
   aMedida?: boolean
 }
@@ -335,6 +406,8 @@ export type RegistroSuenio = {
   despertarPrevisto?: number
   /** Instante en que se levantó de verdad (primera vez que abre la app a la mañana, o «Ya me levanté»). */
   levantado?: number
+  /** Cuántas veces se despertó en la noche, si la persona lo cargó (0, 1, 2, 3 = «3 o más»). */
+  despertares?: number
   /** Minutos dormido: de `dormido` a `levantado` (o al despertar previsto si no abrió la app). */
   minutosDormido?: number
   /** De dónde sale cada dato (v0.34). Sin el campo, cuenta como «estimado» (o «corregido» si levantadoCorregido). */
@@ -475,13 +548,19 @@ export type BloqueEjercicio = {
   /** Músculo o grupo (Pecho, Hombro…). */
   grupo?: string
   series: number
-  /** Repeticiones objetivo (mínimo de la doble progresión). */
+  /**
+   * Reps actuales: las que hizo la vez pasada en la serie 1 con el peso actual (o las que cargó a mano).
+   * La app las sube sola cada vez que las supera (récord). Al cambiar el peso empieza un tramo nuevo y la
+   * primera sesión con ese peso las fija.
+   */
   reps: number
   /** Repeticiones extra, como el «+3» de «12 + 3». */
   repsExtra?: number
   /** Tope de repeticiones: si la serie 1 llega, se sugiere subir peso (sin proponer cuánto). */
   repsTope: number
   peso: number
+  /** Desde qué día vale el peso actual (tramo). Si falta, desde el primer entreno. */
+  tramoDesde?: FechaDia
   /** v0.36 (primera prueba): ya no se usa. El peso nuevo lo pone Navil (la app no conoce sus discos). */
   incremento?: number
   /** Descanso entre series, en segundos. */
@@ -522,7 +601,7 @@ export type Rutina = {
 }
 
 /** `ayuda`: reps con ayuda (solo en ejercicios que la admiten). Quedan en el historial y suman al volumen, pero no cuentan para récord ni para subir peso. */
-export type SerieHecha = { bloqueId: string; n: number; reps: number; repsExtra?: number; ayuda?: number; peso: number; instante: number }
+export type SerieHecha = { bloqueId: string; n: number; reps: number; repsExtra?: number; ayuda?: number; peso: number; instante: number; /** Cuánto duró la serie (desde que terminó el descanso anterior hasta «Serie hecha»). Falta en sesiones viejas. */ segundos?: number }
 
 /** Fase del descanso: sombra, descansar o acomodar para el siguiente ejercicio. */
 export type FaseDescanso = { tipo: 'preparar' | 'sombra' | 'descanso' | 'acomodar'; segundos: number; texto: string }
@@ -552,9 +631,13 @@ export type SesionEntreno = {
   tiempos?: TiempoHecho[]
   /** Descanso en marcha: para retomarlo si la app se cierra. */
   descanso?: { inicio: number; fases: FaseDescanso[]; /** Bloque que no es ejercicio después del cual corre (colgarse en barra). */ origen?: string }
+  /** Desde cuándo corre la serie en curso (se fija al terminar el descanso o al pasar de bloque). */
+  serieDesde?: number
   /** Temporizador en marcha (calentamiento, colgarse, rondas). */
   reloj?: { bloqueId: string; ronda: number; inicio: number; segundos: number }
   xpExtra?: number
+  /** Reps actuales y peso de cada ejercicio al terminar (para que reabrir y volver a terminar compare contra lo mismo). */
+  base?: Record<string, { reps: number; peso: number; tramoDesde?: FechaDia }>
 }
 
 // ---------- Comidas ----------
@@ -611,4 +694,54 @@ export type RegistroComida = {
 
 export type RegistroPeso = { id: string; fecha: FechaDia; kg: number; instante: number }
 
+/** Envase de agua: un toque en la cantimplora de Hoy suma el principal. */
+export type EnvaseAgua = { id: string; nombre: string; ml: number }
+
+export type ConfigAgua = {
+  envases: EnvaseAgua[]
+  /** Id del envase que suma con un toque. */
+  principal: string
+  /** Objetivo diario a mano, en ml. Sin esto se calcula del peso. */
+  objetivoMl?: number
+  /** Cómo se ve en Hoy: chiquita dentro de la tarjeta de Comida (lo normal) o como tarjeta aparte. */
+  enHoy?: 'chica' | 'tarjeta'
+}
+
+/** Recomendación de un usuario: se manda a un formulario de Google de Navil; si no hay internet, espera. */
+export type Recomendacion = {
+  id: string
+  texto: string
+  parte: string
+  contacto?: string
+  estado: 'pendiente' | 'enviada'
+  creada: number
+  enviada?: number
+  intentos: number
+}
+
+/** Una toma de agua (un toque). */
+export type TomaAgua = { id: string; fecha: FechaDia; ml: number; envase?: string; instante: number }
+
 export type ComidaGuardada = { id: string; nombre: string; items: { alimentoId: string; nombre: string; gramos: number }[]; creado: number }
+
+// ---------- Compañero y ninjas de la distracción (4 nov 2026) ----------
+
+export type ModoCompanero = 'pasea' | 'quieto' | 'apagado'
+
+/** Momentos de duda que la app puede ver. */
+export type MomentoNinja = 'pilar' | 'noche' | 'duda' | 'juego' | 'batalla'
+
+/** Una distracción (la edita la persona): nombre y, opcional, en qué momento aparece. */
+export type Distraccion = { id: string; nombre: string; momento?: MomentoNinja | 'cualquiera' }
+
+/** Una pelea con un ninja de la distracción: vencido (tocó «Empezar») o se escapó. Sin XP. */
+export type PeleaNinja = { id?: number; fecha: FechaDia; distraccion: string; momento: MomentoNinja; resultado: 'vencido' | 'escapo'; pilar?: string; instante: number; /** Batalla: reps hechas (la serie que se anotó en el contador). */ reps?: number; /** Rival escurridizo ignorado: XP que se llevó. */ robo?: number }
+
+/** Batalla contra la distracción (minijuego de flexiones). Todo editable en Más → Ver animaciones. */
+export type ConfigBatalla = { /** Sí si falta. */ activa?: boolean; /** Contador de reps que se usa (flexiones si falta). */ contadorId?: string; /** Reps por toque (5 si falta). */ repsPorToque?: number }
+
+/** Cinemática «Tensión»: kanji y frase del final (editables en Más → Ver animaciones). */
+export type ConfigTension = { kanji?: string; frase?: string }
+/** Rival escurridizo: cómo aparece una distracción y cuánto XP roba si se lo ignora. */
+export type ConfigAdaptacion = { desde?: FechaDia; etapas?: { nombre: string; semanas: number; horasMin: number; horasMax: number; despertaresNormales: number }[]; toleranciaMinutos?: number }
+export type ConfigRival = { /** «escurridizo» (muñequito en Hoy, se lo atrapa) o «carta» (la carta directa). Escurridizo si falta. */ modo?: 'escurridizo' | 'carta'; /** XP que roba si se lo ignora (10 si falta, 0 a 30). */ xpRobo?: number }

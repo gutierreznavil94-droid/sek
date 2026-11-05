@@ -4,6 +4,8 @@ import type { Ajustes as TipoAjustes } from '../../data/tipos'
 import { guardarAjustes, obtenerAjustes } from '../../services/base'
 import { Atras, Tarjeta, elegirMovimiento, preferenciaMovimiento, sistemaPideReducir, type PreferenciaMovimiento } from '../componentes'
 import { avisar, mutar, useDatos } from '../estado'
+import { FRASES_DORMIR_DEFECTO, MINUTOS_AVISO_DORMIR } from '../../services/dormir'
+import { frasesCompanero } from '../../services/companero'
 import { Divisor, elegirDivisor, useVarianteDivisor, type VarianteDivisor } from '../Divisor'
 
 const ZONAS = ['America/Argentina/Cordoba', 'America/Argentina/Buenos_Aires', 'America/Montevideo', 'America/Santiago', 'America/Sao_Paulo', 'America/Lima', 'America/Bogota', 'America/Mexico_City', 'Europe/Madrid', 'UTC']
@@ -101,7 +103,41 @@ export function Ajustes() {
       <h1>Ajustes</h1>
       <ElegirFranja />
       <ElegirVideoFondo />
+      <Tarjeta titulo="Fondo con lluvia">
+        <p className="chico texto-2">Lluvia dibujada detrás de la pantalla (sin video, casi no gasta), distinta en cada lugar. Con «reducir movimiento» queda quieta.</p>
+        {([
+          ['hoy', 'En Hoy: lluvia en diagonal con un relámpago tenue cada tanto'],
+          ['calendario', 'En Calendario: llovizna con nubes a tinta que pasan'],
+          ['juego', 'En Juego: gotas que resbalan por el vidrio y un charco (más lenta mientras jugás)'],
+          ['sueno', 'En Sueño: la habitación con el futón y la lluvia por la ventana'],
+          ['comida', 'En Comida: lluvia fina sobre hojas de bambú'],
+          ['entreno', 'En Entreno y Rutinas: tormenta en diagonal que se calma en el descanso'],
+          ['mas', 'En Más y sus pantallas: lluvia con viento y alguna hoja volando'],
+        ] as const).map(([k, texto]) => (
+          <label key={k} className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={a.fondoLluvia?.[k] !== false} onChange={async (e) => { const v = { ...a.fondoLluvia, [k]: e.target.checked }; set('fondoLluvia', v); await mutar(() => guardarAjustes({ fondoLluvia: v })); avisar(e.target.checked ? 'Lluvia encendida' : 'Lluvia apagada') }} /> {texto}</label>
+        ))}
+      </Tarjeta>
       <ElegirMovimiento />
+      <Tarjeta titulo="Fondo de las animaciones">
+        <div className="fondos-opciones" role="radiogroup" aria-label="Fondo de las animaciones">
+          {([['epico', 'Épico', 'papel gris suave con nubes y lluvia'], ['claro', 'Papel', 'tinta sobre papel claro'], ['oscuro', 'Oscuro liso', 'fondo carbón sin cielo']] as const).map(([v, t, nota]) => (
+            <button key={v} role="radio" aria-checked={(a.temaAnimaciones ?? 'epico') === v} className={`fondo-opcion ${(a.temaAnimaciones ?? 'epico') === v ? 'activo' : ''}`} onClick={async () => { set('temaAnimaciones', v); await mutar(() => guardarAjustes({ temaAnimaciones: v })); avisar(`Animaciones: ${t.toLowerCase()}`) }}>
+              <span>{t}</span>
+              <span className="chico texto-3">{nota}</span>
+            </button>
+          ))}
+        </div>
+        <p className="ayuda">Se ve en Más → Ver animaciones.</p>
+      </Tarjeta>
+      <Tarjeta titulo="Frases del compañero">
+        <div className="campo"><label>Una por línea (rotan, no se repiten en el día)</label><textarea rows={6} value={(a.frasesCompanero ?? frasesCompanero(a)).join('\n')} onChange={(e) => set('frasesCompanero', e.target.value.split('\n'))} /></div>
+        <p className="ayuda">Las dice el shinobi que se pasea por Hoy. Si borrás todas, vuelven las del tema. Los consejos según tus datos (agua, pilares, racha) van aparte y no se editan acá.</p>
+      </Tarjeta>
+      <Tarjeta titulo="Recordatorio para dormir">
+        <div className="campo"><label>Minutos antes de «Dejo celu»</label><input type="number" inputMode="numeric" min={5} max={180} value={a.minutosAvisoDormir ?? MINUTOS_AVISO_DORMIR} onChange={num('minutosAvisoDormir', 5, 180)} /></div>
+        <div className="campo"><label>Frases (una por línea, rotan cada noche)</label><textarea rows={4} value={(a.frasesDormir ?? FRASES_DORMIR_DEFECTO).join('\n')} onChange={(e) => set('frasesDormir', e.target.value.split('\n'))} /></div>
+        <p className="ayuda">En Hoy aparece una franja oscura al pie, sin brillo. Un toque la cierra por esa noche; si ya marcaste «Dejo celu», no aparece.</p>
+      </Tarjeta>
       <Tarjeta titulo="Juego">
         <div className="rejilla-2">
           <div className="campo"><label>Lunes a viernes (min)</label><input type="number" inputMode="numeric" value={a.limiteJuegoSemana} onChange={num('limiteJuegoSemana', 0, 1440)} /></div>
@@ -136,6 +172,13 @@ export function Ajustes() {
           <span className="ayuda">El día va de 00:00 a 00:00 en esta zona, aunque el teléfono esté en otra.</span>
         </div>
         <div className="campo"><label>Avisar copia de seguridad cada (días)</label><input type="number" inputMode="numeric" value={a.diasAvisoCopia} onChange={num('diasAvisoCopia', 1, 60)} /></div>
+      </Tarjeta>
+      <Tarjeta titulo="Recomendaciones de usuarios">
+        <div className="campo">
+          <label>Link del formulario de Google</label>
+          <input value={a.formularioRecomendaciones ?? ''} onChange={(e) => set('formularioRecomendaciones', e.target.value)} placeholder="https://docs.google.com/forms/d/e/…/formResponse entry.1 entry.2 entry.3 entry.4" />
+          <span className="ayuda">Pegá el link y, separados por espacios, los cuatro ids de los campos (entry.NNN) en este orden: qué recomendás, parte, contacto, app. Vacío: el botón «Recomendar algo» no se muestra. Cómo crear el formulario: recomendaciones-formulario-google.md.</span>
+        </div>
       </Tarjeta>
       <button className="boton primario ancho" onClick={guardar}>Guardar ajustes</button>
     </>

@@ -36,6 +36,53 @@ export const SUGERENCIAS_PILARES: { clave: ClavePilar; nombre: string; id: strin
 
 export type EleccionPilar = { clave: ClavePilar; nombre: string; dias: number[]; horaLimite?: string; minutos?: number }
 
+/** Los cuatro pilares del creador de la app (Navil), con sus horarios y XP. Se ofrecen en la primera entrada y en Más. */
+export const PILARES_DEL_CREADOR: EleccionPilar[] = [
+  { clave: 'entrenar', nombre: 'Entrenar', dias: [1, 2, 3, 4, 5, 6], horaLimite: '19:35', minutos: 42 },
+  { clave: 'dormir', nombre: 'Dormir a horario', dias: TODOS },
+  { clave: 'dibujar', nombre: 'Dibujar', dias: TODOS, horaLimite: '20:50', minutos: 15 },
+  { clave: 'proyecto', nombre: 'Proyecto propio', dias: TODOS, horaLimite: '20:50' },
+]
+
+export const TEXTO_CREADOR = 'Son los que uso yo todos los días. Cambialos a tu gusto.'
+
+/** XP de un pilar sugerido (el de la sugerencia). */
+export function xpDePilar(clave: ClavePilar): number {
+  return SUGERENCIAS_PILARES.find((x) => x.clave === clave)?.xp ?? 15
+}
+
+/** Qué pilares del creador ya tiene esta persona (por la acción que usan). */
+export async function pilaresDelCreadorQueTiene(): Promise<Set<ClavePilar>> {
+  const tiene = new Set<ClavePilar>()
+  for (const p of PILARES_DEL_CREADOR) {
+    const s = SUGERENCIAS_PILARES.find((x) => x.clave === p.clave)!
+    const a = await db().acciones.get(s.id)
+    if (a && a.pilar && a.activa) tiene.add(p.clave)
+  }
+  return tiene
+}
+
+/** «Agregar los que me falten»: suma los pilares del creador que no tiene, sin pasar el máximo. Devuelve los agregados. */
+export async function agregarPilaresDelCreador(hoy: FechaDia): Promise<string[]> {
+  const d = db()
+  const tiene = await pilaresDelCreadorQueTiene()
+  const faltan = PILARES_DEL_CREADOR.filter((p) => !tiene.has(p.clave))
+  if (!faltan.length) return []
+  const activos = (await d.acciones.toArray()).filter((a) => a.pilar && a.activa).length
+  if (activos + faltan.length > MAX_PILARES) throw new Error(`Con estos serían más de ${MAX_PILARES} pilares. Sacá alguno en Más → Pilares y acciones.`)
+  const aj = await obtenerAjustes()
+  const horarios = { alistarse: aj.horaAlistarse, dejarCelu: aj.horaDejarCelu, dormir: aj.horaDormido }
+  const agregados: string[] = []
+  for (const p of faltan) {
+    const e = accionDe(p, activos + agregados.length + 1, 1, horarios)
+    const existe = await d.acciones.get(e.accion.id)
+    // Si la acción ya existía (por ejemplo, apagada), vuelve como pilar con su XP; si no, se crea con el del creador.
+    await guardarAccion({ ...(existe ?? {}), ...e.accion, minutosExtra: undefined, xpExtra: undefined }, existe ? undefined : e.xp, hoy)
+    agregados.push(p.nombre)
+  }
+  return agregados
+}
+
 export type ConfigPrimeraVez = {
   hoy: FechaDia
   nombrePersona: string
@@ -111,6 +158,7 @@ export async function configurarPrimeraVez(c: ConfigPrimeraVez): Promise<void> {
     nombreApp: c.nombreApp.trim() || 'SEK',
     tema: tema.id,
     nombrePersonaje: tema.personaje,
+    ...(tema.nombresFases?.length === 3 ? { nombresFases: tema.nombresFases } : {}),
     horaAlistarse: c.horarios.alistarse,
     horaDejarCelu: c.horarios.dejarCelu,
     horaDormido: c.horarios.dormir,

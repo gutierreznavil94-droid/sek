@@ -81,7 +81,9 @@ export type PropuestaSubida = { contadorId: string; nombre: string; de: number; 
 function propuestaPara(c: Contador): PropuestaSubida {
   const series = seriesDe(c)
   const a = c.cantidadPorToque + pasoDeSubida(c)
-  return { contadorId: c.id, nombre: c.nombre, de: c.cantidadPorToque, a, series, ...cuotaDeSeries(a, series) }
+  // Con la cuota fijada a mano, suben solo las reps por serie; la cuota y el extra quedan como están.
+  const cuota = c.cuotaAMano ? { cuota: c.metaDiaria, extra: c.metaExtra ?? extraPorDefecto(c.metaDiaria) } : cuotaDeSeries(a, series)
+  return { contadorId: c.id, nombre: c.nombre, de: c.cantidadPorToque, a, series, ...cuota }
 }
 
 /**
@@ -238,7 +240,7 @@ export type ResumenContador = {
   repsHoy: number
   series: number
   /** Escalones de reps por serie (el primero es el valor inicial). */
-  escalonesReps: { desde: FechaDia; reps: number }[]
+  escalonesReps: { desde: FechaDia; reps: number; cuota: number }[]
   /** Cada día del ciclo hasta hoy, con lo que valía la cuota y el extra ese día. */
   diasCiclo: { fecha: FechaDia; total: number; cuota: number; extra: number; reps: number }[]
 }

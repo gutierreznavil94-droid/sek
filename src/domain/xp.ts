@@ -5,8 +5,8 @@
  *   base de datos garantiza que el mismo evento no sume dos veces.
  * - La cantidad se congela en el registro: cambiar una regla después no
  *   recalcula lo ganado.
- * - No existe XP negativo. Las correcciones se registran como anulación
- *   (`anulado: true`) y quedan en el historial.
+ * - No existe XP negativo, salvo el robo del rival escurridizo (origen «rival», chico y editable,
+ *   nunca baja de nivel). Las correcciones se registran como anulación (`anulado: true`) y quedan en el historial.
  */
 
 import type { FechaDia } from './fechas'
@@ -24,6 +24,7 @@ export type OrigenXp =
   | 'contador'
   | 'extra'
   | 'manual'
+  | 'rival'
 
 export type ReglaXp = {
   id: string
@@ -66,11 +67,11 @@ export type RegistroXp = {
   motivoAnulacion?: string
 }
 
-/** Suma del XP válido (no anulado). Nunca baja de 0. */
-export function totalXp(registros: Pick<RegistroXp, 'cantidad' | 'anulado'>[]): number {
+/** Suma del XP válido (no anulado). Nunca baja de 0. El único descuento es el robo del rival (origen «rival»). */
+export function totalXp(registros: (Pick<RegistroXp, 'cantidad' | 'anulado'> & { origen?: OrigenXp })[]): number {
   let total = 0
-  for (const r of registros) if (!r.anulado) total += Math.max(0, r.cantidad)
-  return total
+  for (const r of registros) if (!r.anulado) total += r.origen === 'rival' ? r.cantidad : Math.max(0, r.cantidad)
+  return Math.max(0, total)
 }
 
 /**

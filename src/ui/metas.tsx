@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Meta } from '../data/tipos'
-import { cumplirMeta, crearMetaRapida, borrarMetaPropia, desmarcarMeta, editarMeta, estadoVisible } from '../services/metas'
+import { cumplirMeta, crearMetaRapida, borrarMetaPropia, cumplidaOtroDia, desmarcarMeta, editarMeta, estadoVisible } from '../services/metas'
+import { fechaLegible } from '../domain/fechas'
 import { celebrarNivel } from './animaciones/logros'
 import { animar } from './animaciones/motor'
 import { avisar, mutar } from './estado'
@@ -20,8 +21,10 @@ export async function alternarMeta(m: Meta, hoy: string): Promise<void> {
 }
 
 /** Una meta con su casilla. En verde suave con brillo al cumplirla; gris tachada si pasó sin cumplir. */
-export function FilaMeta({ m, hoy, menu = true, chica = false }: { m: Meta; hoy: string; menu?: boolean; chica?: boolean }) {
+export function FilaMeta({ m, hoy, dia, menu = true, chica = false }: { m: Meta; hoy: string; dia?: string; menu?: boolean; chica?: boolean }) {
   const estado = estadoVisible(m, hoy)
+  // Cumplida antes de tiempo: en su fecha dice «cumplida el …»; el día que se marcó, «para el …».
+  const otroDia = cumplidaOtroDia(m) ? ((dia ?? m.fecha) === m.cumplidaEl ? `para el ${fechaLegible(m.fecha, false)}` : `cumplida el ${fechaLegible(m.cumplidaEl!, false)}`) : null
   const [abierto, setAbierto] = useState(false)
   const [editando, setEditando] = useState<string | null>(null)
   const largo = useRef<number | null>(null)
@@ -43,7 +46,7 @@ export function FilaMeta({ m, hoy, menu = true, chica = false }: { m: Meta; hoy:
       {editando !== null ? (
         <input className="meta-editar" autoFocus value={editando} onChange={(e) => setEditando(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') guardar(); if (e.key === 'Escape') setEditando(null) }} onBlur={guardar} />
       ) : (
-        <span className="meta-titulo" onClick={() => alternarMeta(m, hoy)}>{m.titulo}</span>
+        <span className="meta-titulo" onClick={() => alternarMeta(m, hoy)}>{m.titulo}{otroDia && <span className="meta-otro-dia"> · {otroDia}</span>}</span>
       )}
       {menu && editando === null && (
         <button ref={boton} className="meta-menu" aria-label="Opciones de la meta" aria-haspopup="menu" aria-expanded={abierto} onClick={() => setAbierto(!abierto)}>…</button>

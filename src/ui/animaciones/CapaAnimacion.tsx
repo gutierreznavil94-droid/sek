@@ -14,7 +14,7 @@ export function CapaAnimacion() {
   const config = useConfigAnimaciones()
   const aj = ajustes.datos
   useEffect(() => {
-    if (aj) configurarAnimaciones({ modo: aj.animaciones ?? 'todas', sonido: !!aj.sonidoAnimaciones, nombre: aj.nombrePersonaje || 'Shinobi', tema: aj.temaAnimaciones ?? 'claro' })
+    if (aj) configurarAnimaciones({ modo: aj.animaciones ?? 'todas', sonido: !!aj.sonidoAnimaciones, nombre: aj.nombrePersonaje || 'Shinobi', tema: aj.temaAnimaciones ?? 'epico' })
   }, [aj])
   useEffect(() => {
     cargarPoses()

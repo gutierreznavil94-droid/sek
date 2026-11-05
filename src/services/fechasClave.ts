@@ -36,15 +36,17 @@ export async function fechasClavePorDia(desde: string, hasta: string): Promise<M
   return mapa
 }
 
-export async function agregarFechaClave(fecha: string, titulo: string, nota?: string, anual?: boolean): Promise<FechaClave> {
-  const fc: FechaClave = { id: nuevoId('fc'), fecha, titulo: titulo.trim(), nota: nota?.trim() || undefined, anual: !!anual, creada: ahora() }
+export async function agregarFechaClave(fecha: string, titulo: string, nota?: string, anual?: boolean, horas?: { hora?: string; horaFin?: string }): Promise<FechaClave> {
+  const fc: FechaClave = { id: nuevoId('fc'), fecha, titulo: titulo.trim(), nota: nota?.trim() || undefined, anual: !!anual, hora: horas?.hora || undefined, horaFin: horas?.hora ? horas.horaFin || undefined : undefined, creada: ahora() }
   await db().fechasClave.add(fc)
   await registrarEvento({ tipo: 'crear', entidad: 'fechaClave', entidadId: fc.id, motivo: fc.titulo })
   return fc
 }
 
-export async function editarFechaClave(id: string, cambios: Partial<Pick<FechaClave, 'titulo' | 'nota' | 'anual'>>): Promise<void> {
+export async function editarFechaClave(id: string, cambios: Partial<Pick<FechaClave, 'titulo' | 'nota' | 'anual' | 'hora' | 'horaFin'>>): Promise<void> {
   const c = { ...cambios }
+  if (c.hora !== undefined && !c.hora) { c.hora = undefined; c.horaFin = undefined }
+  if (c.horaFin !== undefined && !c.horaFin) c.horaFin = undefined
   if (c.titulo !== undefined) c.titulo = c.titulo.trim()
   if (c.nota !== undefined) c.nota = c.nota.trim() || undefined
   await db().fechasClave.update(id, c)

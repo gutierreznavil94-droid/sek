@@ -1,0 +1,17 @@
+{
+  "id": "nay",
+  "nombre": "App Nay",
+  "descripcion": "Tu mundo, tu personaje. Acá se arma el tema de Nay.",
+  "personaje": "Nay",
+  "saludo": "Soy {personaje}. Desde hoy avanzamos juntas: un día a la vez.",
+  "nombreApp": "App Nay",
+  "acento": "#C8102E",
+  "kanjis": true,
+  "carpetaFondos": "fondos/",
+  "sprite": "shinobi/camina.webp",
+  "vistaPrevia": { "video": "fondos/lluvia.mp4", "imagen": "fondos/lluvia.jpg" },
+  "icono": "icono-192.png",
+  "nombresFases": ["Disciplina", "Constancia", "Mi yo ideal"],
+  "orden": 2,
+  "oculto": true
+}

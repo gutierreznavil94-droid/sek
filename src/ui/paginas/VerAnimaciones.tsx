@@ -6,6 +6,20 @@ import { EditorPose } from '../animaciones/EditorPose'
 import { MuniecoVivo } from '../animaciones/Escena'
 import { Atras, Tarjeta } from '../componentes'
 import { avisar, mutar, useDatos } from '../estado'
+import type { Distraccion, ModoCompanero, MomentoNinja } from '../../data/tipos'
+import { NOMBRE_MOMENTO, distraccionesDe, guardarDistracciones, nuevaDistraccion } from '../../services/ninjas'
+import { pedirPelea } from '../Ninja'
+import { Tajo } from '../Tajo'
+import { pedirBatalla } from '../Batalla'
+import { pedirRival } from '../Rival'
+import { forzarPajaroTorpe } from '../Desintegrar'
+import { useNavigate } from 'react-router-dom'
+import { XP_ROBO_MAX, modoRival, xpRoboDe } from '../../services/rival'
+import { FRASE_TENSION, KANJI_TENSION, pedirTension, useClipsTension } from '../Tension'
+import { REPS_POR_TOQUE, TOPE_BATALLAS_DIA, objetivoBatalla, prepararBatalla } from '../../services/batalla'
+import { listarContadores } from '../../services/contadores'
+import { fechaDe } from '../../domain/fechas'
+import { ahora } from '../../services/reloj'
 
 const PILARES = ['entrenamiento', 'empresa', 'manga', 'acostarse']
 
@@ -21,6 +35,14 @@ export function VerAnimaciones() {
   const config = useConfigAnimaciones()
   const [nombre, setNombre] = useState('')
   const [editor, setEditor] = useState(false)
+  const [tajo, setTajo] = useState(false)
+  const contadores = useDatos(() => listarContadores(), [])
+  const clipsTension = useClipsTension()
+  const [kanjiT, setKanjiT] = useState('')
+  const [fraseT, setFraseT] = useState('')
+  useEffect(() => {
+    if (datos.datos) { setKanjiT(datos.datos.tension?.kanji ?? ''); setFraseT(datos.datos.tension?.frase ?? '') }
+  }, [datos.datos])
   useEffect(() => {
     if (datos.datos) setNombre(datos.datos.nombrePersonaje || 'Shinobi')
   }, [datos.datos])
@@ -99,8 +121,9 @@ export function VerAnimaciones() {
           ))}
         </div>
         <p className="ayuda">Si el teléfono tiene «reducir movimiento», solo se ve un destello de color y el texto.</p>
-        <div className="selector-3" style={{ gridTemplateColumns: '1fr 1fr', marginTop: 10 }}>
-          <button className={`boton chico ${(a.temaAnimaciones ?? 'claro') === 'claro' ? 'primario' : ''}`} onClick={() => guardar({ temaAnimaciones: 'claro' }, 'Escenas sobre papel claro')}>Papel claro</button>
+        <div className="selector-3" style={{ marginTop: 10 }}>
+          <button className={`boton chico ${(a.temaAnimaciones ?? 'epico') === 'epico' ? 'primario' : ''}`} onClick={() => guardar({ temaAnimaciones: 'epico' }, 'Escenas con fondo épico')}>Épico</button>
+          <button className={`boton chico ${a.temaAnimaciones === 'claro' ? 'primario' : ''}`} onClick={() => guardar({ temaAnimaciones: 'claro' }, 'Escenas sobre papel claro')}>Papel claro</button>
           <button className={`boton chico ${a.temaAnimaciones === 'oscuro' ? 'primario' : ''}`} onClick={() => guardar({ temaAnimaciones: 'oscuro' }, 'Escenas oscuras')}>Fondo oscuro</button>
         </div>
         <label className="fila chico" style={{ gap: 8, marginTop: 10 }}>
@@ -112,6 +135,89 @@ export function VerAnimaciones() {
         <label className="fila chico" style={{ gap: 8, marginTop: 6 }}>
           <input type="checkbox" checked={config.tinta} onChange={(e) => configurarAnimaciones({ tinta: e.target.checked })} /> Bordes de pincel (desactivalo si el teléfono va lento)
         </label>
+      </Tarjeta>
+
+      <Tarjeta titulo="Compañero">
+        <div className="selector-3">
+          {([['pasea', 'Se pasea'], ['quieto', 'Quieto'], ['apagado', 'Apagado']] as [ModoCompanero, string][]).map(([v, t]) => (
+            <button key={v} className={`boton chico ${(a.companero ?? 'pasea') === v ? 'primario' : ''}`} onClick={() => guardar({ companero: v }, `Compañero: ${t.toLowerCase()}`)}>{t}</button>
+          ))}
+        </div>
+        <p className="ayuda">El shinobi chiquito camina por el borde de abajo de Hoy y queda quieto en una esquina en Calendario, Comida y Más. Tocalo y habla. Con «reducir movimiento» queda quieto. Sus frases se editan en Más → Ajustes.</p>
+      </Tarjeta>
+
+      <Tarjeta titulo="Ninjas de la distracción">
+        <label className="fila chico" style={{ gap: 8 }}>
+          <input type="checkbox" checked={a.ninjas !== false} onChange={(e) => guardar({ ninjas: e.target.checked }, e.target.checked ? 'Ninjas encendidos' : 'Ninjas apagados')} /> Aparecen en los momentos de duda (y el tajo al volver después de horas)
+        </label>
+        <label className="fila chico" style={{ gap: 8 }}>
+          <input type="checkbox" checked={a.ninjasEnProgreso !== false} onChange={(e) => guardar({ ninjasEnProgreso: e.target.checked }, 'Guardado')} /> Tira «Ninjas vencidos esta semana» en Progreso
+        </label>
+        <MisDistracciones lista={distraccionesDe(a)} />
+        <div className="rejilla-2">
+          <button className="boton" onClick={() => { const l = distraccionesDe(a); if (!l.length) return avisar('Agregá una distracción primero'); pedirPelea({ fecha: '0000-00-00', distraccion: l[0], momento: { momento: 'duda' } }) }}>Probar ninja</button>
+          <button className="boton" onClick={() => setTajo(true)}>Probar el tajo</button>
+        </div>
+        {tajo && <Tajo onFin={() => setTajo(false)} />}
+        <p className="ayuda">Un ninja gris con el nombre de la distracción; el shinobi lo bloquea y queda una frase con «Empezar» / «Ahora no» / «⚔ Batalla». Sin XP por la pelea. Máximo 2 por día solos. El tajo aparece solo al volver a la app después de 3 h con un pilar pendiente; acá lo ves cuando quieras.</p>
+      </Tarjeta>
+
+      <Tarjeta>
+        <h2>Pájaro torpe</h2>
+        <label className="fila chico" style={{ gap: 8 }}>
+          <input type="checkbox" checked={a.pajaroTorpe !== false} onChange={(e) => guardar({ pajaroTorpe: e.target.checked }, e.target.checked ? 'Pájaro torpe encendido' : 'Pájaro torpe apagado')} /> A veces, cuando el encabezado de Hoy se hace pájaros, uno se choca con el borde, dice «¡agh!» y se va para arriba
+        </label>
+        <p className="ayuda">Sale 1 de cada 10 veces, nunca dos seguidas.</p>
+        <PajaroTorpeProbar />
+      </Tarjeta>
+
+      <Tarjeta>
+        <h2>El rival escurridizo</h2>
+        <div className="campo">
+          <label>Cuando aparece una distracción</label>
+          <select value={modoRival(a)} onChange={(e) => guardar({ rival: { ...a.rival, modo: e.target.value as 'escurridizo' | 'carta' } }, e.target.value === 'carta' ? 'Carta directa' : 'Rival escurridizo')}>
+            <option value="escurridizo">Rival escurridizo (atraparlo en Hoy)</option>
+            <option value="carta">Carta directa</option>
+          </select>
+        </div>
+        <div className="campo">
+          <label>XP que roba si lo ignorás (0 a {XP_ROBO_MAX})</label>
+          <input type="number" inputMode="numeric" min={0} max={XP_ROBO_MAX} value={xpRoboDe(a)} onChange={(e) => { const v = Number(e.target.value); if (!Number.isNaN(v)) guardar({ rival: { ...a.rival, xpRobo: Math.max(0, Math.min(XP_ROBO_MAX, Math.round(v))) } }, `Roba ${Math.max(0, Math.min(XP_ROBO_MAX, Math.round(v)))} XP`) }} style={{ width: 90 }} />
+        </div>
+        <button className="boton ancho" onClick={() => { const l = distraccionesDe(a); if (!l.length) return avisar('Agregá una distracción primero'); const r = l[Math.floor(Math.random() * l.length)]; if (!pedirRival({ fecha: fechaDe(ahora(), a.zonaHoraria), distraccion: r, momento: { momento: 'duda' } })) avisar('Ya hay un rival en pantalla'); else avisar(`${r.nombre} anda por Hoy`, { tipo: 'bajo' }) }}>Probar rival (aparece en Hoy)</button>
+        <p className="ayuda">Un muñeco gris con el nombre de la distracción se pasea por abajo de Hoy, sin tapar nada. Tocalo: el shinobi corre y salta; la mitad de las veces lo atrapa al primer toque, a veces se escabulle una o dos veces. Al atraparlo arranca la batalla. Si lo dejás 60 s (o cerrás la app con él en pantalla), avisa rompiendo la pantalla, con 10 s para atraparlo; si no, te roba esa XP (nunca te baja de nivel) y queda el sello «se llevó N XP». Es la única penalización de la app: por eso es chica y editable.</p>
+      </Tarjeta>
+
+      <Tarjeta titulo="Batalla contra la distracción">
+        <label className="fila chico" style={{ gap: 8 }}>
+          <input type="checkbox" checked={a.batalla?.activa !== false} onChange={(e) => guardar({ batalla: { ...a.batalla, activa: e.target.checked } }, e.target.checked ? 'Batalla encendida' : 'Batalla apagada: «Dudo» abre la pelea corta')} /> «Dudo» (arriba en Hoy) arranca el minijuego: 3·2·1 y flexiones por rondas
+        </label>
+        <div className="campo">
+          <label>Ejercicio de la batalla</label>
+          <select value={a.batalla?.contadorId ?? (contadores.datos?.find((c) => /flexi/i.test(c.nombre))?.id ?? contadores.datos?.[0]?.id ?? '')} onChange={(e) => guardar({ batalla: { ...a.batalla, contadorId: e.target.value } }, 'Ejercicio guardado')}>
+            {(contadores.datos ?? []).map((c) => <option key={c.id} value={c.id}>{c.nombre} ({c.cantidadPorToque} por serie)</option>)}
+          </select>
+        </div>
+        <div className="campo">
+          <label>Reps por toque</label>
+          <input type="number" inputMode="numeric" min={1} max={50} value={a.batalla?.repsPorToque ?? REPS_POR_TOQUE} onChange={(e) => { const v = Number(e.target.value); if (v > 0) guardar({ batalla: { ...a.batalla, repsPorToque: v } }, `${v} reps por toque`) }} style={{ width: 90 }} />
+        </div>
+        <p className="ayuda">
+          {(() => { const c = (contadores.datos ?? []).find((x) => x.id === (a.batalla?.contadorId ?? '')) ?? (contadores.datos ?? []).find((x) => /flexi/i.test(x.nombre)) ?? contadores.datos?.[0]; const o = objetivoBatalla(c?.cantidadPorToque, a.batalla?.repsPorToque ?? REPS_POR_TOQUE); return `Objetivo hoy: ${o} ${c ? c.nombre.toLowerCase() : 'flexiones'} (las reps por serie redondeadas a múltiplo de ${a.batalla?.repsPorToque ?? REPS_POR_TOQUE}). Al ganar se anota una serie en el contador con esas reps, con la XP de siempre. Rendirse no anota nada. Tope: ${TOPE_BATALLAS_DIA} batallas por día.` })()}
+        </p>
+        <button className="boton ancho" onClick={async () => { const r = await prepararBatalla(fechaDe(ahora(), a.zonaHoraria)); if (r.batalla) pedirBatalla(r.batalla); else avisar(r.motivo) }}>Probar la batalla</button>
+      </Tarjeta>
+
+      <Tarjeta titulo="Tensión 「進」">
+        <p className="chico texto-2" style={{ margin: 0 }}>Cinemática para el momento de estrés: el shinobi mira, el ejército corre, te da la mano y espera tu toque; desenvaina y carga. Termina con el kanji y la frase de abajo. Sin tope ni XP.</p>
+        <div className="fila" style={{ gap: 8 }}>
+          <input aria-label="Kanji del final" value={kanjiT} maxLength={2} placeholder={KANJI_TENSION} onChange={(e) => setKanjiT(e.target.value)} style={{ width: 64, textAlign: 'center', fontSize: '1.3rem' }} />
+          <input aria-label="Frase del final" value={fraseT} maxLength={60} placeholder={FRASE_TENSION} onChange={(e) => setFraseT(e.target.value)} style={{ flex: 1 }} />
+          <button className="boton chico" onClick={() => guardar({ tension: { kanji: kanjiT.trim() || undefined, frase: fraseT } }, 'Guardado')}>Guardar</button>
+        </div>
+        {clipsTension
+          ? <button className="boton ancho" onClick={() => pedirTension()}>Ver la cinemática</button>
+          : <p className="ayuda">Todavía no están los videos: el botón 「進」 aparece en Hoy (al lado de «Dudo») cuando los clips de Luma estén en animaciones/tension/ (t1-mirada, t2-ejercito, t3-mano, t3b-espera, t4-carga).</p>}
       </Tarjeta>
 
       <Tarjeta titulo="Nombre del personaje">
@@ -127,5 +233,42 @@ export function VerAnimaciones() {
         {editor ? <EditorPose /> : <button className="boton ancho" onClick={() => setEditor(true)}>Abrir el editor</button>}
       </Tarjeta>
     </>
+  )
+}
+
+/** «Probar»: el próximo encabezado que se haga polvo trae al pájaro torpe; vuelve a Hoy arriba de todo. */
+function PajaroTorpeProbar() {
+  const navegar = useNavigate()
+  return <button className="boton ancho" onClick={() => { forzarPajaroTorpe(); navegar('/'); window.scrollTo(0, 0); avisar('Bajá un poco en Hoy para verlo', { tipo: 'bajo' }) }}>Probar (bajá en Hoy)</button>
+}
+
+const MOMENTOS: (MomentoNinja | 'cualquiera')[] = ['cualquiera', 'pilar', 'noche', 'duda', 'juego', 'batalla']
+
+/** Lista editable de distracciones: nombre y, opcional, en qué momento aparece. Se guarda con cada cambio. */
+function MisDistracciones({ lista }: { lista: Distraccion[] }) {
+  const [nueva, setNueva] = useState('')
+  const guardarLista = (l: Distraccion[]) => mutar(() => guardarDistracciones(l))
+  const cambiar = (id: string, c: Partial<Distraccion>) => guardarLista(lista.map((d) => (d.id === id ? { ...d, ...c } : d)))
+  const mover = (i: number, a: number) => { const l = [...lista]; const [x] = l.splice(i, 1); l.splice(a, 0, x); void guardarLista(l) }
+  const agregar = () => { if (nueva.trim().length < 2) return; void guardarLista([...lista, nuevaDistraccion(nueva)]); setNueva('') }
+  return (
+    <div className="col" style={{ gap: 6 }}>
+      <span className="seccion-titulo">Mis distracciones</span>
+      {lista.length === 0 && <p className="ayuda">La lista está vacía: los ninjas no aparecen. Agregá una.</p>}
+      {lista.map((d, i) => (
+        <div key={d.id} className="distraccion-fila">
+          <input aria-label="Nombre de la distracción" value={d.nombre} maxLength={30} onChange={(e) => cambiar(d.id, { nombre: e.target.value })} />
+          <select aria-label="Cuándo aparece" value={d.momento ?? 'cualquiera'} onChange={(e) => cambiar(d.id, { momento: e.target.value as Distraccion['momento'] })}>
+            {MOMENTOS.map((m) => <option key={m} value={m}>{m === 'cualquiera' ? 'Cualquier momento' : NOMBRE_MOMENTO[m]}</option>)}
+          </select>
+          <button type="button" className="boton chico suave" aria-label="Subir" disabled={i === 0} onClick={() => mover(i, i - 1)}>↑</button>
+          <button type="button" className="boton chico suave" aria-label="Borrar" onClick={() => guardarLista(lista.filter((x) => x.id !== d.id))}>✕</button>
+        </div>
+      ))}
+      <div className="fila" style={{ gap: 6 }}>
+        <input placeholder="Nueva distracción (ej.: Series)" value={nueva} maxLength={30} onChange={(e) => setNueva(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') agregar() }} style={{ flex: 1 }} />
+        <button type="button" className="boton chico" onClick={agregar}>Agregar</button>
+      </div>
+    </div>
   )
 }

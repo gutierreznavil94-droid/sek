@@ -28,7 +28,7 @@ describe('pantalla Hoy', () => {
     const siguiente = screen.getByRole('link', { name: /Siguiente acción/ })
     expect(tres).toHaveAttribute('href', '/321')
     expect(siguiente).toHaveAttribute('href', '/siguiente')
-    const pilares = document.querySelectorAll('.pilar-tarjeta')
+    const pilares = document.querySelectorAll('.pilar-bloque')
     expect(pilares.length).toBe(4)
     expect(pilares[0].textContent).toContain('Entrenamiento')
     expect(pilares[1].textContent).toContain('Avanzar en la empresa')
@@ -42,10 +42,10 @@ describe('pantalla Hoy', () => {
     await completarCompromiso('manga:2026-11-02', { minutos: 20 })
     render(<MemoryRouter><Hoy hoy="2026-11-02" /></MemoryRouter>)
     await screen.findByRole('link', { name: /3 · 2 · 1/ })
-    const manga = [...document.querySelectorAll('.pilar-tarjeta')].find((e) => e.textContent?.includes('Dibujar manga'))!
+    const manga = [...document.querySelectorAll('.pilar-bloque')].find((e) => e.textContent?.includes('Dibujar manga'))!
     expect(manga.className).toContain('cumplido')
     expect(manga.querySelector('.estado-ic')?.textContent).toBe('✓')
-    const empresa = [...document.querySelectorAll('.pilar-tarjeta')].find((e) => e.textContent?.includes('empresa'))!
+    const empresa = [...document.querySelectorAll('.pilar-bloque')].find((e) => e.textContent?.includes('empresa'))!
     expect(empresa.className).toContain('pendiente')
   })
 })
@@ -63,8 +63,8 @@ describe('pantalla Hoy · cambios 05', () => {
   it('muestra Revisión diaria resaltada y los contadores debajo de los pilares', async () => {
     render(<MemoryRouter><Hoy hoy="2026-11-02" /></MemoryRouter>)
     const rev = await screen.findByRole('link', { name: /Revisión diaria/ })
-    expect(rev.className).toContain('primario')
-    const pilares = document.querySelectorAll('.pilar-tarjeta')
+    expect(rev.className).toContain('rojizo')
+    const pilares = document.querySelectorAll('.pilar-bloque')
     expect(pilares[3].compareDocumentPosition(rev) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     const flex = screen.getByRole('button', { name: /Sumar 14 flexiones/ })
     expect(flex.textContent).toContain('0 / 70')
@@ -84,14 +84,19 @@ describe('pantalla Hoy · cambios 06', () => {
   })
   afterEach(() => vi.useRealTimers())
 
-  it('a las 20:52 muestra un solo mensaje: marcar lo que falta y empezar la revisión', async () => {
+  it('a las 20:52 muestra un solo aviso de una línea: revisión ahora, hasta las 21:00, con «Empezar»', async () => {
     render(<MemoryRouter><Hoy hoy="2026-11-02" /></MemoryRouter>)
-    const aviso = await screen.findByRole('region', { name: /Completá tu revisión ahora/ })
-    expect(document.querySelectorAll('.aviso-2050').length).toBe(1)
-    expect(aviso.textContent).toContain('Dibujar manga')
-    expect(aviso.textContent).toContain('Avanzar en la empresa')
-    expect(aviso.textContent).toContain('21:00')
-    const empezar = screen.getByRole('link', { name: /Empezar la revisión/ })
+    const aviso = await screen.findByRole('alert')
+    const lineas = [...aviso.querySelectorAll('.aviso-linea')]
+    const rev = lineas.filter((l) => l.textContent?.includes('Revisión diaria'))
+    expect(rev.length).toBe(1)
+    expect(rev[0].textContent).toContain('21:00')
+    // Un pilar por vencer también es una línea («Dibujar manga en 8 min»), sin segunda línea de ayuda
+    expect(lineas.some((l) => /Dejo celu en \d+ min/.test(l.textContent ?? ''))).toBe(true)
+    expect(lineas.every((l) => !l.textContent?.includes('es el máximo'))).toBe(true)
+    const empezar = screen.getByRole('link', { name: /Empezar/ })
     expect(empezar).toHaveAttribute('href', '/revision')
+    // Los pilares sin marcar siguen en su fila (una línea cada uno), no en el aviso
+    expect([...document.querySelectorAll('.pilar-bloque')].some((e) => e.textContent?.includes('Dibujar manga'))).toBe(true)
   })
 })

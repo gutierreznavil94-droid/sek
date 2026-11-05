@@ -2,11 +2,14 @@ import { lazy, Suspense, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AJUSTES_INICIALES } from '../../data/semilla'
 import { fechaLegible } from '../../domain/fechas'
-import { configurarPrimeraVez, MAX_PILARES, SUGERENCIAS_PILARES, validarPrimeraVez, type ClavePilar, type EleccionPilar } from '../../services/primeraVez'
+import { configurarPrimeraVez, MAX_PILARES, PILARES_DEL_CREADOR, SUGERENCIAS_PILARES, TEXTO_CREADOR, validarPrimeraVez, xpDePilar, type ClavePilar, type EleccionPilar } from '../../services/primeraVez'
 import { TEMAS, TEMAS_PROXIMOS, aplicarTema, saludoDe, temaPorId, type DefinicionTema } from '../../temas/temas'
 import { DiasSemana, movimientoReducido } from '../componentes'
 import { Divisor } from '../Divisor'
+import { FondoLluvia } from '../FondoLluvia'
+import { ShinobiRespira } from '../../temas/shinobi/ShinobiRespira'
 import { avisar, mutar } from '../estado'
+import { temaTieneFormulario } from '../../services/recomendaciones'
 
 const MuniecoVivo = lazy(() => import('../animaciones/Escena').then((m) => ({ default: m.MuniecoVivo })))
 const BASE = import.meta.env.BASE_URL
@@ -207,6 +210,7 @@ function ElegirPilares({ valor, onChange }: { valor: EleccionPilar[]; onChange: 
   return (
     <>
       <p className="pv-lead">Tildá lo que querés cumplir cada día. Pocos y firmes: hasta {MAX_PILARES}. <b className="pv-cuenta">{valor.length}/{MAX_PILARES}</b></p>
+      <TarjetaCreador usados={valor.map((p) => p.clave)} onUsar={() => onChange(PILARES_DEL_CREADOR.map((p) => ({ ...p, dias: [...p.dias] })))} />
       <div className="pv-pilares">
         {SUGERENCIAS_PILARES.map((s) => {
           const p = elegido(s.clave)
@@ -248,22 +252,51 @@ function ElegirPilares({ valor, onChange }: { valor: EleccionPilar[]; onChange: 
   )
 }
 
+/** «Así lo usa el creador»: los 4 pilares de Navil con horario y XP, y un botón que los deja tildados de una. */
+export function TarjetaCreador({ usados, onUsar, etiquetaBoton = 'Usar estos 4', nota }: { usados: ClavePilar[]; onUsar: () => void; etiquetaBoton?: string; nota?: string }) {
+  const todos = PILARES_DEL_CREADOR.every((p) => usados.includes(p.clave))
+  return (
+    <section className="pv-creador">
+      <div className="fila entre"><b>Así lo usa el creador</b><span className="texto-3 chico">4 pilares</span></div>
+      <ul className="pv-creador-lista">
+        {PILARES_DEL_CREADOR.map((p) => (
+          <li key={p.clave} className={usados.includes(p.clave) ? 'tiene' : ''}>
+            <span className="pv-casilla" aria-hidden>{usados.includes(p.clave) ? '✓' : ''}</span>
+            <span className="crece">{p.nombre}</span>
+            <span className="texto-3 chico mono">{p.clave === 'dormir' ? 'a tu hora' : p.clave === 'entrenar' ? `${p.horaLimite} · ${p.minutos} min` : p.minutos ? `${p.horaLimite} · ${p.minutos} min` : p.horaLimite} · +{xpDePilar(p.clave)} XP</span>
+          </li>
+        ))}
+      </ul>
+      <p className="chico texto-2" style={{ margin: 0 }}>{nota ?? TEXTO_CREADOR}</p>
+      <button type="button" className="boton ancho" disabled={todos} onClick={onUsar}>{todos ? 'Ya los tenés' : etiquetaBoton}</button>
+    </section>
+  )
+}
+
 function Listo({ tema, nombre, hoy, pilares }: { tema: DefinicionTema; nombre: string; hoy: string; pilares: EleccionPilar[] }) {
   return (
     <>
       <div className="pv-saludo">
-        <div className="sh-reposo-marco pv-personaje">
-          <Suspense fallback={<div className="pv-personaje-vacio" />}>
-            <MuniecoVivo />
-          </Suspense>
-        </div>
-        <p className="pv-globo"><b>¡Hola, {nombre}!</b> {saludoDe(tema, nombre)}</p>
+        {tema.id === 'shinobi' ? (
+          <div className="pv-escena" aria-hidden>
+            <FondoLluvia variante="hoy" enCaja />
+            <ShinobiRespira hoja={BASE + tema.sprite} quieto={movimientoReducido()} className="pv-escena-shinobi" />
+          </div>
+        ) : (
+          <div className="sh-reposo-marco pv-personaje">
+            <Suspense fallback={<div className="pv-personaje-vacio" />}>
+              <MuniecoVivo />
+            </Suspense>
+          </div>
+        )}
+        <p className={`pv-globo${tema.id === 'shinobi' ? ' al-lado' : ''}`}><b>¡Hola, {nombre}!</b> {saludoDe(tema, nombre)}</p>
       </div>
       <div className="pv-resumen">
         <div><span className="texto-3 chico">Tu ciclo</span><b>90 días desde hoy</b><span className="chico texto-2">Día 1: {fechaLegible(hoy)}</span></div>
         <div><span className="texto-3 chico">Tus pilares</span><b>{pilares.map((p) => p.nombre.trim()).join(' · ')}</b></div>
       </div>
       <p className="ayuda">Todo se puede cambiar después desde Más. Los datos viven solo en este teléfono: hacé una copia cada semana.</p>
+      {temaTieneFormulario() && <p className="ayuda centro">¿Algo que mejorarías? Después, en Más → <b>Recomendar algo</b>.</p>}
     </>
   )
 }

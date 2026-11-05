@@ -20,6 +20,7 @@ import {
   mejoraDe,
   objetivoSerie,
   obtenerRutina,
+  progresionEjercicio,
   pesoInicial,
   reabrirEntreno,
   reiniciarEntreno,
@@ -33,7 +34,7 @@ import {
   terminarEntreno,
   ultimaVez,
 } from './entreno'
-import { DESCUENTO_S, PREPARACION_S, estadoCronometro, historialTiempo, iniciarReloj, terminarCronometro } from './entreno'
+import { DESCUENTO_S, PREPARACION_S, TOPE_SEGUNDOS_SERIE, duracionSerie, estadoCronometro, fijarObjetivoCronometro, historialTiempo, iniciarReloj, siguienteObjetivo, terminarCronometro, terminarDescanso } from './entreno'
 import { ahora, avanzar, fijarAhora, reiniciarReloj } from './reloj'
 import { xpTotal } from './xp'
 
@@ -154,24 +155,26 @@ describe('peso antes de la serie y progresión basada en la serie 1', () => {
     expect(pesoInicial(b, [])).toBe(53)
     expect(objetivoSerie(b, [], 1, 53)).toBe(8)
   })
-  it('serie 1 sin llegar al tope: +1 rep; la serie 2 apunta a lo que hizo en la serie 2', () => {
-    const antes = [serie(1, 10), serie(2, 8)]
-    expect(sugerencia(b, antes)).toMatchObject({ subirPeso: false })
-    expect(objetivoSerie(b, antes, 1, 53)).toBe(11)
-    expect(objetivoSerie(b, antes, 2, 53)).toBe(8)
+  it('la propuesta de la serie 1 es reps actuales + 1; la serie 2 apunta a lo que hizo en la serie 2', () => {
+    const antes = [serie(1, 8), serie(2, 7)]
+    expect(sugerencia(b, antes)).toEqual({ subirPeso: false, texto: 'Actual 8. Hoy, 9.' })
+    expect(objetivoSerie(b, antes, 1, 53)).toBe(9)
+    expect(objetivoSerie(b, antes, 2, 53)).toBe(7)
+    // Las actuales mandan, no la vez pasada: si las cargó a mano en 10, propone 11.
+    expect(objetivoSerie({ ...b, reps: 10 }, antes, 1, 53)).toBe(11)
   })
-  it('serie 1 en el tope: pregunta si sube peso sin proponer un número', () => {
+  it('reps actuales en el tope: pregunta si sube peso sin proponer un número; con peso nuevo arranca de las actuales', () => {
+    const tope = { ...b, reps: 12 }
     const antes = [serie(1, 12), serie(2, 9)]
-    const s = sugerencia(b, antes)!
+    const s = sugerencia(tope, antes)!
     expect(s.subirPeso).toBe(true)
-    expect(s.texto).toBe('La vez pasada llegaste a 12: ¿subís peso?')
+    expect(s.texto).toBe('Llegaste a 12 con 53 kg. ¿Subís el peso?')
     expect(s).not.toHaveProperty('peso')
-    // El peso arranca en el de la vez pasada; si Navil lo sube, el objetivo vuelve al mínimo.
-    expect(pesoInicial(b, antes)).toBe(53)
-    expect(objetivoSerie(b, antes, 1, 55)).toBe(8)
-    expect(objetivoSerie(b, antes, 2, 55)).toBe(8)
+    expect(pesoInicial(tope, antes)).toBe(53)
+    expect(objetivoSerie(tope, antes, 1, 55)).toBe(12)
+    expect(objetivoSerie(tope, antes, 2, 55)).toBe(12)
   })
-  it('el tope por defecto es 12 (mínimo = la planilla)', async () => {
+  it('el tope por defecto es 12 (actuales = la planilla)', async () => {
     const a = (await obtenerRutina('rutina-a'))!
     expect(ejercicios(a).find((e) => e.id === 'a-press-banca')).toMatchObject({ reps: 8, repsTope: 12 })
     expect(ejercicios(a).some((e) => 'incremento' in e)).toBe(false)
@@ -234,34 +237,53 @@ describe('XP del entreno', () => {
     expect(r.resumen.series).toBe(12)
   })
 
-  it('+5 por mejorar, +10 por récord, con tope de 20 por entreno', async () => {
+  it('+5 por récord (superar las reps actuales), +10 por subir el peso, con tope de 20 por entreno', async () => {
     await hacerRutinaA('2026-11-02')
     const antes = await xpTotal()
-    // Mejora en un ejercicio: +5 mejora y +10 récord = 15.
+    // Una rep más que las actuales (8) con el mismo peso: récord, +5; las actuales pasan a 9.
     let r = await hacerRutinaA('2026-11-05', { 'a-press-banca': { reps: 9 } })
-    expect(r.resumen.ejercicios.find((e) => e.bloqueId === 'a-press-banca')).toMatchObject({ mejora: true, record: true })
-    expect(r.resumen.xpExtra).toBe(15)
-    expect(await xpTotal()).toBe(antes + 30 + 15)
-    // Mejora en tres: 45 sin tope, queda en 20.
+    expect(r.resumen.ejercicios.find((e) => e.bloqueId === 'a-press-banca')).toMatchObject({ record: true, subioPeso: false, actuales: 8, xp: 5 })
+    expect(r.resumen.xpExtra).toBe(5)
+    expect(await xpTotal()).toBe(antes + 30 + 5)
+    expect(ejercicios((await obtenerRutina('rutina-a'))!).find((e) => e.id === 'a-press-banca')).toMatchObject({ reps: 9, peso: 53 })
+    // Dos récords y una subida de peso: 20 justo; con otra subida más serían 30 y queda en 20.
     const antes2 = await xpTotal()
-    r = await hacerRutinaA('2026-11-09', { 'a-press-banca': { reps: 10 }, 'a-vuelos': { peso: 6 }, 'a-press-frances': { reps: 6 } })
-    expect(r.resumen.xpSinTope).toBe(45)
+    r = await hacerRutinaA('2026-11-09', { 'a-press-banca': { reps: 10 }, 'a-vuelos': { peso: 6 }, 'a-press-frances': { reps: 7 }, 'a-press-inclinado': { peso: 50 } })
+    expect(r.resumen.xpSinTope).toBe(30)
     expect(r.resumen.xpExtra).toBe(TOPE_XP_EXTRA)
     expect(await xpTotal()).toBe(antes2 + 30 + 20)
   })
 
-  it('igualar un récord no da XP y la mejora se compara con la sesión anterior de la misma rutina', async () => {
+  it('igualar las reps actuales no da XP; hacer menos tampoco las baja', async () => {
     await hacerRutinaA('2026-11-02', { 'a-press-banca': { reps: 10 } })
-    await hacerRutinaA('2026-11-05', { 'a-press-banca': { reps: 8 } }) // baja
-    const r = await hacerRutinaA('2026-11-09', { 'a-press-banca': { reps: 10 } }) // mejora vs. la anterior, iguala el récord
+    expect(ejercicios((await obtenerRutina('rutina-a'))!).find((e) => e.id === 'a-press-banca')!.reps).toBe(10)
+    await hacerRutinaA('2026-11-05', { 'a-press-banca': { reps: 8 } }) // baja: las actuales siguen en 10
+    expect(ejercicios((await obtenerRutina('rutina-a'))!).find((e) => e.id === 'a-press-banca')!.reps).toBe(10)
+    const r = await hacerRutinaA('2026-11-09', { 'a-press-banca': { reps: 10 } }) // iguala
     const banca = r.resumen.ejercicios.find((e) => e.bloqueId === 'a-press-banca')!
-    expect(banca).toMatchObject({ mejora: true, record: false })
-    expect(r.resumen.xpExtra).toBe(5)
+    expect(banca).toMatchObject({ record: false, subioPeso: false, actuales: 10 })
+    expect(r.resumen.xpExtra).toBe(0)
+  })
+
+  it('cambiar el peso empieza un tramo nuevo: la primera sesión fija las reps actuales y queda la fecha', async () => {
+    await hacerRutinaA('2026-11-02', { 'a-press-banca': { reps: 12 } })
+    const b0 = ejercicios((await obtenerRutina('rutina-a'))!).find((e) => e.id === 'a-press-banca')!
+    expect(sugerencia(b0, [{ bloqueId: 'a-press-banca', n: 1, reps: 12, peso: 53, instante: 0 }])).toMatchObject({ subirPeso: true })
+    const r = await hacerRutinaA('2026-11-05', { 'a-press-banca': { reps: 7, peso: 55 } })
+    expect(r.resumen.ejercicios.find((e) => e.bloqueId === 'a-press-banca')).toMatchObject({ record: false, subioPeso: true, xp: 10 })
+    const b1 = ejercicios((await obtenerRutina('rutina-a'))!).find((e) => e.id === 'a-press-banca')!
+    expect(b1).toMatchObject({ peso: 55, reps: 7, tramoDesde: '2026-11-05' })
+    // En el tramo nuevo, 8 ya es récord (7 + 1), aunque con 53 kg hacía 12.
+    const r2 = await hacerRutinaA('2026-11-09', { 'a-press-banca': { reps: 8, peso: 55 } })
+    expect(r2.resumen.ejercicios.find((e) => e.bloqueId === 'a-press-banca')).toMatchObject({ record: true, actuales: 7 })
+    const p = await progresionEjercicio('a-press-banca')
+    expect(p.tramos.map((t) => [t.peso, t.desde, t.entrenos])).toEqual([[53, '2026-11-02', 1], [55, '2026-11-05', 2]])
+    expect(p.puntos.map((q) => [q.reps, q.tramo, q.record])).toEqual([[12, 0, false], [7, 1, false], [8, 1, true]])
   })
 
   it('hacer menos en la serie 2 no quita nada; corregir en el descanso recalcula sin duplicar', async () => {
     await hacerRutinaA('2026-11-02')
-    // Serie 1 igual, serie 2 dos menos: sin mejora, sin récord, 0 XP extra (pero nada negativo).
+    // Serie 1 igual a las actuales, serie 2 dos menos: sin récord, 0 XP extra (pero nada negativo).
     dia('2026-11-05')
     let s = await iniciarEntreno('rutina-a', '2026-11-05')
     s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
@@ -270,34 +292,34 @@ describe('XP del entreno', () => {
     let r = await terminarEntreno(s.id!)
     expect(r.resumen.xpExtra).toBe(0)
     expect(r.resumen.ejercicios[0]).toMatchObject({ mejora: false, record: false, xp: 0 })
-    // Corrige: la serie 1 fueron 9 → mejora + récord de serie 1.
+    // Corrige: la serie 1 fueron 9 → récord (una más que las 8 actuales), +5.
     await reabrirEntreno(s.id!)
     await corregirSerie(s.id!, 'a-press-banca', 1, { reps: 9 })
     r = await terminarEntreno(s.id!)
-    expect(r.resumen.ejercicios[0]).toMatchObject({ mejora: true, motivo: 'más reps', record: true, xp: 15 })
-    expect(r.resumen.xpExtra).toBe(15)
+    expect(r.resumen.ejercicios[0]).toMatchObject({ mejora: true, motivo: 'más reps', record: true, xp: 5 })
+    expect(r.resumen.xpExtra).toBe(5)
   })
 
   it('reabrir para deshacer una serie quita el XP y al terminar de nuevo no se duplica', async () => {
     await hacerRutinaA('2026-11-02')
     const base = await xpTotal()
     const r = await hacerRutinaA('2026-11-05', { 'a-press-banca': { reps: 9 } })
-    expect(await xpTotal()).toBe(base + 45)
+    expect(await xpTotal()).toBe(base + 35)
     await reabrirEntreno(r.sesion.id!)
     expect(await xpTotal()).toBe(base)
     // Corrige la última serie de jalón (sin cambio de marcas) y vuelve a terminar.
     await deshacerSerie(r.sesion.id!)
     await registrarSerie(r.sesion.id!, 'a-jalon-triceps', { reps: 12, repsExtra: 3, peso: 5 })
     const otra = await terminarEntreno(r.sesion.id!)
-    expect(otra.resumen.xpExtra).toBe(15)
-    expect(await xpTotal()).toBe(base + 45)
+    expect(otra.resumen.xpExtra).toBe(5)
+    expect(await xpTotal()).toBe(base + 35)
   })
 
   it('reiniciar desde cero borra lo de hoy, desmarca el pilar y no duplica el XP; no toca días anteriores', async () => {
     await hacerRutinaA('2026-11-02')
     const base = await xpTotal()
     const r = await hacerRutinaA('2026-11-05', { 'a-press-banca': { reps: 9 } })
-    expect(await xpTotal()).toBe(base + 45)
+    expect(await xpTotal()).toBe(base + 35)
     avanzar(5 * 60_000)
     const s = await reiniciarEntreno(r.sesion.id!)
     expect(s).toMatchObject({ estado: 'en_curso', paso: 0, series: [], hechos: [], saltados: [] })
@@ -312,8 +334,8 @@ describe('XP del entreno', () => {
     // Rehacer la rutina igual da el mismo XP, una sola vez.
     const otra = await hacerRutinaA('2026-11-05', { 'a-press-banca': { reps: 9 } })
     expect(otra.sesion.id).toBe(r.sesion.id)
-    expect(otra.resumen.xpExtra).toBe(15)
-    expect(await xpTotal()).toBe(base + 45)
+    expect(otra.resumen.xpExtra).toBe(5)
+    expect(await xpTotal()).toBe(base + 35)
   })
 
   it('reiniciar en medio del entreno vuelve al bloque 1 con el reloj en 0', async () => {
@@ -349,6 +371,23 @@ describe('historial y fuerza', () => {
     expect(f.records.map((r) => r.nombre)).toEqual(['Press banca'])
     expect(f.mejoraronEsteMes).toEqual(['Press banca'])
     expect(f.volumenPorSemana.at(-1)!.volumen).toBeGreaterThan(0)
+    // Entrenos cumplidos: del 2 al 5 de noviembre tocaban lunes a jueves (4) y hubo 2.
+    expect(f.diasCiclo.map((d) => [d.programado, d.hecho])).toEqual([[true, true], [true, false], [true, false], [true, true]])
+    expect(f.programados).toBe(4)
+    expect(f.ultimaSubida).toBeNull()
+    expect(f.ejercicios.some((e) => e.id === 'a-press-banca')).toBe(true)
+  })
+
+  it('migración: las reps actuales arrancan en la serie 1 de la última sesión con el peso actual', async () => {
+    await hacerRutinaA('2026-11-02', { 'a-press-banca': { reps: 11 } })
+    const d = db()
+    const r = (await d.rutinas.get('rutina-a'))!
+    // Como si viniera de la versión anterior: sin tramo y con el mínimo viejo.
+    await d.rutinas.put({ ...r, bloques: r.bloques.map((b) => (b.tipo === 'ejercicio' ? { ...b, reps: 8, tramoDesde: undefined } : b)) })
+    const { cargarRutinasIniciales } = await import('./entreno')
+    await cargarRutinasIniciales()
+    const b = ejercicios((await d.rutinas.get('rutina-a'))!).find((e) => e.id === 'a-press-banca')!
+    expect(b).toMatchObject({ reps: 11, peso: 53, tramoDesde: '2026-11-02' })
   })
 })
 
@@ -388,6 +427,40 @@ describe('colgarse en barra con cronómetro', () => {
     const h = await historialTiempo('Colgarse en barra')
     expect(h.ultimo).toMatchObject({ segundos: 62, peso: 15 })
     expect(h.record).toMatchObject({ segundos: 72, peso: 15 })
+  })
+})
+
+describe('colgarse: el objetivo sube 1 s solo al superarlo (Navil, 5 nov)', () => {
+  it('supera por mucho → +1 s; no supera o empata → igual; nunca baja', () => {
+    expect(siguienteObjetivo(30, 40)).toBe(31)
+    expect(siguienteObjetivo(30, 31)).toBe(31)
+    expect(siguienteObjetivo(30, 30)).toBe(30)
+    expect(siguienteObjetivo(30, 12)).toBe(30)
+  })
+
+  it('al tocar Listo con récord, el objetivo sube 1 s en las 3 rutinas; sin récord queda igual', async () => {
+    let s = await iniciarEntreno('rutina-a')
+    s = await iniciarReloj(s.id!, 'a-colgarse')
+    avanzar((5 + 113) * 1000) // 110 s guardados contra 70 de objetivo
+    const r = await terminarCronometro(s.id!, 'a-colgarse', 15)
+    expect(r).toMatchObject({ objetivo: 71, subio: true })
+    for (const id of ['rutina-a', 'rutina-b', 'rutina-c']) expect((await obtenerRutina(id))!.bloques.find((x) => x.nombre === 'Colgarse en barra')).toMatchObject({ segundos: 71 })
+    await terminarEntreno(s.id!)
+    dia('2026-11-03')
+    s = await iniciarEntreno('rutina-b', '2026-11-03')
+    s = await iniciarReloj(s.id!, 'b-colgarse')
+    avanzar((5 + 23) * 1000) // 20 s: no supera
+    const r2 = await terminarCronometro(s.id!, 'b-colgarse', 15)
+    expect(r2).toMatchObject({ objetivo: 71, subio: false })
+  })
+
+  it('a mano se puede subir o bajar, y el automático sigue desde ahí', async () => {
+    await fijarObjetivoCronometro('Colgarse en barra', 25)
+    expect((await obtenerRutina('rutina-c'))!.bloques.find((x) => x.nombre === 'Colgarse en barra')).toMatchObject({ segundos: 25 })
+    let s = await iniciarEntreno('rutina-a')
+    s = await iniciarReloj(s.id!, 'a-colgarse')
+    avanzar((5 + 60) * 1000)
+    expect((await terminarCronometro(s.id!, 'a-colgarse', 15)).objetivo).toBe(26)
   })
 })
 
@@ -478,5 +551,40 @@ describe('ronda 8', () => {
     expect(s.reloj).toMatchObject({ segundos: 180, inicio: t0 + PREPARACION_S * 1000 })
     s = await saltarPreparacion(s.id!)
     expect(s.reloj!.inicio).toBe(t0)
+  })
+})
+
+describe('tiempo por serie (4 nov)', () => {
+  it('mide desde el fin del descanso (saltado o agotado) hasta «Serie hecha» y lo guarda en la serie', async () => {
+    dia('2026-11-02')
+    let s = await iniciarEntreno('rutina-a', '2026-11-02')
+    // Primera serie del entreno: sin punto de partida, queda sin medir
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
+    expect(seriesDe(s, 'a-press-banca')[0].segundos).toBeUndefined()
+    // Salta el descanso a los 20 s y hace la serie 2 en 38 s
+    avanzar(20_000)
+    s = await terminarDescanso(s.id!)
+    avanzar(38_000)
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
+    expect(seriesDe(s, 'a-press-banca')[1].segundos).toBe(38)
+    // Deja que el descanso (1:30) se agote solo y hace la serie 3 en 45 s después del fin
+    const total = s.descanso!.fases.reduce((a, f) => a + f.segundos, 0)
+    avanzar(total * 1000 + 45_000)
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
+    expect(seriesDe(s, 'a-press-banca')[2].segundos).toBe(45)
+    // Si toca «Serie hecha» con el descanso aún corriendo, cuenta 0 s (no negativo)
+    avanzar(5_000)
+    s = await registrarSerie(s.id!, 'a-press-banca', { reps: 8, peso: 53 })
+    expect(seriesDe(s, 'a-press-banca')[3].segundos).toBe(0)
+    // Más de 30 min: no se mide (la app quedó abierta)
+    expect(duracionSerie({ serieDesde: ahora() - (TOPE_SEGUNDOS_SERIE + 1) * 1000 }, ahora())).toBeUndefined()
+    // Progreso → Fuerza: promedio del día; sesiones viejas sin tiempo muestran nada
+    avanzar(60_000)
+    await terminarEntreno(s.id!)
+    const prog = await progresionEjercicio('a-press-banca')
+    expect(prog.puntos[0].segundos).toBe(Math.round((38 + 45 + 0) / 3))
+    const vieja = (await db().sesionesEntreno.get(s.id!))!
+    await db().sesionesEntreno.put({ ...vieja, series: vieja.series.map(({ segundos: _s, ...x }) => { void _s; return x }) })
+    expect((await progresionEjercicio('a-press-banca')).puntos[0].segundos).toBeUndefined()
   })
 })

@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import proximamente from './proximamente.json'
+import './shinobi/visual.css'
 
 /**
  * Temas: la cara de la app (personaje, fondos, sprite, color de acento, kanjis).
@@ -28,21 +29,36 @@ export interface DefinicionTema {
   vistaPrevia: { video?: string; imagen: string }
   icono?: string
   orden?: number
+  /** Nombres que se proponen para las tres fases (si falta, los de SEK). */
+  nombresFases?: string[]
+  /** Tema en preparación: no aparece en la primera entrada ni en Más → Tema hasta que se saque esto. */
+  oculto?: boolean
+  /** «Recomendar algo»: link de respuesta del formulario de Google (…/formResponse) y los ids de sus campos (entry.NNN). Sin link, el botón no aparece. */
+  recomendaciones?: { formulario: string; campos: { texto: string; parte: string; contacto: string; app: string } }
+  /** Frases sueltas del compañero (cortas, alentadoras). Editables desde Ajustes. */
+  frases?: string[]
+  /** Íconos por nombre genérico («icono-hoy» → «今»). Lo que falte lo toma de Shinobi. */
+  iconos?: Record<string, string>
 }
 
 export interface TemaProximo { id: string; nombre: string; pista: string }
 
 const archivos = import.meta.glob<{ default: DefinicionTema }>('./*/tema.json', { eager: true })
-export const TEMAS: DefinicionTema[] = Object.values(archivos)
-  .map((m) => m.default)
+const todos = Object.values(archivos).map((m) => m.default)
+const base = todos.find((t) => t.id === 'shinobi') ?? todos[0]
+/** Todos los temas, incluso los ocultos. Lo que le falte a un tema lo toma de Shinobi, así la app no se rompe a medio armar. */
+export const TEMAS_TODOS: DefinicionTema[] = todos
+  .map((t) => ({ ...base, ...Object.fromEntries(Object.entries(t).filter(([, v]) => v !== '' && v !== null && v !== undefined)) }) as DefinicionTema)
   .sort((a, b) => (a.orden ?? 99) - (b.orden ?? 99))
+/** Temas elegibles (los ocultos quedan afuera). */
+export const TEMAS: DefinicionTema[] = TEMAS_TODOS.filter((t) => !t.oculto)
 export const TEMAS_PROXIMOS: TemaProximo[] = proximamente.temas
 export const TEMA_POR_DEFECTO = 'shinobi'
 /** Acento de estilos.css: si el tema usa este, no se pisa nada. */
 const ACENTO_BASE = '#c8102e'
 
 export function temaPorId(id: string | undefined): DefinicionTema {
-  return TEMAS.find((t) => t.id === id) ?? TEMAS.find((t) => t.id === TEMA_POR_DEFECTO) ?? TEMAS[0]
+  return TEMAS_TODOS.find((t) => t.id === id) ?? TEMAS.find((t) => t.id === TEMA_POR_DEFECTO) ?? TEMAS[0]
 }
 
 let activo: DefinicionTema = temaPorId(TEMA_POR_DEFECTO)
@@ -87,6 +103,11 @@ export function rutaTema(archivo: string, tema: DefinicionTema = activo): string
 /** Texto del saludo con el personaje y el nombre de la persona. */
 export function saludoDe(tema: DefinicionTema, nombre: string): string {
   return tema.saludo.replace(/\{personaje\}/g, tema.personaje).replace(/\{nombre\}/g, nombre)
+}
+
+/** Ícono del tema activo por nombre genérico (texto o kanji). Si el tema no lo tiene, el de Shinobi; si tampoco, vacío. */
+export function iconoTema(nombre: string, tema: DefinicionTema = activo): string {
+  return tema.iconos?.[nombre] ?? base.iconos?.[nombre] ?? ''
 }
 
 export function useTema(): DefinicionTema {

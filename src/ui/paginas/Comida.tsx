@@ -5,12 +5,13 @@ import { fechaLegible, sumarDias } from '../../domain/fechas'
 import { obtenerAjustes } from '../../services/base'
 import {
   FRANJAS, FUENTES_TABLA, ID_PILAR_COMIDA, TABLA_ALIMENTOS, activarPilarComida, alimentoPorId, borrarComida, borrarGuardada, buscarCodigo, buscarEn, calcularObjetivo, cambiarCantidad,
-  cargarGuardada, comidasDelDia, crearPropioDesdePorcion, estadoKcal, franjaAhora, frecuentes, guardarComida, guardarObjetivo, listarGuardadas, macrosDe, registrarComida, registrarPeso,
+  cargarGuardada, comidasDelDia, crearPropioDesdePorcion, franjaAhora, frecuentes, guardarComida, guardarObjetivo, listarGuardadas, macrosDe, registrarComida, registrarPeso,
   repetirAyer, resumenComida, todosLosAlimentos, type Alimento, type ResumenComida, type Totales,
 } from '../../services/comidas'
 import { db } from '../../data/db'
 import { Atras, Confirmar, Hoja, Tarjeta } from '../componentes'
 import { avisar, mutar, useDatos } from '../estado'
+import { AguaEnComida, ConfigAguaTarjeta, SeccionAgua, TarjetaAgua, resumenAgua } from './Agua'
 
 // ---------- Anillos ----------
 
@@ -42,7 +43,7 @@ export function AnilloComida({ valor, objetivo, etiqueta, unidad, tam = 72, alPa
 // ---------- Tarjeta de Hoy ----------
 
 export function TarjetaComida({ hoy }: { hoy: string }) {
-  const datos = useDatos(async () => ({ dia: await comidasDelDia(hoy), objetivo: (await obtenerAjustes()).comida }), [hoy])
+  const datos = useDatos(async () => { const a = await obtenerAjustes(); return { dia: await comidasDelDia(hoy), objetivo: a.comida, aguaChica: (a.agua?.enHoy ?? 'chica') === 'chica' } }, [hoy])
   const [cargar, setCargar] = useState(false)
   const d = datos.datos
   if (!d) return null
@@ -54,17 +55,18 @@ export function TarjetaComida({ hoy }: { hoy: string }) {
         <span className="co-kanji" aria-hidden>食</span>
         <span className="co-tarjeta-texto">
           <b>Comida</b>
-          <span className="chico texto-2">
-            {!o ? 'Configurá tu objetivo' : t.kcal === 0 ? 'Cargá tu primera comida' : estadoKcal(t.kcal, o.kcal) === 'pasado' ? `Te pasaste ${t.kcal - o.kcal} kcal` : `Faltan ${Math.max(0, o.kcal - t.kcal).toLocaleString('es-AR')} kcal`}
+          <span className="co-tarjeta-estado">
+            {!o ? 'Configurá tu objetivo' : t.kcal === 0 ? 'Sin comidas aún' : `${t.kcal.toLocaleString('es-AR')} / ${o.kcal.toLocaleString('es-AR')} kcal · ${t.p} g prot.`}
           </span>
         </span>
         {o && (
           <span className="co-tarjeta-anillos">
-            <AnilloComida valor={t.kcal} objetivo={o.kcal} etiqueta="Calorías" unidad="kcal" tam={52} />
-            <AnilloComida valor={t.p} objetivo={o.proteina} etiqueta="Proteína" unidad="g" tam={52} alPasarse={false} />
+            <AnilloComida valor={t.kcal} objetivo={o.kcal} etiqueta="Calorías" unidad="kcal" tam={34} />
+            <AnilloComida valor={t.p} objetivo={o.proteina} etiqueta="Proteína" unidad="g" tam={34} alPasarse={false} />
           </span>
         )}
       </Link>
+      {d.aguaChica && <TarjetaAgua hoy={hoy} chica />}
       {o ? <button className="boton primario co-comi" onClick={() => setCargar(true)}>+ Comí</button> : <Link to="/mas/comida" className="boton co-comi">Objetivo</Link>}
       {cargar && <CargarComida hoy={hoy} onCerrar={() => setCargar(false)} />}
     </section>
@@ -108,6 +110,7 @@ export function Comida({ hoy }: { hoy: string }) {
         </section>
       )}
       {o && <button className="boton primario grande ancho" onClick={() => setCargar(true)}>+ Comí</button>}
+      <AguaEnComida hoy={hoy} />
       {FRANJAS.map((f) => {
         const lista = d.dia.porFranja.get(f.id) ?? []
         const tf = lista.reduce((s, r) => s + r.kcal, 0)
@@ -456,6 +459,7 @@ export function MasComida({ hoy }: { hoy: string }) {
           </div>
         </Tarjeta>
       )}
+      <ConfigAguaTarjeta />
       <Tarjeta titulo="Pilar «Comer según el plan»">
         <p className="chico texto-2">Se cumple si el día cierra entre −10 % y +10 % de tus calorías y llegás a tu proteína. 15 XP. Un día sin cargar comidas no cuenta: retomás sin castigo.</p>
         <button className={`boton ancho ${pilarActivo ? '' : 'primario'}`} disabled={!o} onClick={() => (pilarActivo ? setConfirmar(true) : mutar(() => activarPilarComida(true, hoy)).then(() => avisar('Pilar de comida activado', { tipo: 'ok' })))}>
@@ -477,7 +481,8 @@ export function MasComida({ hoy }: { hoy: string }) {
 
 // ---------- Progreso → 食 ----------
 
-export function SeccionComida({ r }: { r: ResumenComida }) {
+export function SeccionComida({ r, hoy }: { r: ResumenComida; hoy: string }) {
+  const agua = useDatos(() => resumenAgua(hoy), [hoy])
   const o = r.objetivo
   const pesos = r.pesos.slice(-30)
   const W = 300
@@ -516,6 +521,7 @@ export function SeccionComida({ r }: { r: ResumenComida }) {
         {(() => { const s = r.semanas[r.semanas.length - 1]; return s.kcal ? <p className="chico">Esta semana: <b>{s.kcal.toLocaleString('es-AR')} kcal</b> y <b>{s.proteina} g</b> de proteína por día ({s.dias} día{s.dias === 1 ? '' : 's'} cargado{s.dias === 1 ? '' : 's'}).</p> : null })()}
         <p className="chico texto-2">{r.ultraprocesadosSemana ? `${r.ultraprocesadosSemana} ultraprocesado${r.ultraprocesadosSemana === 1 ? '' : 's'} esta semana.` : 'Sin ultraprocesados esta semana.'}</p>
       </section>
+      {agua.datos && <SeccionAgua r={agua.datos} hoy={hoy} />}
       <Link to="/comida" className="boton ancho">Ver la comida de hoy</Link>
     </div>
   )

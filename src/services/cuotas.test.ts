@@ -114,6 +114,25 @@ describe('series con cuota y extra', () => {
     expect(res.diasCiclo[6]).toMatchObject({ fecha: '2026-11-08', total: 75, cuota: 75, reps: 15 })
   })
 
+  it('con «cuota a mano» la propuesta sube solo las reps: la cuota y el extra quedan fijos', async () => {
+    const c0 = await flex()
+    const { creado: _c, ...resto } = c0
+    void _c
+    await guardarContador({ ...resto, cuotaAMano: true, metaDiaria: 60, metaExtra: 90 })
+    expect((await flex()).metaDiaria).toBe(60)
+    for (const f of ['2026-11-02', '2026-11-03', '2026-11-04']) { dia(f); await tocar(5) }
+    dia('2026-11-05')
+    expect(await propuestaDeSubida(await flex(), '2026-11-05')).toMatchObject({ de: 14, a: 15, cuota: 60, extra: 90 })
+    await responderPropuesta('flexiones', true)
+    const c = await flex()
+    expect(c.cantidadPorToque).toBe(15)
+    expect(c.metaDiaria).toBe(60)
+    expect(c.metaExtra).toBe(90)
+    expect(c.cuotaAMano).toBe(true)
+    const res = (await resumenContadores('2026-11-05')).find((x) => x.contador.id === 'flexiones')!
+    expect(res.escalonesReps.map((x) => [x.reps, x.cuota]).slice(-2)).toEqual([[14, 60], [15, 60]])
+  })
+
   it('dominadas también suben de a 1 rep por serie', async () => {
     for (const f of ['2026-11-02', '2026-11-03', '2026-11-04']) { dia(f); for (let i = 0; i < 5; i++) await sumarToque('dominadas') }
     dia('2026-11-05')

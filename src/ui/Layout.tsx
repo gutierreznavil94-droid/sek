@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { NavLink, Outlet, Link } from 'react-router-dom'
+import { NavLink, Outlet, Link, useLocation } from 'react-router-dom'
 import { fechaDelDiaDelCiclo, fechaLegible } from '../domain/fechas'
 import { estadoDelCiclo, fasesDelCiclo, objetivosDelCiclo } from '../services/ciclo'
 import { Hoja } from './componentes'
@@ -8,6 +8,9 @@ import { Desintegracion } from './Desintegrar'
 import { useDatos } from './estado'
 import { VERSION_APP } from '../version'
 import { enModoPrueba, salirModoPrueba } from '../data/modoPrueba'
+import { Companero } from './Companero'
+import { FondoLluvia, type VarianteLluvia } from './FondoLluvia'
+import { useVersion } from './estado'
 
 const ICONOS = {
   sueno: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" /></svg>,
@@ -32,6 +35,11 @@ export function Layout({ hoy }: { hoy: string }) {
   }, [hoy])
   const [detalle, setDetalle] = useState(false)
   const cabRef = useRef<HTMLElement>(null)
+  // Fondo con lluvia dibujada en Hoy y Calendario (Ajustes → Fondo con lluvia).
+  const { pathname } = useLocation()
+  const version = useVersion()
+  const lluvia = useDatos(() => obtenerAjustes().then((a) => a.fondoLluvia ?? {}), [version])
+  const varianteLluvia = varianteDeRuta(pathname, lluvia.datos ?? {})
   const d = estado.datos
   const e = d?.e
   const diasFaltan = e ? 1 - e.dia : 0
@@ -53,6 +61,8 @@ export function Layout({ hoy }: { hoy: string }) {
           </div>
           <div className="fase" style={{ textAlign: 'right' }}>
             {e && e.ciclo.numero > 1 && <div>Ciclo {e.ciclo.numero}</div>}
+            {/* Hueco para los botones chicos de Hoy («Dudo», 「進」) */}
+            <span id="cabecera-extra" className="cabecera-extra" />
           </div>
         </div>
         {/* Barra de fases: mide tiempo (días del ciclo), no esfuerzo. El nivel va aparte. */}
@@ -71,13 +81,17 @@ export function Layout({ hoy }: { hoy: string }) {
             })}
           </button>
         )}
+        {/* Hueco para la barra del horario de Hoy: la barra va encima (fija) y queda arriba cuando la cabecera se hace polvo */}
+        <div id="hueco-horario" className={`hueco-horario ${pathname === '/' ? 'con' : ''}`} aria-hidden />
         {/* Franja de pincel: separa la cabecera de papel del contenido en tinta */}
         <Divisor className="divisor-cabecera" />
       </header>
-      <Desintegracion cabecera={cabRef} texto={e ? (e.noEmpezado ? `Día 1 en ${diasFaltan} día${diasFaltan === 1 ? '' : 's'}` : e.terminado ? 'Ciclo terminado' : `Día ${e.dia}`) : ''} />
+      <Desintegracion cabecera={cabRef} conHorario={pathname === '/'} texto={e ? (e.noEmpezado ? `Día 1 en ${diasFaltan} día${diasFaltan === 1 ? '' : 's'}` : e.terminado ? 'Ciclo terminado' : `Día ${e.dia}`) : ''} />
+      {lluvia.datos && varianteLluvia && <FondoLluvia variante={varianteLluvia} />}
       <main className="contenido">
         <Outlet />
       </main>
+      <Companero hoy={hoy} />
       <nav className="nav" aria-label="Secciones">
         <NavLink to="/" end className={({ isActive }) => (isActive ? 'activo' : '')}>{ICONOS.hoy}Hoy</NavLink>
         <NavLink to="/calendario" className={({ isActive }) => (isActive ? 'activo' : '')}>{ICONOS.calendario}Calendario</NavLink>
@@ -112,4 +126,18 @@ export function Layout({ hoy }: { hoy: string }) {
       )}
     </div>
   )
+}
+
+/** Qué lluvia va en cada pantalla (Progreso no lleva: ya tiene el video del shinobi). */
+function varianteDeRuta(p: string, apagadas: Partial<Record<VarianteLluvia, boolean>>): VarianteLluvia | null {
+  const v: VarianteLluvia | null =
+    p === '/' ? 'hoy'
+    : p.startsWith('/calendario') ? 'calendario'
+    : p === '/juego' ? 'juego'
+    : p === '/sueno' ? 'sueno'
+    : p === '/comida' || p === '/mas/comida' ? 'comida'
+    : p.startsWith('/mas/rutinas') || p === '/mas/entrenamiento' ? 'entreno'
+    : p.startsWith('/mas') ? 'mas'
+    : null
+  return v && apagadas[v] !== false ? v : null
 }

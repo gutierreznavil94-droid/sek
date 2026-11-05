@@ -1100,6 +1100,7 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 .meta-casilla { flex: none; width: 24px; height: 24px; border-radius: 7px 8px 6px 8px; border: 1.5px solid var(--texto-3); background: transparent; color: #0f1d16; font-weight: 900; font-size: 0.85rem; display: grid; place-items: center; cursor: pointer; padding: 0; }
 .meta-titulo { flex: 1; min-width: 0; font-size: 0.95rem; cursor: pointer; overflow-wrap: anywhere; }
 .meta-rapida.chica .meta-titulo { font-size: 0.88rem; }
+.meta-otro-dia { color: var(--texto-3); font-size: 0.8em; white-space: nowrap; }
 .meta-menu { flex: none; background: none; border: 0; color: var(--texto-3); font-size: 1.1rem; padding: 0 4px; min-width: 32px; min-height: 32px; cursor: pointer; }
 .meta-editar { flex: 1; min-width: 0; background: var(--fondo); color: var(--texto); border: 1px solid var(--borde); border-radius: 7px; padding: 6px 8px; font-size: 0.95rem; }
 .meta-opciones { position: absolute; right: 6px; top: calc(100% - 4px); z-index: 30; display: flex; flex-direction: column; min-width: 120px; background: var(--fondo-2); border: 1px solid var(--borde); border-radius: 10px; overflow: hidden; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); }
@@ -1414,6 +1415,21 @@ body::before { content: ''; position: fixed; inset: 0; z-index: 1000; pointer-ev
 .sr-escalones .sr-valor { fill: currentColor; font: 700 12px var(--mono, ui-monospace, monospace); }
 .sr-escalones .sr-valor.fin { opacity: .8; font-weight: 600; }
 .sr-escalones .sr-fecha { fill: currentColor; opacity: .7; font-size: 10px; }
+/* «Así lo usa el creador» */
+.pv-creador { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(176, 124, 48, 0.45); background: rgba(176, 124, 48, 0.06); }
+.pv-creador-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.pv-creador-lista li { display: flex; align-items: center; gap: 10px; font-size: 0.95rem; }
+.pv-creador-lista li.tiene { color: var(--texto-2); }
+
+/* Recordatorio tenue para dormir: franja carbón al pie, borde ámbar apagado, sin brillo */
+.franja-dormir { position: fixed; left: 12px; right: 12px; bottom: calc(var(--nav-alto) + 10px + env(safe-area-inset-bottom)); z-index: 18; max-width: 616px; margin: 0 auto; display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 12px; background: rgba(18, 17, 16, 0.9); border: 1px solid rgba(176, 124, 48, 0.55); color: #cfc7b8; text-align: left; cursor: pointer; animation: franja-dormir-entra 0.6s ease; }
+.franja-dormir-kanji { font-family: var(--pincel, serif); font-size: 1.5rem; color: rgba(176, 124, 48, 0.8); line-height: 1; }
+.franja-dormir-texto { flex: 1; font-size: 0.92rem; line-height: 1.3; }
+.franja-dormir-hora { color: rgba(176, 124, 48, 0.9); font-size: 0.85rem; }
+@keyframes franja-dormir-entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.sr-escalones .av-prog-tiempo { fill: none; stroke: currentColor; stroke-opacity: .35; stroke-width: 1.5; stroke-dasharray: 3 3; }
+.sr-escalones .sr-cuota { fill: currentColor; opacity: .5; font: 600 10px var(--mono, ui-monospace, monospace); }
 .sr-dias { display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 3px; }
 .sr-dia { aspect-ratio: 1; min-height: 0; padding: 0; border: 0; border-radius: 4px; cursor: pointer; display: inline-block; }
 .sr-dia.no { background: rgba(var(--papel-rgb), .16); }
@@ -1690,6 +1706,7 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .co-anillo .fondo { stroke: var(--fondo-3); }
 .co-anillo .valor { stroke: var(--verde); stroke-linecap: round; transition: stroke-dashoffset 0.8s cubic-bezier(.2,.8,.2,1), stroke 0.3s; }
 .co-anillo.pasado .valor { stroke: var(--ambar); }
+.co-anillo.vacio { padding: 0; }
 .co-anillo.vacio .fondo { stroke-dasharray: 3 5; stroke: var(--borde); }
 .co-anillo-centro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.05; text-align: center; }
 .co-anillo-centro b { font-size: 0.95em; font-variant-numeric: tabular-nums; }
@@ -1826,3 +1843,566 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .progreso-tinta[data-vidrio="claro"] .av-codigo-banner { background: linear-gradient(100deg, rgba(200, 16, 46, .22), rgba(243, 239, 230, .6) 55%, rgba(200, 16, 46, .16)); }
 .progreso-tinta[data-vidrio="claro"] .av-codigo-kanji { color: #121110; }
 .progreso-tinta[data-vidrio="claro"] .av-codigo-fondo { color: rgba(18, 17, 16, .07); }
+
+/* Progreso → Fuerza: entrenos cumplidos (tira de días) y, por ejercicio, escalera de peso + reps por tramo */
+.sr-dia.libre { background: rgba(var(--papel-rgb), .06); }
+.av-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.av-chips::-webkit-scrollbar { display: none; }
+.av-chip { flex: none; padding: 5px 11px; border-radius: 999px; border: 1px solid rgba(var(--papel-rgb), .25); background: rgba(var(--papel-rgb), .06); color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
+.av-chip.activa { border-color: #c8102e; background: rgba(200, 16, 46, .25); font-weight: 700; }
+.av-progresion { display: flex; flex-direction: column; gap: 4px; }
+.av-prog-corte { stroke: rgba(var(--papel-rgb), .35); stroke-width: 1; stroke-dasharray: 2 3; }
+.sr-escalones .av-prog-tramo.alt { stroke: var(--verde); }
+.sr-escalones .sr-punto.alt { fill: var(--verde); }
+.av-prog-estrella { fill: #e8323c; font-size: 11px; }
+.av-tarjeta-titulo .enlace { background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; }
+
+/* ---------- Agua: la cantimplora del shinobi ---------- */
+.agua-tarjeta { display: flex; align-items: center; gap: 12px; padding: 8px 14px 8px 10px; border: 1px solid var(--borde); border-radius: 16px; background: var(--fondo-2); }
+.agua-boton { background: none; border: 0; padding: 4px; margin: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none; border-radius: 16px; line-height: 0; }
+.agua-boton:active .agua-svg { transform: scale(.97); }
+.agua-boton.chico { padding: 0; }
+.agua-chica { flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 2px 6px; border-radius: 10px; }
+.agua-chica:active { background: var(--fondo-3); }
+.agua-chica .agua-svg { overflow: visible; }
+.agua-chica .agua-sello { font-size: 64px; }
+.agua-chica-ml { font-size: 0.6rem; line-height: 1; color: var(--texto-2); white-space: nowrap; }
+.agua-chica-ml.suma { color: var(--verde); font-weight: 700; }
+.agua-texto { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.agua-numero { font-size: 1.5rem; font-weight: 800; line-height: 1.1; }
+.agua-numero .texto-3 { font-size: 0.95rem; font-weight: 600; }
+.agua-extra { color: var(--verde); font-size: 1rem; }
+.agua-svg { display: block; overflow: visible; transition: transform .15s; --agua: #5b7f93; --agua-2: #4a6b7e; }
+.agua-fondo { fill: rgba(var(--papel-rgb), .06); }
+.agua-trazo { fill: none; stroke: var(--papel); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.agua-trazo.fino { stroke-width: 1.6; opacity: .7; }
+.agua-trazo.cordel { stroke-width: 1.4; opacity: .55; stroke-dasharray: 3 2.5; }
+.agua-tapa { fill: var(--papel); opacity: .9; }
+.agua-nivel { transition: transform .9s cubic-bezier(.2,.8,.2,1); }
+.agua-ola { fill: var(--agua); animation: agua-ola 3.2s linear infinite; }
+.agua-ola.dos { fill: var(--agua-2); opacity: .75; animation-duration: 4.6s; animation-direction: reverse; }
+@keyframes agua-ola { from { transform: translateX(0) } to { transform: translateX(-50px) } }
+.agua-svg.quieta .agua-ola, .agua-svg.quieta .agua-ola.dos { animation: none; }
+.agua-svg.quieta .agua-nivel { transition: none; }
+.agua-chorro { fill: none; stroke: var(--agua); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 70; stroke-dashoffset: 70; animation: agua-chorro .9s ease-out forwards; }
+@keyframes agua-chorro { 0% { stroke-dashoffset: 70; opacity: 1 } 45% { stroke-dashoffset: 0; opacity: 1 } 100% { stroke-dashoffset: -70; opacity: 0 } }
+.agua-svg.quieta .agua-chorro { animation: none; opacity: 0; }
+.agua-svg.llena .agua-trazo.cuerpo { stroke: #bfe3f2; filter: drop-shadow(0 0 4px rgba(150, 210, 240, .8)); }
+.agua-gotas path { fill: var(--agua); opacity: 0; animation: agua-gota 1.8s ease-in infinite; }
+.agua-gotas path:nth-child(2) { animation-delay: .6s; }
+.agua-gotas path:nth-child(3) { animation-delay: 1.1s; }
+@keyframes agua-gota { 0% { opacity: 0; transform: translateY(0) } 20% { opacity: .9 } 100% { opacity: 0; transform: translateY(70px) } }
+.agua-svg.quieta .agua-gotas path { animation: none; opacity: .7; }
+.agua-sello { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 34px; fill: #c8102e; opacity: 0; animation: agua-sello 1.4s ease-out forwards; }
+@keyframes agua-sello { 0% { opacity: 0; transform: scale(1.5) } 25% { opacity: .95; transform: scale(1) } 75% { opacity: .95 } 100% { opacity: 0 } }
+.agua-svg.quieta .agua-sello { animation: none; opacity: .9; }
+.agua-envases { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.agua-envase-fila { display: grid; grid-template-columns: 1fr 72px auto auto; gap: 6px; align-items: center; }
+.agua-envase-fila.nuevo { grid-template-columns: 1fr 72px auto; }
+.agua-envase-fila input { min-width: 0; }
+.agua-en-comida .agua-svg { --agua: #5b7f93; }
+.agua-dias { grid-template-columns: repeat(14, minmax(0, 1fr)); }
+.sr-dia.parcial { background: rgba(91, 127, 147, .55); }
+.agua-semanas { display: flex; gap: 6px; align-items: flex-end; height: 96px; }
+.agua-semana { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; height: 100%; }
+.agua-semana .agua-col { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+.agua-semana .agua-col > div { width: 100%; min-height: 2px; border-radius: 3px 3px 1px 1px; background: #5b7f93; }
+.agua-semana .agua-col > div.llego { background: var(--verde); }
+.agua-semana span { font-size: 0.6rem; color: var(--texto-3); }
+
+/* ---------- Mi horario ---------- */
+.hor-boton { justify-content: space-between; text-align: left; }
+.hor-boton .desc { display: block; font-size: 0.75rem; font-weight: 500; color: var(--texto-3); }
+.hor-grilla { position: relative; display: grid; grid-template-columns: 22px repeat(7, 1fr); gap: 3px; }
+.hor-horas { position: relative; }
+.hor-horas span { position: absolute; right: 2px; transform: translateY(-50%); font-size: 0.6rem; color: var(--texto-3); font-variant-numeric: tabular-nums; }
+.hor-col { display: flex; flex-direction: column; min-width: 0; }
+.hor-cab { height: 22px; text-align: center; font-size: 0.7rem; color: var(--texto-3); font-weight: 600; }
+.hor-dia { position: relative; background: var(--fondo-3); border-radius: 8px; overflow: hidden; }
+.hor-raya { position: absolute; left: 0; right: 0; height: 1px; background: rgba(var(--papel-rgb), .05); }
+.hor-bloque { position: absolute; left: 1px; right: 1px; border: 0; border-radius: 5px; padding: 2px 3px; font-size: 0.62rem; font-weight: 700; line-height: 1.1; text-align: left; color: var(--tinta); overflow: hidden; display: flex; flex-direction: column; gap: 1px; cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.hor-bloque span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hor-bloque .hor-hora { font-weight: 500; opacity: .8; font-variant-numeric: tabular-nums; }
+.hor-bloque.obligatorio, .hor-muestra.obligatorio, .hor-tramo.obligatorio, .franjas i.obligatorio { background: rgba(var(--papel-rgb), .82); }
+.hor-bloque.entreno, .hor-muestra.entreno, .hor-tramo.entreno, .franjas i.entreno { background: var(--verde); }
+.hor-bloque.otro, .hor-muestra.otro, .hor-tramo.otro, .franjas i.otro { background: rgba(var(--papel-rgb), .38); }
+.hor-bloque.dormir, .hor-muestra.dormir { background: repeating-linear-gradient(135deg, rgba(var(--papel-rgb), .10) 0 3px, transparent 3px 7px); pointer-events: none; }
+.hor-leyenda { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+.hor-leyenda span { display: inline-flex; align-items: center; gap: 5px; }
+.hor-muestra { display: inline-block; width: 11px; height: 11px; border-radius: 3px; }
+.hor-dias { display: flex; gap: 4px; }
+.hor-dias button { flex: 1; min-height: 40px; border-radius: 10px; border: 1px solid var(--borde); background: var(--fondo); color: var(--texto-2); font-weight: 700; font-size: 0.8rem; }
+.hor-dias button.activo { background: var(--papel); border-color: var(--papel); color: var(--tinta); }
+/* Hoy: la línea del día */
+.hor-linea { display: flex; align-items: center; gap: 8px; }
+.hor-linea-link { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; color: var(--texto); }
+.hor-barra { position: relative; height: 10px; border-radius: 5px; background: rgba(var(--papel-rgb), .08); overflow: visible; }
+.hor-tramo { position: absolute; top: 0; height: 100%; border-radius: 5px; opacity: .85; }
+.hor-ahora { position: absolute; top: -3px; width: 3px; height: 16px; margin-left: -1px; border-radius: 2px; background: var(--acento); box-shadow: 0 0 6px rgba(200, 16, 46, .8); }
+.hor-texto { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hor-correr { flex: none; }
+/* Calendario: franjas por día y lista del día elegido */
+.cal-dia .franjas { position: absolute; left: 14%; right: 14%; top: 4px; display: flex; gap: 2px; height: 3px; }
+.cal-dia .franjas i, .franjas.muestra i { flex: 1; border-radius: 2px; opacity: .8; }
+.franjas.muestra { display: inline-flex; gap: 2px; width: 18px; height: 3px; margin-right: 4px; }
+.hor-dia-lista { display: flex; flex-direction: column; gap: 4px; }
+.hor-dia-fila { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 2px; background: none; border: 0; color: var(--texto); text-align: left; font-size: 0.85rem; border-top: 1px solid var(--borde); cursor: pointer; }
+.hor-dia-fila.apagado { opacity: .5; text-decoration: line-through; }
+.hor-dia-fila:disabled { cursor: default; }
+.hor-hueco { margin: 0 0 10px; padding: 8px 12px; border-radius: 10px; background: var(--fondo-2); border: 1px solid var(--borde); color: var(--texto-2); }
+.hor-hueco .enlace { font-size: inherit; }
+
+/* ---------- Recomendar algo ---------- */
+.rec-boton { justify-content: flex-start; gap: 12px; text-align: left; }
+.rec-boton .desc { display: block; font-size: 0.75rem; font-weight: 500; color: var(--texto-3); }
+.rec-boton .flecha { margin-left: auto; }
+.rec-kanji { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 72px; line-height: 1; color: #c8102e; }
+.rec-kanji.chico { font-size: 28px; }
+.rec-sello { gap: 10px; padding: 26px 16px; border: 1px solid var(--borde); border-radius: 16px; background: var(--fondo-2); align-items: center; }
+.rec-sello .rec-kanji { animation: rec-sello .7s cubic-bezier(.175,.885,.32,1.275) both; }
+@keyframes rec-sello { 0% { opacity: 0; transform: scale(1.6) rotate(-10deg) } 100% { opacity: 1; transform: scale(1) rotate(-4deg) } }
+.rec-fila { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-top: 1px solid var(--borde); }
+
+/* ---------- Fondo épico de las escenas: papel suave gris, como nubes lloviendo (4 nov: Navil pidió volver al claro pero más oscurito) ---------- */
+.sh-capa.epica { --sh-papel: #d3d1cb; --sh-tinta: #141414; --sh-tinta-2: #2e2c2c; --sh-tinta-seca: #3a3836; --sh-enemigo: #4b4b4b; --sh-enemigo-2: #6a6a6a; --sh-lejos: #bdbbb4; --sh-lejos-2: #c8c6bf; --sh-piedra: #8d8a82; --sh-texto: #141414; --sh-texto-2: #4a4743; background: #d3d1cb; animation: sh-entrar 250ms ease-out both; }
+.sh-capa.epica.parry-video { animation: sh-entrar 250ms ease-out both, sh-pv-sale calc(var(--dur) * .08) ease-in calc(var(--dur) * .92) forwards; }
+.sh-epico { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+/* El cielo de lluvia, lavado: nubes grises claras sobre papel. */
+.sh-epico-cielo { position: absolute; inset: -4%; background-size: cover; background-position: center 30%; filter: blur(9px) grayscale(1) brightness(1.75) contrast(.55); opacity: .9; }
+.sh-epico-cielo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(211, 209, 203, .15), rgba(211, 209, 203, .55) 70%, rgba(211, 209, 203, .8)); }
+.sh-epico-lluvia { position: absolute; inset: -20% 0 0 0; background: repeating-linear-gradient(100deg, transparent 0 13px, rgba(20, 20, 20, .09) 13px 14px); animation: sh-epico-lluvia 1.1s linear infinite; }
+@keyframes sh-epico-lluvia { from { transform: translate(0, -40px) } to { transform: translate(-30px, 120px) } }
+.sh-capa.epica .sh-escenario { position: relative; }
+.sh-capa.epica .sh-enso { stroke: #141414; opacity: .1; }
+.sh-capa.epica .sh-lluvia { stroke: #3a3836; opacity: .3; }
+.sh-capa.epica.reducida { animation: sh-flash-epico 700ms ease-out both; }
+@keyframes sh-flash-epico { 0% { background: #f3efe6 } 100% { background: #d3d1cb } }
+.sh-capa.epica .sh-titulo { text-shadow: 0 1px 10px rgba(211, 209, 203, .9); }
+
+/* ---------- Compañero: el shinobi que se pasea (4 nov 2026) ---------- */
+.companero { position: fixed; left: 0; right: 0; bottom: calc(var(--nav-alto) + env(safe-area-inset-bottom)); height: 0; z-index: 19; pointer-events: none; max-width: 640px; margin: 0 auto; }
+.companero-caja { position: absolute; left: 0; bottom: 2px; will-change: transform; }
+.companero-boton { appearance: none; background: none; border: 0; padding: 0; pointer-events: auto; cursor: pointer; display: block; }
+.companero-boton .shinobi-capa { position: relative; filter: drop-shadow(0 0 0.6px rgba(236, 234, 229, 0.9)); transform-origin: 50% 60%; }
+/* El globo a pincel: papel con borde negro irregular (filtro de ruido), punta de pincel hacia la cabeza. Lo mueve el bucle (transform). */
+.companero-globo { position: absolute; left: 0; bottom: 0; pointer-events: auto; display: flex; flex-direction: column; gap: 8px; padding: 10px 13px; color: #151413; font-size: 0.9rem; line-height: 1.3; cursor: pointer; will-change: transform; animation: globo-texto 0.3s ease-out both; }
+.companero-globo::before { content: ''; position: absolute; inset: 0; z-index: -1; background: #F4EFE6; border: 2px solid #151413; border-radius: 13px 9px 14px 8px / 8px 14px 9px 13px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); filter: url(#globo-pincel); animation: globo-traza 0.2s ease-out both; }
+.companero-globo .boton { align-self: flex-start; }
+.companero-globo .boton.primario { background: #151413; color: #F4EFE6; border-color: #151413; }
+.companero-punta { position: absolute; left: 0; bottom: 0; width: 100%; overflow: visible; pointer-events: none; animation: globo-texto 0.25s ease-out both; }
+.companero-punta path { fill: #F4EFE6; stroke: #151413; stroke-width: 2; stroke-linejoin: round; filter: url(#globo-pincel); }
+.companero-globo.saliendo, .companero-punta.saliendo { animation: globo-tinta 0.26s ease-in forwards; }
+@keyframes globo-traza { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes globo-texto { 0% { opacity: 0; } 50% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes globo-tinta { to { opacity: 0; filter: blur(3px); } }
+@keyframes globo-entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Ninjas de la distracción ---------- */
+.sh-cartel-rival { position: absolute; top: calc(50% - 150px); right: 12%; background: var(--papel); color: var(--tinta); border: 1.5px solid var(--tinta); border-radius: 8px; padding: 4px 10px; font-weight: 800; font-size: 0.95rem; letter-spacing: 0.02em; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4); animation: globo-entra 0.3s ease-out both; }
+.ninja-carta-fondo { position: fixed; inset: 0; z-index: 60; background: rgba(18, 17, 16, 0.86); display: flex; align-items: flex-end; justify-content: center; padding: 0 12px calc(var(--nav-alto) + 16px + env(safe-area-inset-bottom)); animation: globo-entra 0.3s ease-out both; }
+.ninja-carta { width: 100%; max-width: 616px; display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; background: #121110; border: 1px solid rgba(236, 234, 229, 0.25); color: #ece6d8; }
+.ninja-cartel { align-self: flex-start; background: var(--papel); color: var(--tinta); border-radius: 8px; padding: 3px 10px; font-weight: 800; }
+.ninja-frase { margin: 0; font-size: 1.1rem; font-weight: 700; line-height: 1.3; }
+.ninja-fila { min-height: 18px; }
+.av-ninjas { display: flex; align-items: center; gap: 8px; padding: 6px 2px 0; }
+.av-ninjas-k { font-family: 'Noto Serif JP', Georgia, serif; font-size: 1.1rem; }
+.distraccion-fila { display: grid; grid-template-columns: 1fr auto auto auto; gap: 6px; align-items: center; }
+.distraccion-fila input { min-width: 0; }
+.distraccion-fila select { max-width: 150px; font-size: 0.8rem; }
+
+/* ---------- El tajo ---------- */
+.tajo { position: fixed; inset: 0; z-index: 70; overflow: hidden; background: transparent; }
+.tajo-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: url(#tajo-luma) brightness(0.72) contrast(1.1); }
+/* La hoja brillante: un riel girado sobre la diagonal del corte; la hoja (blanca con punta roja) lo recorre en 0,4 s. */
+.tajo-riel { position: absolute; left: 50%; top: 50%; height: 6px; pointer-events: none; }
+.tajo-hoja { position: absolute; top: 0; left: 0; width: 180px; height: 6px; border-radius: 3px; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6) 35%, #ffffff 70%, #ff3b3b 88%, #ff8a8a 100%); box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.85), 0 0 26px 6px rgba(255, 60, 60, 0.55); animation: tajo-hoja 0.4s cubic-bezier(.2,.7,.3,1) both; }
+@keyframes tajo-hoja { 0% { transform: translateX(-180px); opacity: 0; } 10% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateX(var(--largo, 150vmax)); opacity: 0; } }
+
+/* ===== v0.42: Hoy compacta ===== */
+/* Botones chicos en la cabecera, al lado de la fecha: «Dudo» (batalla) y 「進」 (tensión) */
+.cabecera-extra { display: inline-flex; justify-content: flex-end; margin-top: 2px; }
+.hoy-arriba { display: inline-flex; gap: 6px; }
+.boton-duda { appearance: none; font: inherit; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; color: var(--texto-3); background: transparent; border: 1px solid rgba(var(--papel-rgb), 0.32); border-radius: 8px 10px 7px 11px / 10px 7px 11px 8px; padding: 3px 9px; line-height: 1.2; cursor: pointer; }
+.boton-duda:active { background: var(--fondo-3); }
+.boton-duda.kanji { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 1rem; padding: 1px 8px; color: var(--texto-2); }
+/* Avisos: una línea cada uno, apilados como líneas finas */
+.avisos { display: flex; flex-direction: column; gap: 4px; }
+.aviso-linea { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 9px 11px 8px 12px / 12px 8px 11px 9px; border: 1px solid var(--borde); background: var(--fondo-2); font-size: 0.9rem; line-height: 1.25; }
+.aviso-linea .crece { flex: 1; min-width: 0; }
+.aviso-linea.rojo { border-color: rgba(var(--papel-rgb), 0.45); font-weight: 600; }
+.aviso-linea.ambar { border-color: rgba(var(--papel-rgb), 0.3); }
+.aviso-linea .boton.chico { padding: 4px 10px; }
+.aviso-cerrar { appearance: none; border: 0; background: transparent; color: var(--texto-3); font: inherit; font-size: 0.85rem; padding: 2px 6px; cursor: pointer; }
+/* El paréntesis del título, en gris chico y sin mayúsculas */
+.seccion-nota { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--texto-3); font-size: 0.68rem; }
+/* Pilares: 4 bloques (2 arriba, 2 abajo), resumidos: ícono + nombre, una línea de detalle y el círculo/tilde. Bordes a tinta; el rojo solo en los íconos. */
+.pilares-bloques { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pilar-bloque { position: relative; appearance: none; text-align: left; display: flex; flex-direction: column; gap: 3px; min-height: 60px; padding: 8px 30px 8px 10px; border-radius: 11px 14px 10px 15px / 14px 10px 15px 11px; background: var(--fondo-2); border: 1.5px solid rgba(var(--papel-rgb), 0.3); color: var(--texto); font: inherit; cursor: pointer; transition: transform 0.15s ease, background 0.3s ease, border-color 0.3s ease; }
+.pilar-bloque:active { transform: scale(0.98); }
+.pilar-bloque .icono { width: 26px; height: 26px; flex: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: var(--fondo-3); color: var(--texto-2); }
+.pilar-bloque .icono svg { width: 15px; height: 15px; }
+.pilar-bloque .nombre { font-weight: 700; font-size: 0.84rem; line-height: 1.15; min-width: 0; }
+.pilar-bloque .detalle { font-size: 0.68rem; color: var(--texto-3); line-height: 1.2; }
+.pilar-bloque .detalle .extra-pendiente { opacity: 0.75; }
+.pilar-bloque .estado-ic { position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--texto-3); display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; color: var(--texto-3); background: var(--fondo-2); }
+.pilar-bloque .estado-ic .punto-ambar { width: 8px; height: 8px; border-radius: 50%; background: var(--medio, #f0b429); box-shadow: 0 0 6px rgba(240, 180, 41, 0.7); }
+.pilar-bloque.iniciado .estado-ic { border-color: rgba(240, 180, 41, 0.6); }
+.pilar-bloque .mas { position: absolute; bottom: 4px; right: 4px; width: 22px; height: 20px; border-radius: 6px; border: 0; background: transparent; color: var(--texto-3); font-weight: 800; font-size: 0.8rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.pilar-bloque.pendiente.cerca, .pilar-bloque.pendiente.vencido { border-color: rgba(240, 180, 41, 0.55); }
+.pilar-bloque.pendiente.cerca .detalle, .pilar-bloque.pendiente.vencido .detalle { color: var(--medio); }
+.pilar-bloque.cumplido { background: linear-gradient(160deg, rgba(60, 207, 122, 0.18), rgba(60, 207, 122, 0.05)); border-color: rgba(60, 207, 122, 0.6); }
+.pilar-bloque.cumplido .icono { background: var(--ok); color: #06261a; }
+.pilar-bloque.cumplido .estado-ic { background: var(--ok); border-color: var(--ok); color: #06261a; }
+.pilar-bloque.cumplido .detalle { color: var(--ok); }
+.pilar-bloque.tarde, .pilar-bloque.omitido { opacity: 0.8; }
+.pilar-bloque.tarde .estado-ic, .pilar-bloque.omitido .estado-ic { border-color: var(--texto-2); color: var(--texto-2); }
+.pilar-bloque.descanso { opacity: 0.5; border-style: dashed; cursor: default; }
+.pilar-bloque.marcado { animation: pop 0.4s ease; }
+.pilar-bloque.destello-extra { animation: extra-destello 0.9s ease; }
+.pilar-bloque .flash { position: absolute; top: 4px; right: 30px; font-weight: 800; color: var(--ok); font-size: 0.9rem; animation: subir 1.2s ease forwards; pointer-events: none; }
+/* Comida y agua un poco más llamativas: borde a pincel más marcado */
+.co-tarjeta { border: 1.5px solid rgba(var(--papel-rgb), 0.42); border-radius: 12px 15px 11px 16px / 15px 11px 16px 12px; }
+.agua-chica { border: 1px solid rgba(var(--papel-rgb), 0.3); border-radius: 9px 11px 8px 12px / 11px 8px 12px 9px; }
+.co-anillo[style*="60px"] .co-anillo-centro b { font-size: 0.8rem; }
+.co-anillo[style*="60px"] .co-anillo-centro span { font-size: 0.56rem; }
+.co-anillo[style*="60px"] circle { stroke-width: 10; }
+/* Metas: tarjeta baja con borde de tinta, kanji 的 y sello rojo «Sumar meta» */
+.semana-metas.tinta { padding: 6px 10px 7px; border: 1.5px solid rgba(var(--papel-rgb), 0.4); border-radius: 12px 16px 11px 17px / 16px 11px 17px 12px; background: var(--fondo-2); gap: 5px; }
+.semana-titulo { display: inline-flex; align-items: center; gap: 6px; font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 1.15rem; line-height: 1; color: var(--texto); }
+.semana-kanji { font-size: 1.05rem; color: rgba(200, 16, 46, 0.9); }
+.sello-rojo { appearance: none; font: inherit; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.04em; color: #f6d9d9; background: rgba(200, 16, 46, 0.92); border: 1.5px solid rgba(246, 217, 217, 0.5); border-radius: 3px 4px 3px 5px; padding: 3px 7px; transform: rotate(-3deg); box-shadow: 0 0 0 1px rgba(200, 16, 46, 0.5), 0 0 8px rgba(200, 16, 46, 0.35); cursor: pointer; }
+.sello-rojo:active { transform: rotate(-3deg) scale(0.96); }
+.semana-metas.tinta .semana-dia { padding: 3px 0 4px; gap: 0; }
+.semana-metas.tinta .semana-letra { font-size: 0.58rem; }
+.semana-metas.tinta .semana-num { font-size: 0.8rem; }
+.semana-puntos { display: flex; gap: 2px; min-height: 9px; align-items: center; justify-content: center; }
+.semana-puntos .semana-punto { width: 6px; height: 6px; margin-top: 1px; }
+.semana-metas.tinta .semana-hoy { gap: 2px; }
+/* Botones importantes: rojizos a pincel; usados en el día → verde */
+.accesos .boton.rojizo { background: var(--fondo-2); border: 1.5px solid rgba(var(--papel-rgb), 0.35); border-radius: 12px 15px 11px 16px / 15px 11px 16px 12px; color: var(--texto); }
+.accesos .boton.rojizo svg { color: var(--texto-2); }
+.accesos .boton.hecha { border: 1.5px solid rgba(60, 207, 122, 0.6); border-radius: 12px 15px 11px 16px / 15px 11px 16px 12px; }
+/* Series rápidas: lado a lado y más bajas */
+.contador-boton.compacto { min-height: 0; padding: 8px 10px 8px; gap: 1px; border: 1.5px solid rgba(var(--papel-rgb), 0.3); border-radius: 11px 14px 10px 15px / 14px 10px 15px 11px; }
+.contador-boton.compacto .mas-n { font-size: 1.5rem; }
+.contador-boton.compacto .nombre { font-size: 0.86rem; }
+.contador-boton.compacto .detalle { font-size: 0.72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contador-boton.compacto .barrita { margin-top: 3px; }
+.contador-boton.compacto .deshacer { top: 4px; right: 4px; width: 26px; height: 26px; }
+
+/* ===== v0.42: Batalla contra la distracción ===== */
+.bt-capa { z-index: 210; justify-content: space-between; gap: 0; padding: calc(10px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom)); cursor: default; }
+.bt-arriba { position: relative; z-index: 2; width: 100%; max-width: 560px; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; }
+.bt-rendirse { appearance: none; font: inherit; font-size: 0.78rem; font-weight: 700; color: var(--sh-texto-2); background: transparent; border: 1px solid rgba(20, 20, 20, 0.35); border-radius: 8px 10px 7px 11px / 10px 7px 11px 8px; padding: 4px 10px; cursor: pointer; }
+.bt-rival { margin-left: auto; background: var(--sh-tinta); color: var(--sh-papel); border-radius: 6px 8px 5px 9px; padding: 3px 10px; font-weight: 800; font-size: 0.95rem; }
+.bt-vida { position: relative; z-index: 2; width: 100%; max-width: 560px; height: 10px; margin-top: 8px; border-radius: 999px; background: rgba(20, 20, 20, 0.18); border: 1px solid rgba(20, 20, 20, 0.35); overflow: hidden; }
+.bt-vida i { display: block; height: 100%; background: linear-gradient(90deg, #8c1020, #c8102e); border-radius: 999px; transition: width 0.45s cubic-bezier(.2,.8,.2,1); }
+.bt-escena { position: relative; z-index: 1; flex: 1; width: 100%; max-width: 560px; display: flex; align-items: flex-end; justify-content: center; min-height: 0; }
+.bt-tira { width: 100%; height: auto; max-height: 100%; display: block; }
+.bt-tira.bt-shinobi { width: 62%; align-self: flex-end; margin-right: auto; margin-left: 2%; }
+.bt-tira.bt-pelea { width: 100%; }
+.bt-tira.bt-pelea.golpe { animation: bt-sacudir 0.35s ease; }
+@keyframes bt-sacudir { 0% { transform: none; } 30% { transform: translateX(-6px); } 60% { transform: translateX(5px); } 100% { transform: none; } }
+.bt-enemigo { position: absolute; right: 8%; bottom: 0; width: 26%; height: auto; animation: bt-guardia 1.6s ease-in-out infinite; }
+@keyframes bt-guardia { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.bt-globo { position: absolute; left: 4%; bottom: 34%; z-index: 2; padding: 8px 14px; color: #151413; background: #F4EFE6; border: 2px solid #151413; border-radius: 13px 9px 14px 8px / 8px 14px 9px 13px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); font-weight: 800; font-size: 1.15rem; animation: globo-texto 0.3s ease-out both; }
+.bt-globo::after { content: ''; position: absolute; left: 30px; bottom: -12px; width: 14px; height: 14px; background: #F4EFE6; border-right: 2px solid #151413; border-bottom: 2px solid #151413; transform: rotate(55deg) skewX(20deg); }
+.bt-numero { position: absolute; left: 50%; top: 10%; transform: translateX(-50%); z-index: 2; font-size: 7rem; font-weight: 800; line-height: 1; letter-spacing: -0.04em; color: #c8102e; text-shadow: 0 0 1px #c8102e, 3px 3px 0 rgba(20, 20, 20, 0.35); animation: bt-num 0.9s ease both; }
+@keyframes bt-num { 0% { opacity: 0; transform: translateX(-50%) scale(1.5); } 25% { opacity: 1; transform: translateX(-50%) scale(1); } 100% { opacity: 1; } }
+.bt-abajo { position: relative; z-index: 2; width: 100%; max-width: 560px; display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 10px; }
+.bt-boton { appearance: none; width: 100%; font: inherit; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.01em; color: #F4EFE6; background: #151413; border: 2px solid #151413; border-radius: 16px 20px 14px 22px / 20px 14px 22px 16px; padding: 18px 16px; cursor: pointer; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25); transition: transform 0.1s ease; }
+.bt-boton:active { transform: scale(0.97); background: #c8102e; border-color: #c8102e; }
+.bt-cuenta { font-size: 0.86rem; color: var(--sh-texto-2); text-align: center; }
+/* Victoria: rojo profundo a negro, sol a tinta, kanji 勝, partículas doradas, brillo en el filo */
+.bt-capa.victoria { background: radial-gradient(ellipse at 50% 40%, #5A0A12 0%, #2a0509 55%, #000 100%); --sh-texto: #f3efe6; --sh-texto-2: #d9c9c9; color: #f3efe6; }
+.bt-victoria-fondo { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.bt-sol { position: absolute; left: 50%; top: 38%; width: 68vmin; height: 68vmin; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(circle, rgba(200, 16, 46, 0.9) 0%, rgba(200, 16, 46, 0.55) 58%, rgba(200, 16, 46, 0) 62%); box-shadow: 0 0 60px rgba(200, 16, 46, 0.5); animation: bt-sol 1.2s ease-out both; }
+@keyframes bt-sol { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); } 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+.bt-kanji-victoria { position: absolute; left: 50%; top: 30%; transform: translate(-50%, -50%); font-family: 'Noto Serif JP', 'Pincel', serif; font-size: 38vmin; line-height: 1; color: rgba(243, 239, 230, 0.9); text-shadow: 0 0 24px rgba(255, 215, 120, 0.5); animation: bt-kanji 3s ease-out both; }
+@keyframes bt-kanji { 0% { opacity: 0; transform: translate(-50%, -50%) scale(1.3); } 15% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0.08; transform: translate(-50%, -52%) scale(1.04); } }
+.bt-particulas i { position: absolute; bottom: 20%; width: 5px; height: 5px; border-radius: 50%; background: #ffd77a; box-shadow: 0 0 8px #ffd77a; opacity: 0; animation: bt-particula 2.6s ease-out infinite; }
+@keyframes bt-particula { 0% { opacity: 0; transform: translateY(0) scale(0.6); } 20% { opacity: 0.9; } 100% { opacity: 0; transform: translateY(-55vh) translateX(calc((var(--i) - 9) * 3px)) scale(1.1); } }
+.bt-pose { position: relative; width: 96%; margin: 0 auto; }
+.bt-filo { position: absolute; left: 36%; top: 2%; width: 10%; height: 44%; transform: rotate(16deg); background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0) 100%); background-size: 100% 40%; background-repeat: no-repeat; filter: blur(2px); mix-blend-mode: screen; animation: bt-filo 1.2s ease-in-out 0.7s infinite; pointer-events: none; }
+@keyframes bt-filo { 0% { background-position: 0 -40%; opacity: 0; } 20% { opacity: 1; } 100% { background-position: 0 140%; opacity: 0; } }
+.bt-resultado { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; animation: aparecer 0.5s ease 0.4s both; }
+.bt-resultado b { font-size: 1.4rem; font-family: 'Noto Serif JP', Georgia, serif; }
+.bt-resultado span { font-size: 0.9rem; color: var(--sh-texto-2); }
+.bt-saltar { font-size: 0.75rem !important; opacity: 0.7; margin-top: 6px; }
+.ninja-carta .bt-entrar { border-color: rgba(200, 16, 46, 0.7); background: rgba(200, 16, 46, 0.14); color: #ece6d8; }
+
+/* ===== v0.42: Cinemática «Tensión» ===== */
+.tn-capa { position: fixed; inset: 0; z-index: 220; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; animation: sh-entrar 200ms ease-out both; }
+.tn-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; background: #000; animation: tn-fundido 0.35s ease both; }
+@keyframes tn-fundido { from { opacity: 0; } to { opacity: 1; } }
+.tn-espera { position: absolute; left: 50%; top: 60%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; }
+.tn-aro { width: 110px; height: 110px; border-radius: 50%; border: 3px solid rgba(243, 239, 230, 0.9); box-shadow: 0 0 0 6px rgba(243, 239, 230, 0.12), 0 0 24px rgba(0, 0, 0, 0.6); animation: tn-latir 1.4s ease-in-out infinite; }
+@keyframes tn-latir { 0%, 100% { transform: scale(0.92); opacity: 0.65; } 50% { transform: scale(1.06); opacity: 1; } }
+.tn-tocalo { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 1.4rem; color: #f3efe6; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9); animation: tn-latir 1.4s ease-in-out infinite; }
+.tn-saltar { position: absolute; top: calc(12px + env(safe-area-inset-top)); right: 14px; z-index: 2; appearance: none; font: inherit; font-size: 0.75rem; color: rgba(243, 239, 230, 0.75); background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(243, 239, 230, 0.35); border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+.tn-final { display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; padding: 20px; }
+.tn-kanji { font-family: 'Noto Serif JP', 'Pincel', serif; font-size: min(58vmin, 320px); line-height: 1; color: #f3efe6; text-shadow: 0 0 2px #fff, 3px 3px 0 rgba(200, 16, 46, 0.9), 0 0 30px rgba(200, 16, 46, 0.45); clip-path: inset(0 100% 0 0); animation: tn-pincel 0.6s cubic-bezier(.3,.7,.3,1) 0.15s forwards; }
+@keyframes tn-pincel { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.tn-frase { font-size: 1.1rem; color: rgba(243, 239, 230, 0.9); letter-spacing: 0.02em; animation: aparecer 0.5s ease 0.8s both; }
+.tn-cerrar { font-size: 0.72rem; color: rgba(243, 239, 230, 0.5); animation: aparecer 0.5s ease 1.6s both; }
+@media (prefers-reduced-motion: reduce) { :root:not(.movimiento-siempre) .tn-kanji { animation: none; clip-path: none; } :root:not(.movimiento-siempre) .tn-aro, :root:not(.movimiento-siempre) .tn-tocalo { animation: none; } }
+
+/* ===== v0.43: decoración de Calendario y Sueño, la casa del juego, buenas noches ===== */
+/* Calendario: solo decoración (nada cambia de lugar) */
+.cal-titulo { display: inline-flex; align-items: center; gap: 8px; }
+.cal-kanji { font-family: 'Noto Serif JP', serif; font-size: 1.1rem; color: rgba(200, 16, 46, 0.85); line-height: 1; }
+.calendario.tinta { padding: 6px; border: 1.5px solid rgba(var(--papel-rgb), 0.35); border-radius: 12px 16px 11px 17px / 16px 11px 17px 12px; }
+.calendario.tinta .cal-dia { border-top: 1px solid rgba(var(--papel-rgb), 0.1); }
+.calendario.tinta .cal-dia.vacio { border-top-color: transparent; }
+.calendario.tinta .cal-dia.hoy { border-color: transparent; box-shadow: none; }
+.calendario.tinta .cal-dia.hoy::before { content: ''; position: absolute; inset: 1px; border: 2px solid var(--texto); border-radius: 46% 54% 48% 52% / 52% 46% 54% 48%; transform: rotate(-4deg); pointer-events: none; }
+.calendario.tinta .cal-dia.completo { background: rgba(200, 16, 46, 0.1); }
+.calendario.tinta .cal-dia.completo .num { color: var(--texto); }
+.calendario.tinta .cal-dia.completo::after { content: ''; position: absolute; top: 3px; left: 3px; width: 6px; height: 6px; border-radius: 1px 2px 1px 2px; background: rgba(200, 16, 46, 0.55); transform: rotate(-8deg); }
+.calendario.tinta .cal-dia.completo.feriado::after { background: rgba(200, 16, 46, 0.55); top: 3px; left: 3px; right: auto; border: 0; }
+/* Sueño: título a pincel con kanji, bordes de tinta, trazo verde en la ventana ideal */
+.sueno-titulo { display: inline-flex; align-items: center; gap: 8px; }
+.sueno-kanji { font-family: 'Noto Serif JP', serif; font-size: 1.2rem; color: rgba(200, 16, 46, 0.85); line-height: 1; }
+.pagina-sueno .tarjeta { border: 1.5px solid rgba(var(--papel-rgb), 0.3); border-radius: 12px 16px 11px 17px / 16px 11px 17px 12px; }
+.sueno-grafico .sueno-ventana { opacity: 0.07; }
+.sueno-grafico .sueno-trazo { fill: none; stroke: var(--verde); stroke-width: 2.4; stroke-linecap: round; opacity: 0.85; }
+/* Juego: temporizador chico, la casa debajo */
+.juego-temporizador { gap: 10px; }
+.juego-segundos { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.sl-casa-marco { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.sl-casa { --sh-tinta: #141414; --sh-tinta-seca: #3a3836; --sh-papel: #f3efe6; --sh-enemigo: #4b4b4b; --sh-enemigo-2: #6a6a6a; width: 100%; height: auto; display: block; border-radius: 10px 13px 9px 12px / 12px 9px 13px 10px; border: 1.5px solid rgba(var(--papel-rgb), 0.35); overflow: hidden; }
+.sl-casa-nota { font-size: 0.7rem; color: var(--texto-3); text-align: center; }
+@media (min-width: 900px) { .sl-casa { max-height: 260px; } }
+/* Pelea en casa: vaivén y un amague cada tanto; al tocar Jugar frenan y se sientan; al terminar desenvainan */
+.sl-casa .sl-shinobi { animation: sl-amague 2.6s ease-in-out infinite; transform-origin: 80px 150px; }
+.sl-casa .sl-rival { animation: sl-amague-rival 2.6s ease-in-out infinite 1.3s; transform-origin: 290px 150px; }
+@keyframes sl-amague { 0%, 100% { transform: translateX(0); } 40% { transform: translateX(0); } 55% { transform: translateX(28px) rotate(-6deg); } 70% { transform: translateX(0); } }
+@keyframes sl-amague-rival { 0%, 100% { transform: translateX(0); } 40% { transform: translateX(0); } 55% { transform: translateX(-28px) rotate(6deg); } 70% { transform: translateX(0); } }
+.sl-casa.a-jugar .sl-sentados { animation: sl-sentarse 1.1s ease-out both; transform-origin: 180px 150px; }
+@keyframes sl-sentarse { 0% { transform: translateY(-18px); opacity: 0; } 55% { transform: translateY(-18px); opacity: 0.6; } 100% { transform: none; opacity: 1; } }
+.sl-casa.terminar .sl-peleando { animation: sl-desenvainar 0.5s ease-out both; }
+@keyframes sl-desenvainar { 0% { transform: translateY(10px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.sl-casa .sl-juego { animation: sl-parpadeo 0.6s steps(2) infinite; }
+@keyframes sl-parpadeo { 0% { opacity: 1; } 100% { opacity: 0.35; } }
+.sl-casa .sl-mando { animation: sl-mando 0.5s ease-in-out infinite alternate; }
+@keyframes sl-mando { from { transform: translateY(0); } to { transform: translateY(-1.5px); } }
+.sl-casa .sl-taza { animation: sl-taza 3s ease-in-out infinite; }
+@keyframes sl-taza { 0%, 60%, 100% { transform: translateY(0); } 75% { transform: translateY(-6px); } }
+.sl-casa .sl-vapor { animation: sl-vapor 1.8s ease-in-out infinite; }
+@keyframes sl-vapor { 0% { opacity: 0.2; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-4px); } }
+.sl-casa.jugando .sl-pantalla { animation: sl-pantalla 1.2s ease-in-out infinite alternate; }
+@keyframes sl-pantalla { from { fill: #cfe8d6; } to { fill: #a9d6b8; } }
+/* Buenas noches: katana, sombrero, camina, se acuesta y respira */
+.sl-noche { --sh-tinta: #9a9ea8; --sh-tinta-seca: #6b6f78; width: min(100%, 420px); height: auto; display: block; margin: 0 auto 6px; }
+.sl-noche-katana { opacity: 0; animation: aparecer 0.6s ease 1.2s both; }
+.sl-noche-sombrero { opacity: 0; animation: aparecer 0.6s ease 2s both; }
+.sl-noche-camina { animation: sl-camina 2.8s ease-in-out both; }
+@keyframes sl-camina { 0% { transform: translateX(-60px); opacity: 1; } 75% { transform: translateX(90px); opacity: 1; } 100% { transform: translateX(100px); opacity: 0; } }
+.sl-noche-acostado { opacity: 0; animation: aparecer 0.8s ease 2.8s both; }
+.sl-noche-acostado path { transform-origin: 250px 120px; animation: sl-respira 4s ease-in-out 3.6s infinite; }
+@keyframes sl-respira { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.06); } }
+.sl-noche-z { animation: sl-z 3s ease-in-out 3.8s infinite; }
+@keyframes sl-z { 0% { opacity: 0; transform: translateY(0); } 30% { opacity: 0.9; } 100% { opacity: 0; transform: translateY(-10px); } }
+/* El compañero dormido en su cama, en la esquina */
+.companero-caja.dormido { left: auto; right: 10px; bottom: 4px; color: var(--texto-2); opacity: 0.85; }
+.companero-cama-cuerpo { transform-origin: 70px 36px; animation: sl-respira 4s ease-in-out infinite; }
+.companero-cama-z { animation: sl-z 3s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { :root:not(.movimiento-siempre) .sl-casa *, :root:not(.movimiento-siempre) .sl-noche *, :root:not(.movimiento-siempre) .companero-cama * { animation: none !important; opacity: 1; } }
+
+/* Metas a la mitad de alto: días como fichas de una línea (letra + número + puntitos) */
+.semana-metas.tinta .semana-fila { gap: 3px; }
+.semana-metas.tinta .semana-dia { flex-direction: row; justify-content: center; gap: 3px; padding: 4px 0; min-height: 26px; }
+.semana-metas.tinta .semana-letra { font-size: 0.55rem; }
+.semana-metas.tinta .semana-num { font-size: 0.78rem; }
+.semana-metas.tinta .semana-puntos { min-height: 0; gap: 1px; }
+.semana-metas.tinta .semana-puntos .semana-punto { width: 4px; height: 4px; margin: 0; }
+.semana-metas.tinta .semana-puntos .semana-punto:not(.con-meta):not(.cumplida) { display: none; }
+.semana-metas.tinta .semana-titulo { font-size: 1.05rem; }
+.semana-metas.tinta .sello-rojo { font-size: 0.62rem; padding: 2px 6px; }
+.semana-sin { font-size: 0.66rem; color: var(--texto-3); margin-left: 8px; font-family: var(--fuente); }
+.semana-metas.tinta .semana-proxima { padding: 0; min-height: 0; }
+
+/* ---------- v0.44: el rival escurridizo (5 nov 2026) ---------- */
+.rival-capa { position: fixed; left: 0; right: 0; bottom: calc(var(--nav-alto) + env(safe-area-inset-bottom)); height: 0; z-index: 19; pointer-events: none; max-width: 640px; margin: 0 auto; --sh-enemigo: #7a7a7a; --sh-enemigo-2: #5e5e5e; --sh-papel: #d8d4cb; }
+.rv-shinobi { position: absolute; left: 0; bottom: 2px; will-change: transform; }
+.rv-shinobi .rv-sprite { position: relative; filter: drop-shadow(0 0 0.6px rgba(236, 234, 229, 0.9)); }
+.rv-shinobi.salta { animation: rv-salto 0.62s ease-out both; }
+@keyframes rv-salto { 0% { bottom: 2px } 45% { bottom: 34px } 100% { bottom: 2px } }
+.rv-rival { position: absolute; left: 0; bottom: 0; appearance: none; background: none; border: 0; padding: 0; margin: 0; pointer-events: auto; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; will-change: transform; -webkit-tap-highlight-color: transparent; }
+.rv-rival .rv-cartel { font-size: 0.68rem; font-weight: 800; line-height: 1; padding: 3px 6px; border-radius: 6px; background: var(--papel, #F4EFE6); color: var(--tinta, #151413); border: 1px solid #151413; white-space: nowrap; animation: globo-entra 0.3s ease-out both; }
+.rv-silueta { display: block; opacity: 0.92; filter: grayscale(1) drop-shadow(0 0 0.6px rgba(236, 234, 229, 0.8)); animation: rv-vaiven 0.9s ease-in-out infinite; transform-origin: 50% 100%; }
+.rv-rival.paseo .rv-silueta { animation: rv-paso 0.55s ease-in-out infinite; }
+.rv-rival.esquiva .rv-silueta { animation: rv-esquiva 0.42s ease-out both; }
+.rv-rival.atrapado .rv-silueta { animation: rv-sobresalto 0.3s ease-out both; }
+@keyframes rv-paso { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-2px) } }
+@keyframes rv-vaiven { 0%, 100% { transform: rotate(-2deg) } 50% { transform: rotate(2deg) } }
+@keyframes rv-esquiva { 0% { transform: translateY(0) scaleX(1) } 40% { transform: translateY(-14px) scaleX(0.9) } 100% { transform: translateY(0) scaleX(1) } }
+@keyframes rv-sobresalto { 0% { transform: translateY(0) } 50% { transform: translateY(-8px) scale(1.08) } 100% { transform: translateY(0) } }
+.rv-destello { position: absolute; left: 50%; bottom: 10px; width: 70px; height: 70px; margin-left: -35px; border-radius: 50%; background: radial-gradient(circle, rgba(220, 218, 212, 0.95) 0%, rgba(160, 158, 152, 0.6) 40%, rgba(120, 118, 112, 0) 70%); animation: rv-destello 0.65s ease-out both; pointer-events: none; }
+@keyframes rv-destello { 0% { transform: scale(0.2); opacity: 0 } 25% { transform: scale(1); opacity: 1 } 100% { transform: scale(1.6); opacity: 0 } }
+
+/* Advertencia: el rival rompe el papel y asoma. Solo se cierra con el botón o a los 10 s. */
+.rv-adv { position: fixed; inset: 0; z-index: 230; display: flex; align-items: center; justify-content: center; background: #0b0b0d; --sh-enemigo: #8a8a92; --sh-enemigo-2: #6e6e76; --sh-papel: #c9c4b8; overflow: hidden; animation: sh-entrar 150ms ease-out both; }
+.rv-adv-papel { position: absolute; inset: 0; background: #F4EFE6; animation: rv-papel 0.5s ease-in both; }
+@keyframes rv-papel { 0% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%) } 100% { clip-path: polygon(0 0, 100% 0, 100% 36%, 72% 40%, 100% 44%, 100% 100%, 0 100%, 0 62%, 26% 58%, 0 54%) } }
+.rv-adv-rotura { position: absolute; left: 50%; top: 50%; width: 320px; height: 320px; margin: -160px 0 0 -160px; background: #0b0b0d; clip-path: polygon(50% 2%, 61% 22%, 83% 12%, 74% 36%, 98% 46%, 76% 56%, 92% 80%, 64% 70%, 54% 98%, 42% 74%, 16% 88%, 26% 62%, 2% 52%, 24% 40%, 10% 16%, 36% 26%); animation: rv-rotura 0.45s cubic-bezier(.2,.9,.3,1) both; }
+@keyframes rv-rotura { 0% { transform: scale(0.05) rotate(-20deg) } 70% { transform: scale(1.08) rotate(3deg) } 100% { transform: scale(1) rotate(0) } }
+.rv-adv-cuerpo { position: relative; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 0 24px; text-align: center; color: #F4EFE6; animation: globo-entra 0.4s 0.3s ease-out both; }
+.rv-adv-rival { width: 150px; height: 155px; animation: rv-asoma 0.6s 0.25s cubic-bezier(.2,.9,.3,1) both; }
+@keyframes rv-asoma { 0% { transform: translateY(60px) scale(0.6); opacity: 0 } 100% { transform: none; opacity: 1 } }
+.rv-adv-texto { margin: 0; font-size: 1.25rem; line-height: 1.25; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8); }
+.rv-adv-texto b { color: #c8102e; }
+.rv-adv-boton { background: #c8102e; border-color: #c8102e; color: #F4EFE6; min-width: 180px; }
+.rv-adv-cuenta { width: 180px; height: 4px; border-radius: 2px; background: rgba(244, 239, 230, 0.25); overflow: hidden; position: relative; }
+.rv-adv-cuenta::after { content: ''; position: absolute; inset: 0; background: #c8102e; transform-origin: left; animation: rv-cuenta 10s linear both; }
+@keyframes rv-cuenta { from { transform: scaleX(1) } to { transform: scaleX(0) } }
+
+/* Robo: la bolita de XP sale del pecho, el rival la agarra y se escapa corriendo por el borde. */
+.rv-robo { position: fixed; inset: 0; z-index: 230; background: rgba(11, 11, 13, 0.92); display: flex; align-items: center; justify-content: center; overflow: hidden; --sh-enemigo: #8a8a92; --sh-enemigo-2: #6e6e76; --sh-papel: #c9c4b8; animation: sh-entrar 150ms ease-out both; }
+.rv-robo-escena { position: relative; width: min(100%, 420px); height: 240px; display: flex; align-items: flex-end; justify-content: center; }
+.rv-robo-rival { position: relative; width: 120px; height: 124px; animation: rv-huida 2.6s ease-in both; }
+.rv-robo-rival svg { width: 100%; height: 100%; }
+@keyframes rv-huida { 0%, 55% { transform: translateX(0) } 70% { transform: translateX(-10px) } 100% { transform: translateX(130vw) } }
+.rv-bolita { position: absolute; left: 50%; top: 52%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff6c2 0%, #f3c54a 45%, #b8841c 100%); box-shadow: 0 0 18px 6px rgba(243, 197, 74, 0.55); animation: rv-bolita 2.6s ease-in-out both; }
+@keyframes rv-bolita { 0% { transform: scale(0.2); opacity: 0 } 20% { transform: scale(1) translateY(-10px); opacity: 1 } 45% { transform: scale(1.15) translateY(-34px); opacity: 1 } 58% { transform: scale(0.8) translate(-26px, -6px); opacity: 1 } 100% { transform: scale(0.6) translate(-30px, -2px); opacity: 0.9 } }
+.rv-cartel-robo { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); font-weight: 800; padding: 4px 10px; border-radius: 6px; background: #F4EFE6; color: #151413; animation: rv-cartel-robo 2.6s ease-in both; }
+@keyframes rv-cartel-robo { 0%, 60% { opacity: 1 } 100% { opacity: 0 } }
+.rv-robo.reducido .rv-robo-rival, .rv-robo.reducido .rv-bolita { animation: none; }
+@media (prefers-reduced-motion: reduce) { .rv-silueta, .rv-shinobi.salta, .rv-adv-papel, .rv-adv-rotura, .rv-adv-rival { animation: none; } }
+
+/* ---------- v0.45: fondo con lluvia dibujada en Hoy y Calendario (5 nov 2026) ---------- */
+.fondo-lluvia { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; animation: sh-entrar 0.6s ease-out both; }
+/* Sueño: adaptación */
+.sueno-veredicto { margin: 0; font-size: 0.92rem; line-height: 1.3; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(var(--papel-rgb), 0.25); }
+.sueno-veredicto.bien { border-color: rgba(var(--verde-rgb), 0.6); color: var(--verde); }
+.sueno-veredicto.normal { border-color: rgba(var(--papel-rgb), 0.45); }
+.sueno-veredicto.aviso { border-color: rgba(245, 197, 66, 0.6); color: #f5c542; }
+.sueno-veredicto.tarde { border-color: rgba(var(--papel-rgb), 0.25); color: var(--texto-2); }
+.sueno-veredicto-linea.bien { color: var(--verde); }
+.sueno-veredicto-linea.aviso { color: #f5c542; }
+.sueno-etapa-frase { margin: 0 0 2px; }
+.sueno-grafico .sueno-etapa { fill: rgba(var(--papel-rgb), 0.08); }
+.sueno-grafico .sueno-etapa.asentando { fill: rgba(var(--papel-rgb), 0.04); }
+.sueno-grafico .sueno-etapa.estable { fill: rgba(var(--verde-rgb), 0.07); }
+.sueno-etapas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.sueno-etapa-chip { display: flex; flex-direction: column; gap: 1px; padding: 7px 8px; border-radius: 10px; border: 1px solid rgba(var(--papel-rgb), 0.22); font-size: 0.78rem; opacity: 0.75; }
+.sueno-etapa-chip span { font-size: 0.7rem; color: var(--texto-3); }
+.sueno-etapa-chip.actual { opacity: 1; border-color: var(--papel); background: rgba(var(--papel-rgb), 0.08); }
+.sueno-etapa-chip.actual.estable { border-color: var(--verde); background: rgba(var(--verde-rgb), 0.1); }
+.sueno-etapa-chip.pasada { text-decoration: line-through; opacity: 0.5; }
+.sueno-etapa-edicion { display: flex; flex-direction: column; gap: 6px; padding: 8px; border: 1px dashed rgba(var(--papel-rgb), 0.3); border-radius: 10px; }
+.sueno-etapa-edicion > input { font-weight: 700; }
+
+/* ---------- v0.46: barra del horario fija arriba (5 nov 2026) ---------- */
+/* (el contenido mantiene su z-index 3 de «Cambios 22»: si baja, el fondo del shinobi lo tapa en Progreso) */
+.hueco-horario { height: 0; }
+.hueco-horario.con { height: 50px; }
+.barra-horario-fija { position: fixed; left: 0; right: 0; top: 0; z-index: 24; pointer-events: none; will-change: transform; }
+.barra-horario-int { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; padding: 4px 16px 0; display: flex; align-items: center; gap: 10px; }
+.barra-horario-slot { flex: 1; min-width: 0; pointer-events: auto; }
+.barra-dia { display: none; flex: none; font-weight: 900; font-size: 0.78rem; letter-spacing: 0.02em; color: #151413; white-space: nowrap; pointer-events: none; }
+/* Dentro de la cabecera: una franja de papel un poco más oscuro, como un recorte */
+.barra-horario-fija .hor-linea { background: #E2DACB; color: #151413; border-radius: 10px 13px 9px 12px / 12px 9px 13px 10px; padding: 6px 10px; box-shadow: inset 0 0 0 1px rgba(20, 20, 20, 0.14), 0 1px 0 rgba(20, 20, 20, 0.08); transition: background 0.25s ease, padding 0.25s ease, box-shadow 0.25s ease; }
+.barra-horario-fija .hor-linea-link { color: #151413; }
+.barra-horario-fija .hor-texto, .barra-horario-fija .texto-2 { color: #4a4743; }
+.barra-horario-fija .hor-barra { background: rgba(20, 20, 20, 0.12); height: 8px; }
+.barra-horario-fija .hor-tramo.obligatorio { background: rgba(20, 20, 20, 0.6); }
+.barra-horario-fija .hor-tramo.otro { background: rgba(20, 20, 20, 0.3); }
+.barra-horario-fija .hor-ahora { top: -3px; height: 14px; }
+.barra-horario-fija .boton { color: #151413; border-color: rgba(20, 20, 20, 0.35); background: transparent; box-shadow: none; }
+/* Fija arriba: banda de papel de todo el ancho, borde de abajo a pincel y sombra de tinta */
+.barra-horario-fija.fija { background: #E2DACB; padding-top: env(safe-area-inset-top); box-shadow: 0 8px 16px -6px rgba(0, 0, 0, 0.6); }
+.barra-horario-fija.fija .barra-horario-int { padding-top: 3px; padding-bottom: 1px; }
+.barra-horario-fija.fija .barra-dia { display: inline; }
+.barra-horario-fija.fija .hor-linea { background: transparent; box-shadow: none; padding: 5px 0 4px; }
+.barra-horario-fija.fija .hor-linea-link { flex-direction: row; align-items: center; gap: 8px; }
+.barra-horario-fija.fija .hor-barra { flex: 1; height: 6px; }
+.barra-horario-fija.fija .hor-texto { max-width: 50%; font-size: 0.72rem; }
+.barra-horario-fija.fija .hor-correr { padding: 3px 8px; font-size: 0.72rem; min-height: 0; }
+.barra-pincel { display: none; position: absolute; left: 0; right: 0; bottom: -7px; width: 100%; height: 8px; pointer-events: none; }
+.barra-pincel path { fill: #E2DACB; }
+.barra-horario-fija.fija .barra-pincel { display: block; }
+@media (prefers-reduced-motion: reduce) { .barra-horario-fija, .barra-horario-fija .hor-linea { transition: none !important; } }
+
+/* ---------- v0.46: Juego más estético ---------- */
+.juego-titulo { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 -4px; }
+.juego-kanji { font-family: 'Noto Serif JP', serif; color: var(--acento); font-size: 1.4rem; font-weight: 700; }
+.juego-temporizador { display: flex; align-items: center; gap: 14px; margin: 4px 0 8px; }
+.enso { position: relative; width: 108px; height: 108px; flex: none; }
+.enso svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.enso-fantasma { fill: none; stroke: rgba(var(--papel-rgb), 0.09); stroke-width: 5; }
+.enso-trazo { fill: none; stroke: var(--papel); stroke-width: 7.5; stroke-linecap: round; opacity: 0.92; transition: d 0.6s ease; }
+.enso-seco { fill: none; stroke: #121110; stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 1.2 4.2; opacity: 0.5; transition: d 0.6s ease; }
+.enso.cerca .enso-trazo { stroke: var(--medio); }
+.enso.superado .enso-trazo { stroke: var(--bajo); }
+.enso-centro { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.enso .juego-segundos { font-family: 'Noto Serif JP', Georgia, serif; font-weight: 700; font-size: 1.4rem; letter-spacing: 0; }
+.juego-lado { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.boton.pincel { border-width: 1.5px; border-radius: 12px 16px 11px 17px / 16px 11px 17px 12px; }
+.juego-shoji { position: relative; padding: 12px 9px; border-radius: 4px; background: #1d1a16; border: 2px solid rgba(var(--papel-rgb), 0.38); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6); }
+.juego-shoji::before, .juego-shoji::after { content: ''; position: absolute; left: 9px; right: 9px; height: 8px; background: repeating-linear-gradient(90deg, rgba(var(--papel-rgb), 0.4) 0 1.5px, transparent 1.5px 24px); border-top: 1.5px solid rgba(var(--papel-rgb), 0.3); border-bottom: 1.5px solid rgba(var(--papel-rgb), 0.3); pointer-events: none; }
+.juego-shoji::before { top: 2px; }
+.juego-shoji::after { bottom: 2px; }
+.juego-shoji .sl-casa { border-radius: 2px; border: 1.5px solid rgba(0, 0, 0, 0.7); }
+.juego-shoji .sl-casa-nota { margin-top: 6px; }
+.enso .juego-segundos { color: var(--texto); }
+.enso .juego-segundos.medio { color: var(--medio); }
+.enso .juego-segundos.bajo { color: var(--bajo); }
+/* Sueño: las tarjetas dejan ver un poco la habitación de fondo (sin perder lectura) */
+.pagina-sueno .tarjeta { background: rgba(24, 23, 21, 0.95); }
+
+/* ---------- v0.47: tarjeta de Comida en Hoy más baja (una fila) y decorada como Metas ---------- */
+.co-tarjeta { position: relative; overflow: hidden; gap: 8px; padding: 5px 8px 5px 10px; min-height: 0; border: 1.5px solid rgba(var(--papel-rgb), 0.4); border-radius: 12px 16px 11px 17px / 16px 11px 17px 12px;
+  background:
+    radial-gradient(120% 90% at 15% 0%, rgba(var(--papel-rgb), 0.05), transparent 60%),
+    repeating-linear-gradient(97deg, rgba(var(--papel-rgb), 0.018) 0 2px, transparent 2px 7px),
+    var(--fondo-2); }
+.co-tarjeta-link { gap: 8px; }
+.co-tarjeta .co-kanji { font-size: 21px; color: var(--acento); flex: none; }
+.co-tarjeta-texto { line-height: 1.15; }
+.co-tarjeta-texto b { position: relative; align-self: flex-start; font-size: 0.95rem; z-index: 0; }
+/* Pincelada fina de tinta detrás del título */
+.co-tarjeta-texto b::after { content: ''; position: absolute; left: -3px; right: -8px; bottom: 1px; height: 5px; z-index: -1; border-radius: 3px 6px 2px 5px; background: linear-gradient(90deg, rgba(var(--papel-rgb), 0.16), rgba(var(--papel-rgb), 0.05) 85%, transparent); transform: skewX(-12deg); }
+.co-tarjeta-estado { font-size: 0.7rem; color: var(--texto-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.co-tarjeta-anillos { gap: 3px; flex: none; }
+.co-tarjeta-anillos .co-anillo-centro { display: none; }
+.co-tarjeta .agua-chica { padding: 1px 4px; gap: 0; border-color: rgba(var(--papel-rgb), 0.22); }
+.co-tarjeta .agua-chica .agua-sello { font-size: 40px; }
+.co-tarjeta .agua-chica-ml { font-size: 0.56rem; }
+.co-tarjeta .co-comi { padding: 5px 11px; min-height: 0; font-size: 0.82rem; border: 1.5px solid rgba(var(--papel-rgb), 0.38); border-radius: 10px 13px 9px 14px / 13px 9px 14px 10px; background: transparent; color: var(--texto); box-shadow: none; }
+.co-tarjeta .co-comi.primario { background: rgba(var(--papel-rgb), 0.1); }
+.co-tarjeta-anillos .co-anillo circle { stroke-width: 13; }
+.co-tarjeta-anillos .co-anillo .fondo, .co-tarjeta-anillos .co-anillo.vacio .fondo { stroke: rgba(var(--papel-rgb), 0.2); stroke-dasharray: none; }
+.co-tarjeta-anillos .co-anillo { height: 34px !important; padding: 0; }
+.co-tarjeta-anillos .co-anillo svg { width: 34px !important; height: 34px !important; display: block; }
+.co-tarjeta .co-comi, .co-tarjeta .co-comi.primario { animation: none; box-shadow: none !important; }
+
+/* ---------- v0.48: en Calendario el horario va en gris tinta fino (el verde es solo de metas, abajo) ---------- */
+.cal-dia .franjas { height: 2px; top: 4px; }
+.cal-dia .franjas i, .franjas.muestra i { opacity: 1; box-shadow: none; filter: none; }
+.franjas.muestra { height: 2px; }
+.cal-dia .franjas i.obligatorio, .franjas.muestra i.obligatorio { background: rgba(var(--papel-rgb), 0.55); }
+.cal-dia .franjas i.entreno, .franjas.muestra i.entreno { background: rgba(var(--papel-rgb), 0.34); }
+.cal-dia .franjas i.otro, .franjas.muestra i.otro { background: rgba(var(--papel-rgb), 0.18); }
+.cal-ver-horario { gap: 8px; align-items: center; margin-top: 2px; }
+.contenido.entreno .fondo-lluvia { z-index: -1; }
+/* v0.49: el polvo y los pájaros del encabezado pasan por detrás de las tarjetas (contenido z 3) */
+.motas-tinta { z-index: 2; }
+.motas-torpe { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; z-index: 27; pointer-events: none; }
+
+/* ---------- v0.50: Más con búsqueda, lo de sistema arriba y 3 grupos ---------- */
+.mas-buscar { display: flex; align-items: center; gap: 8px; padding: 0 10px; min-height: 44px; border: 1.5px solid rgba(var(--papel-rgb), 0.38); border-radius: 12px 15px 11px 16px / 15px 11px 16px 12px; background: var(--fondo-2); }
+.mas-buscar input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--texto); font: inherit; font-size: 1rem; outline: none; padding: 10px 0; }
+.mas-buscar input::-webkit-search-cancel-button { display: none; }
+.mas-lupa { font-size: 1.15rem; color: var(--texto-2); }
+.mas-borrar { appearance: none; border: 0; background: transparent; color: var(--texto-2); font-size: 1.4rem; line-height: 1; padding: 4px 6px; cursor: pointer; }
+.mas-sistema { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.mas-sis { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px 9px; text-align: center; color: var(--texto); background: var(--fondo-2); border: 1.5px solid rgba(var(--papel-rgb), 0.36); border-radius: 11px 14px 10px 15px / 14px 10px 15px 11px; }
+.mas-sis:active { background: var(--fondo-3); }
+.mas-sis-icono { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 1.45rem; line-height: 1.1; color: var(--acento); }
+.mas-sis-nombre { font-weight: 800; font-size: 0.86rem; }
+.mas-sis-desc { font-size: 0.66rem; color: var(--texto-3); line-height: 1.15; }
+.mas-sis.pendiente::after { content: ''; position: absolute; top: 7px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--acento); box-shadow: 0 0 6px rgba(var(--acento-rgb, 200, 16, 46), 0.7); }
+.mas-nada { display: flex; flex-direction: column; gap: 10px; padding: 8px 0; }
+.mas-pie { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: space-between; padding: 4px 0; }
+.mas-pie .texto-3 { flex: 1; min-width: 90px; }

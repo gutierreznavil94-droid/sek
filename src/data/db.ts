@@ -14,6 +14,8 @@ import type {
   FechaClave,
   AlimentoPropio,
   RegistroComida,
+  TomaAgua,
+  Recomendacion,
   RegistroPeso,
   ComidaGuardada,
   Atributo,
@@ -40,8 +42,7 @@ import type {
   Revision,
   SesionJuego,
   SiguienteAccion,
-  TemporizadorActivo,
-} from './tipos'
+  TemporizadorActivo, PeleaNinja } from './tipos'
 
 export class BaseDatos extends Dexie {
   identidad!: EntityTable<Identidad, 'id'>
@@ -72,6 +73,9 @@ export class BaseDatos extends Dexie {
   fechasClave!: EntityTable<FechaClave, 'id'>
   alimentosPropios!: EntityTable<AlimentoPropio, 'id'>
   comidas!: EntityTable<RegistroComida, 'id'>
+  agua!: EntityTable<TomaAgua, 'id'>
+  recomendaciones!: EntityTable<Recomendacion, 'id'>
+  ninjas!: EntityTable<PeleaNinja, 'id'>
   pesos!: EntityTable<RegistroPeso, 'id'>
   comidasGuardadas!: EntityTable<ComidaGuardada, 'id'>
   eventos!: EntityTable<Evento, 'id'>
@@ -129,6 +133,15 @@ export class BaseDatos extends Dexie {
       pesos: 'id, fecha',
       comidasGuardadas: 'id',
     })
+    this.version(9).stores({
+      agua: 'id, fecha',
+    })
+    this.version(10).stores({
+      recomendaciones: 'id, estado',
+    })
+    this.version(11).stores({
+      ninjas: '++id, fecha',
+    })
   }
 
   /** Todas las tablas, para exportar e importar. */
@@ -140,7 +153,7 @@ export class BaseDatos extends Dexie {
 export const TABLAS = [
   'identidad', 'atributos', 'ciclos', 'fases', 'objetivos', 'acciones', 'reglasXp', 'metas', 'ajustes',
   'compromisos', 'sesionesJuego', 'suenio', 'siguienteAccion', 'revisiones', 'xp', 'niveles',
-  'atributosDiarios', 'diasCerrados', 'excepciones', 'feriados', 'contadores', 'registrosContador', 'eventos', 'temporizador', 'modoSuenio', 'rutinas', 'sesionesEntreno', 'codigo', 'fechasClave', 'alimentosPropios', 'comidas', 'pesos', 'comidasGuardadas',
+  'atributosDiarios', 'diasCerrados', 'excepciones', 'feriados', 'contadores', 'registrosContador', 'eventos', 'temporizador', 'modoSuenio', 'rutinas', 'sesionesEntreno', 'codigo', 'fechasClave', 'alimentosPropios', 'comidas', 'pesos', 'comidasGuardadas', 'agua', 'recomendaciones', 'ninjas',
 ] as const
 
 let instancia: BaseDatos | null = null

@@ -10,11 +10,14 @@ import { feriadosEntre, marcarFeriado, quitarFeriado } from '../../services/feri
 import { xpDelDia } from '../../services/xp'
 import { Hoja, IconoPilar, Porcentaje, Tarjeta } from '../componentes'
 import { formatoHora } from '../../domain/fechas'
-import { obtenerAjustes } from '../../services/base'
+import { guardarAjustes, obtenerAjustes } from '../../services/base'
 import { avisar, mutar, useDatos } from '../estado'
 import { agregarFechaClave, borrarFechaClave, editarFechaClave, fechasClavePorDia } from '../../services/fechasClave'
 import type { FechaClave } from '../../data/tipos'
 import { Confirmar } from '../componentes'
+import { bloquesEntre } from '../../services/horario'
+import { HorarioDelDia } from './MiHorario'
+import { iconoTema } from '../../temas/temas'
 
 function primerDiaMes(fecha: string): string {
   return fecha.slice(0, 8) + '01'
@@ -52,7 +55,9 @@ export function Calendario({ hoy }: { hoy: string }) {
     const feriados = new Map((await feriadosEntre(dias[0], ultimo)).map((f) => [f.fecha, f.nombre]))
     const acciones = ordenarPilares(await db().acciones.filter((a) => a.activa && !!a.pilar).toArray())
     const claves = await fechasClavePorDia(dias[0], ultimo)
-    return { ciclo, pilares, metas, excepciones, feriados, acciones, claves }
+    const bloques = await bloquesEntre(dias[0], ultimo)
+    const verHorario = (await obtenerAjustes()).calendarioHorario !== false
+    return { ciclo, pilares, metas, excepciones, feriados, acciones, claves, bloques, verHorario }
   }, [mes, hoy])
 
   const d = datos.datos
@@ -63,31 +68,34 @@ export function Calendario({ hoy }: { hoy: string }) {
 
   return (
     <>
+      <Link to="/calendario/horario" className="boton ancho hor-boton"><span>Mi horario<span className="desc">bloques fijos de la semana: colegio, trabajo, entreno</span></span><span className="flecha">›</span></Link>
       <div className="fila entre">
         <button className="boton chico" onClick={() => setMes(sumarDias(mes, -1).slice(0, 8) + '01')} aria-label="Mes anterior">‹</button>
-        <h1 style={{ textTransform: 'capitalize' }}>{nombreMes(m)} {a}</h1>
+        <h1 style={{ textTransform: 'capitalize' }} className="cal-titulo"><span className="cal-kanji" aria-hidden>暦</span>{nombreMes(m)} {a}</h1>
         <button className="boton chico" onClick={() => setMes(sumarDias(ultimo, 1).slice(0, 8) + '01')} aria-label="Mes siguiente">›</button>
       </div>
       <Tarjeta>
-        <div className="calendario">
+        <div className="calendario tinta">
           {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((x) => <div key={x} className="cab">{x}</div>)}
           {Array.from({ length: huecos }).map((_, i) => <div key={`h${i}`} className="cal-dia vacio" />)}
           {dias.map((f) => {
             const enCiclo = ciclo && f >= ciclo.inicio && fin && f <= fin
             const dia = ciclo ? diaDelCiclo(ciclo.inicio, f) : 0
             const puntos = enCiclo ? d?.pilares.get(f) ?? [] : []
-            const linea = lineaDeMetas(d?.metas.get(f) ?? [], hoy)
+            const linea = lineaDeMetas(d?.metas.get(f) ?? [], hoy, f)
             const inicioFase = enCiclo && ciclo && (dia - 1) % ciclo.diasPorFase === 0
             const claves = d?.claves.get(f) ?? []
+            const franjas = d?.bloques.get(f) ?? []
             return (
               <div
                 key={f}
-                className={`cal-dia ${!enCiclo ? 'fuera' : ''} ${f === hoy ? 'hoy' : ''} ${sel === f ? 'seleccionado' : ''} ${d?.excepciones.has(f) ? 'excepcion' : ''} ${d?.feriados.has(f) ? 'feriado' : ''} ${inicioFase ? 'fase-inicio' : ''}`}
+                className={`cal-dia ${!enCiclo ? 'fuera' : ''} ${f === hoy ? 'hoy tema-remarque-hoy' : ''} ${sel === f ? 'seleccionado' : ''} ${d?.excepciones.has(f) ? 'excepcion' : ''} ${d?.feriados.has(f) ? 'feriado' : ''} ${inicioFase ? 'fase-inicio' : ''} ${f <= hoy && puntos.length > 0 && puntos.every((p) => p.estado === 'cumplido' || p.estado === 'descanso') && puntos.some((p) => p.estado === 'cumplido') ? 'completo' : ''}`}
                 onClick={() => { setSel(sel === f ? null : f); setEnfocar(sel !== f) }}
                 role="button"
                 aria-label={`${fechaLegible(f, false)}${enCiclo ? `, día ${dia}` : ''}${claves.length ? `, fecha clave: ${claves.map((c) => c.titulo).join(', ')}` : ''}`}
               >
                 <span className="num">{Number(f.slice(8))}</span>
+                {f === hoy && <span className="tema-icono-hoy" aria-hidden>{iconoTema('icono-hoy')}</span>}
                 {claves.length > 0 && <span className="sello-clave" aria-hidden>印</span>}
                 {puntos.length > 0 && (
                   <span className="puntos" aria-hidden>
@@ -95,6 +103,7 @@ export function Calendario({ hoy }: { hoy: string }) {
                   </span>
                 )}
                 {linea && <span className={`linea-meta ${linea}`} aria-hidden />}
+                {d?.verHorario && franjas.length > 0 && <span className="franjas" aria-hidden>{franjas.slice(0, 3).map((b) => <i key={b.id} className={b.tipo} />)}</span>}
               </div>
             )
           })}
@@ -112,7 +121,12 @@ export function Calendario({ hoy }: { hoy: string }) {
           <span><span className="linea-meta verde muestra" />meta cumplida</span>
           <span><span className="linea-meta roja muestra" />meta no cumplida</span>
           <span><span className="sello-clave muestra">印</span>fecha clave</span>
+          <span><span className="franjas muestra"><i className="obligatorio" /><i className="entreno" /></span>horario (gris, arriba)</span>
         </div>
+        <label className="fila cal-ver-horario chico texto-2">
+          <input type="checkbox" checked={d?.verHorario ?? true} onChange={async (e) => { const v = e.target.checked; await mutar(() => guardarAjustes({ calendarioHorario: v })) }} />
+          Mostrar horario en los días
+        </label>
         <p className="ayuda">Los 4 puntos van siempre en ese orden: entrenamiento, empresa, manga, dormir. Tocá un día para ver cuál es cada uno. Borde: hoy. Punto arriba: feriado. Línea abajo: meta (gris pendiente). ▎ inicio de fase.</p>
       </Tarjeta>
 
@@ -167,10 +181,11 @@ function PilaresDelDiaSel({ fecha, hoy, ciclo, enfocar, onMas }: { fecha: string
       {/* Lo primero: escribir una meta (hoy y días futuros). En días pasados, solo marcar. */}
       <div className="metas-del-dia">
         {fecha >= hoy && <CampoMeta fecha={fecha} hoy={hoy} enfocar={enfocar} />}
-        {d.metas.map((m) => <FilaMeta key={m.id} m={m} hoy={hoy} />)}
+        {d.metas.map((m) => <FilaMeta key={m.id} m={m} hoy={hoy} dia={fecha} />)}
         {fecha < hoy && d.metas.length === 0 && <p className="muy-chico texto-3">Sin metas ese día. En días pasados no se agregan.</p>}
       </div>
       <FechasClaveDelDia fecha={fecha} />
+      <HorarioDelDia fecha={fecha} hoy={hoy} />
       {!enCiclo && <p className="texto-3 chico">Fuera del ciclo: ese día no se registra nada.</p>}
       {enCiclo && (
         <div className="pilares-lista">
@@ -319,7 +334,7 @@ function FechasClaveDelDia({ fecha }: { fecha: string }) {
           <span className="sello-clave grande" aria-hidden>印</span>
           <span className="crece col" style={{ gap: 0 }}>
             <b className="chico">{fc.titulo}</b>
-            {(fc.nota || fc.anual) && <span className="muy-chico texto-3">{[fc.nota, fc.anual ? `cada año${fc.fecha.slice(0, 4) !== fecha.slice(0, 4) ? ` · desde ${fc.fecha.slice(0, 4)}` : ''}` : ''].filter(Boolean).join(' · ')}</span>}
+            {(fc.nota || fc.anual || fc.hora) && <span className="muy-chico texto-3">{[fc.hora ? `${fc.hora}${fc.horaFin ? `–${fc.horaFin}` : ''}` : '', fc.nota, fc.anual ? `cada año${fc.fecha.slice(0, 4) !== fecha.slice(0, 4) ? ` · desde ${fc.fecha.slice(0, 4)}` : ''}` : ''].filter(Boolean).join(' · ')}</span>}
           </span>
         </button>
       ))}
@@ -333,11 +348,13 @@ function EditorFechaClave({ fecha, fc, onCerrar }: { fecha: string; fc?: FechaCl
   const [titulo, setTitulo] = useState(fc?.titulo ?? '')
   const [nota, setNota] = useState(fc?.nota ?? '')
   const [anual, setAnual] = useState(!!fc?.anual)
+  const [hora, setHora] = useState(fc?.hora ?? '')
+  const [horaFin, setHoraFin] = useState(fc?.horaFin ?? '')
   const [borrar, setBorrar] = useState(false)
   const guardar = async () => {
     if (!titulo.trim()) return
-    if (fc) await mutar(() => editarFechaClave(fc.id, { titulo, nota, anual }))
-    else await mutar(() => agregarFechaClave(fecha, titulo, nota, anual))
+    if (fc) await mutar(() => editarFechaClave(fc.id, { titulo, nota, anual, hora, horaFin }))
+    else await mutar(() => agregarFechaClave(fecha, titulo, nota, anual, { hora, horaFin }))
     avisar(fc ? 'Fecha clave guardada' : 'Fecha clave marcada 印', { tipo: 'ok' })
     onCerrar()
   }
@@ -352,6 +369,11 @@ function EditorFechaClave({ fecha, fc, onCerrar }: { fecha: string; fc?: FechaCl
         <label>Nota (opcional)</label>
         <textarea rows={2} value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej.: llevar DNI y título" maxLength={240} />
       </div>
+      <div className="rejilla-2">
+        <div className="campo"><label>Hora (opcional)</label><input type="time" value={hora} onChange={(e) => setHora(e.target.value)} /></div>
+        <div className="campo"><label>Hasta</label><input type="time" value={horaFin} disabled={!hora} onChange={(e) => setHoraFin(e.target.value)} /></div>
+      </div>
+      {hora && <p className="ayuda" style={{ marginTop: -6 }}>Con hora, ese día cuenta como bloque obligatorio en Mi horario (examen, trámite): sin avisos mientras dura.</p>}
       <label className="fila" style={{ gap: 8, marginBottom: 12 }}>
         <input type="checkbox" checked={anual} onChange={(e) => setAnual(e.target.checked)} />
         <span>Se repite cada año (cumpleaños, aniversarios)</span>

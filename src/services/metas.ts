@@ -8,7 +8,7 @@ import { db } from '../data/db'
 import type { EstadoMeta, Meta } from '../data/tipos'
 import { diferenciaDias, type FechaDia } from '../domain/fechas'
 import { claveXp } from '../domain/xp'
-import { obtenerAjustes, registrarEvento } from './base'
+import { fechaHoy, obtenerAjustes, registrarEvento } from './base'
 import { ahora, nuevoId } from './reloj'
 import { anularXp, concederXp } from './xp'
 
@@ -57,7 +57,10 @@ export async function resolverMeta(id: string, lograda: boolean, motivo?: string
   const antes = await d.metas.get(id)
   if (!antes) throw new Error(`Meta ${id} no existe`)
   const estado: EstadoMeta = lograda ? 'cumplida' : 'no_cumplida'
-  const despues: Meta = { ...antes, estado, cumplida: lograda, resueltaEn: ahora() }
+  // Cumplida antes de tiempo: queda registrada el día que se marcó, no el día que vencía.
+  const hoy = await fechaHoy()
+  const cumplidaEl = lograda ? (hoy < antes.fecha ? hoy : antes.fecha) : undefined
+  const despues: Meta = { ...antes, estado, cumplida: lograda, resueltaEn: ahora(), cumplidaEl }
   await d.transaction('rw', [d.metas, d.eventos], async () => {
     await d.metas.put(despues)
     await registrarEvento({ tipo: antes.estado && antes.estado !== 'pendiente' ? 'corregir' : 'editar', entidad: 'meta', entidadId: id, antes, despues, motivo })
@@ -67,13 +70,13 @@ export async function resolverMeta(id: string, lograda: boolean, motivo?: string
     const cantidad = antes.xp ?? XP_META_POR_DEFECTO
     if (cantidad <= 0) return { meta: despues, xp: 0, nuevoNivel: null, conTope: false }
     // Tope para todas las metas (rápidas y del calendario): solo 2 por día dan XP; las demás quedan cumplidas sin XP.
-    const delDia = await d.xp.where('fecha').equals(antes.fecha).toArray()
+    const delDia = await d.xp.where('fecha').equals(cumplidaEl!).toArray()
     const otrasConXp = delDia.filter((r) => r.origen === 'meta' && !r.anulado && r.clave !== clave).length
     if (otrasConXp >= TOPE_METAS_CON_XP) {
       await registrarEvento({ tipo: 'editar', entidad: 'meta', entidadId: id, motivo: `Cumplida sin XP (tope de ${TOPE_METAS_CON_XP} por día)` })
       return { meta: despues, xp: 0, nuevoNivel: null, conTope: true }
     }
-    const r = await concederXp({ clave, cantidad, origen: 'meta', fecha: antes.fecha, descripcion: `Meta: ${antes.titulo}` })
+    const r = await concederXp({ clave, cantidad, origen: 'meta', fecha: cumplidaEl!, descripcion: `Meta: ${antes.titulo}` })
     return { meta: despues, xp: r.concedido ? r.cantidad : 0, nuevoNivel: r.nuevoNivel, conTope: false }
   }
   await anularXp(clave, motivo ?? 'Meta marcada como no cumplida')
@@ -87,7 +90,7 @@ export async function reabrirMeta(id: string, motivo = 'Vuelta a pendiente'): Pr
   await d.transaction('rw', [d.metas, d.eventos], async () => {
     const antes = await d.metas.get(id)
     if (!antes) return
-    const despues: Meta = { ...antes, estado: 'pendiente', cumplida: false, resueltaEn: undefined }
+    const despues: Meta = { ...antes, estado: 'pendiente', cumplida: false, resueltaEn: undefined, cumplidaEl: undefined }
     await d.metas.put(despues)
     await registrarEvento({ tipo: 'corregir', entidad: 'meta', entidadId: id, antes, despues, motivo })
   })
@@ -144,23 +147,36 @@ export function estadoVisible(m: Meta, hoy: FechaDia): EstadoVisibleMeta {
   return e
 }
 
+/** Si la meta se cumplió otro día que el suyo: `adelantada` en su fecha original, `cumplida` el día real. */
+export function cumplidaOtroDia(m: Meta): boolean {
+  return !!m.cumplidaEl && m.cumplidaEl !== m.fecha
+}
+
+/** Estado tal como se ve en un día concreto: la cumplida antes de tiempo cuenta solo el día que se marcó. */
+export function estadoEnDia(m: Meta, dia: FechaDia, hoy: FechaDia): EstadoVisibleMeta | 'adelantada' {
+  if (cumplidaOtroDia(m) && dia !== m.cumplidaEl) return 'adelantada'
+  return estadoVisible(m, hoy)
+}
+
 /** Línea del calendario: verde con al menos una cumplida; gris si quedan pendientes; roja apagada si pasó sin cumplir. */
-export function lineaDeMetas(metas: Meta[], hoy: FechaDia): 'verde' | 'gris' | 'roja' | null {
+export function lineaDeMetas(metas: Meta[], hoy: FechaDia, dia?: FechaDia): 'verde' | 'gris' | 'roja' | null {
   if (!metas.length) return null
-  const estados = metas.map((m) => estadoVisible(m, hoy))
+  const estados = metas.map((m) => (dia ? estadoEnDia(m, dia, hoy) : estadoVisible(m, hoy))).filter((e) => e !== 'adelantada')
+  if (!estados.length) return null
   if (estados.includes('cumplida')) return 'verde'
   if (estados.includes('pendiente')) return 'gris'
   return 'roja'
 }
 
-/** Metas propias entre dos fechas, agrupadas por día. */
+/** Metas propias entre dos fechas, agrupadas por día. Una cumplida antes de tiempo aparece en su fecha y también el día que se marcó. */
 export async function metasPorDia(desde: FechaDia, hasta: FechaDia): Promise<Map<FechaDia, Meta[]>> {
-  const lista = await db().metas.where('fecha').between(desde, hasta, true, true).toArray()
+  const en = (f?: FechaDia) => !!f && f >= desde && f <= hasta
+  const lista = await db().metas.filter((x) => x.tipo === 'propia' && (en(x.fecha) || en(x.cumplidaEl))).toArray()
   const m = new Map<FechaDia, Meta[]>()
-  for (const x of lista.filter((x) => x.tipo === 'propia').sort((a, b) => a.creado - b.creado)) {
-    const l = m.get(x.fecha) ?? []
-    l.push(x)
-    m.set(x.fecha, l)
+  const poner = (f: FechaDia, x: Meta) => { const l = m.get(f) ?? []; l.push(x); m.set(f, l) }
+  for (const x of lista.sort((a, b) => a.creado - b.creado)) {
+    if (en(x.fecha)) poner(x.fecha, x)
+    if (cumplidaOtroDia(x) && en(x.cumplidaEl)) poner(x.cumplidaEl!, x)
   }
   return m
 }
@@ -195,13 +211,13 @@ export async function graficoMetas(desde: FechaDia, hasta: FechaDia, hoy: FechaD
   for (const [f, metas] of await metasPorDia(desde, hasta)) {
     const x = { cumplidas: 0, noCumplidas: 0, pendientes: 0, metas }
     for (const m of metas) {
-      const e = estadoVisible(m, hoy)
+      const e = estadoEnDia(m, f, hoy)
       if (e === 'cumplida') x.cumplidas++
       else if (e === 'no_cumplida') x.noCumplidas++
-      else x.pendientes++
+      else if (e === 'pendiente') x.pendientes++
+      if (m.fecha === f) puestas++
     }
     cumplidas += x.cumplidas
-    puestas += metas.length
     porDia.set(f, x)
   }
   return { cumplidas, puestas, porDia }

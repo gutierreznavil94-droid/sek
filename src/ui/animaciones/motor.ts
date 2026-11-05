@@ -10,7 +10,7 @@ export type PilarAnim = 'entrenamiento' | 'empresa' | 'manga' | 'acostarse'
 export type EstiloCorte = 'horizontal' | 'diagonal' | 'ascendente' | 'estocada' | 'vertical'
 
 export type Animacion = (
-  | { tipo: 'ejecucion'; pilar: string; estilo?: EstiloCorte; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
+  | { tipo: 'ejecucion'; pilar: string; estilo?: EstiloCorte; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean; /** Ninjas de la distracción: título propio y nombre del rival en un cartelito. */ titulo?: string; rival?: string }
   | { tipo: 'parry'; nombre?: string; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
   | { tipo: 'postura'; modo: '321' | 'siguiente'; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
   | { tipo: 'logro'; clase: 'nivel' | 'racha' | 'fase' | 'record'; texto: string; sub?: string; /** La versión anterior (muñeco SVG), guardada para volver. */ vieja?: boolean }
@@ -20,7 +20,7 @@ export type ModoAnimaciones = 'todas' | 'logros' | 'ninguna'
 
 /** Duración máxima de cada animación (ms), según lo pedido. */
 export const DURACION: Record<Animacion['tipo'], number> = {
-  ejecucion: 2100, // ejecución hecha con los dos videos de Luma (ronin corta, rival cae): 84 cuadros a 40 fps
+  ejecucion: 2900, // ejecución con los dos videos de Luma: impacto al 46 % (1,33 s) y la caída del rival estirada hasta el 92 % (ver cuadroEjecucion)
   parry: 1900, // parry hecho con el video de Luma (88 cuadros seguidos a ~46 fps: casi el doble de rápido que el video)
   postura: 1400, // caramelo hecho con el video de Luma (56 cuadros a 40 fps)
   logro: 2600, // logro hecho con el video de Luma: 2 s de movimiento + 0,6 s de pose de victoria con el sello
@@ -49,6 +49,7 @@ export const KANJI: Record<string, { k: string; significado: string }> = {
   fase: { k: '段', significado: 'etapa' },
   record: { k: '力', significado: 'fuerza' },
   parry: { k: '忍', significado: 'perseverar' },
+  ninja: { k: '忍', significado: 'perseverar' },
 }
 
 /** Corte por defecto de cada pilar; a veces sale otro al azar para que no se repita. */
@@ -72,7 +73,7 @@ export function elegirCorte(pilar: string, azar = Math.random): EstiloCorte {
   return otros[Math.floor(azar() * otros.length) % otros.length]
 }
 
-type Config = { modo: ModoAnimaciones; sonido: boolean; nombre: string; lento: number; tema: 'claro' | 'oscuro'; tinta: boolean }
+type Config = { modo: ModoAnimaciones; sonido: boolean; nombre: string; lento: number; tema: 'claro' | 'oscuro' | 'epico'; tinta: boolean }
 function leerTinta(): boolean {
   try { return localStorage.getItem('anim-tinta') !== 'no' } catch { return true }
 }
@@ -264,6 +265,77 @@ function tambor(ac: AudioContext, t: number) {
   o.stop(t + 0.5)
 }
 
+/** Lluvia suave generada (cinemática «Tensión»): ruido grave y parejo. Devuelve la función que la apaga con un fundido. */
+export function sonarLluvia(): () => void {
+  const ac = audio()
+  if (!ac) return () => undefined
+  try {
+    const src = ac.createBufferSource()
+    src.buffer = ruido(ac, 2)
+    src.loop = true
+    const f = ac.createBiquadFilter()
+    f.type = 'lowpass'
+    f.frequency.value = 1400
+    const g = ac.createGain()
+    const t = ac.currentTime
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.exponentialRampToValueAtTime(0.09, t + 1.2)
+    src.connect(f).connect(g).connect(ac.destination)
+    src.start(t)
+    return () => {
+      try {
+        const t2 = ac.currentTime
+        g.gain.cancelScheduledValues(t2)
+        g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), t2)
+        g.gain.exponentialRampToValueAtTime(0.0001, t2 + 0.5)
+        src.stop(t2 + 0.55)
+      } catch { /* ya parada */ }
+    }
+  } catch {
+    return () => undefined
+  }
+}
+
+/** Choque de katanas suelto (batalla). Respeta el ajuste de sonido. */
+export function sonarChoque(): void {
+  if (!config.sonido) return
+  const ac = audio()
+  if (!ac) return
+  try { choque(ac, ac.currentTime + 0.01) } catch { /* sin sonido */ }
+}
+
+/** Golpe de taiko grave: un solo aviso a 10 s del fin del descanso (independiente del sonido de animaciones). */
+export function sonarTaiko(): void {
+  const ac = audio()
+  if (!ac) return
+  try {
+    const t = ac.currentTime + 0.01
+    const o = ac.createOscillator()
+    o.type = 'sine'
+    o.frequency.setValueAtTime(90, t)
+    o.frequency.exponentialRampToValueAtTime(38, t + 0.4)
+    const g = ac.createGain()
+    g.gain.setValueAtTime(0.7, t)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6)
+    o.connect(g).connect(ac.destination)
+    o.start(t)
+    o.stop(t + 0.65)
+    // El «parche»: un soplo corto de ruido grave al golpear.
+    const n = ac.createBufferSource()
+    n.buffer = ruido(ac, 0.06)
+    const f = ac.createBiquadFilter()
+    f.type = 'lowpass'
+    f.frequency.value = 400
+    const gn = ac.createGain()
+    gn.gain.setValueAtTime(0.35, t)
+    gn.gain.exponentialRampToValueAtTime(0.0001, t + 0.06)
+    n.connect(f).connect(gn).connect(ac.destination)
+    n.start(t)
+  } catch {
+    // Sin sonido: no pasa nada.
+  }
+}
+
 /** Cámara lenta que corresponde a una animación: la suya o la general. */
 export function lentoDe(a: Animacion): number {
   return a.lento ?? config.lento
@@ -275,7 +347,7 @@ export function sonar(a: Animacion): void {
   const t = ac.currentTime + 0.01
   const l = lentoDe(a)
   try {
-    if (a.tipo === 'ejecucion') corte(ac, t + (a.vieja ? 0.42 : 0.95) * l)
+    if (a.tipo === 'ejecucion') corte(ac, t + (a.vieja ? 0.42 : 1.33) * l)
     else if (a.tipo === 'parry') choque(ac, t + (a.vieja ? 0.12 : 0.67) * l)
     else if (a.tipo === 'postura') aura(ac, t + (a.vieja ? 0.5 : 0.72) * l, a.modo === 'siguiente')
     else {
@@ -285,4 +357,24 @@ export function sonar(a: Animacion): void {
   } catch {
     // Sin sonido: no pasa nada.
   }
+}
+
+/** «Toc» chiquito de madera (el pájaro torpe se choca con el borde). Respeta el ajuste de sonido. */
+export function sonarToc(): void {
+  if (!config.sonido) return
+  const ac = audio()
+  if (!ac) return
+  try {
+    const t = ac.currentTime + 0.01
+    const o = ac.createOscillator()
+    o.type = 'triangle'
+    o.frequency.setValueAtTime(820, t)
+    o.frequency.exponentialRampToValueAtTime(380, t + 0.07)
+    const g = ac.createGain()
+    g.gain.setValueAtTime(0.18, t)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.1)
+    o.connect(g).connect(ac.destination)
+    o.start(t)
+    o.stop(t + 0.12)
+  } catch { /* sin sonido */ }
 }

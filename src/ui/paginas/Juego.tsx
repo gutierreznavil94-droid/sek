@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import type { SesionJuego } from '../../data/tipos'
 import { duracionLegible, fechaDe, fechaLegible, formatoHora, instanteDe, sumarDias } from '../../domain/fechas'
 import { duracionMs } from '../../domain/juego'
@@ -8,6 +8,8 @@ import { ahora } from '../../services/reloj'
 import { recordatorios } from '../../reminders/recordatorios'
 import { Barra, Confirmar, Explicacion, Hoja, Tarjeta } from '../componentes'
 import { avisar, mutar, useDatos, useTic } from '../estado'
+import { CasaDelJuego } from '../animaciones/Siluetas'
+import { CLASE_JUEGO_CORRIENDO } from '../FondoLluvia'
 
 export function Juego({ hoy }: { hoy: string }) {
   const tic = useTic(1000)
@@ -15,6 +17,12 @@ export function Juego({ hoy }: { hoy: string }) {
   const [editar, setEditar] = useState<SesionJuego | null | 'nueva'>(null)
   const [borrar, setBorrar] = useState<SesionJuego | null>(null)
   const d = datos.datos
+  // Con el temporizador corriendo, la lluvia del fondo va más lenta y tenue (concentración).
+  const corriendo = !!d?.resumen.activa && !d.resumen.pausada
+  useEffect(() => {
+    document.documentElement.classList.toggle(CLASE_JUEGO_CORRIENDO, corriendo)
+    return () => document.documentElement.classList.remove(CLASE_JUEGO_CORRIENDO)
+  }, [corriendo])
   if (!d) return <p className="vacio">Cargando…</p>
   const { resumen: r, ajustes } = d
   const activa = r.activa
@@ -40,25 +48,33 @@ export function Juego({ hoy }: { hoy: string }) {
 
   return (
     <>
-      <Tarjeta>
+      <h1 className="juego-titulo"><span className="juego-kanji" aria-hidden>遊</span>Juego</h1>
+      <Tarjeta compacta>
         <div className="fila entre">
-          <h2>Temporizador de juego</h2>
+          <span className="seccion-titulo">Temporizador de juego</span>
           <Explicacion titulo="Cómo funciona">
             <p>Es manual: iniciás, pausás y finalizás. La sesión activa queda guardada en el teléfono, así que cerrar la app no la pierde.</p>
             <p className="texto-2 chico">Registrar el juego no da XP. Respetar el límite del día ({r.limiteMinutos} min hoy: {ajustes.limiteJuegoSemana} de lunes a viernes, {ajustes.limiteJuegoFinde} sábados, domingos y feriados) sí, y se resuelve al cerrar el día. Los avisos de límite solo suenan con la app abierta; con la app cerrada, poné una alarma en el teléfono.</p>
           </Explicacion>
         </div>
-        <div className="centro">
-          <div className={`enorme mono ${estado === 'superado' ? 'bajo' : estado === 'cerca' ? 'medio' : ''}`}>{activa ? tiempo(msSesion) : '00:00'}</div>
-          <div className="texto-2 chico" style={{ marginTop: 6 }}>{activa ? (r.pausada ? 'En pausa' : `Jugando desde las ${formatoHora(activa.inicio, ajustes.zonaHoraria)}`) : 'Sin sesión activa'}</div>
-        </div>
-        {!activa && <button className="boton primario grande ancho" onClick={iniciar}>▶ Iniciar</button>}
-        {activa && (
-          <div className="botonera">
-            {r.pausada ? <button className="boton grande" onClick={() => mutar(reanudarJuego)}>▶ Reanudar</button> : <button className="boton grande" onClick={() => mutar(pausarJuego)}>❚❚ Pausar</button>}
-            <button className="boton grande peligro" onClick={finalizar}>■ Finalizar</button>
+        <div className="juego-temporizador">
+          {/* El ensō se va cerrando con los minutos de hoy contra el límite */}
+          <Enso progreso={minutosHoy / Math.max(1, r.limiteMinutos)} estado={estado}>
+            <div className={`juego-segundos ${estado === 'superado' ? 'bajo' : estado === 'cerca' ? 'medio' : ''}`}>{activa ? tiempo(msSesion) : '00:00'}</div>
+          </Enso>
+          <div className="juego-lado">
+            <div className="texto-3 muy-chico">{activa ? (r.pausada ? 'En pausa' : `Jugando desde las ${formatoHora(activa.inicio, ajustes.zonaHoraria)}`) : 'Sin sesión activa'}</div>
+            {!activa && <button className="boton primario pincel" onClick={iniciar}>▶ Iniciar</button>}
+            {activa && (
+              <div className="fila" style={{ gap: 6, flexWrap: 'wrap' }}>
+                {r.pausada ? <button className="boton pincel" onClick={() => mutar(reanudarJuego)}>▶ Reanudar</button> : <button className="boton pincel" onClick={() => mutar(pausarJuego)}>❚❚ Pausar</button>}
+                <button className="boton peligro pincel" onClick={finalizar}>■ Finalizar</button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
+        {/* La casa, enmarcada como un shōji: pelean hasta que empezás a jugar; jugando, concentrados; en pausa, té. */}
+        <div className="juego-shoji"><CasaDelJuego activa={!!activa} pausada={!!r.pausada} /></div>
       </Tarjeta>
 
       <Tarjeta compacta>
@@ -111,6 +127,28 @@ export function Juego({ hoy }: { hoy: string }) {
       {editar && <EditarSesion sesion={editar === 'nueva' ? null : editar} zona={ajustes.zonaHoraria} hoy={hoy} onCerrar={() => setEditar(null)} />}
       <Confirmar abierta={!!borrar} titulo="¿Borrar esta sesión?" texto="Queda registrado en el historial que se borró." confirmar="Borrar" peligro onConfirmar={() => { mutar(() => borrarSesion(borrar!.id!, 'Borrada desde Juego')); setBorrar(null) }} onCancelar={() => setBorrar(null)} />
     </>
+  )
+}
+
+/** Círculo a pincel (ensō) que se cierra con el progreso (0 a 1): un trazo grueso con borde seco y el resto fantasma. */
+function Enso({ progreso, estado, children }: { progreso: number; estado: 'ok' | 'cerca' | 'superado'; children: ReactNode }) {
+  const p = Math.max(0.07, Math.min(1, progreso))
+  const r = 40
+  const a0 = -100
+  const a1 = a0 + p * 345
+  const punto = (a: number) => [50 + r * Math.cos((a * Math.PI) / 180), 50 + r * Math.sin((a * Math.PI) / 180)]
+  const [x0, y0] = punto(a0)
+  const [x1, y1] = punto(a1)
+  const d = `M${x0.toFixed(2)},${y0.toFixed(2)} A${r},${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1.toFixed(2)},${y1.toFixed(2)}`
+  return (
+    <div className={`enso ${estado}`}>
+      <svg viewBox="0 0 100 100" aria-hidden>
+        <circle cx="50" cy="50" r={r} className="enso-fantasma" />
+        <path d={d} className="enso-trazo" />
+        {p > 0.15 && <path d={d} className="enso-seco" />}
+      </svg>
+      <div className="enso-centro">{children}</div>
+    </div>
   )
 }
 

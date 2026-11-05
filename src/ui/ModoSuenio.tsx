@@ -4,6 +4,7 @@ import { formatoHora } from '../domain/fechas'
 import { salirModoSuenio } from '../services/suenio'
 import { Confirmar } from './componentes'
 import { mutar, useTic } from './estado'
+import { BuenasNoches } from './animaciones/Siluetas'
 
 /**
  * Pantalla del modo sueño: casi negra, con la hora, hasta cuándo dura y la
@@ -17,7 +18,7 @@ export function PantallaSuenio({ estado, zona, horaDormido, horaFin }: { estado:
   const [confirmar, setConfirmar] = useState(false)
   useEffect(() => {
     if (!saludo) return
-    const id = window.setTimeout(() => setSaludo(false), 8000)
+    const id = window.setTimeout(() => setSaludo(false), 12000)
     return () => window.clearTimeout(id)
   }, [saludo])
   const horaReal = formatoHora(estado.inicio, zona)
@@ -25,6 +26,7 @@ export function PantallaSuenio({ estado, zona, horaDormido, horaFin }: { estado:
     <div className="modo-suenio" role="dialog" aria-label="Modo sueño" onClick={() => saludo && setSaludo(false)}>
       {saludo ? (
         <div className="suenio-saludo">
+          <BuenasNoches />
           <div className="suenio-titulo">{estado.tarde ? `Registrado a las ${horaReal}.` : ''} Buenas noches</div>
           <div className="suenio-resumen">{estado.resumen}</div>
           {!estado.tarde && <div className="suenio-nota">Celu dejado a tiempo. +XP guardado.</div>}

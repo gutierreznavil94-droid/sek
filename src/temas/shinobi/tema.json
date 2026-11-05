@@ -11,5 +11,31 @@
   "sprite": "shinobi/camina.webp",
   "vistaPrevia": { "video": "fondos/lluvia.mp4", "imagen": "fondos/lluvia.jpg" },
   "icono": "icono-192.png",
+  "frases": [
+    "Un paso hoy vale más que diez mañana.",
+    "Ya estás acá: eso ya es entrenar.",
+    "La lluvia no para y vos tampoco.",
+    "No hace falta ganas. Hace falta empezar.",
+    "El que vuelve cada día no pierde nunca.",
+    "Hoy no se negocia: se hace.",
+    "Silencio, respirá, y al primer paso.",
+    "La constancia es la katana que no se mella.",
+    "Lo difícil dura un rato. Lo hecho queda.",
+    "Nadie te mira. Hacelo igual.",
+    "Un día más en el camino. Seguimos.",
+    "La montaña se sube con pasos chicos."
+  ],
+  "iconos": {
+    "icono-hoy": "今",
+    "icono-sueno": "眠",
+    "icono-buscar": "⌕",
+    "icono-copia": "写",
+    "icono-animaciones": "動",
+    "icono-tema": "彩",
+    "icono-ajustes": "設",
+    "icono-historial": "歴",
+    "icono-sincronizar": "同",
+    "icono-ciclo": "始"
+  },
   "orden": 1
 }

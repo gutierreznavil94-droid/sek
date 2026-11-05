@@ -12,14 +12,22 @@ import { programarAlarmas } from '../services/alarmas'
 import { Avisos, Cargando } from './componentes'
 import { PantallaSuenio } from './ModoSuenio'
 import { CapaAnimacion } from './animaciones/CapaAnimacion'
+import { NinjaPelea } from './Ninja'
+import { BatallaCapa } from './Batalla'
+import { TensionCapa } from './Tension'
+import { RivalCapa } from './Rival'
 import { avisar, mutar, notificarCambio, useDatos, useVersion } from './estado'
 import { Layout } from './Layout'
 import { Acciones } from './paginas/Acciones'
 import { Ajustes } from './paginas/Ajustes'
+import { Recomendar } from './paginas/Recomendar'
+import { RecomendacionesCreador } from './paginas/RecomendacionesCreador'
+import { reintentarPendientes } from '../services/recomendaciones'
 import { Sueno } from './paginas/Sueno'
 import { AlarmasTelefono } from './paginas/AlarmasTelefono'
 import { Atributos } from './paginas/Atributos'
 import { Calendario } from './paginas/Calendario'
+import { MiHorario } from './paginas/MiHorario'
 import { CierreFase } from './paginas/CierreFase'
 import { Copia } from './paginas/Copia'
 import { Sincronizar } from './paginas/Sincronizar'
@@ -73,6 +81,9 @@ export function App() {
         if (terminado) marcarBuenosDias(terminado.noche)
         else if (await modoSuenioActivo()) await registrarAperturaEnSuenio()
         if (navigator.storage?.persist) navigator.storage.persist().catch(() => {})
+        // Recomendaciones que quedaron esperando internet.
+        reintentarPendientes().catch(() => {})
+        window.addEventListener('online', () => { reintentarPendientes().catch(() => {}) })
       } catch (e) {
         if (!cancelado) setError(e instanceof Error ? e.message : String(e))
       } finally {
@@ -141,6 +152,10 @@ export function App() {
     <HashRouter>
       <ConSuenio />
       <CapaAnimacion />
+      <NinjaPelea />
+      <BatallaCapa />
+      <TensionCapa />
+      <RivalCapa />
       <Avisos />
     </HashRouter>
   )
@@ -199,6 +214,7 @@ function Rutas() {
       <Route element={<Layout hoy={hoy} />}>
         <Route path="/" element={<Hoy hoy={hoy} />} />
         <Route path="/calendario" element={<Calendario hoy={hoy} />} />
+        <Route path="/calendario/horario" element={<MiHorario />} />
         <Route path="/juego" element={<Juego hoy={hoy} />} />
         <Route path="/progreso/*" element={<Progreso hoy={hoy} />} />
         <Route path="/mas" element={<Mas />} />
@@ -216,6 +232,8 @@ function Rutas() {
         <Route path="/mas/copia" element={<Copia />} />
         <Route path="/mas/sincronizar" element={<Sincronizar />} />
         <Route path="/mas/ajustes" element={<Ajustes />} />
+        <Route path="/mas/recomendar" element={<Recomendar />} />
+        <Route path="/mas/creador" element={<RecomendacionesCreador hoy={hoy} />} />
         <Route path="/mas/tema" element={<TemaYNombres />} />
         <Route path="/mas/comida" element={<MasComida hoy={hoy} />} />
         <Route path="/comida" element={<Comida hoy={hoy} />} />
