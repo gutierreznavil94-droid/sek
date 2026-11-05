@@ -45,39 +45,40 @@
 .pv-globo.al-lado { flex: 1; }
 .pv-globo.al-lado::before { top: 50%; left: -9px; margin: -9px 0 0; border: 9px solid transparent; border-left: 0; border-right-color: var(--papel); }
 
-/* ----- Hoy: brillo por estado (SEK pone data-brillo; acá se decide cómo se ve). Resplandor suave de pincel, no neón. ----- */
+/* ----- Hoy: brillo por estado (SEK pone data-brillo; acá se decide cómo se ve).
+   Tenue, estilo papel: verde musgo apagado, borde de pincel con la tinta corrida hacia adentro, sin halo de luz. ----- */
+:root { --musgo: #879f82; --musgo-rgb: 135, 159, 130; --musgo-claro: #a7b9a2; --musgo-cargado-rgb: 104, 128, 99; --oro-viejo-rgb: 176, 146, 84; --tinta-diluida-rgb: 168, 158, 144; --papel-crema: #efe6d4; }
 [data-brillo] { position: relative; }
-[data-brillo]::after { content: ''; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; border: 1.5px solid transparent; animation-delay: var(--brillo-desfase, 0s); }
-/* Falta: borde gris que respira cada ~3 s */
-[data-brillo='pendiente']::after { border-color: rgba(var(--papel-rgb), 0.5); animation: tema-respira-gris 3.2s ease-in-out infinite; animation-delay: var(--brillo-desfase, 0s); }
-@keyframes tema-respira-gris { 0%, 100% { opacity: 0.25; box-shadow: 0 0 0 0 rgba(var(--papel-rgb), 0); } 50% { opacity: 1; box-shadow: 0 0 9px 1px rgba(var(--papel-rgb), 0.28), inset 0 0 6px rgba(var(--papel-rgb), 0.12); } }
-/* Hecho: verde fijo con resplandor suave */
-[data-brillo='hecho']::after { border-color: rgba(var(--verde-rgb), 0.85); box-shadow: 0 0 12px 1px rgba(var(--verde-rgb), 0.32), inset 0 0 8px rgba(var(--verde-rgb), 0.14); }
-/* Pasó el 1.er objetivo: verde que sigue titilando (todavía puede llegar al 2.º) */
-[data-brillo='parcial']::after { border-color: rgba(var(--verde-rgb), 0.8); animation: tema-respira-verde 2.6s ease-in-out infinite; animation-delay: var(--brillo-desfase, 0s); }
-@keyframes tema-respira-verde { 0%, 100% { opacity: 0.45; box-shadow: 0 0 5px 0 rgba(var(--verde-rgb), 0.2); } 50% { opacity: 1; box-shadow: 0 0 13px 2px rgba(var(--verde-rgb), 0.42), inset 0 0 7px rgba(var(--verde-rgb), 0.16); } }
-/* Llegó al 2.º objetivo: verde más fuerte y constante */
-[data-brillo='maximo']::after { border: 2px solid rgba(var(--verde-rgb), 1); box-shadow: 0 0 18px 3px rgba(var(--verde-rgb), 0.5), inset 0 0 10px rgba(var(--verde-rgb), 0.22); }
+[data-brillo]::after { content: ''; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; border: 1.5px solid transparent; }
+/* Falta: tinta diluida cálida que respira cada ~4 s, con poco contraste */
+[data-brillo='pendiente']::after { border-color: rgba(var(--tinta-diluida-rgb), 0.5); box-shadow: inset 0 0 5px rgba(var(--tinta-diluida-rgb), 0.1); animation: tema-respira-tinta 4.2s ease-in-out infinite; animation-delay: var(--brillo-desfase, 0s); }
+@keyframes tema-respira-tinta { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.85; } }
+/* Hecho, parcial y máximo: velo musgo muy leve sobre el papel (el grano se sigue viendo) */
+[data-brillo='hecho'], [data-brillo='parcial'], [data-brillo='maximo'] { background-image: linear-gradient(160deg, rgba(var(--musgo-rgb), 0.09), rgba(var(--musgo-rgb), 0.06)) !important; border-color: rgba(var(--musgo-rgb), 0.35) !important; box-shadow: none !important; }
+.agua-chica[data-brillo='hecho'], .agua-chica[data-brillo='parcial'], .agua-chica[data-brillo='maximo'] { background-image: none !important; background-color: rgba(var(--musgo-rgb), 0.07) !important; }
+[data-brillo='hecho']::after { border-color: rgba(var(--musgo-rgb), 0.85); box-shadow: inset 0 0 6px rgba(var(--musgo-rgb), 0.18); }
+/* Pasó el 1.er objetivo: el mismo musgo, titilando muy suave */
+[data-brillo='parcial']::after { border-color: rgba(var(--musgo-rgb), 0.85); box-shadow: inset 0 0 6px rgba(var(--musgo-rgb), 0.16); animation: tema-respira-musgo 4s ease-in-out infinite; animation-delay: var(--brillo-desfase, 0s); }
+@keyframes tema-respira-musgo { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+/* Llegó al 2.º objetivo: tinta del borde más cargada, con un hilo de dorado viejo, fija */
+[data-brillo='maximo']::after { border: 2px solid rgba(var(--musgo-cargado-rgb), 1); box-shadow: inset 0 0 0 1px rgba(var(--oro-viejo-rgb), 0.38), inset 0 0 8px rgba(var(--musgo-rgb), 0.22); }
+/* Textos y marcas en musgo (se leen bien sobre el papel oscuro) */
+.pilar-bloque[data-brillo='hecho'] .detalle, .contador-boton[data-brillo] .mas-n, .contador-boton[data-brillo='parcial'] .detalle, .contador-boton[data-brillo='maximo'] .detalle { color: var(--musgo-claro) !important; }
+.contador-boton[data-brillo='pendiente'] .mas-n { color: var(--texto) !important; }
+.contador-boton[data-brillo] .barrita i { background: var(--musgo) !important; }
+.accesos .boton[data-brillo='hecho'], .accesos .boton[data-brillo='hecho'] svg { color: var(--musgo-claro) !important; }
+/* Tildes e íconos de lo hecho: papel crema con tinta negra */
+.pilar-bloque.cumplido .estado-ic, .pilar-bloque.tarde .estado-ic { background: var(--papel-crema) !important; border-color: var(--papel-crema) !important; color: #141414 !important; box-shadow: none !important; }
+.pilar-bloque.cumplido .icono { background: var(--papel-crema) !important; color: #141414 !important; }
 @media (prefers-reduced-motion: reduce) {
-  [data-brillo='pendiente']::after { animation: none; opacity: 0.7; }
-  [data-brillo='parcial']::after { animation: none; box-shadow: 0 0 10px 1px rgba(var(--verde-rgb), 0.32); }
+  [data-brillo='pendiente']::after { animation: none; opacity: 0.65; }
+  [data-brillo='parcial']::after { animation: none; opacity: 0.9; }
 }
 
-/* ----- Comida: la manzana a pincel al lado de la cantimplora ----- */
-.fruta-chica { flex: none; display: flex; flex-direction: column; align-items: center; gap: 0; padding: 1px 4px; border-radius: 9px 11px 8px 12px / 11px 8px 12px 9px; border: 1px solid rgba(var(--papel-rgb), 0.22); background: transparent; color: inherit; cursor: pointer; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
-.fruta-chica:active { background: var(--fondo-3); }
-.fruta-chica-n { font-size: 0.56rem; line-height: 1; color: var(--texto-2); white-space: nowrap; }
-.fruta-chica.fruta-cumplido .fruta-chica-n, .fruta-chica.fruta-superado .fruta-chica-n { color: var(--verde); font-weight: 700; }
+/* ----- Comida: la manzana, simple como la cantimplora (mismo botón, mismo trazo) ----- */
 .tema-manzana { overflow: visible; display: block; }
-.tema-manzana-piel { fill: #b3242f; }
-.tema-manzana-pulpa { fill: #efe4c8; }
-.tema-manzana-trazo { fill: none; stroke: rgba(var(--papel-rgb), 0.9); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
-.tema-manzana-trazo.cuerpo { stroke-width: 4.5; }
-.tema-manzana.centro .tema-manzana-trazo { stroke: rgba(120, 70, 40, 0.75); stroke-width: 3; }
-.tema-manzana-brillo { fill: none; stroke: rgba(255, 255, 255, 0.45); stroke-width: 4; stroke-linecap: round; }
-.tema-manzana-hoja { fill: var(--verde); }
-.tema-manzana-semilla { fill: #3b2418; }
-.tema-manzana-miga { fill: var(--sh-tinta, #141414); opacity: 0; animation: tema-miga 0.6s ease-out forwards; }
-.tema-manzana-miga:nth-child(odd) { fill: #efe4c8; }
-@keyframes tema-miga { 0% { opacity: 1; transform: translate(0, 0); } 100% { opacity: 0; transform: translate(var(--mx), var(--my)); } }
-@media (prefers-reduced-motion: reduce) { .tema-manzana-migas { display: none; } }
+.tema-manzana-cuerpo { fill: #9a3b3b; stroke: var(--papel); stroke-width: 3; stroke-linejoin: round; }
+.tema-manzana.centro .tema-manzana-cuerpo { fill: rgba(var(--papel-rgb), 0.18); }
+.tema-manzana-trazo { fill: none; stroke: var(--papel); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.tema-manzana-trazo.fino { stroke-width: 1.8; opacity: 0.75; }
+.fruta-chica[data-brillo='parcial'] .agua-chica-ml, .fruta-chica[data-brillo='maximo'] .agua-chica-ml { color: var(--musgo-claro); }
