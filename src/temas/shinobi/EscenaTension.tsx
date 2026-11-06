@@ -166,12 +166,13 @@ export function EscenaTension({ kanji, frase, sonido, reducido, auto, onFin, onS
 
 const MANCHAS = Array.from({ length: 40 }, (_, i) => {
   const r = (k: number) => { const x = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return x - Math.floor(x) }
-  // Salen cerca de la cima (≈ 70 %, 11 %) y bajan por las laderas: la mayoría por la derecha
-  const derecha = r(1) < 0.7
-  const x0 = 0.68 + r(2) * 0.05
-  const y0 = 0.11 + r(3) * 0.03
-  const x1 = derecha ? 0.8 + r(4) * 0.18 : 0.12 + r(4) * 0.2
-  const y1 = derecha ? 0.19 + r(5) * 0.1 : 0.24 + r(5) * 0.08
+  // Solo en las laderas de los costados, nunca sobre el shinobi (que ocupa ≈ 25–68 % de ancho):
+  // la mayoría baja desde la cima (≈ 70 %, 11 %) por la derecha; unas pocas por la ladera izquierda.
+  const derecha = r(1) < 0.72
+  const x0 = derecha ? 0.7 + r(2) * 0.04 : 0.17 + r(2) * 0.05
+  const y0 = derecha ? 0.11 + r(3) * 0.03 : 0.2 + r(3) * 0.03
+  const x1 = derecha ? 0.78 + r(4) * 0.19 : 0.03 + r(4) * 0.14
+  const y1 = derecha ? 0.18 + r(5) * 0.1 : 0.26 + r(5) * 0.06
   return { x0, y0, x1, y1, vel: 0.6 + r(6) * 0.4, raya: r(7) < 0.45 }
 })
 
