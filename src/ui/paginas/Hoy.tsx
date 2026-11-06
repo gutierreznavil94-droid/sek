@@ -482,6 +482,7 @@ export function Hoy({ hoy }: { hoy: string }) {
               destello={destello === p.accion.id}
               onTocar={() => tocarPilar(p)}
               onMas={() => p.compromiso && setPilarSel(p)}
+              onConfigurar={() => navegar(`/mas/acciones?editar=${encodeURIComponent(p.accion.id)}`)}
               horaLimiteCelu={ajustes.horaLimiteCelu}
               entrenoEnCurso={d.entrenoEnCurso}
             />
@@ -629,9 +630,15 @@ function usadoHoy(que: '321' | 'siguiente', hoy: string): boolean {
 }
 
 /** Un pilar en una sola fila: ícono, nombre, el dato que importa y el estado a la derecha (tilde grande hecho, punto ámbar iniciado). */
-function FilaPilar({ p, brillo: b, suenio, zona, tic, flash, marcado, destello, onTocar, onMas, horaLimiteCelu, entrenoEnCurso }: { p: Pilar; brillo: ReturnType<typeof brillo>; suenio: { horaReal: number } | undefined; zona: string; tic: number; flash?: number; marcado: boolean; destello?: boolean; onTocar: () => void; onMas: () => void; horaLimiteCelu: string; entrenoEnCurso?: boolean }) {
+function FilaPilar({ p, brillo: b, suenio, zona, tic, flash, marcado, destello, onTocar, onMas, onConfigurar, horaLimiteCelu, entrenoEnCurso }: { p: Pilar; brillo: ReturnType<typeof brillo>; suenio: { horaReal: number } | undefined; zona: string; tic: number; flash?: number; marcado: boolean; destello?: boolean; onTocar: () => void; onMas: () => void; onConfigurar: () => void; horaLimiteCelu: string; entrenoEnCurso?: boolean }) {
   const c = p.compromiso
   const esCelu = p.accion.tipo === 'acostarse'
+  // Mantener apretado (0,55 s) abre la configuración del pilar; el toque normal sigue igual.
+  const largo = useRef<number | null>(null)
+  const fueLargo = useRef(false)
+  useEffect(() => () => { if (largo.current) window.clearTimeout(largo.current) }, [])
+  const empezar = () => { fueLargo.current = false; largo.current = window.setTimeout(() => { fueLargo.current = true; largo.current = null; onConfigurar() }, 550) }
+  const soltar = () => { if (largo.current) { window.clearTimeout(largo.current); largo.current = null } }
   const esEntreno = p.accion.tipo === 'entrenamiento'
   const iniciado = p.estado === 'pendiente' && (c?.estado === 'iniciado' || (esEntreno && !!entrenoEnCurso))
   // Últimos 30 minutos antes de la hora límite: el brillo se nota más.
@@ -666,8 +673,13 @@ function FilaPilar({ p, brillo: b, suenio, zona, tic, flash, marcado, destello, 
       type="button"
       className={`pilar-bloque ${p.estado} ${p.vencido ? 'vencido' : ''} ${cerca ? 'cerca' : ''} ${marcado ? 'marcado' : ''} ${c?.extra ? 'extra' : ''} ${destello ? 'destello-extra' : ''} ${iniciado ? 'iniciado' : ''}`}
       {...b}
-      onClick={onTocar}
-      aria-label={`${p.accion.nombre}: ${texto}`}
+      onPointerDown={empezar}
+      onPointerUp={soltar}
+      onPointerLeave={soltar}
+      onPointerCancel={soltar}
+      onContextMenu={(e) => e.preventDefault()}
+      onClick={() => { if (fueLargo.current) { fueLargo.current = false; return } onTocar() }}
+      aria-label={`${p.accion.nombre}: ${texto}. Mantené apretado para configurarlo`}
       disabled={p.estado === 'descanso'}
     >
       <span className="icono"><IconoPilar id={p.accion.id} tipo={p.accion.tipo} /></span>

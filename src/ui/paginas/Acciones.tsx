@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { Accion, ReglaXp } from '../../data/tipos'
 import { nombreDiaSemana } from '../../domain/fechas'
 import { cambiarXpDeAccion, desactivarAccion, guardarAccion, listarAcciones, listarAtributos, reglasDeAccion, validarAccion } from '../../services/acciones'
@@ -23,6 +24,12 @@ export function Acciones({ hoy }: { hoy: string }) {
   const [editar, setEditar] = useState<Accion | 'nueva' | null>(null)
   const [desactivar, setDesactivar] = useState<Accion | null>(null)
   const d = datos.datos
+  // Desde Hoy (mantener apretado un pilar): ?editar=<id> abre esa acción; al cerrar vuelve a Hoy.
+  const [params] = useSearchParams()
+  const navegar = useNavigate()
+  const editarId = params.get('editar')
+  useEffect(() => { if (d && editarId) { const a = d.acciones.find((x) => x.id === editarId); if (a) setEditar(a) } }, [d, editarId])
+  const cerrar = () => { setEditar(null); if (editarId) navegar(-1) }
   if (!d) return <p className="vacio">Cargando…</p>
   const activas = d.acciones.filter((a) => a.activa)
   const inactivas = d.acciones.filter((a) => !a.activa)
@@ -60,7 +67,7 @@ export function Acciones({ hoy }: { hoy: string }) {
           ))}
         </Tarjeta>
       )}
-      {editar && <EditarAccion accion={editar === 'nueva' ? null : editar} xpActual={editar === 'nueva' ? d.ajustes.xpCompromisoPorDefecto : xpDe(editar)} atributos={d.atributos} hoy={hoy} onCerrar={() => setEditar(null)} onDesactivar={(a) => { setEditar(null); setDesactivar(a) }} />}
+      {editar && <EditarAccion accion={editar === 'nueva' ? null : editar} xpActual={editar === 'nueva' ? d.ajustes.xpCompromisoPorDefecto : xpDe(editar)} atributos={d.atributos} hoy={hoy} onCerrar={cerrar} onDesactivar={(a) => { setEditar(null); setDesactivar(a) }} />}
       <Confirmar abierta={!!desactivar} titulo="¿Desactivar acción?" texto="Deja de programarse desde mañana. Su historial y su XP se conservan. Podés reactivarla después." confirmar="Desactivar" peligro onConfirmar={() => { mutar(() => desactivarAccion(desactivar!.id)); setDesactivar(null) }} onCancelar={() => setDesactivar(null)} />
     </>
   )

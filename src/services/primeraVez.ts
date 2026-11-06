@@ -34,13 +34,14 @@ export const SUGERENCIAS_PILARES: { clave: ClavePilar; nombre: string; id: strin
   { clave: 'otro', nombre: 'Otro…', id: 'p-otro', dias: TODOS, horaLimite: '20:50', minutos: 15, atributo: 'disciplina', xp: 15, pideHora: true, pideMinutos: true },
 ]
 
-export type EleccionPilar = { clave: ClavePilar; nombre: string; dias: number[]; horaLimite?: string; minutos?: number }
+/** `minutosExtra`: segunda meta (ej. Dibujar manga: 15 min cumple, 30 min es el extra). */
+export type EleccionPilar = { clave: ClavePilar; nombre: string; dias: number[]; horaLimite?: string; minutos?: number; minutosExtra?: number }
 
 /** Los cuatro pilares del creador de la app (Navil), con sus horarios y XP. Se ofrecen en la primera entrada y en Más. */
 export const PILARES_DEL_CREADOR: EleccionPilar[] = [
   { clave: 'entrenar', nombre: 'Entrenar', dias: [1, 2, 3, 4, 5, 6], horaLimite: '19:35', minutos: 42 },
   { clave: 'dormir', nombre: 'Dormir a horario', dias: TODOS },
-  { clave: 'dibujar', nombre: 'Dibujar', dias: TODOS, horaLimite: '20:50', minutos: 15 },
+  { clave: 'dibujar', nombre: 'Dibujar manga', dias: TODOS, horaLimite: '20:50', minutos: 15, minutosExtra: 30 },
   { clave: 'proyecto', nombre: 'Proyecto propio', dias: TODOS, horaLimite: '20:50' },
 ]
 
@@ -77,7 +78,7 @@ export async function agregarPilaresDelCreador(hoy: FechaDia): Promise<string[]>
     const e = accionDe(p, activos + agregados.length + 1, 1, horarios)
     const existe = await d.acciones.get(e.accion.id)
     // Si la acción ya existía (por ejemplo, apagada), vuelve como pilar con su XP; si no, se crea con el del creador.
-    await guardarAccion({ ...(existe ?? {}), ...e.accion, minutosExtra: undefined, xpExtra: undefined }, existe ? undefined : e.xp, hoy)
+    await guardarAccion({ ...(existe ?? {}), minutosExtra: undefined, xpExtra: undefined, ...e.accion }, existe ? undefined : e.xp, hoy)
     agregados.push(p.nombre)
   }
   return agregados
@@ -138,12 +139,13 @@ function accionDe(p: EleccionPilar, orden: number, indiceOtro: number, horarios:
   const id = p.clave === 'otro' ? `p-otro-${indiceOtro}` : s.id
   const hl = p.horaLimite ?? s.horaLimite ?? '20:50'
   const min = s.pideMinutos ? p.minutos : undefined
+  const extra = min && p.minutosExtra && p.minutosExtra > min ? { minutosExtra: p.minutosExtra, xpExtra: 10 } : { minutosExtra: undefined, xpExtra: undefined }
   const condicion = p.clave === 'pantalla'
     ? `Respetar mi límite de pantalla. Marcar «Sí» hasta las ${hl}; después queda como tarde y no da XP.`
     : `${min ? `Al menos ${min} minutos. ` : ''}Marcar «Sí» hasta las ${hl}; después queda como tarde y no da XP.`
   return {
     xp: s.xp,
-    accion: { id, nombre, tipo: 'compromiso', condicion, horaLimite: hl, minutosMinimos: min, ...(p.clave === 'proyecto' ? { pregunta: '¿Qué avancé?' } : {}), ...comun },
+    accion: { id, nombre, tipo: 'compromiso', condicion, horaLimite: hl, minutosMinimos: min, ...extra, ...(p.clave === 'proyecto' ? { pregunta: '¿Qué avancé?' } : {}), ...comun },
   }
 }
 
@@ -177,7 +179,7 @@ export async function configurarPrimeraVez(c: ConfigPrimeraVez): Promise<void> {
   for (const e of elegidos) {
     const existe = await d.acciones.get(e.accion.id)
     // Las acciones que ya existen conservan su XP; las nuevas reciben el de la sugerencia.
-    await guardarAccion({ ...e.accion, minutosExtra: undefined, xpExtra: undefined }, existe ? undefined : e.xp, c.hoy)
+    await guardarAccion({ minutosExtra: undefined, xpExtra: undefined, ...e.accion }, existe ? undefined : e.xp, c.hoy)
   }
 
   // Entreno: si no hay sesiones, las rutinas de Navil se cambian por la de ejemplo.
