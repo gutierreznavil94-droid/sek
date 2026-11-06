@@ -175,7 +175,6 @@ export function PiedraShinobi({ id, kanji, validos, necesarios, tam = 96, reduci
         {forma.signos.trazos.map((t, i) => <clipPath key={i} id={`pt${u}${i}`}><rect x={t.x} y={t.y} width={t.w} height={t.h} /></clipPath>)}
       </defs>
       <ellipse className="pf-sombra" cx="50" cy="99" rx={completo ? 26 : 40} ry="5" />
-      {!completo && <path className="pf-hueco" d={forma.contorno} />}
       <text className="pf-kanji" x="50" y="52" textAnchor="middle" dominantBaseline="central" fontSize="64">{kanji}</text>
       {/* Antes del primer pedazo, una piedra entera debajo tapa las uniones finas entre pedazos (no deben parecer grietas). */}
       {caidos === 0 && <path d={forma.contorno} fill={`url(#pg${u})`} />}
