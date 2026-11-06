@@ -47,6 +47,7 @@ import {
 import { emitirEvento } from '../../temas/eventos'
 import { duracionSuenio, entrarModoSuenio, horaDeMinutos, resumenSuenio } from '../../services/suenio'
 import { estadoAdaptacion, veredictoDe } from '../../services/adaptacion'
+import { FilaForjaHoy } from '../Forja'
 import { celebrarFase, celebrarNivel, celebrarPilar, celebrarRacha } from '../animaciones/logros'
 import { animar, configuracionAnimaciones } from '../animaciones/motor'
 import { resumenJuego } from '../../services/juego'
@@ -513,6 +514,9 @@ export function Hoy({ hoy }: { hoy: string }) {
 
       {/* Comida: dos anillos (calorías y proteína) y «+ Comí» */}
       <TarjetaComida hoy={hoy} />
+
+      {/* Forja de hábitos: hasta 3 piedras chicas (si no hay, no aparece) */}
+      <FilaForjaHoy hoy={hoy} />
 
       {/* Metas de la semana: fila mini de 7 días, debajo de los pilares */}
       <SemanaMetas hoy={hoy} />

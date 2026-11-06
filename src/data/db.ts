@@ -44,7 +44,7 @@ import type {
   Revision,
   SesionJuego,
   SiguienteAccion,
-  TemporizadorActivo, PeleaNinja } from './tipos'
+  TemporizadorActivo, PeleaNinja, HabitoForja } from './tipos'
 
 export class BaseDatos extends Dexie {
   identidad!: EntityTable<Identidad, 'id'>
@@ -87,6 +87,7 @@ export class BaseDatos extends Dexie {
   modoSuenio!: EntityTable<ModoSuenio, 'id'>
   /** Organización (notas y tareas): un solo objeto JSON en la fila 'datos'. El formato lo define src/organizacion/CONTRATO.md. */
   organizacion!: EntityTable<{ id: string; datos: unknown; actualizado: number }, 'id'>
+  forja!: EntityTable<HabitoForja, 'id'>
 
   constructor(nombre = 'sistema-progreso') {
     super(nombre)
@@ -157,6 +158,10 @@ export class BaseDatos extends Dexie {
     this.version(14).stores({
       caidas: 'id, fecha',
     })
+    // Forja de hábitos: solo agrega su tabla.
+    this.version(15).stores({
+      forja: 'id, estado',
+    })
   }
 
   /** Todas las tablas, para exportar e importar. */
@@ -168,7 +173,7 @@ export class BaseDatos extends Dexie {
 export const TABLAS = [
   'identidad', 'atributos', 'ciclos', 'fases', 'objetivos', 'acciones', 'reglasXp', 'metas', 'ajustes',
   'compromisos', 'sesionesJuego', 'suenio', 'siguienteAccion', 'revisiones', 'xp', 'niveles',
-  'atributosDiarios', 'diasCerrados', 'excepciones', 'feriados', 'contadores', 'registrosContador', 'eventos', 'temporizador', 'modoSuenio', 'rutinas', 'sesionesEntreno', 'codigo', 'fechasClave', 'alimentosPropios', 'comidas', 'pesos', 'comidasGuardadas', 'agua', 'recomendaciones', 'ninjas', 'organizacion', 'frutas', 'caidas',
+  'atributosDiarios', 'diasCerrados', 'excepciones', 'feriados', 'contadores', 'registrosContador', 'eventos', 'temporizador', 'modoSuenio', 'rutinas', 'sesionesEntreno', 'codigo', 'fechasClave', 'alimentosPropios', 'comidas', 'pesos', 'comidasGuardadas', 'agua', 'recomendaciones', 'ninjas', 'organizacion', 'frutas', 'caidas', 'forja',
 ] as const
 
 let instancia: BaseDatos | null = null

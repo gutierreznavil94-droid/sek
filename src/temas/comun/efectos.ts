@@ -24,4 +24,8 @@ export const efectosComun: Efectos = {
   jugar: pulso(1.03, 300),
   pausa: fundido,
   quieto: () => undefined,
+  // Forja de hábitos: el círculo se llena solo; acá un pulso al marcar, un temblor al caer un pedazo y un pulso grande al forjarse.
+  'forja-paso': pulso(1.04, 260),
+  'forja-pedazo': temblor,
+  'forja-completa': pulso(1.12, 700),
 }

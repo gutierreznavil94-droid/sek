@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import { Tarjeta, movimientoReducido } from '../../ui/componentes'
 import { temaActivo } from '../temas'
+import { PiedraShinobi } from './Piedra'
 import { BolitaDorada, HOJA_RIVAL, JuegoShinobi, NocheShinobi, Pregunta, SpriteClip, SuenoShinobi, useHoja } from './Escenas'
 
 const BASE = import.meta.env.BASE_URL
@@ -57,6 +58,7 @@ export function GaleriaShinobi() {
   const reducido = movimientoReducido()
   const [juego, setJuego] = useState<'pelea' | 'jugando' | 'te'>('pelea')
   const [noche, setNoche] = useState(0)
+  const [forja, setForja] = useState(0)
   const hojaCompanero = `${BASE}${temaActivo().sprite}`
   return (
     <>
@@ -85,6 +87,16 @@ export function GaleriaShinobi() {
           <button type="button" className="boton chico" onClick={() => setJuego('pelea')}>Sin jugar</button>
           <button type="button" className="boton chico" onClick={() => setJuego('jugando')}>▶ A jugar</button>
           <button type="button" className="boton chico" onClick={() => setJuego('te')}>❚❚ Pausa (té)</button>
+        </div>
+      </Tarjeta>
+      <Tarjeta titulo="Animaciones · Forja">
+        <p className="chico texto-2" style={{ margin: 0 }}>Mové los días: cada día nuevo es un tajo y una grieta; a los 7, 12, 17, 21 y 25 cae un pedazo; a los 28 se forja.</p>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0' }}><PiedraShinobi id="vista-previa" kanji="読" validos={forja} necesarios={28} tam={150} reducido={!!reducido} /></div>
+        <div className="fila" style={{ gap: 8, alignItems: 'center' }}>
+          <button type="button" className="boton chico" onClick={() => setForja((n) => Math.max(0, n - 1))}>−</button>
+          <input type="range" min={0} max={28} value={forja} onChange={(e) => setForja(Number(e.target.value))} style={{ flex: 1 }} aria-label="Días válidos" />
+          <button type="button" className="boton chico" onClick={() => setForja((n) => Math.min(28, n + 1))}>+ 1 día</button>
+          <span className="mono chico" style={{ minWidth: 44, textAlign: 'right' }}>{forja} / 28</span>
         </div>
       </Tarjeta>
       <Tarjeta titulo="Animaciones · Noche">

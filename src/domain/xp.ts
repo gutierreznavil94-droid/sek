@@ -26,6 +26,7 @@ export type OrigenXp =
   | 'manual'
   | 'rival'
   | 'caida'
+  | 'forja'
 
 export type ReglaXp = {
   id: string

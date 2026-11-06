@@ -121,4 +121,8 @@ export const efectosShinobi: Efectos = {
   jugar: efectosComun.completar,
   pausa: efectosComun.descanso,
   quieto: () => undefined,
+  // Forja: la piedra (Piedra.tsx) ya hace el tajo, la grieta y los pedazos; acá solo un brillo rojo al forjarse.
+  'forja-paso': () => undefined,
+  'forja-pedazo': () => undefined,
+  'forja-completa': brilloRojo,
 }

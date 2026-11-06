@@ -6,6 +6,7 @@ import { Atras, Tarjeta, elegirMovimiento, preferenciaMovimiento, sistemaPideRed
 import { avisar, mutar, useDatos } from '../estado'
 import { FRASES_DORMIR_DEFECTO, MINUTOS_AVISO_DORMIR } from '../../services/dormir'
 import { frasesCompanero } from '../../services/companero'
+import { FORJA_DEFECTO } from '../../domain/forja'
 import { Divisor, elegirDivisor, useVarianteDivisor, type VarianteDivisor } from '../Divisor'
 
 const ZONAS = ['America/Argentina/Cordoba', 'America/Argentina/Buenos_Aires', 'America/Montevideo', 'America/Santiago', 'America/Sao_Paulo', 'America/Lima', 'America/Bogota', 'America/Mexico_City', 'Europe/Madrid', 'UTC']
@@ -149,6 +150,14 @@ export function Ajustes() {
           <div className="campo"><label>Aviso al (%)</label><input type="number" inputMode="numeric" value={a.avisoJuegoPorcentaje} onChange={num('avisoJuegoPorcentaje', 10, 100)} /></div>
         </div>
         <p className="ayuda">Los feriados se marcan desde el Calendario. El cambio vale de hoy en adelante; los días ya cerrados no se recalculan.</p>
+      </Tarjeta>
+      <Tarjeta titulo="鍛 Forja de hábitos">
+        <div className="rejilla-2">
+          {([['dias', 'Días de forja', 1, 120], ['validos', 'Días válidos necesarios', 1, 120], ['xpDia', 'XP por día cumplido', 0, 100], ['xpForjado', 'XP al forjarse', 0, 500]] as const).map(([k, t, mn, mx]) => (
+            <div key={k} className="campo"><label>{t}</label><input type="number" inputMode="numeric" value={{ ...FORJA_DEFECTO, ...(a.forja ?? {}) }[k]} onChange={(e) => { const v = Number(e.target.value); if (Number.isFinite(v)) set('forja', { ...(a.forja ?? {}), [k]: Math.max(mn, Math.min(mx, v)) }) }} /></div>
+          ))}
+        </div>
+        <p className="ayuda">Cada semana de la forja perdona 1 falla. Si los válidos son más que los días, se usan los días. La XP ya ganada no cambia.</p>
       </Tarjeta>
       <Tarjeta titulo="XP y niveles">
         <div className="rejilla-2">
