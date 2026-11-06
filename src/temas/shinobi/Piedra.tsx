@@ -59,10 +59,12 @@ function cinta(ps: P[], w0: number): string {
   }
   return camino([...izq, ...der.reverse()]) + ' Z'
 }
+type Tono = 'luz' | 'medio' | 'sombra' | 'baja'
 type Forma = {
   contorno: string
   luz: string
-  facetas: { d: string; tono: 'luz' | 'medio' | 'sombra' }[]
+  facetas: { d: string; tono: Tono }[]
+  brasa: string
   centro: P
   cunas: string[]
   centros: P[]
@@ -84,19 +86,31 @@ function formaDe(id: string, necesarios: number): Forma {
     return [50 + Math.cos(ang) * rad, 51 + Math.sin(ang) * rad * 0.95]
   })
   const contorno = camino(vert) + ' Z'
-  // Facetas planas: cara de arriba, y un anillo de caras con luz (arriba a la izquierda) o sombra (abajo a la derecha).
-  const ci: P = [46 + j(1.5), 45 + j(1.5)]
-  const inner: P[] = vert.map((v) => [ci[0] + (v[0] - 50) * (0.56 + j(0.05)), ci[1] + (v[1] - 51) * (0.56 + j(0.05))])
-  const facetas: { d: string; tono: 'luz' | 'medio' | 'sombra' }[] = [{ d: camino(inner) + ' Z', tono: 'medio' }]
+  // 5 caras planas ordenadas que salen de una arista baja a la derecha: luz grande arriba a la izquierda,
+  // medias a los costados y sombra abajo a la derecha. Se lee como roca maciza, no como disco.
+  const q: P = [58 + j(1.5), 60 + j(1.5)]
+  const angDe = (v: P) => ((Math.atan2(v[1] - 51, v[0] - 50) * 180) / Math.PI + 360) % 360
+  const cerca = (deg: number) => { let mejor = 0, dm = 999; vert.forEach((v, i) => { const d = Math.abs(((angDe(v) - deg + 540) % 360) - 180); if (d < dm) { dm = d; mejor = i } }); return mejor }
+  const cortes = [cerca(175), cerca(340), cerca(25), cerca(75), cerca(125)]
+  const tonos: Tono[] = ['luz', 'medio', 'sombra', 'baja', 'medio']
+  const facetas: { d: string; tono: Tono }[] = []
+  for (let c = 0; c < 5; c++) {
+    const i0 = cortes[c], i1 = cortes[(c + 1) % 5]
+    if (i0 === i1) continue
+    const ps: P[] = [q]
+    for (let i = i0; ; i = (i + 1) % n) { ps.push(vert[i]); if (i === i1) break }
+    facetas.push({ d: camino(ps) + ' Z', tono: tonos[c] })
+  }
   const bordesLuz: string[] = []
+  const bajos: string[] = []
   for (let i = 0; i < n; i++) {
     const a = vert[i], b = vert[(i + 1) % n]
     const mx = (a[0] + b[0]) / 2 - 50, my = (a[1] + b[1]) / 2 - 51, ml = Math.hypot(mx, my) || 1
     const luz = (mx / ml) * -0.6 + (my / ml) * -0.8
-    const tono = luz > 0.3 ? 'luz' : luz < -0.3 ? 'sombra' : 'medio'
-    facetas.push({ d: camino([a, b, inner[(i + 1) % n], inner[i]]) + ' Z', tono })
     if (luz > 0.45) bordesLuz.push(camino([hacia(a, b, 1.5), hacia(b, a, 1.5)]))
+    if (my / ml > 0.55) bajos.push(camino([a, b]))
   }
+  const brasa = bajos.join(' ')
   const luz = bordesLuz.join(' ')
   const centro: P = [50 + j(5), 50 + j(5)]
   // 6 grietas troncales: son también los bordes de los 6 pedazos.
@@ -146,7 +160,7 @@ function formaDe(id: string, necesarios: number): Forma {
   const kax = 62 + r() * 10, kay = 18 + r() * 8
   const katana = `M${kax},${kay} L${kax + 18},${kay + 26} M${kax + 2.5},${kay + 6} L${kax + 7},${kay + 2.8}`
   const trazos = Array.from({ length: 3 }, (_, i) => ({ x: 28 + i * 13 + j(4), y: 34 + j(10), w: 10 + r() * 6, h: 9 + r() * 7 }))
-  return { contorno, luz, facetas, centro, cunas, centros, grietas, signos: { shuriken: camino(shur) + ' Z', kasa, katana, trazos } }
+  return { contorno, luz, facetas, brasa, centro, cunas, centros, grietas, signos: { shuriken: camino(shur) + ' Z', kasa, katana, trazos } }
 }
 
 /** Lenguas de fuego que suben despacio desde detrás de la piedra (ángulos alrededor de la mitad de arriba). */
@@ -198,7 +212,8 @@ export function PiedraShinobi({ id, kanji, validos, necesarios, tam = 96, reduci
 
   // Pedazos que se ven: los que no cayeron, más el que está cayendo ahora (o todos si se está forjando).
   const caidosAntes = umbrales.filter((p) => v - 1 >= p).length
-  const visibles = forma.cunas.map((_, i) => i).filter((i) => i >= caidos || (!!golpe && i >= caidosAntes))
+  // Forjado: ningún resto de piedra; los pedazos solo se ven mientras estallan.
+  const visibles = completo && !golpe?.forjado ? [] : forma.cunas.map((_, i) => i).filter((i) => i >= caidos || (!!golpe && i >= caidosAntes))
   const grietas = forma.grietas.slice(0, v)
   // Fuego: casi nada en 0, apenas a los 5, claro a los 14, fuerte a los 21; forjado arde entero.
   const fuego = completo ? 1 : Math.pow(v / Math.max(1, necesarios), 1.3)
@@ -210,6 +225,7 @@ export function PiedraShinobi({ id, kanji, validos, necesarios, tam = 96, reduci
   const tajo = nueva ? [desde(nueva.fin, nueva.ang, 30), desde(nueva.fin, nueva.ang + Math.PI, 70)] : null
   return (
     <svg
+      onAnimationEnd={(e) => { if (e.animationName === 'pf-estalla') setGolpe((x) => (x?.forjado ? { ...x, forjado: false, pedazo: null } : x)) }}
       className={`piedra-forja ${completo ? 'forjada' : ''} ${g ? 'golpe' : ''} ${g?.forjado ? 'estallando' : ''} ${reducido ? 'quieta' : ''}`}
       viewBox="-6 -6 112 116"
       width={tam}
@@ -262,6 +278,8 @@ export function PiedraShinobi({ id, kanji, validos, necesarios, tam = 96, reduci
         <text className="pf-kanji-tinta" x="50" y="52" textAnchor="middle" dominantBaseline="central" fontSize={completo ? 62 : 50}>{kanji}</text>
       </g></g>
       {/* Antes del primer pedazo, una piedra entera debajo tapa las uniones finas entre pedazos (no deben parecer grietas). */}
+      {/* Resplandor rojo muy tenue en el borde de abajo: ya se intuye el fuego de adentro. */}
+      {!completo && <path d={forma.brasa} className="pf-brasa-borde" style={{ opacity: 0.35 + fuego * 0.4 }} />}
       {caidos === 0 && <path d={forma.contorno} className="pf-faceta medio" />}
       {visibles.map((i) => {
         const cae = g && (g.pedazo === i || g.forjado)
