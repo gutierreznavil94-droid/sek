@@ -3,7 +3,8 @@
  * (como el compañero, sin tapar nada). Tocarlo: el shinobi corre y salta hacia él; según el sorteo se escabulle 0, 1 o 2
  * veces; al atraparlo, destello gris y arranca la batalla. Ignorado 60 s (o cerrar la app): advertencia que rompe la
  * pantalla (10 s, botón «¡Atraparlo!») y después el robo (la bolita de XP sale del pecho y se la lleva corriendo).
- * Se pide con `pedirRival(pelea)`. Hasta que estén los clips de Luma del rival, es una silueta gris que se desplaza.
+ * Se pide con `pedirRival(pelea)`. Con un tema con escenas (Shinobi) el rival es la hoja de sprites del tema: se asoma
+ * desde el borde con un «?», corre, salta, desenvaina al ser atrapado y roba la bolita. Sin escenas, la silueta gris de siempre.
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useLocation } from 'react-router-dom'
@@ -11,7 +12,9 @@ import type { Pelea } from '../services/ninjas'
 import { prepararBatalla } from '../services/batalla'
 import { TIEMPO_ADVERTENCIA_MS, TIEMPO_IGNORADO_MS, guardarRivalPendiente, limpiarRivalPendiente, peleaPendiente, robarXp, rivalPendiente, sortearEscapes } from '../services/rival'
 import { ahora } from '../services/reloj'
-import { temaActivo } from '../temas/temas'
+import { carpetaEscenas, temaActivo } from '../temas/temas'
+import { emitirEvento } from '../temas/eventos'
+import { BolitaDorada, HOJA_RIVAL, Pregunta, SpriteClip, useHoja } from '../temas/shinobi/Escenas'
 import { Enemigo } from './animaciones/Escena'
 import { sonarChoque, sonarTaiko } from './animaciones/motor'
 import { HOJA_BASE, type Hoja } from './companero/rutina'
@@ -98,6 +101,24 @@ function RivalEnJuego({ rival, enHoy }: { rival: Rival; enHoy: boolean }) {
   const temporizadores = useRef<number[]>([])
   const ignorado = useRef(0)
   const terminado = useRef(false)
+  // Rival del tema (hoja de sprites): si el tema no trae escenas o la hoja no carga, queda la silueta.
+  const hojaRival = useHoja(HOJA_RIVAL)
+  const conSprite = !!carpetaEscenas() && !!hojaRival
+  const [asomando, setAsomando] = useState(rival.faseInicial === 'paseo')
+  const [moviendo, setMoviendo] = useState(false)
+  const [brinco, setBrinco] = useState<{ n: number; dur: number; espera: number } | null>(null)
+  const [huye, setHuye] = useState(false)
+  useEffect(() => { emitirEvento('aparecer'); emitirEvento('alerta') }, [])
+  // Se asoma desde el borde derecho de la pantalla: el corte del clip queda justo en el borde.
+  useEffect(() => {
+    if (!conSprite || !asomando || !hojaRival) return
+    const corte = hojaRival.clips.asoma?.corte ?? hojaRival.celda[0]
+    setRdur(0); setRdir(-1)
+    setRx(Math.round(ancho + (hojaRival.celda[0] - ANCHO_RIVAL) / 2 - corte))
+  }, [conSprite, asomando, ancho]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Si la hoja no llega, no espera al «asoma».
+  useEffect(() => { if (asomando && !carpetaEscenas()) setAsomando(false) }, [asomando])
+  useEffect(() => { if (fase === 'robo') emitirEvento('robo') }, [fase])
 
   const luego = (fn: () => void, ms: number) => { const id = window.setTimeout(fn, ms); temporizadores.current.push(id); return id }
   useEffect(() => () => { for (const id of temporizadores.current) window.clearTimeout(id); window.clearTimeout(ignorado.current) }, [])
@@ -154,24 +175,38 @@ function RivalEnJuego({ rival, enHoy }: { rival: Rival; enHoy: boolean }) {
 
   // Paseo esquivo: camina a un punto, se frena, mira, vuelve a caminar.
   useEffect(() => {
-    if (fase !== 'paseo') return
+    if (fase !== 'paseo' || (asomando && conSprite)) return
     let vivo = true
     const paso = () => {
       if (!vivo || faseRef.current !== 'paseo') return
       const tope = Math.max(MARGEN, ancho - MARGEN - ANCHO_RIVAL)
       const destino = Math.round(MARGEN + Math.random() * (tope - MARGEN))
       const dist = Math.abs(destino - rxRef.current)
-      const dur = reducido ? 0 : dist / 55
       setRdir(destino < rxRef.current ? -1 : 1)
+      const [a, b] = TIEMPOS.pausaPaseo
+      // Con el rival del tema: corre (o, a veces, salta) y en las pausas queda parado.
+      const salta = conSprite && !reducido && dist > 60 && dist < 200 && Math.random() < 0.35
+      if (salta && hojaRival?.clips.salta) {
+        const c = hojaRival.clips.salta
+        const total = c.n / ((c.fps ?? 24) * 1.5)
+        const [a0, a1] = c.aire ?? [0.3, 0.6]
+        setBrinco({ n: Date.now(), dur: (a1 - a0) * total, espera: a0 * total })
+        setMoviendo(true)
+        luego(() => { setRdur((a1 - a0) * total); setRx(destino) }, a0 * total * 1000)
+        luego(() => { setMoviendo(false); setBrinco(null) }, total * 1000)
+        luego(paso, total * 1000 + a + Math.random() * (b - a))
+        return
+      }
+      const dur = reducido ? 0 : dist / (conSprite ? 120 : 55)
       setRdur(dur)
       setRx(destino)
-      const [a, b] = TIEMPOS.pausaPaseo
+      if (conSprite) { setMoviendo(dur > 0); luego(() => setMoviendo(false), dur * 1000) }
       luego(paso, dur * 1000 + a + Math.random() * (b - a))
     }
     const [a] = TIEMPOS.pausaPaseo
     luego(paso, a)
     return () => { vivo = false }
-  }, [fase, ancho, reducido]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fase, ancho, reducido, asomando, conSprite]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Advertencia: 10 s para atraparlo; si no, el robo.
   useEffect(() => {
@@ -191,7 +226,7 @@ function RivalEnJuego({ rival, enHoy }: { rival: Rival; enHoy: boolean }) {
       const r = await mutar(() => robarXp(pelea))
       cerrarRival()
       avisar(r.robado > 0 ? `${nombre} se llevó ${r.robado} XP` : `${nombre} se escapó. No había XP para llevarse.`, { tipo: 'bajo' })
-    }, reducido ? 300 : TIEMPOS.robo)
+    }, reducido ? 300 : conSprite ? TIEMPOS.robo + 1400 : TIEMPOS.robo)
     return () => window.clearTimeout(id)
   }, [fase]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -240,7 +275,8 @@ function RivalEnJuego({ rival, enHoy }: { rival: Rival; enHoy: boolean }) {
           setFase('atrapado')
           sonarChoque()
           try { navigator.vibrate?.(40) } catch { /* sin vibración */ }
-          luego(() => { void atrapar() }, reducido ? 100 : TIEMPOS.destello)
+          // Con el rival del tema, desenvaina antes de la batalla.
+          luego(() => { void atrapar() }, reducido ? 100 : conSprite ? TIEMPOS.destello + 1250 : TIEMPOS.destello)
         }
       }, reducido ? 0 : TIEMPOS.salto)
     }, durCarrera * 1000)
@@ -252,7 +288,9 @@ function RivalEnJuego({ rival, enHoy }: { rival: Rival; enHoy: boolean }) {
         <div className="rv-adv-papel" />
         <div className="rv-adv-rotura" aria-hidden />
         <div className="rv-adv-cuerpo">
-          <svg className="rv-adv-rival" viewBox="-60 -116 120 124" aria-hidden><g transform="scale(-1,1)"><Enemigo variante="bandido" sinArma /></g></svg>
+          {conSprite && hojaRival
+            ? <div className="rv-adv-rival rv-adv-sprite"><SpriteClip hoja={HOJA_RIVAL} datos={hojaRival} clip="desenvaina" mira={-1} reducido={reducido} /></div>
+            : <svg className="rv-adv-rival" viewBox="-60 -116 120 124" aria-hidden><g transform="scale(-1,1)"><Enemigo variante="bandido" sinArma /></g></svg>}
           <p className="rv-adv-texto"><b>{nombre}</b> está por robarte progreso</p>
           <button type="button" className="boton grande primario rv-adv-boton" onClick={() => { void atrapar() }}>¡Atraparlo!</button>
           <span className="rv-adv-cuenta" aria-hidden />
@@ -264,10 +302,18 @@ function RivalEnJuego({ rival, enHoy }: { rival: Rival; enHoy: boolean }) {
     return (
       <div className={`rv-robo ${reducido ? 'reducido' : ''}`} role="status" aria-label={`${nombre} se lleva tu XP`}>
         <div className="rv-robo-escena">
-          <div className="rv-robo-rival">
-            <svg viewBox="-60 -116 120 124" aria-hidden><g transform="scale(-1,1)"><Enemigo variante="bandido" sinArma /></g></svg>
-            <span className="rv-bolita" aria-hidden />
-          </div>
+          {conSprite && hojaRival ? (
+            // Agarra la bolita (clip roba) y sale corriendo con ella (clip corre + la bolita dorada de la app).
+            <div className={`rv-robo-sprite ${huye ? 'huye' : ''}`}>
+              <SpriteClip hoja={HOJA_RIVAL} datos={hojaRival} clip={huye ? 'corre' : 'roba'} vel={huye ? 1.4 : 1.5} reducido={reducido} onFin={() => setHuye(true)} />
+              {huye && <BolitaDorada style={{ left: '58%', top: '52%' }} />}
+            </div>
+          ) : (
+            <div className="rv-robo-rival">
+              <svg viewBox="-60 -116 120 124" aria-hidden><g transform="scale(-1,1)"><Enemigo variante="bandido" sinArma /></g></svg>
+              <span className="rv-bolita" aria-hidden />
+            </div>
+          )}
           <span className="rv-cartel rv-cartel-robo">{nombre}</span>
         </div>
       </div>
@@ -283,9 +329,36 @@ function RivalEnJuego({ rival, enHoy }: { rival: Rival; enHoy: boolean }) {
       </div>
       <button type="button" className={`rv-rival ${fase}`} style={{ transform: `translateX(${rx}px)`, transition: `transform ${rdur}s ${fase === 'esquiva' ? 'cubic-bezier(.2,.9,.3,1)' : 'linear'}`, width: ANCHO_RIVAL, height: ALTO_RIVAL + 22 }} onClick={tocar} aria-label={`Atrapar a ${nombre}`} data-escapes={escapes}>
         <span className="rv-cartel">{nombre}</span>
-        <svg className="rv-silueta" viewBox="-30 -110 60 114" width={ANCHO_RIVAL} height={ALTO_RIVAL} style={{ transform: rdir === 1 ? 'scaleX(-1)' : undefined }} aria-hidden><Enemigo variante="bandido" sinArma /></svg>
+        {conSprite && hojaRival ? (
+          <span className="rv-sprite-rival" style={{ width: hojaRival.celda[0], height: hojaRival.celda[1], marginBottom: -(hojaRival.pies ?? 0), marginTop: -20 }}>
+            <span key={brinco?.n ?? 0} className={brinco ? 'rv-brinco' : ''} style={brinco ? { animationDuration: `${brinco.dur}s`, animationDelay: `${brinco.espera}s` } : undefined}>
+              <SpriteClip
+                hoja={HOJA_RIVAL}
+                datos={hojaRival}
+                clip={clipDelRival(fase, asomando, moviendo, !!brinco)}
+                mira={rdir}
+                vel={fase === 'esquiva' ? 2 : fase === 'atrapado' ? 1.6 : brinco ? 1.5 : 1}
+                reducido={reducido}
+                onFin={asomando ? () => setAsomando(false) : undefined}
+              />
+            </span>
+            {asomando && fase === 'paseo' && <Pregunta />}
+          </span>
+        ) : (
+          <svg className="rv-silueta" viewBox="-30 -110 60 114" width={ANCHO_RIVAL} height={ALTO_RIVAL} style={{ transform: rdir === 1 ? 'scaleX(-1)' : undefined }} aria-hidden><Enemigo variante="bandido" sinArma /></svg>
+        )}
         {fase === 'atrapado' && <span className="rv-destello" aria-hidden />}
       </button>
     </div>
   )
+}
+
+/** Qué clip del rival del tema va en cada momento. */
+function clipDelRival(fase: Fase, asomando: boolean, moviendo: boolean, brinco: boolean): string {
+  if (fase === 'atrapado') return 'desenvaina'
+  if (fase === 'esquiva') return 'salta'
+  if (fase !== 'paseo') return 'quieto'
+  if (asomando) return 'asoma'
+  if (brinco) return 'salta'
+  return moviendo ? 'corre' : 'quieto'
 }

@@ -44,6 +44,7 @@ import {
   type CompromisoConAccion,
   type Pilar,
 } from '../../services/dia'
+import { emitirEvento } from '../../temas/eventos'
 import { duracionSuenio, entrarModoSuenio, horaDeMinutos, resumenSuenio } from '../../services/suenio'
 import { estadoAdaptacion, veredictoDe } from '../../services/adaptacion'
 import { celebrarFase, celebrarNivel, celebrarPilar, celebrarRacha } from '../animaciones/logros'
@@ -306,6 +307,7 @@ export function Hoy({ hoy }: { hoy: string }) {
   // «Dudo»: con el rival escurridizo, aparece el muñeco (atraparlo lleva a la batalla). Con la carta directa, la batalla
   // (minijuego de flexiones); si la batalla está apagada, la pelea corta de antes.
   const batallar = async () => {
+    emitirEvento('duda')
     if (modoRival(ajustes) === 'escurridizo' || ajustes.batalla?.activa === false) return dudar()
     const r = await prepararBatalla(hoy)
     if (r.batalla) pedirBatalla(r.batalla)

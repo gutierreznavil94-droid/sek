@@ -184,3 +184,33 @@
 .tema-tn-manchas.lejos i { opacity: 0; transform: scale(0.6); transition: none; animation: tema-tn-lejos 5s linear both; }
 @keyframes tema-tn-lejos { 0% { opacity: 0; transform: translateY(0) scale(0.8); } 20% { opacity: 0.75; } 100% { opacity: 0.95; transform: translateY(5px) scale(1.4); } }
 .tema-tn-niebla.horizonte { top: 49%; height: 6%; background: linear-gradient(180deg, rgba(200,202,200,0) 0%, rgba(200,202,200,0.2) 50%, rgba(200,202,200,0) 100%); }
+
+/* ---------- v0.65: escenas nuevas (Juego, noche, Sueño, rival) ---------- */
+/* Los clips tienen fondo negro: con «screen» el negro desaparece sobre el fondo oscuro. Nunca reciben toques. */
+.tema-escena { position: relative; width: 100%; aspect-ratio: 16 / 9; pointer-events: none; overflow: hidden; }
+.tema-escena-clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: screen; }
+.tema-escena-clip.oculto { opacity: 0; }
+.tema-escena-clip.arriba { z-index: 1; }
+.tema-juego { position: relative; }
+.tema-juego .tema-escena { border-radius: 2px; }
+.tema-juego .sl-casa-nota { display: block; margin-top: 6px; }
+.tema-escena-tinta { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.tema-escena-tinta::before { content: ''; position: absolute; left: 50%; top: 45%; width: 30%; aspect-ratio: 1; border-radius: 47% 53% 44% 56% / 52% 45% 55% 48%; background: #0b0a09; transform: translate(-50%, -50%) scale(0); animation: tema-tinta-juego 0.75s ease-in-out forwards; }
+@keyframes tema-tinta-juego { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 45% { transform: translate(-50%, -50%) scale(4.5); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(4.5); opacity: 0; } }
+/* Chispas donde chocan las katanas (≈ 44 % / 26 % del clip), una ráfaga por choque. */
+.tema-chispas { position: absolute; left: 44%; top: 26%; z-index: 2; width: 0; height: 0; }
+.tema-chispas i { position: absolute; width: 2px; height: 9px; border-radius: 1px; background: linear-gradient(#fff6d8, #f0b43c); transform: rotate(var(--a)) translateY(0); opacity: 0; animation: tema-chispa 1.25s var(--d) infinite; }
+@keyframes tema-chispa { 0% { opacity: 0; transform: rotate(var(--a)) translateY(0) scaleY(0.4); } 6% { opacity: 1; } 22% { opacity: 0; transform: rotate(var(--a)) translateY(-16px) scaleY(1); } 100% { opacity: 0; } }
+.tema-noche, .tema-sueno { max-width: 420px; margin: 0 auto; }
+.tema-sueno { margin-bottom: 8px; }
+.suenio-reloj .tema-noche { opacity: 0.55; margin-top: 14px; }
+/* Sprites del rival y vistas previas */
+.tema-sprite { background-repeat: no-repeat; image-rendering: auto; pointer-events: none; }
+.tema-pregunta { position: absolute; left: 22%; top: 14px; transform: translateX(-50%); font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 24px; line-height: 1; color: var(--papel, #f4ecdc); text-shadow: 0 0 6px rgba(0, 0, 0, 0.8); animation: tema-pregunta 0.5s ease-out both; pointer-events: none; }
+@keyframes tema-pregunta { from { opacity: 0; transform: translate(-50%, 6px) scale(0.6); } to { opacity: 1; transform: translateX(-50%) scale(1); } }
+.tema-bolita { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff4c2, #f2c14e 55%, #b8862a); box-shadow: 0 0 8px 2px rgba(242, 193, 78, 0.7); pointer-events: none; }
+/* Ver animaciones: grilla de vistas previas */
+.ga-grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+.ga-vista { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px; border-radius: 8px; background: rgba(0, 0, 0, 0.25); }
+.ga-caja { display: flex; align-items: flex-end; justify-content: center; width: 100%; overflow: hidden; }
+.ga-vista figcaption { font-size: 0.72rem; text-align: center; color: var(--texto-2, #b9b3a7); }

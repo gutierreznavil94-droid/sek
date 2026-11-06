@@ -25,6 +25,8 @@ export interface DefinicionTema {
   carpetaFondos: string
   /** Hoja de sprites del personaje que camina en la barra del entreno (dentro de `public/`). */
   sprite: string
+  /** Carpeta de `public/` con las escenas animadas del tema (rival, Juego, noche, Sueño). Sin carpeta, SEK usa sus dibujos simples. */
+  escenas?: string
   /** Vista previa de la tarjeta del tema. */
   vistaPrevia: { video?: string; imagen: string }
   icono?: string
@@ -68,6 +70,11 @@ const oyentes = new Set<() => void>()
 
 export function temaActivo(): DefinicionTema {
   return activo
+}
+
+/** Ruta completa de la carpeta de escenas del tema activo, o null si el tema no trae escenas (SEK usa su versión simple). */
+export function carpetaEscenas(): string | null {
+  return activo.escenas ? `${import.meta.env.BASE_URL}${activo.escenas}` : null
 }
 
 function rgb(hex: string): string | null {

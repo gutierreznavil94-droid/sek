@@ -6,7 +6,7 @@ import { temaActivo } from '../temas/temas'
  * Shinobi que camina por la barra de bloques del entreno (videos de Luma pasados a tinta papel).
  * Sprite armado con scripts/shinobi-sprites.py: caminata de 2 pasos, frenado y quieto respirando.
  */
-/** La hoja sale del tema activo (Shinobi: shinobi/camina.webp). */
+/** La hoja sale del tema activo (Shinobi: temas/shinobi/companero/camina.webp). */
 const hoja = () => `${import.meta.env.BASE_URL}${temaActivo().sprite}`
 const CELDA = { w: 48, h: 35 } // px CSS (la hoja está a 2x)
 const COLUMNAS = 16

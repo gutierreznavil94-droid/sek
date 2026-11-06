@@ -6,9 +6,12 @@ import { obtenerAjustes } from '../../services/base'
 import { agregarSesionManual, borrarSesion, corregirSesion, finalizarJuego, historialJuego, iniciarJuego, pausarJuego, reanudarJuego, resumenJuego } from '../../services/juego'
 import { ahora } from '../../services/reloj'
 import { recordatorios } from '../../reminders/recordatorios'
-import { Barra, Confirmar, Explicacion, Hoja, Tarjeta } from '../componentes'
+import { Barra, Confirmar, Explicacion, Hoja, Tarjeta, movimientoReducido } from '../componentes'
 import { avisar, mutar, useDatos, useTic } from '../estado'
 import { CasaDelJuego } from '../animaciones/Siluetas'
+import { carpetaEscenas } from '../../temas/temas'
+import { emitirEvento } from '../../temas/eventos'
+import { JuegoShinobi } from '../../temas/shinobi/Escenas'
 import { CLASE_JUEGO_CORRIENDO } from '../FondoLluvia'
 
 export function Juego({ hoy }: { hoy: string }) {
@@ -32,6 +35,7 @@ export function Juego({ hoy }: { hoy: string }) {
 
   const iniciar = async () => {
     await mutar(iniciarJuego)
+    emitirEvento('jugar')
     const restante = Math.max(0, r.limiteMinutos - r.minutosHoy)
     const aviso = Math.max(0, (r.limiteMinutos * ajustes.avisoJuegoPorcentaje) / 100 - r.minutosHoy)
     // Avisos mientras la app esté abierta (la web no garantiza más).
@@ -67,14 +71,14 @@ export function Juego({ hoy }: { hoy: string }) {
             {!activa && <button className="boton primario pincel" onClick={iniciar}>▶ Iniciar</button>}
             {activa && (
               <div className="fila" style={{ gap: 6, flexWrap: 'wrap' }}>
-                {r.pausada ? <button className="boton pincel" onClick={() => mutar(reanudarJuego)}>▶ Reanudar</button> : <button className="boton pincel" onClick={() => mutar(pausarJuego)}>❚❚ Pausar</button>}
+                {r.pausada ? <button className="boton pincel" onClick={() => { emitirEvento('jugar'); void mutar(reanudarJuego) }}>▶ Reanudar</button> : <button className="boton pincel" onClick={() => { emitirEvento('pausa'); void mutar(pausarJuego) }}>❚❚ Pausar</button>}
                 <button className="boton peligro pincel" onClick={finalizar}>■ Finalizar</button>
               </div>
             )}
           </div>
         </div>
         {/* La casa, enmarcada como un shōji: pelean hasta que empezás a jugar; jugando, concentrados; en pausa, té. */}
-        <div className="juego-shoji"><CasaDelJuego activa={!!activa} pausada={!!r.pausada} /></div>
+        <div className="juego-shoji">{carpetaEscenas() ? <JuegoShinobi activa={!!activa} pausada={!!r.pausada} reducido={movimientoReducido()} /> : <CasaDelJuego activa={!!activa} pausada={!!r.pausada} />}</div>
       </Tarjeta>
 
       <Tarjeta compacta>

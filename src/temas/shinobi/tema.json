@@ -8,7 +8,8 @@
   "acento": "#C8102E",
   "kanjis": true,
   "carpetaFondos": "fondos/",
-  "sprite": "shinobi/camina.webp",
+  "sprite": "temas/shinobi/companero/camina.webp",
+  "escenas": "temas/shinobi/",
   "vistaPrevia": { "video": "fondos/lluvia.mp4", "imagen": "fondos/lluvia.jpg" },
   "icono": "icono-192.png",
   "frases": [

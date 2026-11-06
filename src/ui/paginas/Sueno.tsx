@@ -7,8 +7,9 @@ import { guardarAjustes, obtenerAjustes } from '../../services/base'
 import { cicloActivo } from '../../services/ciclo'
 import { corregirNoche, duracionSuenio, horaDeMinutos, nochesDeSuenio, resumenSuenio, volverAEstimado, type NocheDeSuenio, type ResumenSuenio } from '../../services/suenio'
 import { finVentana, LATENCIA_MAX, LATENCIA_MIN } from '../../sueno/estimar'
-import { Hoja, Tarjeta } from '../componentes'
-import { iconoTema } from '../../temas/temas'
+import { Hoja, Tarjeta, movimientoReducido } from '../componentes'
+import { carpetaEscenas, iconoTema } from '../../temas/temas'
+import { SuenoShinobi } from '../../temas/shinobi/Escenas'
 import { ETAPAS_SUGERIDAS, TOLERANCIA_SUGERIDA, discursoDeSemana, estadoAdaptacion, etapaDe, normalizarEtapas, ultimaSemanaConInfo, veredictoDe, type ConfigEtapa, type EstadoAdaptacion, type Veredicto } from '../../services/adaptacion'
 import { avisar, mutar, useDatos } from '../estado'
 
@@ -327,6 +328,7 @@ function ShinobiDice({ ad }: { ad: EstadoAdaptacion }) {
   const viendo = etapaDe(sumarDias(ad.inicio, (sem - 1) * 7), ad.inicio, ad.etapas).indice
   return (
     <div className="sh-dice">
+      {carpetaEscenas() && <SuenoShinobi reducido={movimientoReducido()} />}
       <div className="sh-barra" role="group" aria-label="Dónde estás en la adaptación">
         {tramos.map((t) => (
           <div key={t.i} className={`sh-tramo ${t.i < ad.actual.indice ? 'pasado' : t.i === ad.actual.indice ? 'actual' : ''}`} style={{ flexGrow: t.semanas }}>
