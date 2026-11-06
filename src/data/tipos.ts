@@ -244,6 +244,24 @@ export type ReglaCodigo = {
   creado: number
 }
 
+/** Hábito en forja: algo nuevo que se vuelve costumbre (ver domain/forja.ts). */
+export type HabitoForja = {
+  id: string
+  nombre: string
+  /** El kanji escondido en la piedra. */
+  kanji: string
+  /** Día 1 de la forja. */
+  inicio: FechaDia
+  /** Días cumplidos (AAAA-MM-DD). */
+  cumplidos: FechaDia[]
+  /** Fallas no perdonadas al último cálculo (se guarda para el historial; la regla la calcula de nuevo). */
+  fallas: number
+  estado: 'forja' | 'forjado' | 'abandonado'
+  forjadoEn?: FechaDia
+  abandonadoEn?: FechaDia
+  creado: number
+}
+
 export type Ajustes = {
   id: 'unicos'
   /** Ya se cargaron las reglas de ejemplo de «Mi código» (para no volver a cargarlas si se borran). */
@@ -308,6 +326,8 @@ export type Ajustes = {
   /** Cinemática «Tensión»: kanji y frase del final. */
   tension?: ConfigTension
   caida?: ConfigCaida
+  /** Forja de hábitos: días, válidos necesarios, XP por día y al forjarse, máximo a la vez (si falta, los de domain/forja). */
+  forja?: Partial<{ dias: number; validos: number; xpDia: number; xpForjado: number; maximo: number }>
   /** Rival escurridizo: modo y XP que roba. */
   rival?: ConfigRival
   /** Adaptación del sueño: desde cuándo, etapas editables y tolerancia de «a horario». */

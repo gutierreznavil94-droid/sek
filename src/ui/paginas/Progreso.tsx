@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { MiCodigo } from './MiCodigo'
+import { LineaForjados } from '../Forja'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { db } from '../../data/db'
@@ -222,7 +223,7 @@ export function Progreso({ hoy }: { hoy: string }) {
       )}
 
       <div className="av-contenido">
-        {enCodigo ? <MiCodigo /> : seccion ? (
+        {enCodigo ? <MiCodigo hoy={hoy} /> : seccion ? (
           <div className="av-seccion" key={seccion}>
             <Link to="/progreso" className="codigo-volver" onClick={() => recordarSeccion(hoy, null)}>‹ Progreso</Link>
             <h1 className="av-seccion-titulo">{NOMBRE_SECCION[seccion]}</h1>
@@ -347,6 +348,7 @@ export function Progreso({ hoy }: { hoy: string }) {
                 <svg className="av-codigo-trazo" viewBox="0 0 300 8" preserveAspectRatio="none" aria-hidden><path d="M3,5 C50,2 110,7 170,4 C220,2 265,6 297,4" /></svg>
               </Link>
             </nav>
+            <LineaForjados hoy={hoy} />
           </div>
         )}
         </>}

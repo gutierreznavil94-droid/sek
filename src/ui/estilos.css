@@ -2473,3 +2473,40 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .juego-temporizador .enso .juego-segundos { font-size: 1rem; }
 .juego-temporizador { margin: 0 0 4px; gap: 12px; }
 .juego-lado .boton { min-height: 36px; padding: 6px 12px; font-size: 0.85rem; }
+
+/* ---------- v0.74: Forja de hábitos (disposición; la piedra la dibuja el tema) ---------- */
+.forja-hoy { display: flex; flex-direction: column; gap: 6px; }
+.forja-kanji-titulo { font-family: 'Pincel', 'Noto Serif JP', serif; color: rgba(200, 16, 46, 0.9); font-size: 1rem; margin-right: 6px; letter-spacing: 0; }
+.forja-fila { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.forja-chica { appearance: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 6px; border-radius: 11px 14px 10px 15px / 14px 10px 15px 11px; border: 1.5px solid rgba(var(--papel-rgb), 0.22); background: var(--fondo-2); color: var(--texto); cursor: pointer; -webkit-touch-callout: none; user-select: none; touch-action: manipulation; }
+.forja-chica.hecho { border-color: rgba(var(--verde-rgb), 0.6); }
+.forja-nombre { font-size: 0.72rem; font-weight: 700; line-height: 1.15; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.forja-cuenta { font-size: 0.66rem; color: var(--texto-3); }
+.forja-chica.hecho .forja-cuenta { color: var(--verde); }
+.forja-codigo .av-nota { margin: 4px 0; }
+.forja-grande { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0 10px; }
+.forja-grande + .forja-grande { border-top: 1px solid rgba(var(--papel-rgb), 0.1); }
+.forja-grande-piedra { appearance: none; border: 0; background: none; padding: 0; cursor: pointer; flex: none; -webkit-touch-callout: none; user-select: none; touch-action: manipulation; }
+.forja-grande-texto { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.forja-camino { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; margin-top: 5px; max-width: 220px; }
+.fc-dia { display: block; aspect-ratio: 1; border-radius: 3px 4px 3px 4px; background: rgba(var(--papel-rgb), 0.08); border: 1px solid rgba(var(--papel-rgb), 0.12); }
+.fc-dia.cumplido { background: #6a645d; border-color: #847d75; }
+.fc-dia.perdonado { background: transparent; border: 1px dashed rgba(var(--papel-rgb), 0.55); }
+.fc-dia.falla { background: rgba(var(--papel-rgb), 0.03); border-color: rgba(var(--papel-rgb), 0.06); }
+.fc-dia.hoy { border: 1.5px solid rgba(200, 16, 46, 0.95); }
+.fc-dia.pedazo { box-shadow: 0 0 0 1px rgba(200, 16, 46, 0.7); }
+.fc-dia.extra { opacity: 0.6; }
+.forja-nueva { margin-top: 4px; }
+.forja-kanjis { display: flex; gap: 6px; flex-wrap: wrap; }
+.forja-kanjis button { width: 44px; height: 44px; border-radius: 10px 12px 9px 13px; border: 1.5px solid rgba(var(--papel-rgb), 0.25); background: var(--fondo-2); color: var(--texto); font-family: 'Pincel', 'Yuji Syuku', 'Noto Serif JP', serif; font-size: 1.5rem; line-height: 1; cursor: pointer; }
+.forja-kanjis button.activa { border-color: rgba(200, 16, 46, 0.95); color: #e0213b; box-shadow: 0 0 8px rgba(200, 16, 46, 0.35); }
+.forja-kanji-propio { width: 64px; height: 44px; text-align: center; font-size: 1.3rem; }
+.forja-regla { cursor: default; }
+.forja-regla-kanji { font-family: 'Pincel', 'Yuji Syuku', 'Noto Serif JP', serif; color: #e0213b; font-size: 1.5rem; line-height: 1; text-shadow: 0 0 6px rgba(224, 33, 59, 0.5); flex: none; width: 30px; text-align: center; }
+.forja-progreso { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; }
+.forja-progreso-fila { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+.forja-comun.forjada text { filter: drop-shadow(0 0 4px rgba(200, 16, 46, 0.6)); }
+.forja-codigo .forja-grande { padding: 12px 12px 12px 10px; border-radius: 4px 14px 4px 14px; background: rgba(18, 17, 16, var(--vidrio, .72)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border-top: 0; margin-bottom: 8px; }
+.forja-codigo .av-nota, .forja-codigo .forja-nueva { background: rgba(18, 17, 16, 0.6); }
+.forja-codigo .av-nota { padding: 8px 10px; border-radius: 8px; }
+.forja-progreso { background: rgba(18, 17, 16, var(--vidrio, .6)); }

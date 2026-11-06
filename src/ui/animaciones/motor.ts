@@ -443,3 +443,34 @@ export function sonarToc(): void {
     o.stop(t + 0.12)
   } catch { /* sin sonido */ }
 }
+
+/** Piedra que cruje: chasquidos secos de ruido grave-medio. */
+function crujido(ac: AudioContext, t: number, fuerte = false) {
+  for (let i = 0; i < (fuerte ? 5 : 3); i++) {
+    const n = ac.createBufferSource()
+    n.buffer = ruido(ac, 0.05)
+    const f = ac.createBiquadFilter()
+    f.type = 'bandpass'
+    f.frequency.value = 600 + Math.random() * 900
+    f.Q.value = 1.2
+    const g = ac.createGain()
+    const ti = t + i * (0.035 + Math.random() * 0.03)
+    g.gain.setValueAtTime(fuerte ? 0.55 : 0.35, ti)
+    g.gain.exponentialRampToValueAtTime(0.0001, ti + 0.05)
+    n.connect(f).connect(g).connect(ac.destination)
+    n.start(ti)
+  }
+}
+
+/** Forja de hábitos: «paso» = tajo + piedra que cruje; «pedazo» = piedra que cae; «forjado» = taiko. Respeta el ajuste de sonido. */
+export function sonarForja(tipo: 'paso' | 'pedazo' | 'forjado', retrasoS = 0): void {
+  if (!config.sonido) return
+  const ac = audio()
+  if (!ac) return
+  try {
+    const t = ac.currentTime + 0.01 + retrasoS
+    if (tipo === 'paso') { corte(ac, t); crujido(ac, t + 0.12) }
+    else if (tipo === 'pedazo') { crujido(ac, t, true); tambor(ac, t + 0.55) }
+    else { crujido(ac, t, true); tambor(ac, t + 0.05); tambor(ac, t + 0.5); aura(ac, t + 0.5) }
+  } catch { /* sin sonido */ }
+}

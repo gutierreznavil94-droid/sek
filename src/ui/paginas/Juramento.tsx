@@ -11,7 +11,7 @@ import { movimientoReducido } from '../componentes'
 
 export const DURACION_JURAMENTO = 2800
 
-export default function Juramento({ texto, grupo, onFin }: { texto: string; grupo: string; onFin: () => void }) {
+export default function Juramento({ texto, grupo, onFin, kanjiSello = '誓' }: { texto: string; grupo: string; onFin: () => void; kanjiSello?: string }) {
   const reducido = movimientoReducido()
   const fin = useRef(onFin)
   fin.current = onFin
@@ -40,9 +40,9 @@ export default function Juramento({ texto, grupo, onFin }: { texto: string; grup
         <svg className="jur-trazo" viewBox="0 0 300 14" preserveAspectRatio="none" aria-hidden>
           <path d="M4,9 C60,4 120,11 180,6 C230,3 270,8 296,5" />
         </svg>
-        <div className="jur-sello" aria-hidden><span>誓</span></div>
+        <div className="jur-sello" aria-hidden><span>{kanjiSello}</span></div>
       </div>
-      <div className="jur-pie">誓 · juramento · tocá para seguir</div>
+      <div className="jur-pie">{kanjiSello === '誓' ? '誓 · juramento' : `${kanjiSello} · forjado`} · tocá para seguir</div>
     </div>,
     document.body,
   )
