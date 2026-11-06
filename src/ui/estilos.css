@@ -2567,3 +2567,7 @@ video:not([poster]):not([data-vivo]) { opacity: 0 !important; }
 .cal-dia .cal-rio.une-izq { left: -5px; }
 .cal-dia .cal-rio.une-der { right: -5px; }
 .cal-rio.muestra { display: inline-block; width: 22px; margin-right: 4px; vertical-align: middle; }
+/* v0.82: «Día N de 90» siempre en una línea; los tres botones bajan a la fila de la fecha, a la derecha (mismo alto de cabecera). */
+.cabecera-int { position: relative; }
+.cabecera .dia { white-space: nowrap; }
+.cabecera-int > .fase:has(.hoy-arriba) { position: absolute; right: 0; bottom: 0; }
