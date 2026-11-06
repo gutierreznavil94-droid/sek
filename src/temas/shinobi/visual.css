@@ -186,9 +186,23 @@
 .tema-tn-niebla.horizonte { top: 49%; height: 6%; background: linear-gradient(180deg, rgba(200,202,200,0) 0%, rgba(200,202,200,0.2) 50%, rgba(200,202,200,0) 100%); }
 
 /* ---------- v0.65: escenas nuevas (Juego, noche, Sueño, rival) ---------- */
-/* Los clips tienen fondo negro: con «screen» el negro desaparece sobre el fondo oscuro. Nunca reciben toques. */
-.tema-escena { position: relative; width: 100%; aspect-ratio: 16 / 9; pointer-events: none; overflow: hidden; }
-.tema-escena-clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: screen; }
+/* v0.66: los clips van con sus colores originales sobre papel blanco cálido, en una ventanilla de papel shoji
+   (marco fino de madera oscura) con una ventanita de lluvia de afuera en un costado. Nunca reciben toques. */
+.tema-ventanilla { position: relative; box-sizing: border-box; width: 100%; padding: 5px; border-radius: 3px; background: #2b2119; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.55), 0 2px 10px rgba(0, 0, 0, 0.35); pointer-events: none; }
+.tema-ventanilla::after { content: ''; position: absolute; inset: 5px; border: 1px solid rgba(43, 33, 25, 0.35); pointer-events: none; z-index: 4; }
+.tema-escena { position: relative; width: 100%; aspect-ratio: 16 / 9; pointer-events: none; overflow: hidden; background: #F2F0EB; }
+.tema-escena-clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+/* Ventanita con lluvia de afuera: chiquita, arriba, del lado sin personajes. */
+.tema-ventanita { position: absolute; top: 5%; width: 13%; aspect-ratio: 1; z-index: 2; overflow: hidden; background: linear-gradient(#3b3d41, #2a2b2e); border: 2px solid #2b2119; box-shadow: inset 0 0 0 1px rgba(242, 240, 235, 0.25); }
+.tema-ventanita.izq { left: 3%; }
+.tema-ventanita.der { right: 3%; }
+.tema-ventanita::before, .tema-ventanita::after { content: ''; position: absolute; background: #2b2119; z-index: 1; }
+.tema-ventanita::before { left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; }
+.tema-ventanita::after { top: 50%; left: 0; right: 0; height: 2px; margin-top: -1px; }
+.tema-ventanita .fondo-lluvia { position: absolute; inset: 0; width: 100%; height: 100%; animation: none; }
+/* Juego: sin el marco de rayitas viejo cuando está la ventanilla. */
+.juego-shoji:has(.tema-ventanilla) { padding: 0; background: none; border: 0; box-shadow: none; }
+.juego-shoji:has(.tema-ventanilla)::before, .juego-shoji:has(.tema-ventanilla)::after { display: none; }
 .tema-escena-clip.oculto { opacity: 0; }
 .tema-escena-clip.arriba { z-index: 1; }
 .tema-juego { position: relative; }
@@ -203,7 +217,7 @@
 @keyframes tema-chispa { 0% { opacity: 0; transform: rotate(var(--a)) translateY(0) scaleY(0.4); } 6% { opacity: 1; } 22% { opacity: 0; transform: rotate(var(--a)) translateY(-16px) scaleY(1); } 100% { opacity: 0; } }
 .tema-noche, .tema-sueno { max-width: 420px; margin: 0 auto; }
 .tema-sueno { margin-bottom: 8px; }
-.suenio-reloj .tema-noche { opacity: 0.55; margin-top: 14px; }
+.suenio-reloj .tema-noche { opacity: 0.6; margin-top: 14px; }
 /* Sprites del rival y vistas previas */
 .tema-sprite { background-repeat: no-repeat; image-rendering: auto; pointer-events: none; }
 .tema-pregunta { position: absolute; left: 22%; top: 14px; transform: translateX(-50%); font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 24px; line-height: 1; color: var(--papel, #f4ecdc); text-shadow: 0 0 6px rgba(0, 0, 0, 0.8); animation: tema-pregunta 0.5s ease-out both; pointer-events: none; }
@@ -214,3 +228,20 @@
 .ga-vista { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px; border-radius: 8px; background: rgba(0, 0, 0, 0.25); }
 .ga-caja { display: flex; align-items: flex-end; justify-content: center; width: 100%; overflow: hidden; }
 .ga-vista figcaption { font-size: 0.72rem; text-align: center; color: var(--texto-2, #b9b3a7); }
+
+/* ---------- v0.66: fondo gris pincel (3 tonos) y personajes con sus colores originales ---------- */
+/* La zona oscura pasa de tinta casi negra a una aguada de tinta. Las tarjetas, un poquito más claras que el fondo. */
+html:root { --fondo: #33312E; --fondo-2: #3C3A36; --fondo-3: #47443F; --borde: #57534D; --texto-3: #A5A199; }
+html:root[data-gris="1"] { --fondo: #2A2926; --fondo-2: #33312E; --fondo-3: #3D3B37; --borde: #4F4B46; --texto-3: #9C9891; }
+html:root[data-gris="3"] { --fondo: #3C3A36; --fondo-2: #45433F; --fondo-3: #504D48; --borde: #615D57; --texto-3: #ADA9A1; }
+/* Shinobi negro y rival gris carbón: una aguada clara difusa detrás (no un borde blanco) para que se lean sobre el gris. */
+.shinobi-capa, .tema-sprite { filter: drop-shadow(0 0 2px rgba(242, 240, 235, 0.38)) drop-shadow(0 0 7px rgba(242, 240, 235, 0.2)); }
+.companero-boton .shinobi-capa { filter: drop-shadow(0 0 2px rgba(242, 240, 235, 0.38)) drop-shadow(0 0 7px rgba(242, 240, 235, 0.2)); }
+.ga-vista { background: rgba(242, 240, 235, 0.06); }
+/* Elegir el tono (Ver animaciones) */
+.ga-tonos { display: flex; gap: 8px; flex-wrap: wrap; }
+.ga-tonos button { display: inline-flex; align-items: center; gap: 6px; }
+.ga-tonos i { width: 16px; height: 16px; border-radius: 4px; border: 1px solid rgba(242, 240, 235, 0.4); display: inline-block; }
+.ga-tonos button.activo { border-color: var(--acento); }
+/* El rival gris carbón sobre el gris pincel: la aguada clara un poco más marcada. */
+.rv-sprite-rival .tema-sprite, .ga-vista .tema-sprite { filter: drop-shadow(0 0 2px rgba(242, 240, 235, 0.55)) drop-shadow(0 0 9px rgba(242, 240, 235, 0.32)); }

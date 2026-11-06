@@ -14,7 +14,8 @@ Clips nuevos (los de Luma para la rutina del compañero) se suman por nombre, po
 Además del .webp escribe el .json de al lado (celda, columnas, filas y los clips): la app lo lee y usa cada clip
 que encuentre; mientras un clip no está, ese movimiento usa caminar o quieto.
 Quita el fondo blanco, recorta al personaje (sin la marca de Luma) y lo pinta en tinta
-color papel con el borde rojo del kasa. Para cambiar el color, tocá TINTA y ROJO.
+color papel con el borde rojo del kasa. Para cambiar el color, tocá TINTA y ROJO, o pasá --tinta R,G,B
+(el tema Shinobi usa negro tinta: --tinta 21,20,19, como en los videos).
 """
 import sys, glob, json
 import numpy as np
@@ -30,7 +31,10 @@ d, salida = sys.argv[1], sys.argv[2]
 extras = []  # dicts: nombre, carpeta, desde, hasta, paso, fps, ancla, cuelga, altura, unaVez, aire
 args = sys.argv[3:]
 while args:
-    if args[0] == '--clip' and len(args) > 1:
+    if args[0] == '--tinta' and len(args) > 1:
+        TINTA = tuple(int(v) for v in args[1].split(','))
+        args = args[2:]
+    elif args[0] == '--clip' and len(args) > 1:
         nombre, resto = args[1].split('=', 1)
         partes = resto.split(',')
         c = {'nombre': nombre, 'carpeta': partes[0], 'desde': 0, 'hasta': 10 ** 6, 'paso': 1, 'fps': 24.0, 'ancla': 'cuadro', 'cuelga': 0, 'altura': 1.0, 'unaVez': False, 'aire': None}

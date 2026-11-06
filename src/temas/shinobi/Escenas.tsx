@@ -2,11 +2,13 @@
  * Escenas animadas del tema Shinobi: Juego (pelea → a jugar → jugando → té), noche (buenas noches → durmiendo),
  * Sueño (sentado junto a la cama) y el rival gris (hoja de sprites). SEK solo pide la escena con su estado; los clips
  * viven en public/temas/shinobi/<grupo>/ (los arma scripts/shinobi-escenas.py y scripts/rival-sprites.py).
- * Los videos tienen fondo negro y se muestran con `mix-blend-mode: screen`: el negro desaparece sobre el fondo oscuro.
+ * Los videos van con sus colores originales (shinobi negro, rival gris) sobre papel blanco cálido, dentro de una ventanilla
+ * de papel shoji con una ventanita de lluvia de afuera en un costado (que no tapa a los personajes).
  * Sin pantallas negras: el clip que sigue ya está precargado y debajo queda el último cuadro del anterior.
  * Con movimiento reducido (o si un clip no carga): un cuadro quieto.
  */
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { FondoLluvia } from '../../ui/FondoLluvia'
 
 const BASE = `${import.meta.env.BASE_URL}temas/shinobi/`
 
@@ -21,10 +23,12 @@ type PropsVideo = {
   reducido: boolean
   onFin?: () => void
   className?: string
+  /** De qué lado va la ventanita con lluvia (donde no hay personajes). */
+  ventana?: 'izq' | 'der'
   children?: React.ReactNode
 }
 
-export function VideoEscena({ actual, bucle = false, precargar = [], reducido, onFin, className = '', children }: PropsVideo) {
+export function VideoEscena({ actual, bucle = false, precargar = [], reducido, onFin, className = '', ventana = 'der', children }: PropsVideo) {
   const src = (c: string, ext: string) => `${BASE}${c}${ext}`
   const [anterior, setAnterior] = useState<string | null>(null)
   const [roto, setRoto] = useState<Set<string>>(() => new Set())
@@ -53,7 +57,9 @@ export function VideoEscena({ actual, bucle = false, precargar = [], reducido, o
   const montados = reducido ? [] : [actual, ...precargar.filter((c) => c !== actual)]
   const quieto = reducido || roto.has(actual)
   return (
-    <div className={`tema-escena ${className}`} aria-hidden>
+    <div className={`tema-ventanilla ${className}`} aria-hidden>
+    <div className="tema-escena">
+      <div className={`tema-ventanita ${ventana}`}>{!reducido && <FondoLluvia variante="hoy" enCaja />}</div>
       {anterior && <img className="tema-escena-clip" src={src(anterior, '-fin.jpg')} alt="" />}
       {quieto && <img className="tema-escena-clip arriba" src={src(actual, '-quieto.jpg')} alt="" />}
       {montados.map((c) => (
@@ -71,6 +77,7 @@ export function VideoEscena({ actual, bucle = false, precargar = [], reducido, o
         />
       ))}
       {children}
+    </div>
     </div>
   )
 }
@@ -112,6 +119,7 @@ export function JuegoShinobi({ activa, pausada, reducido }: { activa: boolean; p
     <div className="tema-juego">
       <VideoEscena
         actual={rutaJuego(clip)}
+        ventana={clip === 'pelea' ? 'der' : 'izq'}
         bucle={BUCLE_JUEGO.includes(clip)}
         precargar={PRECARGA_JUEGO[clip].map(rutaJuego)}
         reducido={reducido}
