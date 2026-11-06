@@ -28,6 +28,8 @@ export interface DefinicionTema {
   sprite: string
   /** Carpeta de `public/` con las escenas animadas del tema (rival, Juego, noche, Sueño). Sin carpeta, SEK usa sus dibujos simples. */
   escenas?: string
+  /** Partes escondidas por ahora (no borradas): ver src/temas/archivado.ts. */
+  archivado?: { rival?: boolean }
   /** Vista previa de la tarjeta del tema. */
   vistaPrevia: { video?: string; imagen: string }
   icono?: string

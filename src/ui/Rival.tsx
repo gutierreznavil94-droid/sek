@@ -6,6 +6,7 @@
  * Se pide con `pedirRival(pelea)`. Con un tema con escenas (Shinobi) el rival es la hoja de sprites del tema: se asoma
  * desde el borde con un «?», corre, salta, desenvaina al ser atrapado y roba la bolita. Sin escenas, la silueta gris de siempre.
  */
+import { rivalArchivado } from '../temas/archivado'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useLocation } from 'react-router-dom'
 import type { Pelea } from '../services/ninjas'
@@ -41,7 +42,8 @@ function avisarOyentes() { for (const o of oyentes) o() }
 
 /** Pide el rival (uno a la vez). `azar` fija el sorteo (pruebas). */
 export function pedirRival(p: Pelea, azar: () => number = Math.random, faseInicial: Fase = 'paseo'): boolean {
-  if (pendiente) return false
+  // Archivado (v0.86): el rival no se mete en la pantalla, ni roba, ni hace desenvainar al compañero.
+  if (pendiente || rivalArchivado()) return false
   // Quedó un rival de una sesión anterior (se cerró la app con él en pantalla): primero su advertencia; el nuevo espera.
   const viejo = faseInicial === 'paseo' ? rivalPendiente() : null
   if (viejo && viejo.desde < ahora() - 5000) {
@@ -81,7 +83,7 @@ export function RivalCapa() {
     if (pendiente || !rivalPendiente()) return
     void peleaPendiente().then((p) => { if (p && !pendiente) pedirRival(p, Math.random, 'advertencia') })
   }, [])
-  if (!rival) return null
+  if (!rival || rivalArchivado()) return null
   return <RivalEnJuego key={rival.pelea.distraccion.id + rival.pelea.fecha} rival={rival} enHoy={pathname === '/'} />
 }
 

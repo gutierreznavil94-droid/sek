@@ -7,6 +7,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react'
 import { rendirse, terminarBatalla, type Batalla } from '../services/batalla'
 import { anotarDuelo, configDuelo, type ConfigDuelo, type MotivoDuelo } from '../services/duelo'
 import { DueloComun, DueloShinobi } from '../temas/shinobi/DueloShinobi'
+import { rivalArchivado } from '../temas/archivado'
 import { useTema } from '../temas/temas'
 import { sonarChoque } from './animaciones/motor'
 import { movimientoReducido } from './componentes'
@@ -76,6 +77,7 @@ function Duelo({ p }: { p: PedidoDuelo }) {
     if (p.batalla && !p.prueba) void mutar(() => rendirse(p.batalla!))
     cerrarDuelo()
   }
-  const Vista = tema.escenas ? DueloShinobi : DueloComun
-  return <Vista titulo={c.nombre} hechas={hechas} total={c.reps} nombreRival={p.batalla?.pelea.distraccion.nombre} fase={fase} reducido={reducido} onTocar={tocar} onListo={terminar} onAhoraNo={ahoraNo} />
+  // Con el rival archivado (v0.86), la pantalla simple: lluvia, 力 y la cuenta, sin personajes.
+  const Vista = tema.escenas && !rivalArchivado() ? DueloShinobi : DueloComun
+  return <Vista lluvia={!!tema.escenas} titulo={c.nombre} hechas={hechas} total={c.reps} nombreRival={p.batalla?.pelea.distraccion.nombre} fase={fase} reducido={reducido} onTocar={tocar} onListo={terminar} onAhoraNo={ahoraNo} />
 }

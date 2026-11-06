@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { rivalArchivado } from '../../temas/archivado'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import type { Compromiso } from '../../data/tipos'
@@ -448,7 +449,7 @@ export function Hoy({ hoy }: { hoy: string }) {
       {/* «Dudo», «Tensión» y «No cumplí» en la cabecera, juntos y en contorno */}
       {huecoCabecera && createPortal(
         <span className="hoy-arriba">
-          <button type="button" className="boton-duda" onClick={batallar} aria-label="Estoy dudando: batalla contra la distracción">Dudo</button>
+          {!rivalArchivado() && <button type="button" className="boton-duda" onClick={batallar} aria-label="Estoy dudando: batalla contra la distracción">Dudo</button>}
           {clipsTension && <button type="button" className="boton-duda" onClick={() => pedirTension()} aria-label="Tensión: cinemática"><span className="boton-duda-kanji" aria-hidden>進</span>Tensión</button>}
           <BotonNoCumpli fecha={hoy} className="boton-duda rojo" texto="No cumplí" />
         </span>,
@@ -516,7 +517,7 @@ export function Hoy({ hoy }: { hoy: string }) {
         </div>
         {/* Línea simple del horario de la noche */}
         <p className="linea-horario muy-chico texto-3 centro">Alistarse {ajustes.horaAlistarse} · dejo celu hasta {ajustes.horaDejarCelu} · dormido {ajustes.horaDormido}</p>
-        {ajustes.ninjas !== false && (d.peleas.length > 0 || (batallas && batallas.hechas > 0)) && (
+        {!rivalArchivado() && ajustes.ninjas !== false && (d.peleas.length > 0 || (batallas && batallas.hechas > 0)) && (
           <ChipsBatallas hoy={hoy} ajustes={ajustes} unidad={d.contadores.find((c) => c.contador.id === (ajustes.batalla?.contadorId ?? 'flexiones'))?.contador.nombre.toLowerCase() ?? 'flexiones'} hechas={batallas?.hechas} tope={batallas?.tope} />
         )}
         {!d.suenio && esHoraDeAlistarse && !ventanaCeluCerrada && (

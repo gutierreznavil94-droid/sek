@@ -54,20 +54,10 @@ function Vista({ hoja, clip, titulo, escala, extra }: { hoja: string; clip: stri
   )
 }
 
-export function GaleriaShinobi() {
-  const reducido = movimientoReducido()
-  const [juego, setJuego] = useState<'pelea' | 'jugando' | 'te'>('pelea')
-  const [noche, setNoche] = useState(0)
-  const [forja, setForja] = useState(0)
-  const hojaCompanero = `${BASE}${temaActivo().sprite}`
+/** El rival (asoma, corre, salta, desenvaina, roba). Con el rival archivado va en el grupo «Archivado». */
+export function GaleriaRival() {
   return (
-    <>
-      <Tarjeta titulo="Animaciones · Compañero">
-        <div className="ga-grilla">
-          {COMPANERO.map((c) => <Vista key={c.clip} hoja={hojaCompanero} clip={c.clip} titulo={c.titulo} escala={2} />)}
-        </div>
-      </Tarjeta>
-      <Tarjeta titulo="Animaciones · Rival">
+    <Tarjeta titulo="Animaciones · Rival">
         <div className="ga-grilla">
           {RIVAL.map((c) => (
             <Vista
@@ -81,6 +71,23 @@ export function GaleriaShinobi() {
           ))}
         </div>
       </Tarjeta>
+  )
+}
+
+export function GaleriaShinobi({ sinRival = false }: { sinRival?: boolean } = {}) {
+  const reducido = movimientoReducido()
+  const [juego, setJuego] = useState<'pelea' | 'jugando' | 'te'>('pelea')
+  const [noche, setNoche] = useState(0)
+  const [forja, setForja] = useState(0)
+  const hojaCompanero = `${BASE}${temaActivo().sprite}`
+  return (
+    <>
+      <Tarjeta titulo="Animaciones · Compañero">
+        <div className="ga-grilla">
+          {COMPANERO.map((c) => <Vista key={c.clip} hoja={hojaCompanero} clip={c.clip} titulo={c.titulo} escala={2} />)}
+        </div>
+      </Tarjeta>
+      {!sinRival && <GaleriaRival />}
       <Tarjeta titulo="Animaciones · Juego">
         <div className="juego-shoji"><JuegoShinobi activa={juego !== 'pelea'} pausada={juego === 'te'} reducido={!!reducido} /></div>
         <div className="fila" style={{ gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
