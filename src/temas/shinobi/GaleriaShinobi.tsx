@@ -82,7 +82,7 @@ export function GaleriaShinobi() {
       <Tarjeta titulo="Animaciones · Juego">
         <div className="juego-shoji"><JuegoShinobi activa={juego !== 'pelea'} pausada={juego === 'te'} reducido={!!reducido} /></div>
         <div className="fila" style={{ gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-          <button type="button" className="boton chico" onClick={() => setJuego('pelea')}>Pelea</button>
+          <button type="button" className="boton chico" onClick={() => setJuego('pelea')}>Sin jugar</button>
           <button type="button" className="boton chico" onClick={() => setJuego('jugando')}>▶ A jugar</button>
           <button type="button" className="boton chico" onClick={() => setJuego('te')}>❚❚ Pausa (té)</button>
         </div>

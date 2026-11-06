@@ -22,12 +22,14 @@ type PropsVideo = {
   reducido: boolean
   onFin?: () => void
   className?: string
+  /** Solo el papel, sin video (Juego cuando no estás jugando); igual precarga lo que viene. */
+  enBlanco?: boolean
   /** Kanji del sello del marco (遊 Juego, 眠 Sueño y noche). */
   sello?: string
   children?: React.ReactNode
 }
 
-export function VideoEscena({ actual, bucle = false, precargar = [], reducido, onFin, className = '', sello, children }: PropsVideo) {
+export function VideoEscena({ actual, bucle = false, precargar = [], reducido, onFin, className = '', sello, enBlanco = false, children }: PropsVideo) {
   const src = (c: string, ext: string) => `${BASE}${c}${ext}`
   const [anterior, setAnterior] = useState<string | null>(null)
   const [roto, setRoto] = useState<Set<string>>(() => new Set())
@@ -53,13 +55,13 @@ export function VideoEscena({ actual, bucle = false, precargar = [], reducido, o
     const id = window.setTimeout(() => fin.current?.(), 1200)
     return () => window.clearTimeout(id)
   }, [actual, bucle, reducido, roto])
-  const montados = reducido ? [] : [actual, ...precargar.filter((c) => c !== actual)]
-  const quieto = reducido || roto.has(actual)
+  const montados = reducido ? [] : [...(enBlanco ? [] : [actual]), ...precargar.filter((c) => c !== actual)]
+  const quieto = !enBlanco && (reducido || roto.has(actual))
   return (
     <div className={`tema-ventanilla ${className}`} aria-hidden>
     {sello && <span className="tema-sello">{sello}</span>}
     <div className="tema-escena">
-      {anterior && <img className="tema-escena-clip" src={src(anterior, '-fin.jpg')} alt="" />}
+      {anterior && !enBlanco && <img className="tema-escena-clip" src={src(anterior, '-fin.jpg')} alt="" />}
       {quieto && <img className="tema-escena-clip arriba" src={src(actual, '-quieto.jpg')} alt="" />}
       {montados.map((c) => (
         <video
@@ -90,7 +92,7 @@ const PRECARGA_JUEGO: Record<ClipJuego, ClipJuego[]> = {
   pelea: ['a-jugar'], 'a-jugar': ['jugando'], jugando: ['te-entra'], 'te-entra': ['te-bucle'], 'te-bucle': ['te-sale'], 'te-sale': ['jugando'],
 }
 const NOTA_JUEGO: Record<ClipJuego, string> = {
-  pelea: 'Pelean en la casa hasta que empieces a jugar', 'a-jugar': 'Dejan de pelear y se sientan a jugar', jugando: 'Jugando, concentrados',
+  pelea: 'Cuando empieces a jugar, se sientan a jugar', 'a-jugar': 'Dejan de pelear y se sientan a jugar', jugando: 'Jugando, concentrados',
   'te-entra': 'Pausa: té', 'te-bucle': 'Pausa: té', 'te-sale': 'De vuelta a jugar',
 }
 
@@ -119,25 +121,16 @@ export function JuegoShinobi({ activa, pausada, reducido }: { activa: boolean; p
       <VideoEscena
         actual={rutaJuego(clip)}
         sello="遊"
+        enBlanco={clip === 'pelea'}
         className={clip === 'a-jugar' ? 'epico' : ''}
         bucle={BUCLE_JUEGO.includes(clip)}
         precargar={PRECARGA_JUEGO[clip].map(rutaJuego)}
         reducido={reducido}
         onFin={() => { const s = SIGUE_JUEGO[clipRef.current]; if (s) setClip(s) }}
       >
-        {clip === 'pelea' && !reducido && <Chispas />}
       </VideoEscena>
       {tinta > 0 && <div key={tinta} className="tema-escena-tinta" aria-hidden />}
       <span className="sl-casa-nota">{NOTA_JUEGO[clip]}</span>
-    </div>
-  )
-}
-
-/** Chispas donde chocan las katanas (cada choque del clip de la pelea, ≈ cada 1,25 s). */
-function Chispas() {
-  return (
-    <div className="tema-chispas" aria-hidden>
-      {Array.from({ length: 7 }, (_, i) => <i key={i} style={{ '--a': `${i * 51 - 150}deg`, '--d': `${(i % 3) * 0.04}s` } as CSSProperties} />)}
     </div>
   )
 }
