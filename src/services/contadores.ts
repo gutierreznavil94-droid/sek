@@ -15,6 +15,7 @@ import { fechaHoy, registrarEvento } from './base'
 import { cicloActivo } from './ciclo'
 import { ahora, nuevoId } from './reloj'
 import { anularXp, concederXp } from './xp'
+import { devolverResta } from './restas'
 
 export async function cargarContadoresIniciales(): Promise<void> {
   const d = db()
@@ -159,6 +160,8 @@ async function ajustarXpMeta(c: Contador, fecha: FechaDia): Promise<ResultadoXp>
   r.xp += await tope(claveXp('contador', [c.id, fecha]), r.metaLograda, c.xpMetaDiaria, `${c.nombre}: cuota diaria (${cuota})`)
   r.xpExtra = await tope(claveXp('contador', [c.id, fecha, 'extra']), r.extraLogrado, c.xpExtra ?? 5, `${c.nombre}: extra (${extra})`)
   r.xp += r.xpExtra
+  // Si ese día ya había restado (la cuota se completó después), se devuelve.
+  if (r.metaLograda) await devolverResta(`serie-${c.id}`, fecha, 'Cuota completada')
   return r
 }
 

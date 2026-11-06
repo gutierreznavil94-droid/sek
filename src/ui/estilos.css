@@ -2571,3 +2571,23 @@ video:not([poster]):not([data-vivo]) { opacity: 0 !important; }
 .cabecera-int { position: relative; }
 .cabecera .dia { white-space: nowrap; }
 .cabecera-int > .fase:has(.hoy-arriba) { position: absolute; right: 0; bottom: 0; }
+
+/* ---------- v0.83 · lo no cumplido resta ---------- */
+.linea-ayer { margin: 0 0 2px; text-align: right; color: var(--texto-3); }
+.linea-ayer a { color: inherit; text-decoration: none; }
+.linea-ayer .ayer-mas { color: var(--texto-2); font-weight: 700; }
+.linea-ayer .ayer-menos { color: #e8443a; font-weight: 700; }
+.aviso-resta { display: block; margin: 2px 0; padding: 7px 10px; border-left: 2px solid var(--acento); background: var(--acento-suave); border-radius: 4px; font-size: 0.85rem; }
+.aviso-resta-k { color: var(--acento); font-weight: 700; margin-right: 4px; }
+.xpc-menos { position: fixed; z-index: 80; pointer-events: none; transform: translate(-50%, -50%); font: 800 1.1rem/1 var(--fuente); color: #d8312a; animation: xpc-menos 1.8s ease-out forwards; }
+@keyframes xpc-menos { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -150%); } }
+@media (prefers-reduced-motion: reduce) { .xpc-menos { animation: none; } }
+.xp-historial .xp-dia { padding: 6px 0; border-top: 1px solid rgba(255, 255, 255, 0.07); }
+.xp-historial .xp-dia:first-of-type { border-top: 0; }
+.xp-historial .xp-dia-cab { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 2px; }
+.xp-historial .xp-linea { display: flex; gap: 8px; font-size: 0.78rem; color: var(--texto-2); line-height: 1.5; }
+.xp-historial .xp-cant { min-width: 58px; text-align: right; color: var(--texto); }
+.xp-historial .xp-linea.resta .xp-cant, .xp-historial .xp-menos { color: #e8443a; }
+.xp-historial .xp-linea.resta .xp-desc { color: #c9a39e; }
+.camino-mas { color: var(--texto); }
+.camino-menos { color: #e8443a; }

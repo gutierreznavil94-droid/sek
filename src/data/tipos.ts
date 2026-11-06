@@ -345,6 +345,8 @@ export type Ajustes = {
   /** Cinemática «Tensión»: kanji y frase del final. */
   tension?: ConfigTension
   caida?: ConfigCaida
+  /** Lo no cumplido resta (v0.83): prendido, % de la XP que da y desde qué día vale (nunca hacia atrás). */
+  xpResta?: { activa?: boolean; porcentaje?: number; desde?: FechaDia }
   /** Forja de hábitos: días, válidos necesarios, XP por día y al forjarse, máximo a la vez (si falta, los de domain/forja). */
   forja?: Partial<{ dias: number; validos: number; xpDia: number; xpForjado: number; maximo: number }>
   /** Rival escurridizo: modo y XP que roba. */
