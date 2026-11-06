@@ -6,10 +6,10 @@
  * Regla: si se suma un evento nuevo, se agrega a TODOS los temas (aunque en Común sea algo simple).
  */
 
-export const EVENTOS = ['completar', 'aparecer', 'logro', 'recompensa', 'alerta', 'descanso', 'dormir', 'pelear', 'robo', 'duda', 'jugar', 'pausa', 'quieto', 'forja-paso', 'forja-pedazo', 'forja-completa'] as const
+export const EVENTOS = ['completar', 'aparecer', 'logro', 'recompensa', 'alerta', 'descanso', 'dormir', 'pelear', 'robo', 'duda', 'jugar', 'pausa', 'quieto', 'forja-paso', 'forja-pedazo', 'forja-completa', 'xp-perdida'] as const
 export type NombreEvento = (typeof EVENTOS)[number]
-/** Eventos que se sumaron con las animaciones de v0.65 (Estoy dudando, Juego, pausa, quieto) y la forja de hábitos (v0.74): cada tema puede traer el suyo; si falta, el de Común. */
-export const EVENTOS_NUEVOS = ['duda', 'jugar', 'pausa', 'quieto', 'forja-paso', 'forja-pedazo', 'forja-completa'] as const
+/** Eventos que se sumaron con las animaciones de v0.65 (Estoy dudando, Juego, pausa, quieto) la forja de hábitos (v0.74) y la XP que se pierde (v0.83, «xp-perdida»): cada tema puede traer el suyo; si falta, el de Común. */
+export const EVENTOS_NUEVOS = ['duda', 'jugar', 'pausa', 'quieto', 'forja-paso', 'forja-pedazo', 'forja-completa', 'xp-perdida'] as const
 type EventoNuevo = (typeof EVENTOS_NUEVOS)[number]
 
 export interface DetalleEvento {

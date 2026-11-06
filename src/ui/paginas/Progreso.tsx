@@ -95,10 +95,19 @@ export function Progreso({ hoy }: { hoy: string }) {
     const conExtra: PilarConExtra[] = []
     // Serie del gráfico: desde el Día 1 hasta hoy.
     const serie: PuntoSerie[] = []
+    const balance = new Map<string, { mas: number; menos: number }>()
     if (estado && !estado.noEmpezado) {
       const inicio = estado.ciclo.inicio
       const hasta = hoy < estado.fechaFin ? hoy : estado.fechaFin
       const porDia = await xpPorDia(inicio, hasta)
+      // Lo ganado y lo perdido de cada día (para «道 El camino» y el historial de XP).
+      for (const r of await db().xp.where('fecha').between(inicio, hasta, true, true).toArray()) {
+        if (r.anulado) continue
+        const b = balance.get(r.fecha) ?? { mas: 0, menos: 0 }
+        if (r.cantidad >= 0) b.mas += r.cantidad
+        else b.menos -= r.cantidad
+        balance.set(r.fecha, b)
+      }
       const pil = await pilaresPorDia(inicio, hasta, hoy)
       let acumulado = await xpAntesDe(inicio)
       for (let f = inicio, dia = 1; f <= hasta; f = sumarDias(f, 1), dia++) {
@@ -160,10 +169,11 @@ export function Progreso({ hoy }: { hoy: string }) {
     const camino: DiaCamino[] = serie.map((p) => {
       const cont = p.pilares.filter((x) => x.estado !== 'descanso')
       const hechos = cont.filter((x) => x.estado === 'cumplido' || x.estado === 'tarde').length
+      const b = balance.get(p.fecha) ?? { mas: 0, menos: 0 }
       return {
-        fecha: p.fecha, xp: p.xp, cumplido: cont.length ? hechos / cont.length : null,
+        fecha: p.fecha, xp: p.xp, mas: b.mas, menos: b.menos, total: Math.max(0, p.acumulado), cumplido: cont.length ? hechos / cont.length : null,
         caida: fechasCaida.has(p.fecha), forja: diasForja.has(p.fecha), marca: marcaDe.get(p.fecha),
-        etiqueta: `Día ${p.dia} · ${fechaLegible(p.fecha)} · ${cont.length ? `${hechos}/${cont.length} pilares` : 'sin pilares'} · ${p.xp} XP`,
+        etiqueta: `Día ${p.dia} · ${fechaLegible(p.fecha)} · ${cont.length ? `${hechos}/${cont.length} pilares` : 'sin pilares'}`,
       }
     })
     return { camino, marcas, caidas, ninjas, ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados, conExtra, reglasCodigo: await db().codigo.count(), comida, metasSemana: { cumplidas: metasSemana.filter((m) => m.cumplida).length, total: metasSemana.length }, mini }
@@ -263,6 +273,7 @@ export function Progreso({ hoy }: { hoy: string }) {
                     )}
                   </section>
                 )}
+                {seccion === 'xp' && <HistorialXp hoy={hoy} />}
 
                 {seccion === 'metas' && <TarjetaMetas hoy={hoy} inicio={d.estado && !d.estado.noEmpezado ? d.estado.ciclo.inicio : hoy} fin={d.estado ? d.estado.fechaFin : sumarDias(hoy, 89)} />}
 
@@ -598,6 +609,43 @@ function GraficoXp({ serie, rango, hoy, ciclo, base, total, xpSemana, xpHoy }: {
         <div className="av-nota">hoy +{xpHoy} · esta semana +{xpSemana} · desde el Día 1 ({fechaLegible(fechaDelDiaDelCiclo(ciclo.inicio, 1))}). Tocá un punto para ver ese día.</div>
       )}
     </div>
+  )
+}
+
+/** Historial de XP por día: lo que sumó y lo que restó, con su nombre («−8 XP · Entrenamiento sin hacer»). */
+function HistorialXp({ hoy }: { hoy: string }) {
+  const [dias, setDias] = useState(7)
+  const datos = useDatos(async () => {
+    const desde = sumarDias(hoy, -(dias - 1))
+    const regs = (await db().xp.where('fecha').between(desde, hoy, true, true).toArray()).filter((r) => !r.anulado)
+    const porDia = new Map<string, typeof regs>()
+    for (const r of regs) porDia.set(r.fecha, [...(porDia.get(r.fecha) ?? []), r])
+    const masViejo = await db().xp.where('fecha').below(desde).count()
+    return { dias: [...porDia.entries()].sort((a, b) => b[0].localeCompare(a[0])).map(([f, l]) => ({ fecha: f, lista: l.sort((x, y) => x.creado - y.creado) })), masViejo }
+  }, [hoy, dias])
+  const h = datos.datos
+  if (!h) return null
+  return (
+    <section className="av-tarjeta xp-historial" aria-label="Historial de XP">
+      <div className="av-tarjeta-titulo"><span>Historial de XP</span></div>
+      {h.dias.length === 0 && <p className="av-nota" style={{ margin: 0 }}>Sin XP en estos días.</p>}
+      {h.dias.map((g) => {
+        const mas = g.lista.filter((r) => r.cantidad > 0).reduce((s, r) => s + r.cantidad, 0)
+        const menos = -g.lista.filter((r) => r.cantidad < 0).reduce((s, r) => s + r.cantidad, 0)
+        return (
+          <div key={g.fecha} className="xp-dia">
+            <div className="xp-dia-cab"><b>{g.fecha === hoy ? 'Hoy' : fechaLegible(g.fecha)}</b><span className="av-mono">+{mas}{menos > 0 && <> / <span className="xp-menos">−{menos}</span></>}</span></div>
+            {g.lista.map((r) => (
+              <div key={r.id ?? r.clave} className={`xp-linea ${r.cantidad < 0 ? 'resta' : ''}`}>
+                <span className="av-mono xp-cant">{r.cantidad < 0 ? `−${-r.cantidad}` : `+${r.cantidad}`} XP</span>
+                <span className="xp-desc">{r.descripcion}</span>
+              </div>
+            ))}
+          </div>
+        )
+      })}
+      {h.masViejo > 0 && <button type="button" className="boton chico suave ancho" onClick={() => setDias((x) => x + 7)}>Ver más</button>}
+    </section>
   )
 }
 

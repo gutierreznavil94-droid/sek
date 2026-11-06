@@ -58,6 +58,9 @@ import { ahora } from '../../services/reloj'
 import { rutinaDelDia, sesionEnCurso } from '../../services/entreno'
 import { obtenerRevision } from '../../services/revisiones'
 import { xpDelDia, xpTotal } from '../../services/xp'
+import { avisoRestaHoy, balanceDelDia } from '../../services/restas'
+import { textoAvisoResta } from '../../domain/resta'
+import { disparar } from '../../temas/eventos'
 import { Celebracion, Hoja, IconoPilar } from '../componentes'
 import { avisar, mutar, useDatos, useTic } from '../estado'
 import { CamaDelCompanero } from '../Companero'
@@ -109,7 +112,10 @@ async function cargarPanel(hoy: string) {
   const rutina = (await rutinaDelDia(hoy)) ?? null
   const entrenoEnCurso = !!(await sesionEnCurso())
   const peleas = await peleasDelDia(hoy)
-  return { antes: false as const, peleas, rutina, entrenoEnCurso, metasSemana, ajustes, estado, compromisos, nivel, atributos, racha, juego, semana, xpHoy, revision, nocheAbierta, suenio, pilares, propuestas, contadores, ventana, ajusteDeAyer, buenosDias, anoche, veredictoAnoche }
+  // «Ayer: +35 / −8» y lo que restaría hoy si queda sin hacer.
+  const ayer = await balanceDelDia(sumarDias(hoy, -1))
+  const avisoResta = await avisoRestaHoy(hoy)
+  return { antes: false as const, ayer, avisoResta, peleas, rutina, entrenoEnCurso, metasSemana, ajustes, estado, compromisos, nivel, atributos, racha, juego, semana, xpHoy, revision, nocheAbierta, suenio, pilares, propuestas, contadores, ventana, ajusteDeAyer, buenosDias, anoche, veredictoAnoche }
 }
 
 
@@ -224,6 +230,24 @@ export function Hoy({ hoy }: { hoy: string }) {
     const id = window.setTimeout(() => mutar(cerrarDiasPendientes), espera)
     return () => window.clearTimeout(id)
   }, [d])
+
+  // «Lo no cumplido resta»: aviso a la hora de alistarse con lo que falta y cuánto restaría.
+  useEffect(() => {
+    if (!d || d.antes) return
+    const texto = d.avisoResta ? textoAvisoResta(d.avisoResta.faltantes, d.avisoResta.porcentaje) : null
+    const instante = instanteDe(hoy, d.ajustes.horaAlistarse || '20:00', d.ajustes.zonaHoraria)
+    if (!texto || instante <= Date.now()) { recordatorios.cancelar('resta-alistarse'); return }
+    recordatorios.programar({ id: 'resta-alistarse', titulo: 'Todavía estás a tiempo', cuerpo: `${texto} · ${d.avisoResta!.faltantes.map((f) => f.nombre).join(', ')}`, instante })
+  }, [d, hoy])
+  // Lo que se perdió ayer: el tema lo muestra una vez (la bolita de XP se apaga y cae como ceniza).
+  const lineaAyer = useRef<HTMLParagraphElement>(null)
+  useEffect(() => {
+    if (!d || d.antes || !d.ayer.menos) return
+    const clave = `xp-perdida:${sumarDias(hoy, -1)}`
+    try { if (localStorage.getItem(clave)) return; localStorage.setItem(clave, '1') } catch { /* sin almacenamiento */ }
+    const t = window.setTimeout(() => disparar('xp-perdida', { elemento: lineaAyer.current?.querySelector('.ayer-menos') ?? lineaAyer.current, texto: `−${d.ayer.menos} XP` }), 700)
+    return () => window.clearTimeout(t)
+  }, [d, hoy])
 
   // Primer día de una fase nueva: logro grande (una sola vez).
   useEffect(() => {
@@ -457,6 +481,9 @@ export function Hoy({ hoy }: { hoy: string }) {
         </div>
       )}
       {!d.buenosDias && d.ajusteDeAyer && <p className="ajuste-ayer">Ajuste de hoy: <b>{d.ajusteDeAyer}</b></p>}
+      {(d.ayer.mas > 0 || d.ayer.menos > 0) && (
+        <p ref={lineaAyer} className="linea-ayer muy-chico mono"><Link to="/progreso">Ayer: <span className="ayer-mas">+{d.ayer.mas}</span>{d.ayer.menos > 0 && <> / <span className="ayer-menos">−{d.ayer.menos}</span></>} XP</Link></p>
+      )}
 
       {/* Mi horario: dónde estás ahora y qué sigue (tocar abre la semana). Arriba, en la barra fija; sin ella, acá. */}
       {huecoHorario ? createPortal(<LineaDelDia hoy={hoy} />, huecoHorario) : <LineaDelDia hoy={hoy} />}
