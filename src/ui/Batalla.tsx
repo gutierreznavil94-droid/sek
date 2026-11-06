@@ -116,6 +116,12 @@ function BatallaEnCurso({ b }: { b: Batalla }) {
   const rival = b.pelea.distraccion.nombre
   const { rondas, repsPorToque, objetivo, contador } = b.config
   const cerrar = () => { pendiente = null; avisarOyentes() }
+  // Ganada: si vino de alcanzar al rival, sigue el 3·2·1 con la acción que tocaba (arranca contando).
+  const cerrarGanada = () => {
+    cerrar()
+    // Sin pilar a la vista: abre el 3·2·1 para elegir qué empezar.
+    if (b.despues !== undefined) window.location.hash = b.despues ? `#/321?accion=${encodeURIComponent(b.despues)}&auto=1` : '#/321'
+  }
 
   // Grito → cuenta
   useEffect(() => {
@@ -148,7 +154,7 @@ function BatallaEnCurso({ b }: { b: Batalla }) {
     if (sonido) { sonarTaiko(); window.setTimeout(sonarTaiko, 380) }
     try { navigator.vibrate?.([80, 60, 160]) } catch { /* sin vibración */ }
     const a = window.setTimeout(() => setPuedeCerrar(true), 900)
-    const c = window.setTimeout(cerrar, DUR_VICTORIA + 4000)
+    const c = window.setTimeout(cerrarGanada, DUR_VICTORIA + 4000)
     return () => { window.clearTimeout(a); window.clearTimeout(c) }
   }, [fase, sonido]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -172,7 +178,7 @@ function BatallaEnCurso({ b }: { b: Batalla }) {
   const unidad = (contador?.nombre ?? 'flexiones').toLowerCase()
 
   return (
-    <div className={`sh-capa oscura epica bt-capa ${fase}`} role="dialog" aria-label={`Batalla contra ${rival}`} onPointerDown={victoria && puedeCerrar ? cerrar : undefined}>
+    <div className={`sh-capa oscura epica bt-capa ${fase}`} role="dialog" aria-label={`Batalla contra ${rival}`} onPointerDown={victoria && puedeCerrar ? cerrarGanada : undefined}>
       {!victoria && <FondoEpico />}
       {victoria && (
         <div className="bt-victoria-fondo" aria-hidden>

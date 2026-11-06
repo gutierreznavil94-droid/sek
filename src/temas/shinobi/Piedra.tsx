@@ -14,7 +14,7 @@ import { sonarForja } from '../../ui/animaciones/motor'
 type P = [number, number]
 
 /** Kanji que ya trae la fuente de pincel de la app; para otro, se pide a Google Fonts solo esa letra. */
-const EN_FUENTE = '体力印夜始常弾心忍志掟描整斬昇昼時朝柱次段目眠誓連進鍛静食一二三四五六七八九十水願読学書走歩音健早律耐甦'
+const EN_FUENTE = '体力印夜始常弾心忍志掟描整斬昇昼時朝柱次段目眠誓連進鍛静食一二三四五六七八九十水願読学書走歩音健早律耐甦道写'
 const pedidos = new Set<string>()
 function asegurarFuente(k: string) {
   if (!k || EN_FUENTE.includes(k) || pedidos.has(k) || typeof document === 'undefined') return

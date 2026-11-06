@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { db } from '../../data/db'
 import { diaDelCiclo, diaSemanaDe, esFechaValida, faseDelDia, fechaLegible, nombreMes, sumarDias } from '../../domain/fechas'
@@ -12,6 +12,8 @@ import { Hoja, IconoPilar, Porcentaje, Tarjeta } from '../componentes'
 import { formatoHora } from '../../domain/fechas'
 import { guardarAjustes, obtenerAjustes } from '../../services/base'
 import { avisar, mutar, useDatos } from '../estado'
+import { HojaMarcar } from '../FotosMarcas'
+import { listarMarcas } from '../../services/fotos'
 import { caidasDelDia, caidasPorDia } from '../../services/caidas'
 import { TumbaRota } from '../../temas/shinobi/TumbaRota'
 import { agregarFechaClave, borrarFechaClave, editarFechaClave, fechasClavePorDia } from '../../services/fechasClave'
@@ -47,6 +49,11 @@ export function Calendario({ hoy }: { hoy: string }) {
     }
   }, [pedido, setParams])
   const [hoja, setHoja] = useState(false)
+  // Mantener apretado un día → «Marcar este día» (印).
+  const [marcar, setMarcar] = useState<string | null>(null)
+  const largo = useRef<number | null>(null)
+  const fueLargo = useRef(false)
+  const soltar = () => { if (largo.current) { window.clearTimeout(largo.current); largo.current = null } }
   const dias = diasDelMes(mes)
   const ultimo = dias[dias.length - 1]
   const datos = useDatos(async () => {
@@ -60,7 +67,9 @@ export function Calendario({ hoy }: { hoy: string }) {
     const bloques = await bloquesEntre(dias[0], ultimo)
     const verHorario = (await obtenerAjustes()).calendarioHorario !== false
     const caidas = await caidasPorDia(dias[0], ultimo)
-    return { ciclo, pilares, metas, excepciones, feriados, acciones, claves, bloques, verHorario, caidas }
+    const marcas = new Map((await listarMarcas()).filter((x) => x.fecha >= dias[0] && x.fecha <= ultimo).map((x) => [x.fecha, x]))
+    const forja = new Set((await db().forja.toArray()).flatMap((h) => h.cumplidos ?? []))
+    return { ciclo, pilares, metas, excepciones, feriados, acciones, claves, bloques, verHorario, caidas, marcas, forja }
   }, [mes, hoy])
 
   const d = datos.datos
@@ -93,7 +102,11 @@ export function Calendario({ hoy }: { hoy: string }) {
               <div
                 key={f}
                 className={`cal-dia ${!enCiclo ? 'fuera' : ''} ${f === hoy ? 'hoy tema-remarque-hoy' : ''} ${sel === f ? 'seleccionado' : ''} ${d?.excepciones.has(f) ? 'excepcion' : ''} ${d?.feriados.has(f) ? 'feriado' : ''} ${inicioFase ? 'fase-inicio' : ''} ${f <= hoy && puntos.length > 0 && puntos.every((p) => p.estado === 'cumplido' || p.estado === 'descanso') && puntos.some((p) => p.estado === 'cumplido') ? 'completo' : ''}`}
-                onClick={() => { setSel(sel === f ? null : f); setEnfocar(sel !== f) }}
+                onClick={() => { if (fueLargo.current) { fueLargo.current = false; return } setSel(sel === f ? null : f); setEnfocar(sel !== f) }}
+                onPointerDown={() => { fueLargo.current = false; soltar(); largo.current = window.setTimeout(() => { fueLargo.current = true; largo.current = null; setMarcar(f) }, 550) }}
+                onPointerUp={soltar}
+                onPointerLeave={soltar}
+                onContextMenu={(e) => e.preventDefault()}
                 role="button"
                 aria-label={`${fechaLegible(f, false)}${enCiclo ? `, día ${dia}` : ''}${(d?.caidas.get(f) ?? 0) > 0 ? ', caída superada' : ''}${claves.length ? `, fecha clave: ${claves.map((c) => c.titulo).join(', ')}` : ''}`}
               >
@@ -101,6 +114,8 @@ export function Calendario({ hoy }: { hoy: string }) {
                 {f === hoy && <span className="tema-icono-hoy" aria-hidden>{iconoTema('icono-hoy')}</span>}
                 {claves.length > 0 && <span className="sello-clave" aria-hidden>印</span>}
                 {(d?.caidas.get(f) ?? 0) > 0 && <span className="cal-caida" aria-hidden><TumbaRota ancho={10} /></span>}
+                {d?.marcas.has(f) && <span className="cal-marca" aria-hidden>印</span>}
+                {d?.forja.has(f) && <span className="cal-forja" aria-hidden>鍛</span>}
                 {puntos.length > 0 && (
                   <span className="puntos" aria-hidden>
                     {puntos.map((p) => <i key={p.accionId} className={f > hoy ? '' : p.estado} />)}
@@ -126,6 +141,8 @@ export function Calendario({ hoy }: { hoy: string }) {
           <span><span className="linea-meta roja muestra" />meta no cumplida</span>
           <span><TumbaRota ancho={9} /> caída (seguiste)</span>
           <span><span className="sello-clave muestra">印</span>fecha clave</span>
+          <span><span className="cal-marca muestra">印</span>día marcado (mantené apretado un día)</span>
+          <span><span className="cal-forja muestra">鍛</span>día de forja</span>
           <span><span className="franjas muestra"><i className="obligatorio" /><i className="entreno" /></span>horario (gris, arriba)</span>
         </div>
         <label className="fila cal-ver-horario chico texto-2">
@@ -134,6 +151,14 @@ export function Calendario({ hoy }: { hoy: string }) {
         </label>
         <p className="ayuda">Los 4 puntos van siempre en ese orden: entrenamiento, empresa, manga, dormir. Tocá un día para ver cuál es cada uno. Borde: hoy. Punto arriba: feriado. Línea abajo: meta (gris pendiente). ▎ inicio de fase.</p>
       </Tarjeta>
+
+      {sel && d && (
+        <div className="fila entre tarjeta compacta cal-marca-fila">
+          {d.marcas.get(sel) ? <span><span className="cal-marca muestra">印</span> {d.marcas.get(sel)!.texto}</span> : <span className="texto-3 chico">Sin marca este día</span>}
+          <button type="button" className="boton chico suave" onClick={() => setMarcar(sel)}>{d.marcas.get(sel) ? 'Editar' : '印 Marcar este día'}</button>
+        </div>
+      )}
+      <HojaMarcar fecha={marcar} marca={marcar ? d?.marcas.get(marcar) : undefined} onCerrar={() => setMarcar(null)} />
 
       {sel && d && <PilaresDelDiaSel fecha={sel} hoy={hoy} ciclo={ciclo ?? null} enfocar={enfocar} onMas={() => setHoja(true)} />}
 

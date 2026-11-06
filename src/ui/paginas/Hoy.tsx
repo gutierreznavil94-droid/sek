@@ -422,11 +422,12 @@ export function Hoy({ hoy }: { hoy: string }) {
         </div>
       )}
 
-      {/* «Dudo» (batalla) y 「進」 (tensión) en la cabecera, al lado de la fecha */}
+      {/* «Dudo», «Tensión» y «No cumplí» en la cabecera, juntos y en contorno */}
       {huecoCabecera && createPortal(
         <span className="hoy-arriba">
-          {clipsTension && <button type="button" className="boton-duda kanji" onClick={() => pedirTension()} aria-label="Tensión: cinemática">進</button>}
           {ajustes.ninjas !== false && <button type="button" className="boton-duda" onClick={batallar} aria-label="Estoy dudando: batalla contra la distracción">Dudo</button>}
+          {clipsTension && <button type="button" className="boton-duda" onClick={() => pedirTension()} aria-label="Tensión: cinemática"><span className="boton-duda-kanji" aria-hidden>進</span>Tensión</button>}
+          <BotonNoCumpli fecha={hoy} className="boton-duda rojo" texto="No cumplí" />
         </span>,
         huecoCabecera,
       )}
@@ -589,7 +590,6 @@ export function Hoy({ hoy }: { hoy: string }) {
       <CamaDelCompanero dormido={!!d.suenio && deNoche} modo={ajustes.companero} />
 
       {/* Discreto, abajo de todo: una caída no reinicia nada, saca un poco de XP y deja la marca */}
-      <div className="no-cumpli-lugar"><BotonNoCumpli fecha={hoy} /></div>
 
       <DetalleCompromiso c={seleccion} hoy={hoy} onCerrar={() => setSeleccion(null)} />
       <DetallePilar p={pilarSel} hoy={hoy} onCerrar={() => setPilarSel(null)} onResultado={(id, xp, n) => celebrarYFlash(id, xp, n)} />

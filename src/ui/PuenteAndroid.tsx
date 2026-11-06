@@ -53,6 +53,8 @@ async function atenderAtajo(ruta: string) {
     return
   }
   if (ruta === 'revision') { window.location.hash = '#/revision'; return }
+  // Widget y acceso directo «Tareas»: abre el módulo de Tareas (Organización).
+  if (ruta === 'tareas') { window.location.hash = '#/organizacion'; return }
 }
 
 async function alAbrir() {

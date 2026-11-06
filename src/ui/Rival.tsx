@@ -262,9 +262,10 @@ function RivalEnJuego({ rival, enHoy }: { rival: Rival; enHoy: boolean }) {
     if (terminado.current) return
     terminado.current = true
     window.clearTimeout(ignorado.current)
-    const r = await prepararBatalla(pelea.fecha, pelea.distraccion)
+    const r = await prepararBatalla(pelea.fecha, pelea.distraccion, Math.random, true)
     cerrarRival()
-    if (r.batalla) pedirBatalla(r.batalla)
+    // Directo a la batalla de flexiones; al ganarla sigue el 3·2·1 con la acción que tocaba.
+    if (r.batalla) pedirBatalla({ ...r.batalla, despues: pelea.momento.pilar?.nombre ?? '' })
     else pedirPelea(pelea)
   }
 

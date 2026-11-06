@@ -45,18 +45,20 @@ export async function puedeBatallar(fecha: FechaDia): Promise<{ puede: boolean; 
   return { puede: hechas < TOPE_BATALLAS_DIA, hechas, tope: TOPE_BATALLAS_DIA }
 }
 
-export type Batalla = { pelea: Pelea; config: ConfigBatalla }
+/** `despues`: la acción que toca al ganar (va al 3·2·1; vacío = elegir). Solo cuando la batalla viene de alcanzar al rival. */
+export type Batalla = { pelea: Pelea; config: ConfigBatalla; despues?: string }
 
 /** Arma la batalla o dice por qué no: ninjas/batalla apagados, lista vacía o tope del día. */
-export async function prepararBatalla(fecha: FechaDia, distraccion?: Distraccion, azar: () => number = Math.random): Promise<{ batalla: Batalla; motivo?: undefined } | { motivo: string; batalla?: undefined }> {
+export async function prepararBatalla(fecha: FechaDia, distraccion?: Distraccion, azar: () => number = Math.random, desdeRival = false): Promise<{ batalla: Batalla; motivo?: undefined } | { motivo: string; batalla?: undefined }> {
   const a = await obtenerAjustes()
   if (a.ninjas === false) return { motivo: 'Los ninjas están apagados (Más → Ver animaciones).' }
   const config = await configBatalla()
-  if (!config.activa) return { motivo: 'La batalla está apagada (Más → Ver animaciones).' }
+  // Alcanzar al rival siempre lleva a la batalla (sin tope ni interruptor): es la pelea que ya ganaste corriendo.
+  if (!config.activa && !desdeRival) return { motivo: 'La batalla está apagada (Más → Ver animaciones).' }
   const lista = distraccionesDe(a)
   if (!lista.length) return { motivo: 'Sin distracciones en la lista (Más → Ver animaciones → Mis distracciones).' }
   const t = await puedeBatallar(fecha)
-  if (!t.puede) return { motivo: `Batallas hoy: ${t.hechas} de ${t.tope}. Mañana hay más.` }
+  if (!t.puede && !desdeRival) return { motivo: `Batallas hoy: ${t.hechas} de ${t.tope}. Mañana hay más.` }
   const usados = (await peleasDelDia(fecha)).map((p) => p.distraccion)
   const rival = distraccion ?? elegirNinja(lista, 'batalla', usados, azar) ?? lista[0]
   return { batalla: { pelea: { fecha, distraccion: rival, momento: { momento: 'batalla' } }, config } }

@@ -226,34 +226,49 @@
                 android:textSize="13sp" />
 
             <TextView
+                android:id="@+id/wm_tareas"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/widget_boton_rojo"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:text="Tareas"
+                android:textColor="#F1EBDF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
                 android:id="@+id/wm_vaso"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:background="@drawable/widget_boton"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp"
+                android:background="@drawable/widget_boton_suave"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
                 android:text="+1 vaso"
-                android:textColor="#F1EBDF"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+                android:textColor="#6B655C"
+                android:textSize="11sp"
+                />
 
             <TextView
                 android:id="@+id/wm_fruta"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:background="@drawable/widget_boton"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp"
+                android:background="@drawable/widget_boton_suave"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
                 android:text="+1 fruta"
-                android:textColor="#F1EBDF"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+                android:textColor="#6B655C"
+                android:textSize="11sp"
+                />
         </LinearLayout>
     </LinearLayout>
 
