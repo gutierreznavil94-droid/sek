@@ -10,6 +10,7 @@
   "carpetaFondos": "fondos/",
   "sprite": "temas/shinobi/companero/camina.webp",
   "escenas": "temas/shinobi/",
+  "archivado": { "rival": true },
   "vistaPrevia": { "video": "fondos/lluvia.mp4", "imagen": "fondos/lluvia.jpg" },
   "icono": "icono-192.png",
   "frases": [

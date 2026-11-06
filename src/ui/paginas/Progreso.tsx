@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { rivalArchivado } from '../../temas/archivado'
 import { MiCodigo } from './MiCodigo'
 import { TarjetaFotos, LineaMarcas } from '../FotosMarcas'
 import { CaminoMontana, type DiaCamino } from '../../temas/shinobi/Camino'
@@ -337,7 +338,7 @@ export function Progreso({ hoy }: { hoy: string }) {
                 <CaminoMontana dias={d.camino} duracion={d.estado.ciclo.duracionDias} reducido={reducido} />
               </section>
             )}
-            {d.ajustes.ninjas !== false && d.ajustes.ninjasEnProgreso !== false && d.ninjas.peleas > 0 && (
+            {!rivalArchivado() && d.ajustes.ninjas !== false && d.ajustes.ninjasEnProgreso !== false && d.ninjas.peleas > 0 && (
               <div className="av-ninjas av-nota" aria-label={`Ninjas vencidos esta semana: ${d.ninjas.vencidos} de ${d.ninjas.peleas}`}><span className="av-ninjas-k">忍</span> <b>{d.ninjas.vencidos}</b><span className="texto-3"> de {d.ninjas.peleas}</span> · ninjas esta semana</div>
             )}
 

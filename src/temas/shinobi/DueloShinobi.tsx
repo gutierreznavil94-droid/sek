@@ -87,12 +87,20 @@ export function DueloShinobi({ titulo, hechas, total, nombreRival, fase, reducid
   )
 }
 
-/** Común: sin personajes, solo la cuenta. */
-export function DueloComun({ titulo, hechas, total, fase, onTocar, onListo, onAhoraNo }: PropsDuelo) {
+/**
+ * Pantalla simple (v0.86, con el rival archivado; y el tema Común): sin personajes. Lluvia de fondo, 力 grande,
+ * «Flexiones · N», el contador (tocá en cualquier lado por cada flexión) y «Listo».
+ */
+export function DueloComun({ titulo, hechas, total, fase, reducido, lluvia, onTocar, onListo, onAhoraNo }: PropsDuelo & { lluvia?: boolean }) {
   return (
-    <div className={`dq-capa comun dq-${fase === 'tajo' ? 'tajo-fase' : fase}`} role="dialog" aria-label={`Duelo: ${titulo} · ${total}`}>
-      <div className="dq-arriba"><div className="dq-titulo">{titulo} · <b>{total}</b></div><div className="dq-cuenta">{hechas} / {total}</div></div>
-      <button type="button" className="dq-escena" onClick={onTocar} aria-label="Una flexión"><span className="dq-mas">+1</span></button>
+    <div className={`dq-capa simple dq-${fase === 'tajo' ? 'tajo-fase' : fase} ${reducido ? 'quieto' : ''}`} role="dialog" aria-label={`${titulo} · ${total}`}>
+      {lluvia && !reducido && <LluviaApp cantidad={38} />}
+      <button type="button" className="dq-escena dq-simple" onClick={onTocar} aria-label="Una flexión">
+        <span className="dq-kanji" aria-hidden>力</span>
+        <span className="dq-titulo">{titulo} · <b>{total}</b></span>
+        <span className="dq-cuenta grande" aria-live="polite">{hechas} <span className="texto-3">/ {total}</span></span>
+        <span className="dq-nota">Tocá por cada flexión</span>
+      </button>
       <div className="dq-abajo"><button type="button" className="dq-listo" onClick={onListo}>Listo</button><button type="button" className="dq-no" onClick={onAhoraNo}>Ahora no</button></div>
     </div>
   )

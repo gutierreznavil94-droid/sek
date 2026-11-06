@@ -445,3 +445,13 @@ body .barra-horario-fija:not(.fija) .hor-correr { padding: 3px 9px; font-size: 0
 .dq-capa.quieto .dq-respira, .dq-capa.quieto .dq-rival, .dq-capa.quieto .dq-shinobi, .dq-capa.quieto .dq-tajo { animation: none; }
 .dq-capa.quieto.dq-tajo-fase .dq-rival { opacity: 0.25; }
 @media (prefers-reduced-motion: reduce) { .dq-respira, .dq-capa { animation: none; } }
+
+/* v0.86 · Flexiones en pantalla simple (rival archivado): lluvia, 力 grande y la cuenta. */
+.dq-capa.simple { justify-content: center; gap: 18px; }
+.dq-escena.dq-simple { flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 0; max-width: none; }
+.dq-kanji { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: clamp(6rem, 34vw, 9rem); line-height: 1; color: #f3efe6; text-shadow: 3px 3px 0 rgba(200, 16, 46, 0.75); }
+.dq-cuenta.grande { font-size: 2.6rem; font-weight: 800; opacity: 1; }
+.dq-cuenta.grande .texto-3 { font-size: 1.3rem; font-weight: 600; }
+.dq-capa.simple.dq-tajo-fase .dq-kanji { animation: dq-sello 600ms ease-out forwards; }
+@keyframes dq-sello { 0% { transform: scale(1); } 40% { transform: scale(1.18); color: #e8c37a; } 100% { transform: scale(1); color: #e8c37a; } }
+.dq-capa.simple.quieto .dq-kanji { animation: none; }
