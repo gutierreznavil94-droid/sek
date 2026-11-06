@@ -64,7 +64,7 @@
 [data-brillo='maximo'] { border-color: rgba(var(--verde-rgb), 1) !important; }
 [data-brillo='maximo']::after { border: 2px solid rgba(var(--verde-rgb), 0.9); box-shadow: 0 0 12px 1px rgba(var(--verde-rgb), 0.32); }
 /* Textos de lo hecho en verde */
-.pilar-bloque[data-brillo='hecho'] .detalle, .contador-boton[data-brillo='parcial'] .mas-n, .contador-boton[data-brillo='maximo'] .mas-n, .contador-boton[data-brillo='parcial'] .detalle, .contador-boton[data-brillo='maximo'] .detalle { color: var(--verde) !important; }
+.pilar-bloque[data-brillo='hecho'] .detalle, .pilar-bloque[data-brillo='parcial'] .detalle, .pilar-bloque[data-brillo='maximo'] .detalle, .contador-boton[data-brillo='parcial'] .mas-n, .contador-boton[data-brillo='maximo'] .mas-n, .contador-boton[data-brillo='parcial'] .detalle, .contador-boton[data-brillo='maximo'] .detalle { color: var(--verde) !important; }
 .contador-boton[data-brillo] .barrita i { background: var(--verde) !important; }
 .accesos .boton[data-brillo='hecho'] svg { color: var(--verde) !important; }
 /* Tildes e íconos de lo hecho: papel crema con tinta negra */
@@ -242,3 +242,29 @@
 .ga-vista { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px; border-radius: 8px; background: rgba(0, 0, 0, 0.25); }
 .ga-caja { display: flex; align-items: flex-end; justify-content: center; width: 100%; overflow: hidden; }
 .ga-vista figcaption { font-size: 0.72rem; text-align: center; color: var(--texto-2, #b9b3a7); }
+
+/* ----- v0.70: Hoy más compacto (Navil 6 nov) ----- */
+/* Metas: mismo ancho, fila de días más baja (número y letra juntos, menos aire). */
+.semana-metas.simple { gap: 3px; }
+.semana-metas.simple .semana-dia { padding: 2px 0 3px; gap: 0; line-height: 1.05; }
+.semana-metas.simple .semana-letra { font-size: 0.56rem; }
+.semana-metas.simple .semana-num { font-size: 0.82rem; }
+.semana-metas.simple .semana-puntos { min-height: 5px; }
+.semana-metas.simple .semana-puntos .semana-punto { width: 5px; height: 5px; margin-top: 0; }
+/* Encabezado: «Día X de 90» igual de grande; fecha, fases y barra del horario más bajas. */
+.app .cabecera { padding-top: calc(6px + env(safe-area-inset-top)); padding-bottom: 4px; }
+.app .banda-prueba + .cabecera { padding-top: 6px; }
+.app .cabecera .fecha { font-size: 0.8rem; line-height: 1.15; margin-top: 1px; }
+.app .cabecera .fecha a { font-size: 0.68rem !important; }
+.app .barra-fases { margin-top: 5px; }
+.app .barra-fases .tramo { height: 16px; }
+.app .barra-fases .tramo.final .etq, .app .barra-fases .etq { line-height: 16px; font-size: 0.6rem; }
+.app .hueco-horario.con { height: 38px; }
+body .barra-horario-int { padding-top: 3px; }
+body .barra-horario-fija:not(.fija) .hor-linea { padding: 3px 8px; }
+body .barra-horario-fija:not(.fija) .hor-linea-link { gap: 2px; font-size: 0.8rem; }
+body .barra-horario-fija:not(.fija) .hor-barra { height: 6px; }
+body .barra-horario-fija:not(.fija) .hor-ahora { top: -3px; height: 12px; }
+body .barra-horario-fija:not(.fija) .hor-correr { padding: 3px 9px; font-size: 0.78rem; min-height: 0; }
+.app .contenido { padding-top: 38px; }
+@media (min-width: 700px) { .app .contenido { padding-top: 40px; } }
