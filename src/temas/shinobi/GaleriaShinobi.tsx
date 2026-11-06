@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { Tarjeta, movimientoReducido } from '../../ui/componentes'
 import { temaActivo } from '../temas'
 import { PiedraShinobi } from './Piedra'
-import { BolitaDorada, HOJA_RIVAL, JuegoShinobi, NocheShinobi, Pregunta, SpriteClip, SuenoShinobi, useHoja } from './Escenas'
+import { HOJA_RIVAL, JuegoShinobi, NocheShinobi, Pregunta, SpriteClip, SuenoShinobi, useHoja } from './Escenas'
 
 const BASE = import.meta.env.BASE_URL
 
@@ -22,14 +22,14 @@ const RIVAL: { clip: string; titulo: string }[] = [
   { clip: 'corre', titulo: 'Corre' },
   { clip: 'salta', titulo: 'Salta entre tarjetas' },
   { clip: 'desenvaina', titulo: 'Atrapado · desenvaina' },
-  { clip: 'roba', titulo: 'Robo · se lleva la bolita' },
+  { clip: 'roba', titulo: 'Robo · se escapa con la bolita' },
 ]
 
 /** Un clip de una hoja en bucle (los de una sola vez vuelven a empezar). */
 function Vista({ hoja, clip, titulo, escala, extra }: { hoja: string; clip: string; titulo: string; escala: number; extra?: (fin: boolean) => React.ReactNode }) {
   const datos = useHoja(hoja)
   const [vuelta, setVuelta] = useState(0)
-  const [fin, setFin] = useState(false)
+  const fin = false
   const reducido = movimientoReducido()
   if (!datos || !datos.clips[clip]) return null
   const [cw, ch] = datos.celda
@@ -42,9 +42,9 @@ function Vista({ hoja, clip, titulo, escala, extra }: { hoja: string; clip: stri
             key={vuelta}
             hoja={hoja}
             datos={datos}
-            clip={fin && clip === 'roba' ? 'corre' : clip}
+            clip={clip}
             reducido={reducido}
-            onFin={unaVez ? () => window.setTimeout(() => { if (clip === 'roba' && !fin) { setFin(true); window.setTimeout(() => { setFin(false); setVuelta((v) => v + 1) }, 2000) } else setVuelta((v) => v + 1) }, 900) : undefined}
+            onFin={unaVez ? () => window.setTimeout(() => setVuelta((v) => v + 1), 900) : undefined}
           />
           {extra?.(fin)}
         </div>
@@ -76,7 +76,7 @@ export function GaleriaShinobi() {
               clip={c.clip}
               titulo={c.titulo}
               escala={1.5}
-              extra={(fin) => (c.clip === 'asoma' ? <Pregunta /> : c.clip === 'roba' && fin ? <BolitaDorada style={{ left: '58%', top: '50%' }} /> : null)}
+              extra={() => (c.clip === 'asoma' ? <Pregunta /> : null)}
             />
           ))}
         </div>

@@ -2463,7 +2463,7 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 @keyframes rv-brinco { 0% { transform: translateY(0) } 50% { transform: translateY(-26px) } 100% { transform: translateY(0) } }
 .rv-adv-sprite { display: flex; justify-content: center; transform: scale(2.4); transform-origin: 50% 100%; margin: 70px auto 6px; }
 .rv-robo-sprite { position: relative; transform: scale(2.6); transform-origin: 50% 100%; margin-bottom: 20px; transition: transform 1.4s ease-in; }
-.rv-robo-sprite.huye { transform: translateX(130vw) scale(2.6); }
+.rv-robo-sprite.huye { transform: translateX(130vw) scale(2.6); transition: transform 1s cubic-bezier(.3, .2, .6, 1); }
 .rv-robo.reducido .rv-robo-sprite { transition: none; }
 /* v0.68: el «?» sobre la parte visible del rival que se asoma (desde la derecha o desde la izquierda) */
 .rv-pregunta { position: absolute; inset: 0; pointer-events: none; }
@@ -2502,7 +2502,7 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .forja-kanjis button.activa { border-color: rgba(200, 16, 46, 0.95); color: #e0213b; box-shadow: 0 0 8px rgba(200, 16, 46, 0.35); }
 .forja-kanji-propio { width: 64px; height: 44px; text-align: center; font-size: 1.3rem; }
 .forja-regla { cursor: default; }
-.forja-regla-kanji { font-family: 'Pincel', 'Yuji Syuku', 'Noto Serif JP', serif; color: #e0213b; font-size: 1.5rem; line-height: 1; text-shadow: 0 0 6px rgba(224, 33, 59, 0.5); flex: none; width: 30px; text-align: center; }
+.forja-regla-kanji { font-family: 'Pincel', 'Yuji Syuku', 'Noto Serif JP', serif; color: #f3efe6; font-size: 1.5rem; line-height: 1; text-shadow: 2px 2px 0 rgba(200, 16, 46, 0.55); flex: none; width: 30px; text-align: center; }
 .forja-progreso { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; }
 .forja-progreso-fila { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
 .forja-comun.forjada text { filter: drop-shadow(0 0 4px rgba(200, 16, 46, 0.6)); }

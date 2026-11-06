@@ -14,7 +14,7 @@ import { TIEMPO_ADVERTENCIA_MS, TIEMPO_IGNORADO_MS, guardarRivalPendiente, limpi
 import { ahora } from '../services/reloj'
 import { carpetaEscenas, temaActivo } from '../temas/temas'
 import { emitirEvento } from '../temas/eventos'
-import { BolitaDorada, HOJA_RIVAL, Pregunta, SpriteClip, useHoja } from '../temas/shinobi/Escenas'
+import { HOJA_RIVAL, Pregunta, SpriteClip, useHoja } from '../temas/shinobi/Escenas'
 import { Enemigo } from './animaciones/Escena'
 import { sonarChoque, sonarTaiko } from './animaciones/motor'
 import { HOJA_BASE, type Hoja } from './companero/rutina'
@@ -330,10 +330,10 @@ function RivalEnJuego({ rival, enHoy }: { rival: Rival; enHoy: boolean }) {
       <div className={`rv-robo ${reducido ? 'reducido' : ''}`} role="status" aria-label={`${nombre} se lleva tu XP`}>
         <div className="rv-robo-escena">
           {conSprite && hojaRival ? (
-            // Agarra la bolita (clip roba) y sale corriendo con ella (clip corre + la bolita dorada de la app).
+            // R6 entero: agarra la bolita, la abraza contra el pecho y arranca a correr; en el último paso sale de la pantalla
+            // con la bolita en la mano (la del video, la app no dibuja ninguna).
             <div className={`rv-robo-sprite ${huye ? 'huye' : ''}`}>
-              <SpriteClip hoja={HOJA_RIVAL} datos={hojaRival} clip={huye ? 'corre' : 'roba'} vel={huye ? 1.4 : 1.5} reducido={reducido} onFin={() => setHuye(true)} />
-              {huye && <BolitaDorada style={{ left: '58%', top: '52%' }} />}
+              <SpriteClip hoja={HOJA_RIVAL} datos={hojaRival} clip="roba" vel={1.5} reducido={reducido} onFin={() => setHuye(true)} />
             </div>
           ) : (
             <div className="rv-robo-rival">
