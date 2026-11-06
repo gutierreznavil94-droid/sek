@@ -116,4 +116,9 @@ export const efectosShinobi: Efectos = {
   dormir: efectosComun.dormir,
   pelear: tajo,
   robo: tajo,
+  // Estoy dudando, Juego y pausa: las escenas animadas del tema (Escenas.tsx) escuchan el evento; acá, el simple de Común.
+  duda: efectosComun.alerta,
+  jugar: efectosComun.completar,
+  pausa: efectosComun.descanso,
+  quieto: () => undefined,
 }

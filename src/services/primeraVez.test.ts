@@ -131,7 +131,7 @@ describe('temas', () => {
   it('Shinobi existe, es el de siempre y hay tarjetas «Próximamente»', () => {
     expect(TEMAS.map((t) => t.id)).toContain('shinobi')
     const s = temaPorId('shinobi')
-    expect(s).toMatchObject({ personaje: 'Shinobi', nombreApp: 'SEK', kanjis: true, carpetaFondos: 'fondos/', sprite: 'shinobi/camina.webp' })
+    expect(s).toMatchObject({ personaje: 'Shinobi', nombreApp: 'SEK', kanjis: true, carpetaFondos: 'fondos/', sprite: 'temas/shinobi/companero/camina.webp' })
     expect(TEMAS_PROXIMOS.length).toBeGreaterThan(0)
   })
 
@@ -140,7 +140,7 @@ describe('temas', () => {
     const n = temaPorId('nay')
     expect(n.id).toBe('nay')
     expect(n.oculto).toBe(true)
-    expect(n.sprite).toBe('shinobi/camina.webp')
+    expect(n.sprite).toBe('temas/shinobi/companero/camina.webp')
     expect(n.saludo).toContain('{personaje}')
   })
 

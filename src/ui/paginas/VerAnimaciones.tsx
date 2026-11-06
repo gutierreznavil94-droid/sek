@@ -17,6 +17,8 @@ import { useNavigate } from 'react-router-dom'
 import { XP_ROBO_MAX, modoRival, xpRoboDe } from '../../services/rival'
 import { FRASE_TENSION, KANJI_TENSION, pedirTension, useClipsTension } from '../Tension'
 import { pedirCaida } from '../Caida'
+import { carpetaEscenas } from '../../temas/temas'
+import { GaleriaShinobi } from '../../temas/shinobi/GaleriaShinobi'
 import { XP_CAIDA_MAX, xpCaidaDe } from '../../services/caidas'
 import { REPS_POR_TOQUE, TOPE_BATALLAS_DIA, objetivoBatalla, prepararBatalla } from '../../services/batalla'
 import { listarContadores } from '../../services/contadores'
@@ -219,6 +221,8 @@ export function VerAnimaciones() {
         <button className="boton ancho" onClick={async () => { const r = await prepararBatalla(fechaDe(ahora(), a.zonaHoraria)); if (r.batalla) pedirBatalla(r.batalla); else avisar(r.motivo) }}>Probar la batalla</button>
       </Tarjeta>
 
+      {/* Animaciones del tema (Shinobi): Compañero, Rival, Juego y Noche */}
+      {carpetaEscenas() && <GaleriaShinobi />}
       <Tarjeta titulo="Tensión 「進」">
         <p className="chico texto-2" style={{ margin: 0 }}>Cinemática para el momento de estrés: el shinobi te da la mano y espera tu toque. Termina con el kanji y la frase de abajo. Sin tope ni XP (si no le das la mano, es una caída).</p>
         <div className="fila" style={{ gap: 8 }}>

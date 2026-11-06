@@ -1,7 +1,7 @@
 /**
  * La rutina del compañero: qué hace cuando no habla ni pelea. Estados (caminar, correr, saltar a un
  * escalón, parado ahí, sentado, caer y rodar, voltereta, estirarse, alerta) elegidos al azar con pesos.
- * Los clips viven en la hoja de sprites (public/shinobi/camina.json): si un clip no está, el estado usa
+ * Los clips viven en la hoja de sprites (public/temas/shinobi/companero/camina.json): si un clip no está, el estado usa
  * caminar o quieto y se activa solo cuando el clip aparece en la hoja.
  */
 
@@ -17,7 +17,7 @@ export const HOJA_BASE: Hoja = {
   pasoCuadro: 0.3348, frenoAvance: 5.8,
 }
 
-export type Movimiento = 'quieto' | 'caminar' | 'correr' | 'saltar' | 'enEscalon' | 'sentado' | 'caerRodar' | 'voltereta' | 'estirarse' | 'alerta'
+export type Movimiento = 'quieto' | 'caminar' | 'correr' | 'saltar' | 'enEscalon' | 'sentado' | 'caerRodar' | 'voltereta' | 'estirarse' | 'alerta' | 'saltoGiro'
 
 /** Con qué clip se dibuja cada movimiento, y con cuál se reemplaza si todavía no está en la hoja. */
 export const CLIP_DE: Record<Movimiento, { clip: string; sino: 'caminar' | 'quieto' }> = {
@@ -31,10 +31,16 @@ export const CLIP_DE: Record<Movimiento, { clip: string; sino: 'caminar' | 'quie
   voltereta: { clip: 'voltereta', sino: 'caminar' },
   estirarse: { clip: 'estirarse', sino: 'quieto' },
   alerta: { clip: 'alerta', sino: 'quieto' },
+  saltoGiro: { clip: 'saltoGiro', sino: 'quieto' },
 }
+
+/** Clip que se prefiere si la hoja lo trae: para subir a una tarjeta, trepa (s1) en lugar del salto. */
+export const PREFERIDO: Partial<Record<Movimiento, string>> = { saltar: 'trepa' }
 
 /** El clip real para un movimiento: el propio si está en la hoja, si no el de respaldo. */
 export function clipPara(hoja: Hoja, m: Movimiento): { nombre: string; clip: Clip; propio: boolean } {
+  const p = PREFERIDO[m]
+  if (p && hoja.clips[p]) return { nombre: p, clip: hoja.clips[p], propio: true }
   const { clip, sino } = CLIP_DE[m]
   const c = hoja.clips[clip]
   if (c) return { nombre: clip, clip: c, propio: true }
@@ -43,7 +49,7 @@ export function clipPara(hoja: Hoja, m: Movimiento): { nombre: string; clip: Cli
 
 /** Pesos: caminar y quieto son lo común; voltereta y alerta, raros. */
 export const PESOS: Record<Movimiento, number> = {
-  quieto: 30, caminar: 30, correr: 8, saltar: 10, enEscalon: 0, sentado: 6, caerRodar: 0, voltereta: 3, estirarse: 5, alerta: 2,
+  quieto: 30, caminar: 30, correr: 8, saltar: 10, enEscalon: 0, sentado: 6, caerRodar: 0, voltereta: 3, estirarse: 5, alerta: 2, saltoGiro: 0,
 }
 
 export type Contexto = {
@@ -78,7 +84,7 @@ function sortear(opciones: [Movimiento, number][], azar: () => number): Movimien
 
 /** Cuánto dura cada movimiento que no se mueve (segundos), al azar entre mínimo y máximo. */
 export const DURACION: Partial<Record<Movimiento, [number, number]>> = {
-  quieto: [2, 6], enEscalon: [2, 5], sentado: [4, 9], estirarse: [1.6, 2.4], alerta: [1.2, 1.8], voltereta: [0.7, 0.7],
+  quieto: [2, 6], enEscalon: [2, 5], sentado: [4, 9], estirarse: [1.6, 2.4], alerta: [1.2, 1.8], voltereta: [0.7, 0.7], saltoGiro: [0.7, 0.7],
 }
 
 export function duracionDe(m: Movimiento, azar: () => number = Math.random): number {

@@ -20,4 +20,8 @@ export const efectosComun: Efectos = {
   dormir: fundido,
   pelear: temblor,
   robo: temblor,
+  duda: temblor,
+  jugar: pulso(1.03, 300),
+  pausa: fundido,
+  quieto: () => undefined,
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alDisparar, disparar, EVENTOS, fijarTemaEfectos } from './eventos'
+import { alDisparar, alEvento, disparar, emitirEvento, EVENTOS, fijarTemaEfectos, type EventoTema } from './eventos'
 import { iconoSvg } from './iconos'
 import { efectosComun } from './comun/efectos'
 import { efectosShinobi } from './shinobi/efectos'
@@ -31,5 +31,15 @@ describe('Temas · eventos e íconos', () => {
     expect(iconoSvg('icono-celu')).toContain('<svg')
     expect(iconoSvg('icono-celu', 'nay')).toContain('<svg')
     expect(iconoSvg('no-existe')).toBe('')
+  })
+
+  it('emitirEvento y alEvento: llegan a quien escucha y se puede dejar de escuchar', () => {
+    const vistos: EventoTema[] = []
+    const dejar = alEvento((e) => vistos.push(e))
+    emitirEvento('duda')
+    emitirEvento('completar')
+    dejar()
+    emitirEvento('logro')
+    expect(vistos).toEqual(['duda', 'completar'])
   })
 })

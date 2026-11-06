@@ -6,8 +6,11 @@
  * Regla: si se suma un evento nuevo, se agrega a TODOS los temas (aunque en Común sea algo simple).
  */
 
-export const EVENTOS = ['completar', 'aparecer', 'logro', 'recompensa', 'alerta', 'descanso', 'dormir', 'pelear', 'robo'] as const
+export const EVENTOS = ['completar', 'aparecer', 'logro', 'recompensa', 'alerta', 'descanso', 'dormir', 'pelear', 'robo', 'duda', 'jugar', 'pausa', 'quieto'] as const
 export type NombreEvento = (typeof EVENTOS)[number]
+/** Eventos que se sumaron con las animaciones de v0.65 (Estoy dudando, Juego, pausa, quieto): cada tema puede traer el suyo; si falta, el de Común. */
+export const EVENTOS_NUEVOS = ['duda', 'jugar', 'pausa', 'quieto'] as const
+type EventoNuevo = (typeof EVENTOS_NUEVOS)[number]
 
 export interface DetalleEvento {
   /** Elemento de la pantalla sobre el que pasa (la tarea que se completó, la tarjeta que aparece…). */
@@ -17,7 +20,7 @@ export interface DetalleEvento {
 }
 
 export type Efecto = (detalle: DetalleEvento) => void
-export type Efectos = Record<NombreEvento, Efecto>
+export type Efectos = Record<Exclude<NombreEvento, EventoNuevo>, Efecto> & Partial<Record<EventoNuevo, Efecto>>
 
 const porTema = new Map<string, Efectos>()
 const oyentes = new Set<(evento: NombreEvento, detalle: DetalleEvento) => void>()
@@ -43,7 +46,8 @@ export function disparar(evento: NombreEvento, detalle: DetalleEvento = {}): voi
     try { o(evento, detalle) } catch { /* un oyente roto no frena al resto */ }
   }
   const efectos = porTema.get(temaActual) ?? porTema.get('comun')
-  try { efectos?.[evento]?.(detalle) } catch { /* una animación rota nunca rompe la app */ }
+  const efecto = efectos?.[evento] ?? porTema.get('comun')?.[evento]
+  try { efecto?.(detalle) } catch { /* una animación rota nunca rompe la app */ }
 }
 
 /** Escuchar eventos (por ejemplo, para sonidos o animaciones viejas en React). Devuelve cómo dejar de escuchar. */
@@ -61,4 +65,15 @@ export function sinMovimiento(): boolean {
 export function animar(el: Element | null | undefined, cuadros: Keyframe[], opciones: KeyframeAnimationOptions): Animation | null {
   if (!el || sinMovimiento() || typeof (el as HTMLElement).animate !== 'function') return null
   return (el as HTMLElement).animate(cuadros, opciones)
+}
+
+// ---------- Atajos para las escenas animadas (compañero, rival, Juego, noche) ----------
+/** Igual que `disparar`, sin detalle. */
+export type EventoTema = NombreEvento
+export function emitirEvento(evento: EventoTema): void {
+  disparar(evento)
+}
+/** Igual que `alDisparar`, solo con el nombre del evento. */
+export function alEvento(fn: (evento: EventoTema) => void): () => void {
+  return alDisparar((e) => fn(e))
 }
