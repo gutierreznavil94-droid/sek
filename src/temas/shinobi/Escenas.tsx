@@ -62,6 +62,8 @@ export function VideoEscena({ actual, bucle = false, precargar = [], reducido, o
     {sello && <span className="tema-sello">{sello}</span>}
     <div className="tema-escena">
       {anterior && !enBlanco && <img className="tema-escena-clip" src={src(anterior, '-fin.jpg')} alt="" />}
+      {/* Portada: el primer cuadro del clip, debajo del video mientras carga (nunca el ícono de play). */}
+      {!enBlanco && !quieto && <img className="tema-escena-clip" src={src(actual, '-inicio.webp')} alt="" onError={(e) => { e.currentTarget.style.display = 'none' }} />}
       {quieto && <img className="tema-escena-clip arriba" src={src(actual, '-quieto.jpg')} alt="" />}
       {montados.map((c) => (
         <video

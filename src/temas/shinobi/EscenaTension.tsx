@@ -121,6 +121,7 @@ export function EscenaTension({ kanji, frase, sonido, reducido, auto, onFin, onS
         <div className="tema-marco">
           {/* Debajo de todo, el último cuadro del clip anterior: nunca queda la pantalla negra */}
           {anterior && <img className="tema-tn-clip" src={fin(anterior)} alt="" />}
+          {!reducido && !quieto.has(paso) && <img className="tema-tn-clip" src={`${BASE}${paso}-inicio.webp`} alt="" onError={(e) => { e.currentTarget.style.display = 'none' }} />}
           {(reducido || quieto.has(paso)) && <img className="tema-tn-clip arriba" src={fin(paso)} alt="" />}
           {montados.map((c) => (
             <video

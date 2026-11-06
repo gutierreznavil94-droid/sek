@@ -2527,3 +2527,8 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .hj-sesion { padding: 8px 0; border-top: 1px solid var(--borde); }
 .hj-sesion.cero { opacity: 0.45; }
 .hj-mas { align-self: center; margin-top: 2px; }
+
+/* ---------- v0.79: videos sin el ícono de play del navegador ---------- */
+video::-webkit-media-controls, video::-webkit-media-controls-panel, video::-webkit-media-controls-overlay-play-button, video::-webkit-media-controls-start-playback-button, video::-webkit-media-controls-enclosure { display: none !important; -webkit-appearance: none; opacity: 0 !important; }
+/* Sin portada: invisible hasta que reproduce (lo marca videoSinPlay.ts). */
+video:not([poster]):not([data-vivo]) { opacity: 0 !important; }

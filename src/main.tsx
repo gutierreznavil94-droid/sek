@@ -6,8 +6,10 @@ import './ui/estilos.css'
 import { aplicarMovimiento } from './ui/componentes'
 import { iniciarSincronizacion } from './sync/sincronizar'
 import { esAndroid } from './nativo/sek'
+import { videosSinPlay } from './ui/videoSinPlay'
 
 aplicarMovimiento()
+videosSinPlay()
 void iniciarSincronizacion()
 
 // Busca una versión nueva al abrir, al volver a primer plano y cada hora.
