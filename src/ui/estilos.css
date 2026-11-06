@@ -2477,11 +2477,12 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 /* ---------- v0.74: Forja de hábitos (disposición; la piedra la dibuja el tema) ---------- */
 .forja-hoy { display: flex; flex-direction: column; gap: 6px; }
 .forja-kanji-titulo { font-family: 'Pincel', 'Noto Serif JP', serif; color: rgba(200, 16, 46, 0.9); font-size: 1rem; margin-right: 6px; letter-spacing: 0; }
-.forja-fila { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.forja-chica { appearance: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 6px; border-radius: 11px 14px 10px 15px / 14px 10px 15px 11px; border: 1.5px solid rgba(var(--papel-rgb), 0.22); background: var(--fondo-2); color: var(--texto); cursor: pointer; -webkit-touch-callout: none; user-select: none; touch-action: manipulation; }
+.forja-fila { position: relative; display: grid; grid-template-columns: 1fr; gap: 5px; }
+.forja-chica { appearance: none; display: flex; flex-direction: row; align-items: center; gap: 10px; min-height: 54px; padding: 4px 12px 4px 8px; text-align: left; border-radius: 11px 14px 10px 15px / 14px 10px 15px 11px; border: 1.5px solid rgba(var(--papel-rgb), 0.22); background: var(--fondo-2); color: var(--texto); cursor: pointer; -webkit-touch-callout: none; user-select: none; touch-action: manipulation; }
 .forja-chica.hecho { border-color: rgba(var(--verde-rgb), 0.6); }
-.forja-nombre { font-size: 0.72rem; font-weight: 700; line-height: 1.15; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.forja-cuenta { font-size: 0.66rem; color: var(--texto-3); }
+.forja-nombre { flex: 1; min-width: 0; font-size: 0.86rem; font-weight: 700; line-height: 1.15; text-align: left; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.forja-cuenta { flex: none; font-size: 0.74rem; color: var(--texto-3); }
+.forja-chica .piedra-forja { flex: none; }
 .forja-chica.hecho .forja-cuenta { color: var(--verde); }
 .forja-codigo .av-nota { margin: 4px 0; }
 .forja-grande { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0 10px; }

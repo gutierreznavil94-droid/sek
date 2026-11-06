@@ -83,7 +83,7 @@ function PiedraChica({ x, hoy, onForjado, onOpciones }: { x: HabitoConEstado; ho
   const e = x.estado
   return (
     <button type="button" className={`forja-chica ${e.hechoHoy ? 'hecho' : ''}`} {...t} aria-label={`${x.habito.nombre}: ${e.validos} de ${e.necesarios}. ${e.hechoHoy ? 'Hecho hoy' : 'Tocá si lo hiciste hoy'}`}>
-      <PiedraHabito id={x.habito.id} kanji={x.habito.kanji} validos={e.validos} necesarios={e.necesarios} tam={58} reducido={movimientoReducido()} />
+      <PiedraHabito id={x.habito.id} kanji={x.habito.kanji} validos={e.validos} necesarios={e.necesarios} tam={42} reducido={movimientoReducido()} />
       <span className="forja-nombre">{x.habito.nombre}</span>
       <span className="forja-cuenta mono">{e.hechoHoy ? '✓ ' : ''}{e.validos} / {e.necesarios}</span>
     </button>
