@@ -9,6 +9,7 @@ import { anotarDuelo, configDuelo, type ConfigDuelo, type MotivoDuelo } from '..
 import { DueloComun, DueloShinobi } from '../temas/shinobi/DueloShinobi'
 import { rivalArchivado } from '../temas/archivado'
 import { useTema } from '../temas/temas'
+import { FondoLluvia } from './FondoLluvia'
 import { sonarChoque } from './animaciones/motor'
 import { movimientoReducido } from './componentes'
 import { avisar, mutar } from './estado'
@@ -79,5 +80,5 @@ function Duelo({ p }: { p: PedidoDuelo }) {
   }
   // Con el rival archivado (v0.86), la pantalla simple: lluvia, 力 y la cuenta, sin personajes.
   const Vista = tema.escenas && !rivalArchivado() ? DueloShinobi : DueloComun
-  return <Vista lluvia={!!tema.escenas} titulo={c.nombre} hechas={hechas} total={c.reps} nombreRival={p.batalla?.pelea.distraccion.nombre} fase={fase} reducido={reducido} onTocar={tocar} onListo={terminar} onAhoraNo={ahoraNo} />
+  return <Vista fondo={tema.escenas ? <FondoLluvia variante="hoy" /> : undefined} titulo={c.nombre} hechas={hechas} total={c.reps} nombreRival={p.batalla?.pelea.distraccion.nombre} fase={fase} reducido={reducido} onTocar={tocar} onListo={terminar} onAhoraNo={ahoraNo} />
 }

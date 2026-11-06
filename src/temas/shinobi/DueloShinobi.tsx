@@ -4,7 +4,7 @@
  * de «desenvainar» de cada uno), con la lluvia de la app. Sin video nuevo. Al terminar: tajo y el rival cae.
  * SEK pasa el texto, la cuenta y qué hacer al tocar; acá solo se decide cómo se ve.
  */
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { HOJA_RIVAL, useHoja, type HojaSprites } from './Escenas'
 import { LluviaApp } from './EscenaCaida'
 
@@ -88,13 +88,15 @@ export function DueloShinobi({ titulo, hechas, total, nombreRival, fase, reducid
 }
 
 /**
- * Pantalla simple (v0.86, con el rival archivado; y el tema Común): sin personajes. Lluvia de fondo, 力 grande,
+ * Pantalla simple (v0.86, con el rival archivado; y el tema Común): sin personajes. De fondo, la misma tormenta de Hoy
+ * (v0.87: SEK la pasa en `fondo`) con una viñeta suave en el centro; 力 grande,
  * «Flexiones · N», el contador (tocá en cualquier lado por cada flexión) y «Listo».
  */
-export function DueloComun({ titulo, hechas, total, fase, reducido, lluvia, onTocar, onListo, onAhoraNo }: PropsDuelo & { lluvia?: boolean }) {
+export function DueloComun({ titulo, hechas, total, fase, reducido, fondo, onTocar, onListo, onAhoraNo }: PropsDuelo & { fondo?: ReactNode }) {
   return (
     <div className={`dq-capa simple dq-${fase === 'tajo' ? 'tajo-fase' : fase} ${reducido ? 'quieto' : ''}`} role="dialog" aria-label={`${titulo} · ${total}`}>
-      {lluvia && !reducido && <LluviaApp cantidad={38} />}
+      {fondo}
+      <span className="dq-vineta" aria-hidden />
       <button type="button" className="dq-escena dq-simple" onClick={onTocar} aria-label="Una flexión">
         <span className="dq-kanji" aria-hidden>力</span>
         <span className="dq-titulo">{titulo} · <b>{total}</b></span>

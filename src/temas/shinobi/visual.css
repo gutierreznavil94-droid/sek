@@ -455,3 +455,7 @@ body .barra-horario-fija:not(.fija) .hor-correr { padding: 3px 9px; font-size: 0
 .dq-capa.simple.dq-tajo-fase .dq-kanji { animation: dq-sello 600ms ease-out forwards; }
 @keyframes dq-sello { 0% { transform: scale(1); } 40% { transform: scale(1.18); color: #e8c37a; } 100% { transform: scale(1); color: #e8c37a; } }
 .dq-capa.simple.quieto .dq-kanji { animation: none; }
+/* v0.87 · Pantalla de flexiones con la tormenta de Hoy detrás y una viñeta suave al centro para leer. */
+.dq-capa.simple { background: var(--fondo, #121110); }
+.dq-capa.simple .fondo-lluvia { z-index: 0; }
+.dq-vineta { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(ellipse 70% 42% at 50% 44%, rgba(10, 9, 8, 0.62) 0%, rgba(10, 9, 8, 0.32) 55%, rgba(10, 9, 8, 0) 100%); }
