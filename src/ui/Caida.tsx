@@ -54,13 +54,13 @@ function EscenaCaidaConSonido({ xp, desdeTension }: { xp: number; desdeTension: 
   return <EscenaCaida xp={xp} reducido={reducido} desdeTension={desdeTension} sonido={sonido} onFin={cerrar} />
 }
 
-/** «No cumplí mi palabra»: discreto, abajo de Hoy. Pide confirmar antes de la escena. */
-export function BotonNoCumpli({ fecha }: { fecha?: string }) {
+/** «No cumplí»: botón chico de contorno (borde rojo) en la cabecera de Hoy, junto a «Dudo» y «Tensión». Pide confirmar antes de la escena. */
+export function BotonNoCumpli({ fecha, className = 'boton-no-cumpli', texto = 'No cumplí mi palabra' }: { fecha?: string; className?: string; texto?: string }) {
   const [abierta, setAbierta] = useState(false)
   const [xp, setXp] = useState(20)
   return (
     <>
-      <button type="button" className="boton-no-cumpli" onClick={() => { void obtenerAjustes().then((a) => setXp(xpCaidaDe(a))); setAbierta(true) }}>No cumplí mi palabra</button>
+      <button type="button" className={className} aria-label="No cumplí mi palabra" onClick={() => { void obtenerAjustes().then((a) => setXp(xpCaidaDe(a))); setAbierta(true) }}>{texto}</button>
       <Confirmar
         abierta={abierta}
         titulo="¿Seguro?"

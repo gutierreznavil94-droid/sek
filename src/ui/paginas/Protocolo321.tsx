@@ -17,7 +17,8 @@ export function Protocolo321({ hoy }: { hoy: string }) {
   const [params] = useSearchParams()
   const [texto, setTexto] = useState(params.get('accion') ?? '')
   const [compromisoId, setCompromisoId] = useState<string | undefined>(params.get('compromiso') ?? undefined)
-  const [fase, setFase] = useState<'elegir' | 'cuenta' | 'ahora'>('elegir')
+  // Con «auto» (después de ganarle al rival) arranca contando, sin preguntar.
+  const [fase, setFase] = useState<'elegir' | 'cuenta' | 'ahora'>(params.get('auto') && params.get('accion') ? 'cuenta' : 'elegir')
   const [n, setN] = useState(3)
   const pendientes = useDatos(async () => (await compromisosDelDia(hoy)).filter((c) => (c.estado === 'pendiente' || c.estado === 'iniciado') && c.accion.tipo !== 'limite_juego' && c.accion.tipo !== 'acostarse'), [hoy])
   const hueco = useDatos(() => momento(hoy, Date.now()), [hoy])
@@ -78,7 +79,7 @@ export function Protocolo321({ hoy }: { hoy: string }) {
         {fase === 'cuenta' ? (
           <>
             <div className="numero acento">{n}</div>
-            <p className="texto-2">{texto}</p>
+            <p className="texto-2">Ahora: {texto}</p>
           </>
         ) : (
           <>

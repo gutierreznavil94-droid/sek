@@ -6,6 +6,7 @@
     <string name="custom_url_scheme">ar.sek.app</string>
     <string name="widget_chico_desc">Día, racha y pilares de hoy</string>
     <string name="widget_mediano_desc">Pilares para marcar, agua y Mi horario</string>
+    <string name="atajo_tareas">Tareas</string>
     <string name="atajo_celu">Dejo celu</string>
     <string name="atajo_vaso">+1 vaso de agua</string>
     <string name="atajo_batalla">Batalla</string>

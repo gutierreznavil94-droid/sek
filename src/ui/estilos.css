@@ -2038,6 +2038,9 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .boton-duda { appearance: none; font: inherit; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; color: var(--texto-3); background: transparent; border: 1px solid rgba(var(--papel-rgb), 0.32); border-radius: 8px 10px 7px 11px / 10px 7px 11px 8px; padding: 3px 9px; line-height: 1.2; cursor: pointer; }
 .boton-duda:active { background: var(--fondo-3); }
 .boton-duda.kanji { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 1rem; padding: 1px 8px; color: var(--texto-2); }
+.boton-duda-kanji { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 0.8rem; margin-right: 3px; font-weight: 400; }
+.boton-duda.rojo { border-color: rgba(200, 16, 46, 0.75); color: #e8a0a8; }
+.hoy-arriba { display: inline-flex; gap: 5px; align-items: center; flex-wrap: nowrap; }
 /* Avisos: una línea cada uno, apilados como líneas finas */
 .avisos { display: flex; flex-direction: column; gap: 4px; }
 .aviso-linea { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 9px 11px 8px 12px / 12px 8px 11px 9px; border: 1px solid var(--borde); background: var(--fondo-2); font-size: 0.9rem; line-height: 1.25; }
@@ -2532,3 +2535,28 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 video::-webkit-media-controls, video::-webkit-media-controls-panel, video::-webkit-media-controls-overlay-play-button, video::-webkit-media-controls-start-playback-button, video::-webkit-media-controls-enclosure { display: none !important; -webkit-appearance: none; opacity: 0 !important; }
 /* Sin portada: invisible hasta que reproduce (lo marca videoSinPlay.ts). */
 video:not([poster]):not([data-vivo]) { opacity: 0 !important; }
+
+/* ---------- v0.80: fotos de progreso, días marcados y el camino (disposición) ---------- */
+.fotos-fila { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+.foto-mini { appearance: none; flex: none; position: relative; width: 74px; height: 98px; padding: 0; border: 1.5px solid rgba(var(--papel-rgb), 0.25); border-radius: 8px; overflow: hidden; background: var(--fondo-2); cursor: pointer; -webkit-touch-callout: none; user-select: none; }
+.foto-mini.elegida { border-color: #c8102e; box-shadow: 0 0 0 2px rgba(200, 16, 46, 0.45); }
+.foto-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.foto-dia { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 4px; font-size: 0.66rem; font-weight: 700; color: #f3efe6; background: linear-gradient(transparent, rgba(0, 0, 0, 0.75)); text-align: left; }
+.fotos-par { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+.fotos-par figure { margin: 0; }
+.fotos-par img { width: 100%; border-radius: 6px; display: block; }
+.fotos-par figcaption { font-size: 0.72rem; text-align: center; color: var(--texto-2); margin-top: 2px; }
+.foto-grande { width: 100%; border-radius: 8px; display: block; }
+.marca-sello, .cal-marca { font-family: 'Pincel', serif; line-height: 1; color: #fff4f4; background: #c8102e; border-radius: 2px 3px 2px 3px; padding: 1px 1.5px; transform: rotate(5deg); display: inline-block; box-shadow: 0 0 5px rgba(200, 16, 46, 0.5); }
+.marca-sello { font-size: 0.75rem; margin-right: 6px; }
+.cal-dia .cal-marca { position: absolute; top: -4px; right: -4px; font-size: 0.55rem; z-index: 1; }
+.cal-forja { font-family: 'Pincel', serif; font-size: 0.6rem; line-height: 1; color: #e0213b; }
+.cal-dia .cal-forja { position: absolute; right: 3px; bottom: 2px; pointer-events: none; }
+.cal-marca.muestra, .cal-forja.muestra { position: static; margin-right: 3px; font-size: 0.65rem; }
+.cal-marca-fila { gap: 8px; }
+.marcas-linea { appearance: none; border: 0; font: inherit; text-align: left; width: 100%; cursor: pointer; }
+.marcas-item { gap: 8px; padding: 6px 0; border-top: 1px solid var(--borde); align-items: baseline; }
+.camino-titulo-k { font-family: 'Pincel', 'Noto Serif JP', serif; color: #f3efe6; text-shadow: 1.5px 1.5px 0 rgba(200, 16, 46, 0.6); margin-right: 4px; }
+/* v0.80: los tres botones de la cabecera de Hoy, chicos, en una línea y con contorno visible sobre el papel */
+.hoy-arriba .boton-duda { border-color: currentColor; white-space: nowrap; font-size: 0.66rem; padding: 3px 7px; }
+.hoy-arriba .boton-duda.rojo { border-color: #c8102e; color: #c8102e; }

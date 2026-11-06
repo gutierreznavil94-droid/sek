@@ -244,6 +244,25 @@ export type ReglaCodigo = {
   creado: number
 }
 
+/** Foto de progreso (opcional): queda con el día en que se cargó, sin poder cambiarlo. Solo en el celu. */
+export type FotoProgreso = {
+  id: string
+  fecha: string
+  /** Día del ciclo (Día N de 90) en que se cargó; 0 si no había ciclo. */
+  dia: number
+  /** Imagen achicada (máx. ~1080 px) como data URL (webp o jpg). */
+  imagen: string
+  creada: number
+}
+
+/** Día marcado en el Calendario (印): algo importante que hiciste, con un texto corto. */
+export type MarcaDia = {
+  fecha: string
+  texto: string
+  creada: number
+  editada?: number
+}
+
 /** Hábito en forja: algo nuevo que se vuelve costumbre (ver domain/forja.ts). */
 export type HabitoForja = {
   id: string

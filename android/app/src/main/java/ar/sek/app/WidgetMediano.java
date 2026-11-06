@@ -52,6 +52,7 @@ public class WidgetMediano extends WidgetBase {
 
         v.setTextViewText(R.id.wm_agua, Datos.icono(d, "icono-agua", "💧") + "  " + agua(d) + "   " + Datos.icono(d, "icono-fruta", "🍎") + " " + fruta(d));
         v.setTextColor(R.id.wm_agua, tinta);
+        v.setOnClickPendingIntent(R.id.wm_tareas, abrir(c, "tareas", 240));
         v.setOnClickPendingIntent(R.id.wm_vaso, difusion(c, WidgetMediano.class, VASO, null, 230));
         v.setOnClickPendingIntent(R.id.wm_fruta, difusion(c, WidgetMediano.class, FRUTA, null, 231));
 

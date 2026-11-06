@@ -369,6 +369,36 @@ export function sonarTrueno(): void {
   } catch { /* sin sonido */ }
 }
 
+/** Trueno lejano de la tormenta de los fondos: retumbo grave y suave (más fuerte de vez en cuando). */
+export function sonarTruenoLejano(fuerte = false): void {
+  const ac = audio()
+  if (!ac) return
+  try {
+    const t = ac.currentTime + 0.05
+    const src = ac.createBufferSource()
+    src.buffer = ruido(ac, 3.2)
+    const f = ac.createBiquadFilter()
+    f.type = 'lowpass'
+    f.frequency.setValueAtTime(fuerte ? 700 : 420, t)
+    f.frequency.exponentialRampToValueAtTime(70, t + 2.6)
+    const g = ac.createGain()
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.exponentialRampToValueAtTime(fuerte ? 0.3 : 0.14, t + 0.25)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 3.1)
+    src.connect(f).connect(g).connect(ac.destination)
+    src.start(t)
+    src.stop(t + 3.2)
+  } catch { /* sin sonido */ }
+}
+// Los fondos con lluvia avisan cada relámpago con un evento; acá suena el trueno si el sonido de animaciones está prendido.
+if (typeof window !== 'undefined') {
+  window.addEventListener('sek-trueno', (e) => {
+    if (!config.sonido) return
+    const fuerte = !!(e as CustomEvent<{ fuerte?: boolean }>).detail?.fuerte
+    window.setTimeout(() => sonarTruenoLejano(fuerte), 600 + Math.random() * 1400)
+  })
+}
+
 /** Golpe de taiko grave: un solo aviso a 10 s del fin del descanso (independiente del sonido de animaciones). */
 export function sonarTaiko(): void {
   const ac = audio()

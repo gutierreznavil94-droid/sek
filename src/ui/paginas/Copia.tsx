@@ -27,16 +27,17 @@ export function Copia() {
   const [texto, setTexto] = useState('')
   const [pegado, setPegado] = useState('')
   const archivo = useRef<HTMLInputElement>(null)
+  const [conFotos, setConFotos] = useState(false)
 
   const exportar = async () => {
-    const datos = await mutar(exportarTodo)
+    const datos = await mutar(() => exportarTodo({ incluirFotos: conFotos }))
     const fecha = fechaDe(ahora())
     descargar(`sek-${fecha}.json`, JSON.stringify(datos, null, 1), 'application/json')
     avisar('Copia exportada. Guardala en Drive, Telegram o el correo.', { tipo: 'ok' })
   }
   // Para cuando el navegador no deja descargar archivos (por ejemplo, dentro de Claude): la copia como texto.
   const copiarTexto = async () => {
-    const datos = await mutar(exportarTodo)
+    const datos = await mutar(() => exportarTodo({ incluirFotos: conFotos }))
     const json = JSON.stringify(datos)
     setTexto(json)
     try {
@@ -82,6 +83,7 @@ export function Copia() {
       <Tarjeta titulo="Exportar">
         <p className="chico texto-2">Los datos viven solo en este teléfono. Si borrás los datos del navegador (Chrome → Configuración → Privacidad → Borrar datos), desinstalás la app o perdés el teléfono, se pierden. Una copia por semana alcanza. Lo único que sale del teléfono es lo que mandás vos desde «Recomendar algo»: va a un formulario de Google del dueño de la app.</p>
         <div className="fila entre chico"><span className="texto-2">Última copia</span><b>{ultima ? fechaLegible(fechaDe(ultima)) : 'nunca'}</b></div>
+        <label className="fila chico" style={{ gap: 8, margin: '4px 0 8px' }}><input type="checkbox" checked={conFotos} onChange={(e) => setConFotos(e.target.checked)} /> Incluir fotos de progreso (pueden pesar mucho)</label>
         <button className="boton primario ancho" onClick={exportar}>Exportar todo (JSON)</button>
         <button className="boton ancho" onClick={copiarTexto}>Copiar todo como texto</button>
         {texto && (

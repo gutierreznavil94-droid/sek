@@ -11,6 +11,11 @@
  * - Entreno: tormenta en diagonal con relámpagos lejanos; en el descanso (`calma`) se calma y va más lenta.
  * - Más: lluvia oblicua con viento que va y viene, y cada tanto una hoja que pasa volando.
  *
+ * - v0.80, tormenta en todos (menos Sueño, que la ve por la ventana): más gotas, ráfagas de viento que inclinan la lluvia,
+ *   salpicaduras al pie y sobre el borde de las tarjetas, neblina lenta, nubes, hojas que cruzan y relámpagos lejanos
+ *   cada 20–60 s que iluminan las nubes y la silueta de montañas del fondo (trueno vía el evento «sek-trueno»).
+ *   Si el celu va lento, baja la cantidad de gotas sola.
+ *
  * Autocontenido: solo usa React y `movimientoReducido` (se puede llevar a otro proyecto tal cual).
  */
 import { useEffect, useRef } from 'react'
@@ -23,6 +28,9 @@ type Nube = { x: number; y: number; r: number; vel: number; a: number }
 /** Gota en el vidrio: queda quieta un rato, baja, se frena, sigue. Deja un rastro que se borra. */
 type GotaVidrio = { x: number; y: number; r: number; vel: number; quieta: number; moviendo: number; rastro: number }
 type Anillo = { x: number; y: number; t: number; max: number }
+/** Salpicadura: dos o tres gotitas que saltan y caen. */
+type Salpica = { x: number; y: number; t: number; dx: number[] }
+type Niebla = { x: number; y: number; r: number; vel: number; a: number }
 /** Hoja de bambú: sale de un nudo con un ángulo; se mece un poco. */
 type HojaBambu = { x: number; y: number; ang: number; largo: number; ancho: number; fase: number }
 /** Gota que resbala por una hoja (k: 0 base → 1 punta) y después cae. */
@@ -71,6 +79,20 @@ export function FondoLluvia({ variante, calma = false, enCaja = false }: { varia
     let proximaGotaHoja = 0
     const vuelan: HojaVuela[] = []
     let proximaHojaVuela = performance.now() + 2500
+    // Tormenta: todas las variantes menos Sueño (que tiene su ventana).
+    const tormenta = variante !== 'sueno'
+    let factorGotas = 1
+    const salpicas: Salpica[] = []
+    const nieblas: Niebla[] = []
+    let rafaga = 0
+    let proximaRafaga = performance.now() + 9000 + Math.random() * 12000
+    let tormentaLuz = 0
+    let tormentaFuerte = false
+    let proximaTormenta = performance.now() + 6000 + Math.random() * 14000
+    let bordes: { x: number; y: number; w: number }[] = []
+    let medidoBordes = 0
+    let lentoAcum = 0
+    let silueta: [number, number][] = []
     /** Ventana de Sueño (y zona de lluvia de afuera). */
     let ventana = { x: 0, y: 0, w: 0, h: 0 }
 
@@ -101,7 +123,7 @@ export function FondoLluvia({ variante, calma = false, enCaja = false }: { varia
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       ventana = { x: Math.round(w * 0.6), y: Math.round(h * 0.3), w: Math.round(w * 0.34), h: Math.round(h * 0.27) }
       gotas.length = 0
-      const n = Math.round((variante === 'sueno' ? ventana.w * ventana.h : w * h) / perfil.area) * (enCaja ? 6 : 1)
+      const n = Math.round(((variante === 'sueno' ? ventana.w * ventana.h : w * h) / perfil.area) * (enCaja ? 6 : 1) * (tormenta ? 1.7 * factorGotas : 1))
       for (let i = 0; i < n; i++) gotas.push(nueva(true))
       vidrio.length = 0
       if (variante === 'juego') for (let i = 0; i < Math.max(9, Math.round(w / 34)); i++) vidrio.push(nuevaVidrio(true))
@@ -121,6 +143,14 @@ export function FondoLluvia({ variante, calma = false, enCaja = false }: { varia
             for (let q = 0; q < n; q++) hojas.push({ x: cx, y, ang: Math.PI * (0.82 + q * 0.09 + Math.random() * 0.05), largo: 46 + Math.random() * 34, ancho: 6 + Math.random() * 3, fase: Math.random() * 6 })
           }
         })
+      }
+      nieblas.length = 0
+      if (tormenta) {
+        for (let i = 0; i < 3; i++) nieblas.push({ x: Math.random() * w, y: h * (0.35 + i * 0.22), r: 140 + Math.random() * 90, vel: 5 + Math.random() * 6, a: 0.05 + Math.random() * 0.03 })
+        if (variante === 'juego' || variante === 'comida' || variante === 'mas') for (let i = 0; i < 4; i++) nubes.push({ x: (w * (i + 0.5)) / 4, y: 10 + Math.random() * 50, r: 55 + Math.random() * 35, vel: 3 + Math.random() * 3, a: 0.12 + Math.random() * 0.05 })
+        // Silueta de montañas lejanas: solo se ve cuando ilumina un relámpago.
+        silueta = []
+        for (let k = 0; k <= 10; k++) silueta.push([(w * k) / 10, h * (0.56 + Math.random() * 0.1) - (k % 4 === 2 ? h * 0.08 : 0)])
       }
       if (variante === 'hoy') {
         // Banco denso arriba (detrás de la barra fija) y unas pocas sueltas más abajo que se aclaran.
@@ -394,12 +424,105 @@ export function FondoLluvia({ variante, calma = false, enCaja = false }: { varia
       }
     }
 
+    /** Relámpago lejano: destello que ilumina las nubes y la silueta de montañas un instante (a veces doble y más fuerte). */
+    const pintarTormentaLuz = (dt: number, t: number) => {
+      if (quieto) return
+      if (t >= proximaTormenta) {
+        tormentaFuerte = Math.random() < 0.3
+        tormentaLuz = 1
+        proximaTormenta = t + 20000 + Math.random() * 40000
+        try { window.dispatchEvent(new CustomEvent('sek-trueno', { detail: { fuerte: tormentaFuerte } })) } catch { /* sin eventos */ }
+      }
+      if (tormentaLuz <= 0) return
+      const parpadeo = tormentaLuz > 0.75 ? 1 : tormentaLuz > 0.6 ? 0.25 : tormentaLuz > 0.45 ? (tormentaFuerte ? 0.9 : 0.5) : 0.6
+      const k = tormentaLuz * parpadeo * (tormentaFuerte ? 1 : 0.6)
+      const cielo = ctx.createLinearGradient(0, 0, 0, h * 0.75)
+      cielo.addColorStop(0, `rgba(${COLOR}, ${0.2 * k})`)
+      cielo.addColorStop(1, `rgba(${COLOR}, 0)`)
+      ctx.fillStyle = cielo
+      ctx.fillRect(0, 0, w, h * 0.75)
+      if (silueta.length) {
+        ctx.fillStyle = `rgba(8, 8, 8, ${0.5 * k})`
+        ctx.beginPath(); ctx.moveTo(0, h)
+        for (const [x, y] of silueta) ctx.lineTo(x, y)
+        ctx.lineTo(w, h); ctx.closePath(); ctx.fill()
+      }
+      tormentaLuz = Math.max(0, tormentaLuz - dt * (tormentaFuerte ? 1.6 : 2.4))
+    }
+    /** Ráfaga de viento: la lluvia se inclina más unos segundos y vuelve. */
+    const vientoRafaga = (dt: number, t: number) => {
+      if (quieto) return 0
+      if (t >= proximaRafaga) { rafaga = 1; proximaRafaga = t + 14000 + Math.random() * 18000 }
+      if (rafaga > 0) rafaga = Math.max(0, rafaga - dt / 4.5)
+      return Math.sin(Math.PI * rafaga) * 0.28
+    }
+    /** Neblina suave que pasa lenta. */
+    const pintarNiebla = (dt: number) => {
+      for (const n of nieblas) {
+        if (!quieto) { n.x += n.vel * dt; if (n.x - n.r * 2 > w) n.x = -n.r * 2 }
+        const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 2)
+        g.addColorStop(0, `rgba(170, 168, 162, ${n.a})`)
+        g.addColorStop(1, 'rgba(170, 168, 162, 0)')
+        ctx.fillStyle = g
+        ctx.beginPath(); ctx.ellipse(n.x, n.y, n.r * 2, n.r * 0.5, 0, 0, Math.PI * 2); ctx.fill()
+      }
+    }
+    /** Salpicaduras al pie de la pantalla y sobre el borde de arriba de las tarjetas. */
+    const pintarSalpicas = (dt: number, t: number) => {
+      if (quieto || enCaja) return
+      if (t - medidoBordes > 1200) {
+        medidoBordes = t
+        bordes = []
+        document.querySelectorAll('.tarjeta, .av-tarjeta, .pilar-bloque, .hj-dia').forEach((el) => {
+          const r = el.getBoundingClientRect()
+          if (r.width > 60 && r.top > 40 && r.top < h - 40) bordes.push({ x: r.left + 8, y: r.top, w: r.width - 16 })
+          if (bordes.length > 14) return
+        })
+      }
+      const nuevas = dt * 9
+      const cuantas = Math.floor(nuevas) + (Math.random() < nuevas % 1 ? 1 : 0)
+      for (let i = 0; i < cuantas; i++) {
+        const b = bordes.length && Math.random() < 0.6 ? bordes[Math.floor(Math.random() * bordes.length)] : { x: 0, y: h - 2, w }
+        salpicas.push({ x: b.x + Math.random() * b.w, y: b.y, t: 0, dx: [-1, 0.2, 1].map((v) => v * (6 + Math.random() * 6)) })
+      }
+      ctx.fillStyle = `rgba(${COLOR}, 0.5)`
+      for (let i = salpicas.length - 1; i >= 0; i--) {
+        const sp = salpicas[i]
+        sp.t += dt
+        const k = sp.t / 0.38
+        if (k >= 1) { salpicas.splice(i, 1); continue }
+        ctx.globalAlpha = 1 - k
+        for (const dx of sp.dx) { ctx.beginPath(); ctx.arc(sp.x + dx * k, sp.y - 9 * Math.sin(Math.PI * k) * (0.6 + Math.abs(dx) / 20), 0.9, 0, Math.PI * 2); ctx.fill() }
+      }
+      ctx.globalAlpha = 1
+      if (salpicas.length > 60) salpicas.splice(0, salpicas.length - 60)
+    }
+    /** Si el celu va lento (más de 3 s por debajo de ~35 cuadros), menos gotas. */
+    const cuidarBateria = (dt: number) => {
+      if (quieto) return
+      lentoAcum = dt > 1 / 35 ? lentoAcum + dt : Math.max(0, lentoAcum - dt)
+      if (lentoAcum > 3 && factorGotas > 0.45) { factorGotas *= 0.65; lentoAcum = 0; gotas.splice(Math.round(gotas.length * 0.65)) }
+    }
+
     const dibujar = (dt: number, t: number) => {
       ctx.clearRect(0, 0, w, h)
+      if (tormenta) {
+        cuidarBateria(dt)
+        pintarTormentaLuz(dt, t)
+        pintarNiebla(dt)
+        diagonal = (variante === 'mas' ? diagonal : perfil.diagonal) + vientoRafaga(dt, t)
+      }
+      dibujarVariante(dt, t)
+      if (tormenta) {
+        if (variante !== 'mas') pintarHojasVuela(dt, t)
+        pintarSalpicas(dt, t)
+      }
+    }
+    const dibujarVariante = (dt: number, t: number) => {
       if (variante === 'comida') { pintarLluvia(dt, 1, 1); pintarBambu(dt, t); return }
       if (variante === 'mas') {
         // Viento que va y viene: la lluvia se inclina más o menos
-        if (!quieto) diagonal = perfil.diagonal + Math.sin(t / 2600) * 0.16 + Math.sin(t / 900) * 0.04
+        if (!quieto) diagonal = perfil.diagonal + Math.sin(t / 2600) * 0.16 + Math.sin(t / 900) * 0.04 + vientoRafaga(0, t)
         pintarLluvia(dt, 1, 1)
         pintarHojasVuela(dt, t)
         return
@@ -423,14 +546,6 @@ export function FondoLluvia({ variante, calma = false, enCaja = false }: { varia
         pintarVidrio(dt, alfa, lento)
         pintarCharco(dt, t, alfa, lento)
         return
-      }
-      if (variante === 'hoy' && !quieto) {
-        if (t >= proximoRelampago) { relampago = 1; proximoRelampago = t + 20000 + Math.random() * 20000 }
-        if (relampago > 0) {
-          ctx.fillStyle = `rgba(${COLOR}, ${0.09 * relampago})`
-          ctx.fillRect(0, 0, w, h)
-          relampago = Math.max(0, relampago - dt * 3.2)
-        }
       }
       for (const nb of nubes) {
         if (!quieto) { nb.x += nb.vel * dt; if (nb.x - nb.r * 1.6 > w) nb.x = -nb.r * 1.6 }

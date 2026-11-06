@@ -17,6 +17,7 @@ public class WidgetChico extends WidgetBase {
         v.setTextColor(R.id.wc_racha, Datos.color(d, "color-principal", ROJO));
         v.setTextViewText(R.id.wc_puntos, puntos(d));
         v.setOnClickPendingIntent(R.id.wc_raiz, abrir(c, null, 100));
+        v.setOnClickPendingIntent(R.id.wc_tareas, abrir(c, "tareas", 101));
         return v;
     }
 }

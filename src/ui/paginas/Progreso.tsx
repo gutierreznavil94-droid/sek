@@ -1,6 +1,9 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { MiCodigo } from './MiCodigo'
 import { LineaForjados } from '../Forja'
+import { TarjetaFotos, LineaMarcas } from '../FotosMarcas'
+import { CaminoMontana, type DiaCamino } from '../../temas/shinobi/Camino'
+import { listarMarcas } from '../../services/fotos'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { db } from '../../data/db'
@@ -149,7 +152,21 @@ export function Progreso({ hoy }: { hoy: string }) {
     }
     const ninjas = await ninjasVencidosSemana(hoy)
     const caidas = await todasLasCaidas()
-    return { caidas, ninjas, ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados, conExtra, reglasCodigo: await db().codigo.count(), comida, metasSemana: { cumplidas: metasSemana.filter((m) => m.cumplida).length, total: metasSemana.length }, mini }
+    // «道 El camino»: un punto por día del ciclo, con sus marcas (caída, forja, día marcado).
+    const marcas = await listarMarcas()
+    const diasForja = new Set((await db().forja.toArray()).flatMap((h) => h.cumplidos ?? []))
+    const fechasCaida = new Set(caidas.map((c) => c.fecha))
+    const marcaDe = new Map(marcas.map((m) => [m.fecha, m.texto]))
+    const camino: DiaCamino[] = serie.map((p) => {
+      const cont = p.pilares.filter((x) => x.estado !== 'descanso')
+      const hechos = cont.filter((x) => x.estado === 'cumplido' || x.estado === 'tarde').length
+      return {
+        fecha: p.fecha, xp: p.xp, cumplido: cont.length ? hechos / cont.length : null,
+        caida: fechasCaida.has(p.fecha), forja: diasForja.has(p.fecha), marca: marcaDe.get(p.fecha),
+        etiqueta: `Día ${p.dia} · ${fechaLegible(p.fecha)} · ${cont.length ? `${hechos}/${cont.length} pilares` : 'sin pilares'} · ${p.xp} XP`,
+      }
+    })
+    return { camino, marcas, caidas, ninjas, ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados, conExtra, reglasCodigo: await db().codigo.count(), comida, metasSemana: { cumplidas: metasSemana.filter((m) => m.cumplida).length, total: metasSemana.length }, mini }
   }, [hoy])
   const reducido = useMemo(() => movimientoReducido(), [])
   const modo = useModoFondo()
@@ -304,6 +321,13 @@ export function Progreso({ hoy }: { hoy: string }) {
               <Dato grande={String(d.racha)} chico="RACHA" sub={d.racha === 1 ? 'día seguido' : 'días seguidos'} rojo={d.racha > 0} />
               <div className="av-barra" aria-hidden="true"><div style={{ width: `${Math.round(100 * d.nivel.progreso)}%` }} /></div>
             </section>
+            {/* 道 El camino: el progreso no es lineal */}
+            {d.estado && !d.estado.noEmpezado && d.camino.length > 0 && (
+              <section className="av-tarjeta camino-tarjeta" aria-label="El camino">
+                <div className="av-tarjeta-titulo"><span><span className="camino-titulo-k" aria-hidden>道</span> El camino</span></div>
+                <CaminoMontana dias={d.camino} duracion={d.estado.ciclo.duracionDias} reducido={reducido} />
+              </section>
+            )}
             {d.ajustes.ninjas !== false && d.ajustes.ninjasEnProgreso !== false && d.ninjas.peleas > 0 && (
               <div className="av-ninjas av-nota" aria-label="Ninjas vencidos esta semana"><span className="av-ninjas-k">忍</span> Ninjas vencidos esta semana: <b>{d.ninjas.vencidos}</b><span className="texto-3"> de {d.ninjas.peleas}</span></div>
             )}
@@ -349,6 +373,8 @@ export function Progreso({ hoy }: { hoy: string }) {
               </Link>
             </nav>
             <LineaForjados hoy={hoy} />
+            <LineaMarcas marcas={d.marcas} />
+            <TarjetaFotos hoy={hoy} />
           </div>
         )}
         </>}
