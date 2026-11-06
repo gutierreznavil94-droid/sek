@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { pedirDuelo } from '../Duelo'
+import { REPS_SIN_SERIE } from '../../services/duelo'
 import type { Ajustes } from '../../data/tipos'
 import { guardarAjustes, obtenerAjustes } from '../../services/base'
 import { DURACION_EJECUCION, KANJI, animar, nombreDePilar, configurarAnimaciones, useConfigAnimaciones, type Animacion, type ModoAnimaciones, type VelocidadEjecucion } from '../animaciones/motor'
@@ -215,6 +217,12 @@ export function VerAnimaciones() {
           <label>Reps por toque</label>
           <input type="number" inputMode="numeric" min={1} max={50} value={a.batalla?.repsPorToque ?? REPS_POR_TOQUE} onChange={(e) => { const v = Number(e.target.value); if (v > 0) guardar({ batalla: { ...a.batalla, repsPorToque: v } }, `${v} reps por toque`) }} style={{ width: 90 }} />
         </div>
+        <div className="campo">
+          <label>Flexiones del duelo sin serie rápida</label>
+          <input type="number" inputMode="numeric" min={1} max={200} value={a.batalla?.repsSinSerie ?? REPS_SIN_SERIE} onChange={(e) => { const v = Number(e.target.value); if (v > 0) guardar({ batalla: { ...a.batalla, repsSinSerie: v } }, `Duelo: ${v} flexiones`) }} style={{ width: 90 }} />
+        </div>
+        <p className="ayuda">Duelo (al alcanzar al rival, al final de Tensión y después de «No cumplí»): pide las reps de una serie del ejercicio (en «No cumplí», la serie más la mitad) y cuenta como una serie hecha.</p>
+        <button className="boton ancho" onClick={() => pedirDuelo({ motivo: 'caida', prueba: true })}>Probar el duelo</button>
         <p className="ayuda">
           {(() => { const c = (contadores.datos ?? []).find((x) => x.id === (a.batalla?.contadorId ?? '')) ?? (contadores.datos ?? []).find((x) => /flexi/i.test(x.nombre)) ?? contadores.datos?.[0]; const o = objetivoBatalla(c?.cantidadPorToque, a.batalla?.repsPorToque ?? REPS_POR_TOQUE); return `Objetivo hoy: ${o} ${c ? c.nombre.toLowerCase() : 'flexiones'} (las reps por serie redondeadas a múltiplo de ${a.batalla?.repsPorToque ?? REPS_POR_TOQUE}). Al ganar se anota una serie en el contador con esas reps, con la XP de siempre. Rendirse no anota nada. Tope: ${TOPE_BATALLAS_DIA} batallas por día.` })()}
         </p>

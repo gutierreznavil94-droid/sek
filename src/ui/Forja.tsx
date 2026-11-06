@@ -99,7 +99,8 @@ export function FilaForjaHoy({ hoy }: { hoy: string }) {
   return (
     <section className="forja-hoy" aria-label="Hábitos en forja">
       <span className="seccion-titulo"><span className="forja-kanji-titulo" aria-hidden>鍛</span>En forja <span className="seccion-nota">(tocá la piedra si lo hiciste hoy)</span></span>
-      <div className="forja-fila">
+      {/* Con 2 o 3 hábitos van en una sola fila (columnas iguales); con 1, la fila baja de siempre. */}
+      <div className={`forja-fila ${lista.length > 1 ? 'en-columnas' : ''}`} style={lista.length > 1 ? { gridTemplateColumns: `repeat(${lista.length}, 1fr)` } : undefined}>
         {lista.map((x) => <PiedraChica key={x.habito.id} x={x} hoy={hoy} onForjado={setJurado} onOpciones={setOpciones} />)}
       </div>
       <Opciones h={opciones} hoy={hoy} onCerrar={() => setOpciones(null)} />

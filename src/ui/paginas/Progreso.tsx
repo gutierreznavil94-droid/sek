@@ -1,6 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { MiCodigo } from './MiCodigo'
-import { LineaForjados } from '../Forja'
 import { TarjetaFotos, LineaMarcas } from '../FotosMarcas'
 import { CaminoMontana, type DiaCamino } from '../../temas/shinobi/Camino'
 import { listarMarcas } from '../../services/fotos'
@@ -176,7 +175,7 @@ export function Progreso({ hoy }: { hoy: string }) {
         etiqueta: `Día ${p.dia} · ${fechaLegible(p.fecha)} · ${cont.length ? `${hechos}/${cont.length} pilares` : 'sin pilares'}`,
       }
     })
-    return { camino, marcas, caidas, ninjas, ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados, conExtra, reglasCodigo: await db().codigo.count(), comida, metasSemana: { cumplidas: metasSemana.filter((m) => m.cumplida).length, total: metasSemana.length }, mini }
+    return { camino, marcas, caidas, ninjas, ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados, conExtra, reglasCodigo: await db().codigo.count(), forjados: (await db().forja.toArray()).filter((h) => h.estado === 'forjado').map((h) => h.kanji), comida, metasSemana: { cumplidas: metasSemana.filter((m) => m.cumplida).length, total: metasSemana.length }, mini }
   }, [hoy])
   const reducido = useMemo(() => movimientoReducido(), [])
   const modo = useModoFondo()
@@ -335,19 +334,18 @@ export function Progreso({ hoy }: { hoy: string }) {
             {/* 道 El camino: el progreso no es lineal */}
             {d.estado && !d.estado.noEmpezado && d.camino.length > 0 && (
               <section className="av-tarjeta camino-tarjeta" aria-label="El camino">
-                <div className="av-tarjeta-titulo"><span><span className="camino-titulo-k" aria-hidden>道</span> El camino</span></div>
                 <CaminoMontana dias={d.camino} duracion={d.estado.ciclo.duracionDias} reducido={reducido} />
               </section>
             )}
             {d.ajustes.ninjas !== false && d.ajustes.ninjasEnProgreso !== false && d.ninjas.peleas > 0 && (
-              <div className="av-ninjas av-nota" aria-label="Ninjas vencidos esta semana"><span className="av-ninjas-k">忍</span> Ninjas vencidos esta semana: <b>{d.ninjas.vencidos}</b><span className="texto-3"> de {d.ninjas.peleas}</span></div>
+              <div className="av-ninjas av-nota" aria-label={`Ninjas vencidos esta semana: ${d.ninjas.vencidos} de ${d.ninjas.peleas}`}><span className="av-ninjas-k">忍</span> <b>{d.ninjas.vencidos}</b><span className="texto-3"> de {d.ninjas.peleas}</span> · ninjas esta semana</div>
             )}
 
             {/* Caídas: se ve que hubo una falla, pero también que seguiste */}
             {d.caidas.length > 0 && (
               <div className="av-ninjas av-nota" aria-label={`Caídas superadas: ${d.caidas.length}`}>
-                <span className="caidas-fila" aria-hidden>{d.caidas.slice(-12).map((c) => <TumbaRota key={c.id} ancho={12} />)}</span>
-                Caídas superadas: <b>{d.caidas.length}</b><span className="texto-3"> · nuevo round cada vez</span>
+                <span className="caidas-fila" aria-hidden><TumbaRota ancho={12} /></span>
+                <b>{d.caidas.length}</b> · Caídas superadas<span className="texto-3"> · nuevo round cada vez</span>
               </div>
             )}
 
@@ -378,12 +376,13 @@ export function Progreso({ hoy }: { hoy: string }) {
                 <span className="av-codigo-textos">
                   <b>Mi código</b>
                   <span className="av-nota">Okite · lo que un shinobi no rompe</span>
+                  {/* Los hábitos forjados viven acá adentro: sus kanji chiquitos, no una fila aparte. */}
+                  {d.forjados.length > 0 && <span className="av-codigo-forjados"><span className="forja-kanji-titulo" aria-hidden>鍛</span>{d.forjados.length} forjado{d.forjados.length > 1 ? 's' : ''} <span className="av-codigo-forjados-k" aria-hidden>{d.forjados.join('')}</span></span>}
                 </span>
                 <span className="av-codigo-sello" aria-hidden><span>誓</span><em>{d.reglasCodigo}</em></span>
                 <svg className="av-codigo-trazo" viewBox="0 0 300 8" preserveAspectRatio="none" aria-hidden><path d="M3,5 C50,2 110,7 170,4 C220,2 265,6 297,4" /></svg>
               </Link>
             </nav>
-            <LineaForjados hoy={hoy} />
             <LineaMarcas marcas={d.marcas} />
             <TarjetaFotos hoy={hoy} />
           </div>

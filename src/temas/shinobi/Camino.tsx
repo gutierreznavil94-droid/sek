@@ -25,7 +25,7 @@ export type DiaCamino = {
 }
 
 type P = [number, number]
-const W = 360, H = 120, X0 = 12, X1 = 348, ARRIBA = 18, ABAJO = 116
+const W = 360, H = 62, X0 = 10, X1 = 350, ARRIBA = 8, ABAJO = 60
 
 /** Catmull-Rom → muchos puntos: curvas suaves, sin quiebres de polígono. */
 function suave(ps: P[], pasos = 10): P[] {
@@ -76,7 +76,7 @@ export function CaminoMontana({ dias, duracion, reducido = false }: { dias: DiaC
     if (suav.length === 1) suav.push(suav[0])
     // La línea base (0) siempre entra: lo de arriba y lo de abajo se comparan contra ella.
     const min = Math.min(0, ...suav), max = Math.max(0, ...suav, min + 30)
-    const yDe = (v: number) => ABAJO - 10 - ((v - min) / (max - min)) * (ABAJO - ARRIBA - 20)
+    const yDe = (v: number) => ABAJO - 5 - ((v - min) / (max - min)) * (ABAJO - ARRIBA - 9)
     const base = yDe(0)
     const puntos: P[] = suav.map((v, i) => [xDe(i), yDe(v)])
     const camino = suave(puntos, total > 40 ? 4 : 10)
@@ -88,7 +88,7 @@ export function CaminoMontana({ dias, duracion, reducido = false }: { dias: DiaC
   const d = sel !== null ? dias[sel] : null
   return (
     <div className={`camino ${reducido ? 'quieto' : ''}`}>
-      <h2 className="camino-frase">El progreso no es lineal.</h2>
+      <h2 className="camino-frase"><span className="camino-titulo-k" aria-hidden>道</span> El progreso no es lineal.</h2>
       <svg className="camino-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`El camino: ${dias.length} días de ${duracion}`}>
         <defs>
           <linearGradient id="cm-aguada" x1="0" y1="0" x2="0" y2="1">
@@ -105,8 +105,8 @@ export function CaminoMontana({ dias, duracion, reducido = false }: { dias: DiaC
         <line className="camino-base" x1={X0} x2={X1} y1={c.base} y2={c.base} />
         <g className="camino-trazo">
           <path className="camino-brillo" d={linea(c.camino)} filter="url(#cm-brillo)" />
-          <path className="camino-sombra" d={pincel(c.camino, 5.6)} transform="translate(2.4 2.6)" />
-          <path className="camino-tinta" d={pincel(c.camino, 5.6)} />
+          <path className="camino-sombra" d={pincel(c.camino, 4)} transform="translate(1.6 1.8)" />
+          <path className="camino-tinta" d={pincel(c.camino, 4)} />
           {/* Alma del trazo: tapa los huequitos que deja la cinta en los valles muy cerrados. */}
           <path className="camino-alma" d={linea(c.camino.slice(1, -1))} />
         </g>
@@ -116,9 +116,9 @@ export function CaminoMontana({ dias, duracion, reducido = false }: { dias: DiaC
           const forjaVisible = x.forja && !dias.slice(Math.max(0, i - 3), i).some((y) => y.forja)
           return (
             <g key={x.fecha}>
-              {(x.caida || x.xp < 0) && <circle className="camino-caida" cx={p[0]} cy={p[1] + 8} r="2.4" />}
-              {forjaVisible && <text className="camino-k forja" x={p[0]} y={p[1] + (x.caida ? 20 : 13)} textAnchor="middle">鍛</text>}
-              {x.marca && <g transform={`translate(${p[0]} ${p[1] - 12})`}><rect className="camino-sello" x="-5" y="-5" width="10" height="10" rx="1.5" /><text className="camino-k sello" y="0.5" textAnchor="middle" dominantBaseline="central">印</text></g>}
+              {(x.caida || x.xp < 0) && <circle className="camino-caida" cx={p[0]} cy={Math.min(H - 2, p[1] + 6)} r="2" />}
+              {forjaVisible && <text className="camino-k forja" x={p[0]} y={Math.min(H, p[1] + (x.caida ? 15 : 10))} textAnchor="middle">鍛</text>}
+              {x.marca && <g transform={`translate(${p[0]} ${Math.max(5, p[1] - 9)})`}><rect className="camino-sello" x="-5" y="-5" width="10" height="10" rx="1.5" /><text className="camino-k sello" y="0.5" textAnchor="middle" dominantBaseline="central">印</text></g>}
               <circle className="camino-toque" cx={p[0]} cy={p[1]} r={Math.max(5, Math.min(14, (X1 - X0) / Math.max(dias.length, 1) / 2 + 2))} onClick={() => setSel(sel === i ? null : i)} />
             </g>
           )
@@ -126,7 +126,7 @@ export function CaminoMontana({ dias, duracion, reducido = false }: { dias: DiaC
         {ultimo && <circle className="camino-hoy" cx={ultimo[0]} cy={ultimo[1]} r="2.6" />}
         {d && sel !== null && <circle className="camino-elegido" cx={c.puntos[sel][0]} cy={c.puntos[sel][1]} r="5" />}
       </svg>
-      <p className="camino-pie av-nota">{d ? <><b>{d.etiqueta}</b>{d.mas !== undefined && <> · <span className="camino-mas">+{d.mas}</span>{d.menos ? <> / <span className="camino-menos">−{d.menos}</span></> : null} · neto {d.xp > 0 ? '+' : d.xp < 0 ? '−' : ''}{Math.abs(d.xp)} · total {d.total ?? 0}</>}{d.marca ? ` · 印 ${d.marca}` : ''}{d.caida ? ' · caída, seguiste' : ''}{d.forja ? ' · 鍛 forja' : ''}</> : <>Día {dias.length} de {duracion} · tocá un punto para ver ese día</>}</p>
+      <p className="camino-pie av-nota">{d ? <><b>{d.etiqueta}</b>{d.mas !== undefined && <> · <span className="camino-mas">+{d.mas}</span>{d.menos ? <> / <span className="camino-menos">−{d.menos}</span></> : null} · neto {d.xp > 0 ? '+' : d.xp < 0 ? '−' : ''}{Math.abs(d.xp)} · total {d.total ?? 0}</>}{d.marca ? ` · 印 ${d.marca}` : ''}{d.caida ? ' · caída, seguiste' : ''}{d.forja ? ' · 鍛 forja' : ''}</> : <>Día {dias.length} de {duracion} · tocá un día</>}</p>
     </div>
   )
 }

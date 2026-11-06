@@ -3,14 +3,14 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { db } from '../../data/db'
 import { diaDelCiclo, diaSemanaDe, esFechaValida, faseDelDia, fechaLegible, nombreMes, sumarDias } from '../../domain/fechas'
 import { cicloActivo, guardarMeta, metasEntre } from '../../services/ciclo'
-import { lineaDeMetas, metasPorDia } from '../../services/metas'
+import { metasPorDia } from '../../services/metas'
 import { CampoMeta, FilaMeta } from '../metas'
 import { compromisosDelDia, corregirCompromiso, marcarExcepcion, ordenarPilares, pilaresPorDia, quitarExcepcion } from '../../services/dia'
 import { feriadosEntre, marcarFeriado, quitarFeriado } from '../../services/feriados'
 import { xpDelDia } from '../../services/xp'
 import { Hoja, IconoPilar, Porcentaje, Tarjeta } from '../componentes'
 import { formatoHora } from '../../domain/fechas'
-import { guardarAjustes, obtenerAjustes } from '../../services/base'
+import { obtenerAjustes } from '../../services/base'
 import { avisar, mutar, useDatos } from '../estado'
 import { HojaMarcar } from '../FotosMarcas'
 import { listarMarcas } from '../../services/fotos'
@@ -21,7 +21,6 @@ import type { FechaClave } from '../../data/tipos'
 import { Confirmar } from '../componentes'
 import { bloquesEntre } from '../../services/horario'
 import { HorarioDelDia } from './MiHorario'
-import { iconoTema } from '../../temas/temas'
 
 function primerDiaMes(fecha: string): string {
   return fecha.slice(0, 8) + '01'
@@ -94,10 +93,8 @@ export function Calendario({ hoy }: { hoy: string }) {
             const enCiclo = ciclo && f >= ciclo.inicio && fin && f <= fin
             const dia = ciclo ? diaDelCiclo(ciclo.inicio, f) : 0
             const puntos = enCiclo ? d?.pilares.get(f) ?? [] : []
-            const linea = lineaDeMetas(d?.metas.get(f) ?? [], hoy, f)
             const inicioFase = enCiclo && ciclo && (dia - 1) % ciclo.diasPorFase === 0
             const claves = d?.claves.get(f) ?? []
-            const franjas = d?.bloques.get(f) ?? []
             return (
               <div
                 key={f}
@@ -110,46 +107,28 @@ export function Calendario({ hoy }: { hoy: string }) {
                 role="button"
                 aria-label={`${fechaLegible(f, false)}${enCiclo ? `, día ${dia}` : ''}${(d?.caidas.get(f) ?? 0) > 0 ? ', caída superada' : ''}${claves.length ? `, fecha clave: ${claves.map((c) => c.titulo).join(', ')}` : ''}`}
               >
+                {/* Lugares fijos: número arriba a la izquierda, un solo ícono arriba a la derecha, la barrita de pilares abajo y el río de la forja debajo. */}
                 <span className="num">{Number(f.slice(8))}</span>
-                {f === hoy && <span className="tema-icono-hoy" aria-hidden>{iconoTema('icono-hoy')}</span>}
-                {claves.length > 0 && <span className="sello-clave" aria-hidden>印</span>}
-                {(d?.caidas.get(f) ?? 0) > 0 && <span className="cal-caida" aria-hidden><TumbaRota ancho={10} /></span>}
-                {d?.marcas.has(f) && <span className="cal-marca" aria-hidden>印</span>}
-                {d?.forja.has(f) && <span className={`cal-rio ${d.forja.has(sumarDias(f, -1)) ? 'une-izq' : ''} ${d.forja.has(sumarDias(f, 1)) ? 'une-der' : ''}`} aria-hidden />}
+                {(() => {
+                  // Un solo ícono, por prioridad: hoy → marcado (o fecha clave) → caída. El resto se ve al tocar el día.
+                  if (f === hoy) return <span className="cal-icono hoy" aria-hidden>今</span>
+                  if (d?.marcas.has(f)) return <span className="cal-icono marca" aria-hidden>印</span>
+                  if (claves.length > 0) return <span className="cal-icono clave" aria-hidden>印</span>
+                  if ((d?.caidas.get(f) ?? 0) > 0) return <span className="cal-icono caida" aria-hidden>墓</span>
+                  return null
+                })()}
                 {puntos.length > 0 && (
-                  <span className="puntos" aria-hidden>
+                  <span className="cal-barra" aria-hidden>
                     {puntos.map((p) => <i key={p.accionId} className={f > hoy ? '' : p.estado} />)}
                   </span>
                 )}
-                {linea && <span className={`linea-meta ${linea}`} aria-hidden />}
-                {d?.verHorario && franjas.length > 0 && <span className="franjas" aria-hidden>{franjas.slice(0, 3).map((b) => <i key={b.id} className={b.tipo} />)}</span>}
+                {d?.forja.has(f) && <span className={`cal-rio ${d.forja.has(sumarDias(f, -1)) ? 'une-izq' : ''} ${d.forja.has(sumarDias(f, 1)) ? 'une-der' : ''}`} aria-hidden />}
               </div>
             )
           })}
         </div>
-        <div className="leyenda orden-pilares">
-          {(d?.acciones ?? []).map((a, i) => (
-            <span key={a.id}><b className="mono">{i + 1}</b><span className="ico-mini"><IconoPilar id={a.id} tipo={a.tipo} /></span>{a.nombre}</span>
-          ))}
-        </div>
-        <div className="leyenda">
-          <span><span className="puntos"><i className="cumplido" /></span>cumplido</span>
-          <span><span className="puntos"><i className="omitido" /></span>no cumplido</span>
-          <span><span className="puntos"><i className="descanso" /></span>no aplica</span>
-          <span><span className="puntos"><i /></span>pendiente</span>
-          <span><span className="linea-meta verde muestra" />meta cumplida</span>
-          <span><span className="linea-meta roja muestra" />meta no cumplida</span>
-          <span><TumbaRota ancho={9} /> caída (seguiste)</span>
-          <span><span className="sello-clave muestra">印</span>fecha clave</span>
-          <span><span className="cal-marca muestra">印</span>día marcado (mantené apretado un día)</span>
-          <span><span className="cal-rio muestra" />hábito en forja cumplido</span>
-          <span><span className="franjas muestra"><i className="obligatorio" /><i className="entreno" /></span>horario (gris, arriba)</span>
-        </div>
-        <label className="fila cal-ver-horario chico texto-2">
-          <input type="checkbox" checked={d?.verHorario ?? true} onChange={async (e) => { const v = e.target.checked; await mutar(() => guardarAjustes({ calendarioHorario: v })) }} />
-          Mostrar horario en los días
-        </label>
-        <p className="ayuda">Los 4 puntos van siempre en ese orden: entrenamiento, empresa, manga, dormir. Tocá un día para ver cuál es cada uno. Borde: hoy. Punto arriba: feriado. Línea abajo: meta (gris pendiente). ▎ inicio de fase.</p>
+        {/* La explicación en una línea; el detalle de cada día se ve al tocarlo. */}
+        <p className="cal-leyenda muy-chico texto-3"><span className="cal-barra muestra"><i className="cumplido" /><i className="cumplido" /><i /><i /></span> pilares · <span className="cal-rio muestra" /> forja · <b className="cal-icono marca">印</b> marcado · <b className="cal-icono caida">墓</b> caída · <b className="cal-icono hoy">今</b> hoy</p>
       </Tarjeta>
 
       {sel && d && (

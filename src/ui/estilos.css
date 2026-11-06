@@ -2591,3 +2591,47 @@ video:not([poster]):not([data-vivo]) { opacity: 0 !important; }
 .xp-historial .xp-linea.resta .xp-desc { color: #c9a39e; }
 .camino-mas { color: var(--texto); }
 .camino-menos { color: #e8443a; }
+
+/* ---------- v0.85 · simplificar ---------- */
+/* Hoy: forjas una al lado de la otra (2 o 3): piedra arriba, nombre corto y la cuenta abajo. */
+.forja-fila.en-columnas .forja-chica { flex-direction: column; justify-content: center; gap: 2px; min-height: 0; padding: 6px 4px 5px; text-align: center; }
+.forja-fila.en-columnas .forja-nombre { flex: none; font-size: 0.74rem; text-align: center; width: 100%; }
+.forja-fila.en-columnas .forja-cuenta { font-size: 0.68rem; }
+/* Hoy: Revisión diaria baja (una línea; el aviso fuerte lo da la alarma de las 20:50); 3·2·1 y Siguiente un poco más chicos. */
+.accesos .boton.grande.revision-baja { min-height: 40px; padding: 6px 12px; font-size: 0.95rem; gap: 6px; }
+.accesos .boton.grande.revision-baja svg { width: 16px; height: 16px; }
+.accesos .boton.grande.acceso-medio { min-height: 46px; padding: 6px 10px; font-size: 1rem; }
+.accesos .boton.grande.acceso-medio svg { width: 16px; height: 16px; }
+/* Calendario ordenado: número arriba a la izquierda, un ícono arriba a la derecha, barrita de 4 tramos abajo, río debajo. */
+.calendario.tinta .cal-dia { aspect-ratio: auto; height: 46px; display: block; padding: 0; border-top-color: transparent; }
+.calendario.tinta .cal-dia .num { position: absolute; top: 5px; left: 6px; font-size: 0.82rem; }
+.calendario.tinta .cal-dia.completo::after, .calendario.tinta .cal-dia.feriado::after { display: none; }
+.cal-icono { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 0.68rem; line-height: 1; font-weight: 400; }
+.cal-dia .cal-icono { position: absolute; top: 4px; right: 4px; }
+.cal-icono.hoy { color: var(--acento); }
+.cal-icono.marca { color: #f3efe6; background: var(--acento); border-radius: 2px; padding: 1px 1.5px; }
+.cal-icono.clave { color: #f4eefc; background: rgba(var(--violeta-rgb), 0.9); border-radius: 2px; padding: 1px 1.5px; }
+.cal-icono.caida { color: var(--texto-3); }
+.cal-barra { display: flex; gap: 1.5px; height: 3px; }
+.cal-dia .cal-barra { position: absolute; left: 6px; right: 6px; bottom: 9px; }
+.cal-barra i { flex: 1; border-radius: 1px; background: rgba(var(--papel-rgb), 0.16); }
+.cal-barra i.cumplido { background: var(--verde); box-shadow: 0 0 3px rgba(var(--verde-rgb), 0.5); }
+.cal-barra i.tarde { background: rgba(var(--verde-rgb), 0.5); }
+.cal-barra i.omitido { background: var(--rojo-apagado); }
+.cal-barra i.descanso { background: transparent; border: 0.5px dashed rgba(var(--papel-rgb), 0.25); }
+.calendario.tinta .cal-dia .cal-rio { height: 4px; bottom: 2px; }
+.cal-leyenda { display: flex; flex-wrap: nowrap; white-space: nowrap; align-items: center; gap: 3px; margin: 8px 0 0; font-size: 0.66rem !important; overflow: hidden; }
+.cal-leyenda .cal-barra.muestra { display: inline-flex; width: 22px; }
+.cal-leyenda .cal-rio.muestra { display: inline-block; width: 18px; height: 5px; }
+.cal-leyenda b.cal-icono { font-size: 0.72rem; }
+/* Sueño: «Anoche» en una tarjeta baja de dos líneas; los ajustes detrás de un botón. */
+.anoche-baja { appearance: none; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; width: 100%; padding: 10px 14px; text-align: left; color: var(--texto); cursor: pointer; font: inherit; }
+.anoche-grande { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.01em; }
+.ajustes-sueno-boton { align-self: flex-start; background: transparent; }
+/* Progreso: «El camino» compacto; los forjados dentro de Mi código. */
+.camino-tarjeta { padding-top: 8px !important; padding-bottom: 6px !important; }
+.av-codigo-forjados { font-size: 11.5px; color: var(--texto-2); display: flex; align-items: center; gap: 2px; }
+.av-codigo-forjados-k { font-family: 'Pincel', 'Noto Serif JP', serif; color: #f3efe6; text-shadow: 1px 1px 0 rgba(200, 16, 46, 0.7); letter-spacing: 2px; margin-left: 4px; font-size: 13px; }
+.cal-dia.feriado .num { text-decoration: none; }
+.anoche-chica { font-size: 0.74rem; line-height: 1.35; }
+.anoche-chica .texto-verde { white-space: nowrap; }
