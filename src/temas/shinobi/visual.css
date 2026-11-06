@@ -1,3 +1,5 @@
+/* Letra latina de pincel grueso (Kaushan Script, licencia OFL) solo para «El progreso no es lineal.». */
+@font-face { font-family: 'Brocha'; src: url('../../assets/fuentes/brocha.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
 /* Visual del tema Shinobi pedido por nombre genérico (la app solo pone las clases tema-*). */
 
 /* ----- Calendario: remarque del día de hoy (borde a pincel que brilla y late, como luz de farol) ----- */
@@ -345,7 +347,9 @@ body .barra-horario-fija:not(.fija) .hor-correr { padding: 3px 9px; font-size: 0
 @media (prefers-reduced-motion: reduce) { .forja-regla-kanji { animation: none; } }
 /* v0.80: «道 El camino» — el progreso no es lineal (trazo de pincel épico sobre la ladera). */
 .camino { position: relative; }
-.camino-frase { margin: 2px 0 0; font-family: 'Pincel', 'Yuji Syuku', serif; font-weight: 400; font-size: clamp(1.3rem, 6.2vw, 1.8rem); line-height: 1.1; color: #f3efe6; text-shadow: 0.7px 0 0 #f3efe6, -0.7px 0 0 #f3efe6, 0 0.7px 0 #f3efe6, 0 -0.5px 0 #f3efe6, 3.5px 3.5px 0 rgba(200, 16, 46, 0.75), 0 0 24px rgba(200, 16, 46, 0.35); letter-spacing: -0.01em; text-align: center; }
+.camino-frase { margin: 2px 0 0; font-family: 'Brocha', 'Pincel', cursive; font-weight: 400; font-size: clamp(1.45rem, 7vw, 2rem); line-height: 1.15; color: #f3efe6; text-shadow: 0.5px 0 0 #f3efe6, -0.5px 0 0 #f3efe6, 3px 3px 0 rgba(200, 16, 46, 0.85), 0 0 22px rgba(200, 16, 46, 0.3); letter-spacing: 0.01em; text-align: center; }
+.camino-alma { fill: none; stroke: #f3efe6; stroke-width: 3px; stroke-linecap: round; stroke-linejoin: round; }
+.camino-base { stroke: rgba(200, 192, 182, 0.22); stroke-width: 0.8px; stroke-dasharray: 3 3; }
 .camino-svg { display: block; width: 100%; height: auto; margin-top: 2px; overflow: visible; }
 .camino-lejos { opacity: 0.55; }
 .camino-falta { fill: rgba(120, 114, 108, 0.1); }

@@ -1,7 +1,7 @@
 /**
  * «道 El camino» (Progreso): el progreso no es lineal. Un trazo de pincel que sube y baja como la ladera
- * de una montaña, un punto por día del ciclo. Desde v0.83 la altura es tu XP total de cada día
- * (lo ganado menos lo perdido: lo no cumplido, caídas, robos del rival); los días que bajó llevan un punto rojo.
+ * de una montaña, un punto por día del ciclo. La altura es la XP neta de cada día (lo ganado menos lo perdido:
+ * lo no cumplido, caídas, robos del rival), con una línea base fina en 0: arriba ganaste, abajo perdiste (punto rojo).
  * SEK pasa los días (XP del día, total y sus marcas);
  * acá se decide cómo se ve: pincel blanco papel con filo y sombra roja, aguada gris debajo,
  * y la montaña siempre a todo el ancho: con cada día se comprime (no hay nada prearmado hacia adelante).
@@ -50,7 +50,8 @@ function pincel(ps: P[], base: number): string {
   if (n < 2) return ''
   const izq: P[] = [], der: P[] = []
   for (let i = 0; i < n; i++) {
-    const a = ps[Math.max(0, i - 1)], b = ps[Math.min(n - 1, i + 1)]
+    // Normal tomada de unos puntos a cada lado: en los valles cerrados la cinta no se da vuelta.
+    const a = ps[Math.max(0, i - 4)], b = ps[Math.min(n - 1, i + 4)]
     const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1
     const t = i / (n - 1)
     const entra = Math.min(1, t * 14)
@@ -69,15 +70,17 @@ export function CaminoMontana({ dias, duracion, reducido = false }: { dias: DiaC
     // La montaña ocupa siempre todo el ancho: cada día nuevo la comprime un poco (nada prearmado hacia adelante).
     const total = Math.max(dias.length, 2)
     const xDe = (i: number) => X0 + ((X1 - X0) * i) / (total - 1)
-    // Altura: la XP total de cada día. Sube con lo ganado y baja con lo perdido (sin promediar: una bajada se ve).
-    const suav = dias.map((d) => d.total ?? 0)
+    // Altura: la XP neta de cada día (sin promediar): picos los días ganados, valles los perdidos.
+    const suav = dias.map((d) => d.xp)
     // Con un solo día, el camino arranca plano de lado a lado.
     if (suav.length === 1) suav.push(suav[0])
-    const min = Math.min(...suav), max = Math.max(...suav, min + 30)
+    // La línea base (0) siempre entra: lo de arriba y lo de abajo se comparan contra ella.
+    const min = Math.min(0, ...suav), max = Math.max(0, ...suav, min + 30)
     const yDe = (v: number) => ABAJO - 10 - ((v - min) / (max - min)) * (ABAJO - ARRIBA - 20)
+    const base = yDe(0)
     const puntos: P[] = suav.map((v, i) => [xDe(i), yDe(v)])
     const camino = suave(puntos, total > 40 ? 4 : 10)
-    return { puntos, camino }
+    return { puntos, camino, base }
   }, [dias])
 
   const ultimo = c.puntos[c.puntos.length - 1]
@@ -99,10 +102,13 @@ export function CaminoMontana({ dias, duracion, reducido = false }: { dias: DiaC
           <filter id="cm-brillo" x="-10%" y="-30%" width="120%" height="160%"><feGaussianBlur stdDeviation="3.2" /></filter>
         </defs>
         {ladera && <path className="camino-ladera" d={ladera} fill="url(#cm-aguada)" />}
+        <line className="camino-base" x1={X0} x2={X1} y1={c.base} y2={c.base} />
         <g className="camino-trazo">
           <path className="camino-brillo" d={linea(c.camino)} filter="url(#cm-brillo)" />
           <path className="camino-sombra" d={pincel(c.camino, 5.6)} transform="translate(2.4 2.6)" />
           <path className="camino-tinta" d={pincel(c.camino, 5.6)} />
+          {/* Alma del trazo: tapa los huequitos que deja la cinta en los valles muy cerrados. */}
+          <path className="camino-alma" d={linea(c.camino.slice(1, -1))} />
         </g>
         {dias.map((x, i) => {
           const p = c.puntos[i]
@@ -120,7 +126,7 @@ export function CaminoMontana({ dias, duracion, reducido = false }: { dias: DiaC
         {ultimo && <circle className="camino-hoy" cx={ultimo[0]} cy={ultimo[1]} r="2.6" />}
         {d && sel !== null && <circle className="camino-elegido" cx={c.puntos[sel][0]} cy={c.puntos[sel][1]} r="5" />}
       </svg>
-      <p className="camino-pie av-nota">{d ? <><b>{d.etiqueta}</b>{d.mas !== undefined && <> · <span className="camino-mas">+{d.mas}</span>{d.menos ? <> / <span className="camino-menos">−{d.menos}</span></> : null} · total {d.total ?? 0}</>}{d.marca ? ` · 印 ${d.marca}` : ''}{d.caida ? ' · caída, seguiste' : ''}{d.forja ? ' · 鍛 forja' : ''}</> : <>Día {dias.length} de {duracion} · tocá un punto para ver ese día</>}</p>
+      <p className="camino-pie av-nota">{d ? <><b>{d.etiqueta}</b>{d.mas !== undefined && <> · <span className="camino-mas">+{d.mas}</span>{d.menos ? <> / <span className="camino-menos">−{d.menos}</span></> : null} · neto {d.xp > 0 ? '+' : d.xp < 0 ? '−' : ''}{Math.abs(d.xp)} · total {d.total ?? 0}</>}{d.marca ? ` · 印 ${d.marca}` : ''}{d.caida ? ' · caída, seguiste' : ''}{d.forja ? ' · 鍛 forja' : ''}</> : <>Día {dias.length} de {duracion} · tocá un punto para ver ese día</>}</p>
     </div>
   )
 }
