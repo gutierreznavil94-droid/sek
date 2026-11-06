@@ -2,7 +2,7 @@
  * Escena «tension» del tema Shinobi (pantalla completa). SEK solo la pide y recibe si diste la mano o no.
  * T1 la mirada → T1b pasos en los charcos → T3 la mano → T3b la espera (bucle sin límite: aro, «Tocalo»,
  * manchitas de rivales que bajan por las laderas, cada vuelta más y más cerca, y «No le doy la mano»).
- * · Diste la mano: tinta → T4a se tira del risco → tinta → T4c la carga (+ rivales chicos en el horizonte) → negro → 進.
+ * · Diste la mano: tinta → T4a se tira del risco → tinta → T4c la carga (solo los 6 del clip y manchitas lejanas) → negro → 進.
  * · No la diste: T4b la derrota → negro → `onSoltar` (SEK dispara la caída, que sigue en la tumba).
  * Sin pantallas negras entre clips: el siguiente se precarga mientras corre el actual, y debajo queda el último cuadro
  * del anterior. Si un clip no carga, su último cuadro quieto y sigue. Con movimiento reducido: solo últimos cuadros.
@@ -11,7 +11,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { sonarEstampida, sonarLluvia, sonarTaiko } from '../../ui/animaciones/motor'
 
 const BASE = `${import.meta.env.BASE_URL}temas/shinobi/tension/`
-const R7 = `${import.meta.env.BASE_URL}temas/shinobi/caida/r7-rival-corre.mp4`
 export const CLIPS_TENSION = ['t1-mirada', 't1b-charcos', 't3-mano', 't3b-espera', 't4a-se-tira', 't4c-carga-llanura', 't4b-derrota'] as const
 export type ClipTension = (typeof CLIPS_TENSION)[number]
 const clip = (c: ClipTension) => `${BASE}${c}.mp4`
@@ -138,7 +137,7 @@ export function EscenaTension({ kanji, frase, sonido, reducido, auto, onFin, onS
             />
           ))}
           {espera && <Manchitas vueltas={vueltas} />}
-          {paso === 't4c-carga-llanura' && !reducido && <RivalesHorizonte />}
+          {paso === 't4c-carga-llanura' && !reducido && <ManchasHorizonte />}
           <div className="tema-vineta" aria-hidden />
           {espera && (
             <button type="button" className="tema-tn-mano" onClick={darMano} aria-label="Darle la mano">
@@ -192,72 +191,22 @@ function Manchitas({ vueltas }: { vueltas: number }) {
   )
 }
 
-// ---------- La carga: rivales chicos en el horizonte, detrás de los 6 del clip ----------
+// ---------- La carga: solo los 6 del clip; muy lejos, manchitas grises en el horizonte ----------
 
-function RivalesHorizonte() {
-  const lienzo = useRef<HTMLCanvasElement>(null)
-  const video = useRef<HTMLVideoElement>(null)
-  useEffect(() => {
-    const c = lienzo.current
-    const v = video.current
-    if (!c || !v) return
-    const ctx = c.getContext('2d')
-    const hoja = document.createElement('canvas')
-    const hctx = hoja.getContext('2d', { willReadFrequently: true })
-    if (!ctx || !hctx) return
-    const dpr = Math.min(1.5, window.devicePixelRatio || 1)
-    const W = c.clientWidth
-    const H = c.clientHeight
-    c.width = Math.round(W * dpr)
-    c.height = Math.round(H * dpr)
-    ctx.scale(dpr, dpr)
-    v.play().catch(() => undefined)
-    // 12 rivales sobre la línea del horizonte (≈ 60 % de alto), los de cada lado mirando al centro
-    const rivales = Array.from({ length: 12 }, (_, i) => ({ x: 0.04 + (i / 11) * 0.92 + Math.sin(i * 3.1) * 0.02, alto: 0.022 + ((i * 7) % 5) * 0.003, base: 0.548 + ((i * 5) % 4) * 0.004 }))
-    const inicio = performance.now()
-    let raf = 0
-    const cuadro = (ahora: number) => {
-      const t = (ahora - inicio) / 1000
-      ctx.clearRect(0, 0, W, H)
-      if (v.readyState >= 2) {
-        // El clip tiene fondo blanco: se pasa a silueta gris con transparencia.
-        hoja.width = 130; hoja.height = 126
-        hctx.drawImage(v, 0, 0, 130, 126)
-        const img = hctx.getImageData(0, 0, 130, 126)
-        const d = img.data
-        for (let k = 0; k < d.length; k += 4) {
-          const a = 255 - (d[k] + d[k + 1] + d[k + 2]) / 3
-          d[k] = 52; d[k + 1] = 52; d[k + 2] = 54; d[k + 3] = a < 40 ? 0 : Math.min(255, a * 1.2)
-        }
-        hctx.putImageData(img, 0, 0)
-        for (const r of rivales) {
-          const h = r.alto * H
-          const w = h * 1.03
-          const haciaCentro = r.x < 0.5 ? 1 : -1
-          const x = (r.x + haciaCentro * Math.min(0.06, t * 0.012)) * W
-          const y = r.base * H - h
-          ctx.save()
-          ctx.globalAlpha = 0.75
-          if (haciaCentro < 0) { ctx.translate(x + w, y); ctx.scale(-1, 1); ctx.drawImage(hoja, 0, 0, w, h) } else ctx.drawImage(hoja, x, y, w, h)
-          ctx.restore()
-        }
-      }
-      // Un poco de niebla delante
-      const g = ctx.createLinearGradient(0, H * 0.51, 0, H * 0.57)
-      g.addColorStop(0, 'rgba(200,202,200,0)')
-      g.addColorStop(0.5, 'rgba(200,202,200,0.22)')
-      g.addColorStop(1, 'rgba(200,202,200,0)')
-      ctx.fillStyle = g
-      ctx.fillRect(0, H * 0.51, W, H * 0.06)
-      raf = requestAnimationFrame(cuadro)
-    }
-    raf = requestAnimationFrame(cuadro)
-    return () => cancelAnimationFrame(raf)
-  }, [])
+/** A los costados de los 6 rivales y del shinobi (que ocupan ≈ 30–85 % de ancho), sobre la línea del horizonte. */
+const LEJOS = Array.from({ length: 16 }, (_, i) => {
+  const r = (k: number) => { const x = Math.sin(i * 91.17 + k * 37.719) * 24634.6345; return x - Math.floor(x) }
+  const izquierda = i % 3 !== 0
+  return { x: izquierda ? 0.03 + r(1) * 0.24 : 0.87 + r(1) * 0.11, y: 0.514 + r(2) * 0.012, raya: r(3) < 0.4, demora: r(4) * 0.8 }
+})
+
+function ManchasHorizonte() {
   return (
-    <>
-      <video ref={video} src={R7} muted playsInline loop autoPlay preload="auto" className="tema-caida-fuente" />
-      <canvas ref={lienzo} className="tema-tn-horizonte" />
-    </>
+    <div className="tema-tn-manchas lejos" aria-hidden>
+      {LEJOS.map((m, i) => (
+        <i key={i} className={m.raya ? 'raya' : ''} style={{ left: `${m.x * 100}%`, top: `${m.y * 100}%`, animationDelay: `${m.demora}s` }} />
+      ))}
+      <div className="tema-tn-niebla horizonte" />
+    </div>
   )
 }
