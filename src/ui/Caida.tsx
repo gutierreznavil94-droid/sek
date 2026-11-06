@@ -9,21 +9,23 @@ import { ahora } from '../services/reloj'
 import { fechaDe } from '../domain/fechas'
 import type { Caida } from '../data/tipos'
 import { EscenaCaida } from '../temas/shinobi/EscenaCaida'
-import { sonarEstampida } from './animaciones/motor'
+import { configuracionAnimaciones, sonarEstampida } from './animaciones/motor'
 import { Confirmar, movimientoReducido } from './componentes'
 import { avisar, mutar } from './estado'
 
-type Pedido = { caida: Caida | null; xp: number }
+type Pedido = { caida: Caida | null; xp: number; desdeTension: boolean; n: number }
+let cuenta = 0
 let pedido: Pedido | null = null
 const oyentes = new Set<() => void>()
 function avisarOyentes() { for (const o of oyentes) o() }
 
 /** Registra la caída de hoy y muestra la escena. `prueba`: solo la escena (Ver animaciones), sin tocar datos. */
-export async function pedirCaida(origen: Caida['origen'], op: { fecha?: string; prueba?: boolean } = {}): Promise<void> {
+export async function pedirCaida(origen: Caida['origen'], op: { fecha?: string; prueba?: boolean; desdeTension?: boolean } = {}): Promise<void> {
   const a = await obtenerAjustes()
-  if (op.prueba) { pedido = { caida: null, xp: xpCaidaDe(a) }; avisarOyentes(); return }
+  const desdeTension = !!op.desdeTension
+  if (op.prueba) { pedido = { caida: null, xp: xpCaidaDe(a), desdeTension, n: ++cuenta }; avisarOyentes(); return }
   const caida = await mutar(() => registrarCaida(op.fecha ?? fechaDe(ahora(), a.zonaHoraria), origen))
-  pedido = { caida, xp: caida.xp }
+  pedido = { caida, xp: caida.xp, desdeTension, n: ++cuenta }
   avisarOyentes()
 }
 
@@ -42,13 +44,14 @@ function cerrar() {
 export function CaidaCapa() {
   const p = useSyncExternalStore((o) => { oyentes.add(o); return () => oyentes.delete(o) }, () => pedido, () => null)
   if (!p) return null
-  return <EscenaCaidaConSonido key={p.caida?.id ?? 'prueba'} xp={p.xp} />
+  return <EscenaCaidaConSonido key={p.n} xp={p.xp} desdeTension={p.desdeTension} />
 }
 
-function EscenaCaidaConSonido({ xp }: { xp: number }) {
+function EscenaCaidaConSonido({ xp, desdeTension }: { xp: number; desdeTension: boolean }) {
   const [reducido] = useState(() => movimientoReducido())
-  useEffect(() => { if (!reducido) sonarEstampida() }, [reducido])
-  return <EscenaCaida xp={xp} reducido={reducido} onFin={cerrar} />
+  const sonido = configuracionAnimaciones().sonido
+  useEffect(() => { if (!reducido && !desdeTension) sonarEstampida() }, [reducido, desdeTension])
+  return <EscenaCaida xp={xp} reducido={reducido} desdeTension={desdeTension} sonido={sonido} onFin={cerrar} />
 }
 
 /** «No cumplí mi palabra»: discreto, abajo de Hoy. Pide confirmar antes de la escena. */

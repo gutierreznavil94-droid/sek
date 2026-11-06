@@ -1,57 +1,63 @@
 /**
- * Escena «caída» del tema Shinobi (~9 s, pantalla completa). SEK solo dispara el evento y pasa la XP.
- * 1. Te arrasan (0–2,5 s): el clip R7 repetido muchas veces, cada vez más grandes y rápidos, con la espada afuera,
- *    hasta que todo queda gris oscuro. No se ve al shinobi.
- * 2. Fundido de tinta (2,5–3 s).
- * 3. La tumba (3–8 s): clip t6-tumba-regreso.mp4 si existe; si no, la tumba quieta dibujada acá
- *    (árbol seco en la montaña, lluvia, katana clavada con el sombrero) y la mano que sale de la tierra.
- * 4. Renacer (8 s en adelante): 甦 con brillo rojo que late, «NUEVO ROUND» y «Levantarme».
- * Con movimiento reducido: directo a la tumba quieta con el kanji y la frase.
+ * Escena «caída» del tema Shinobi (pantalla completa). SEK solo dispara el evento y pasa la XP.
+ * Desde el botón: 1. Te arrasan (el clip R7 repetido, cada vez más grandes, hasta gris oscuro) → 2. fundido de tinta → 3 → 4.
+ * Desde Tensión (después de la derrota): fundido desde negro → 3 → 4.
+ * 3. La tumba: clip t6-tumba-regreso.mp4 con acercamiento lento (100 → 110 % en 3 s), lluvia de la app y terrones
+ *    cuando sale la mano. En el último cuadro, destello blanco de 0,3 s con trueno.
+ * 4. Renacer sobre ese cuadro: 甦 con brillo rojo que late, «NUEVO ROUND» y «Levantarme».
+ * Si el clip no carga: la tumba dibujada acá. Con movimiento reducido: el último cuadro quieto.
  */
 import { useEffect, useRef, useState } from 'react'
+import { sonarTrueno } from '../../ui/animaciones/motor'
 
 const BASE = `${import.meta.env.BASE_URL}temas/shinobi/caida/`
 const CLIP_RIVAL = `${BASE}r7-rival-corre.mp4`
 const CLIP_TUMBA = `${BASE}t6-tumba-regreso.mp4`
+const FIN_TUMBA = `${BASE}t6-tumba-regreso-fin.jpg`
 
-export const TIEMPOS_CAIDA = { arrasan: 2500, tinta: 500, tumba: 5000 }
+export const TIEMPOS_CAIDA = { arrasan: 2500, tinta: 500, tumba: 5000, destello: 300 }
 export const KANJI_CAIDA = '甦'
 
-// ---------- ¿Está el clip de la tumba? (una vez por carga) ----------
-let hayTumba: boolean | null = null
-function revisarClipTumba(): Promise<boolean> {
-  if (hayTumba !== null) return Promise.resolve(hayTumba)
-  return (async () => {
-    try {
-      const r = await fetch(CLIP_TUMBA, { method: 'HEAD', cache: 'no-store' })
-      hayTumba = r.ok && (r.headers.get('content-type') ?? '').startsWith('video')
-    } catch { hayTumba = false }
-    return hayTumba
-  })()
-}
+type Fase = 'arrasan' | 'tinta' | 'tumba' | 'destello' | 'renacer'
 
-type Fase = 'arrasan' | 'tinta' | 'tumba' | 'renacer'
-
-export function EscenaCaida({ xp, reducido = false, onFin }: { xp: number; reducido?: boolean; onFin: () => void }) {
-  const [fase, setFase] = useState<Fase>(reducido ? 'tumba' : 'arrasan')
-  const [clipTumba, setClipTumba] = useState(false)
-  useEffect(() => { void revisarClipTumba().then(setClipTumba) }, [])
+export function EscenaCaida({ xp, reducido = false, desdeTension = false, sonido = false, onFin }: { xp: number; reducido?: boolean; desdeTension?: boolean; sonido?: boolean; onFin: () => void }) {
+  const [fase, setFase] = useState<Fase>(reducido || desdeTension ? 'tumba' : 'arrasan')
+  // 'video' el clip; 'quieta' el último cuadro (movimiento reducido); 'dibujo' si nada carga
+  const [modo, setModo] = useState<'video' | 'quieta' | 'dibujo'>(reducido ? 'quieta' : 'video')
   useEffect(() => {
     if (fase === 'renacer') { try { navigator.vibrate?.([80, 60, 80, 60, 240]) } catch { /* sin vibración */ } return }
-    const dur = reducido && fase === 'tumba' ? 900 : TIEMPOS_CAIDA[fase]
-    const sig: Record<Exclude<Fase, 'renacer'>, Fase> = { arrasan: 'tinta', tinta: 'tumba', tumba: 'renacer' }
+    if (fase === 'destello') {
+      if (sonido) sonarTrueno()
+      const id = window.setTimeout(() => setFase('renacer'), TIEMPOS_CAIDA.destello)
+      return () => window.clearTimeout(id)
+    }
+    // Con el clip, la tumba termina cuando termina el video (con un tope por si se traba).
+    const dur = fase === 'tumba' ? (modo === 'video' ? 9000 : reducido ? 1200 : TIEMPOS_CAIDA.tumba) : TIEMPOS_CAIDA[fase]
+    const sig: Record<'arrasan' | 'tinta' | 'tumba', Fase> = { arrasan: 'tinta', tinta: 'tumba', tumba: reducido ? 'renacer' : 'destello' }
     const id = window.setTimeout(() => setFase(sig[fase]), dur)
     return () => window.clearTimeout(id)
-  }, [fase, reducido])
+  }, [fase, reducido, modo, sonido])
+  const enTumba = fase === 'tumba' || fase === 'destello' || fase === 'renacer'
   return (
-    <div className={`tema-caida ${fase} ${reducido ? 'quieta' : ''}`} role="dialog" aria-label="Caída: nuevo round">
+    <div className={`tema-caida ${fase} ${reducido ? 'quieta' : ''} ${desdeTension ? 'desde-negro' : ''}`} role="dialog" aria-label="Caída: nuevo round">
       {fase === 'arrasan' && <Estampida duracion={TIEMPOS_CAIDA.arrasan} />}
       {fase === 'tinta' && <div className="tema-caida-tinta" />}
-      {(fase === 'tumba' || fase === 'renacer') && (
-        clipTumba && !reducido
-          ? <video className="tema-caida-video" src={CLIP_TUMBA} playsInline muted autoPlay preload="auto" onError={() => setClipTumba(false)} />
-          : <TumbaQuieta mano={!reducido} />
+      {enTumba && modo === 'dibujo' && <TumbaQuieta mano={!reducido} />}
+      {enTumba && modo !== 'dibujo' && (
+        <div className="tema-marco tema-caida-marco">
+          {modo === 'video'
+            ? <video className="tema-caida-clip" src={CLIP_TUMBA} poster={FIN_TUMBA} playsInline muted autoPlay preload="auto" onEnded={() => setFase((f) => (f === 'tumba' ? 'destello' : f))} onError={() => setModo('dibujo')} />
+            : <img className="tema-caida-clip" src={FIN_TUMBA} alt="" onError={() => setModo('dibujo')} />}
+          {modo === 'video' && fase === 'tumba' && (
+            <>
+              <LluviaApp />
+              <div className="tema-caida-terrones" aria-hidden>{[0, 1, 2, 3, 4, 5].map((i) => <i key={i} style={{ '--i': i } as React.CSSProperties} />)}</div>
+            </>
+          )}
+          <div className="tema-vineta" aria-hidden />
+        </div>
       )}
+      {fase === 'destello' && <div className="tema-caida-destello" aria-hidden />}
       {fase === 'renacer' && (
         <div className="tema-caida-final">
           <div className="tema-caida-kanji" aria-hidden>{KANJI_CAIDA}</div>
@@ -63,6 +69,17 @@ export function EscenaCaida({ xp, reducido = false, onFin }: { xp: number; reduc
       )}
       {fase !== 'renacer' && <button type="button" className="tema-caida-saltar" onClick={() => setFase('renacer')}>Saltar</button>}
     </div>
+  )
+}
+
+/** Lluvia propia de la app encima de los clips: rayitas finas que caen inclinadas. */
+export function LluviaApp({ cantidad = 46 }: { cantidad?: number }) {
+  return (
+    <svg className="tema-lluvia-app" viewBox="0 0 360 640" preserveAspectRatio="none" aria-hidden>
+      <g stroke="#cfd2d0" strokeWidth="0.9" opacity="0.32">
+        {Array.from({ length: cantidad }, (_, i) => <path key={i} d={`M${(i * 53 + (i % 3) * 17) % 380} ${(i * 97) % 680 - 40} l-7 30`} />)}
+      </g>
+    </svg>
   )
 }
 
