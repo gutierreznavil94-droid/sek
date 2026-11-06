@@ -2,7 +2,7 @@
  * «道 El camino» (Progreso): el progreso no es lineal. Un trazo de pincel que sube y baja como la ladera
  * de una montaña, un punto por día del ciclo. SEK pasa los días (subida de cada uno y sus marcas);
  * acá se decide cómo se ve: pincel blanco papel con filo y sombra roja, aguada gris debajo,
- * cresta lejana detrás y, hasta el día 90, la silueta de la montaña que falta.
+ * y la montaña siempre a todo el ancho: con cada día se comprime (no hay nada prearmado hacia adelante).
  */
 import { useMemo, useState } from 'react'
 
@@ -18,7 +18,7 @@ export type DiaCamino = {
 }
 
 type P = [number, number]
-const W = 360, H = 200, X0 = 14, X1 = 346, ARRIBA = 30, ABAJO = 176
+const W = 360, H = 120, X0 = 12, X1 = 348, ARRIBA = 18, ABAJO = 116
 
 /** Catmull-Rom → muchos puntos: curvas suaves, sin quiebres de polígono. */
 function suave(ps: P[], pasos = 10): P[] {
@@ -56,15 +56,11 @@ function pincel(ps: P[], base: number): string {
   return linea([...izq, ...der.reverse()]) + ' Z'
 }
 
-function azar(semilla: number) {
-  let a = semilla || 1
-  return () => { a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296 }
-}
-
 export function CaminoMontana({ dias, duracion, reducido = false }: { dias: DiaCamino[]; duracion: number; reducido?: boolean }) {
   const [sel, setSel] = useState<number | null>(null)
   const c = useMemo(() => {
-    const total = Math.max(duracion, dias.length, 2)
+    // La montaña ocupa siempre todo el ancho: cada día nuevo la comprime un poco (nada prearmado hacia adelante).
+    const total = Math.max(dias.length, 2)
     const xDe = (i: number) => X0 + ((X1 - X0) * i) / (total - 1)
     // Altura: sube con los días cumplidos, baja en los flojos; una caída es una bajada marcada.
     const alt: number[] = []
@@ -77,37 +73,19 @@ export function CaminoMontana({ dias, duracion, reducido = false }: { dias: DiaC
       }
       alt.push(h)
     })
-    // Lo que falta hasta el día 90: la ladera sigue subiendo hasta la cumbre, apenas insinuada.
-    const r = azar(dias.length * 7 + total)
-    const futuro: number[] = []
-    let hf = h
-    const cumbre = Math.max(h + 6, (Math.max(...alt, 0) + 4))
-    for (let i = dias.length; i < total; i++) {
-      const falta = total - i
-      hf += (cumbre - hf) / Math.max(1, falta) + (r() - 0.45) * 0.9
-      futuro.push(hf)
-    }
     // Suavizado de 3 días: se lee la ladera, no cada escalón.
     const suav = alt.map((_, i) => { const v = alt.slice(Math.max(0, i - 1), i + 2); return v.reduce((a, b) => a + b, 0) / v.length })
-    alt.splice(0, alt.length, ...suav)
-    const todos = [...alt, ...futuro]
-    const min = Math.min(...todos), max = Math.max(...todos, min + 4)
-    const yDe = (v: number) => ABAJO - 12 - ((v - min) / (max - min)) * (ABAJO - ARRIBA - 22)
-    const puntos: P[] = alt.map((v, i) => [xDe(i), yDe(v)])
-    const camino = suave(puntos)
-    const fut: P[] = [puntos[puntos.length - 1] ?? [X0, yDe(0)], ...futuro.map((v, k): P => [xDe(dias.length + k), yDe(v)])]
-    const futSuave = suave(fut, 6)
-    // Cresta lejana: montañas grises detrás para dar profundidad.
-    const r2 = azar(total * 13 + 5)
-    const cresta: P[] = []
-    for (let k = 0; k <= 12; k++) cresta.push([(W * k) / 12, ARRIBA + 34 + r2() * 46 - (k % 3 === 1 ? 18 : 0)])
-    const crestaSuave = suave(cresta, 6)
-    return { puntos, camino, futSuave, crestaSuave, xDe }
+    // Con un solo día, el camino arranca plano de lado a lado.
+    if (suav.length === 1) suav.push(suav[0])
+    const min = Math.min(...suav), max = Math.max(...suav, min + 3)
+    const yDe = (v: number) => ABAJO - 10 - ((v - min) / (max - min)) * (ABAJO - ARRIBA - 20)
+    const puntos: P[] = suav.map((v, i) => [xDe(i), yDe(v)])
+    const camino = suave(puntos, total > 40 ? 4 : 10)
+    return { puntos, camino }
   }, [dias, duracion])
 
   const ultimo = c.puntos[c.puntos.length - 1]
   const ladera = c.camino.length > 1 ? `${linea(c.camino)} L${c.camino[c.camino.length - 1][0].toFixed(1)},${H} L${c.camino[0][0].toFixed(1)},${H} Z` : ''
-  const montanaFalta = `${linea(c.futSuave)} L${X1},${H} L${c.futSuave[0][0].toFixed(1)},${H} Z`
   const d = sel !== null ? dias[sel] : null
   return (
     <div className={`camino ${reducido ? 'quieto' : ''}`}>
@@ -124,9 +102,6 @@ export function CaminoMontana({ dias, duracion, reducido = false }: { dias: DiaC
           </linearGradient>
           <filter id="cm-brillo" x="-10%" y="-30%" width="120%" height="160%"><feGaussianBlur stdDeviation="3.2" /></filter>
         </defs>
-        <path className="camino-lejos" d={`${linea(c.crestaSuave)} L${W},${H} L0,${H} Z`} fill="url(#cm-lejos)" />
-        <path className="camino-falta" d={montanaFalta} />
-        <path className="camino-falta-linea" d={linea(c.futSuave)} />
         {ladera && <path className="camino-ladera" d={ladera} fill="url(#cm-aguada)" />}
         <g className="camino-trazo">
           <path className="camino-brillo" d={linea(c.camino)} filter="url(#cm-brillo)" />
@@ -139,14 +114,14 @@ export function CaminoMontana({ dias, duracion, reducido = false }: { dias: DiaC
           const forjaVisible = x.forja && !dias.slice(Math.max(0, i - 3), i).some((y) => y.forja)
           return (
             <g key={x.fecha}>
-              {x.caida && <circle className="camino-caida" cx={p[0]} cy={p[1] + 1} r="3" />}
-              {forjaVisible && <text className="camino-k forja" x={p[0]} y={p[1] + 13} textAnchor="middle">鍛</text>}
+              {x.caida && <circle className="camino-caida" cx={p[0]} cy={p[1] + 8} r="2.4" />}
+              {forjaVisible && <text className="camino-k forja" x={p[0]} y={p[1] + (x.caida ? 20 : 13)} textAnchor="middle">鍛</text>}
               {x.marca && <g transform={`translate(${p[0]} ${p[1] - 12})`}><rect className="camino-sello" x="-5" y="-5" width="10" height="10" rx="1.5" /><text className="camino-k sello" y="0.5" textAnchor="middle" dominantBaseline="central">印</text></g>}
-              <circle className="camino-toque" cx={p[0]} cy={p[1]} r={Math.max(5, (X1 - X0) / Math.max(dias.length, duracion) / 2 + 2)} onClick={() => setSel(sel === i ? null : i)} />
+              <circle className="camino-toque" cx={p[0]} cy={p[1]} r={Math.max(5, Math.min(14, (X1 - X0) / Math.max(dias.length, 1) / 2 + 2))} onClick={() => setSel(sel === i ? null : i)} />
             </g>
           )
         })}
-        {ultimo && <circle className="camino-hoy" cx={ultimo[0]} cy={ultimo[1]} r="3.4" />}
+        {ultimo && <circle className="camino-hoy" cx={ultimo[0]} cy={ultimo[1]} r="2.6" />}
         {d && sel !== null && <circle className="camino-elegido" cx={c.puntos[sel][0]} cy={c.puntos[sel][1]} r="5" />}
       </svg>
       <p className="camino-pie av-nota">{d ? <><b>{d.etiqueta}</b>{d.marca ? ` · 印 ${d.marca}` : ''}{d.caida ? ' · caída, seguiste' : ''}{d.forja ? ' · 鍛 forja' : ''}</> : <>Día {dias.length} de {duracion} · tocá un punto para ver ese día</>}</p>
