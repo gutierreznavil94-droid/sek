@@ -28,4 +28,6 @@ export const efectosComun: Efectos = {
   'forja-paso': pulso(1.04, 260),
   'forja-pedazo': temblor,
   'forja-completa': pulso(1.12, 700),
+  // XP perdida: el −N rojo lo pone la capa (temas/xpPerdida.tsx); acá, un temblor en lo que se perdió.
+  'xp-perdida': temblor,
 }

@@ -125,4 +125,6 @@ export const efectosShinobi: Efectos = {
   'forja-paso': () => undefined,
   'forja-pedazo': () => undefined,
   'forja-completa': brilloRojo,
+  // XP perdida: la bolita que cae como ceniza la dibuja la capa (temas/xpPerdida.tsx + shinobi/XpCeniza.tsx).
+  'xp-perdida': () => undefined,
 }
