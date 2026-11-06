@@ -67,8 +67,9 @@ export async function prepararBatalla(fecha: FechaDia, distraccion?: Distraccion
 export type ResultadoBatalla = { pelea: PeleaNinja; reps: number; xp: number; xpExtra: number; nuevoNivel: number | null; contador: string | null }
 
 /** Victoria: sello del día + una serie en el contador con las reps del objetivo (una sola vez). */
-export async function terminarBatalla(b: Batalla): Promise<ResultadoBatalla> {
-  const reps = b.config.objetivo
+export async function terminarBatalla(b: Batalla, repsHechas?: number): Promise<ResultadoBatalla> {
+  // El duelo quieto (v0.85) pide la serie tal cual (14, no 15): se anotan esas reps.
+  const reps = repsHechas && repsHechas > 0 ? Math.round(repsHechas) : b.config.objetivo
   const pelea = await registrarPelea(b.pelea, 'vencido', { reps })
   if (!b.config.contador) return { pelea, reps, xp: 0, xpExtra: 0, nuevoNivel: null, contador: null }
   const r = await sumarToque(b.config.contador.id, reps, `Batalla contra ${b.pelea.distraccion.nombre}`)

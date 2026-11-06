@@ -7,6 +7,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react'
 import { obtenerAjustes } from '../services/base'
 import { configuracionAnimaciones } from './animaciones/motor'
 import { movimientoReducido } from './componentes'
+import { pedirDuelo } from './Duelo'
 import { CLIP_PRUEBA_TENSION, EscenaTension } from '../temas/shinobi/EscenaTension'
 import { pedirCaida } from './Caida'
 
@@ -68,7 +69,8 @@ function Tension({ pedido: p }: { pedido: Pedido }) {
       sonido={configuracionAnimaciones().sonido}
       reducido={reducido}
       auto={p.auto}
-      onFin={cerrarTension}
+      onFin={() => { cerrarTension(); pedirDuelo({ motivo: 'tension', prueba: p.prueba }) }}
+      onSalir={cerrarTension}
       onSoltar={() => { void pedirCaida('tension', { prueba: p.prueba, desdeTension: true }).then(cerrarTension) }}
     />
   )

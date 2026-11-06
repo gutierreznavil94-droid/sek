@@ -154,7 +154,8 @@ export function SuenoShinobi({ reducido }: { reducido: boolean }) {
 
 // ---------- Hojas de sprites (rival gris y compañero) ----------
 
-export type ClipHoja = { desde: number; n: number; fps?: number; unaVez?: boolean; aire?: [number, number]; corte?: number }
+/** `escala`: lleva el personaje de ese clip a la misma altura que los demás (medida sobre la silueta, no sobre el cuadro). */
+export type ClipHoja = { desde: number; n: number; fps?: number; unaVez?: boolean; aire?: [number, number]; corte?: number; escala?: number }
 export type HojaSprites = { celda: [number, number]; columnas: number; filas: number; pies?: number; clips: Record<string, ClipHoja> }
 
 const hojas = new Map<string, Promise<HojaSprites | null>>()
@@ -205,11 +206,14 @@ export function SpriteClip({ hoja: url, datos, clip, mira = 1, vel = 1, reducido
   const [cw, ch] = datos.celda
   const nativa = url === HOJA_RIVAL ? MIRA_RIVAL[clip] ?? 1 : 1
   const voltear = nativa !== mira
+  // Mismo tamaño de personaje en todos los clips: se escala desde los pies.
+  const e = c?.escala ?? 1
+  const transform = e !== 1 ? `scale(${voltear ? -e : e}, ${e})` : voltear ? 'scaleX(-1)' : undefined
   return (
     <div
       ref={el}
       className={`tema-sprite ${className}`}
-      style={{ backgroundImage: `url(${url})`, backgroundSize: `${datos.columnas * cw}px ${datos.filas * ch}px`, width: cw, height: ch, transform: voltear ? 'scaleX(-1)' : undefined, ...style }}
+      style={{ backgroundImage: `url(${url})`, backgroundSize: `${datos.columnas * cw}px ${datos.filas * ch}px`, width: cw, height: ch, transform, transformOrigin: e !== 1 ? `50% ${ch - (datos.pies ?? 0)}px` : undefined, ...style }}
       aria-hidden
     />
   )

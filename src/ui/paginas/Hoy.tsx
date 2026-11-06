@@ -240,13 +240,12 @@ export function Hoy({ hoy }: { hoy: string }) {
     if (!texto || instante <= Date.now()) { recordatorios.cancelar('resta-alistarse'); return }
     recordatorios.programar({ id: 'resta-alistarse', titulo: 'Todavía estás a tiempo', cuerpo: `${texto} · ${d.avisoResta!.faltantes.map((f) => f.nombre).join(', ')}`, instante })
   }, [d, hoy])
-  // Lo que se perdió ayer: el tema lo muestra una vez (la bolita de XP se apaga y cae como ceniza).
-  const lineaAyer = useRef<HTMLParagraphElement>(null)
+  // Lo que se perdió ayer: el tema lo muestra una vez (la bolita de XP se apaga y cae como ceniza), arriba.
   useEffect(() => {
     if (!d || d.antes || !d.ayer.menos) return
     const clave = `xp-perdida:${sumarDias(hoy, -1)}`
     try { if (localStorage.getItem(clave)) return; localStorage.setItem(clave, '1') } catch { /* sin almacenamiento */ }
-    const t = window.setTimeout(() => disparar('xp-perdida', { elemento: lineaAyer.current?.querySelector('.ayer-menos') ?? lineaAyer.current, texto: `−${d.ayer.menos} XP` }), 700)
+    const t = window.setTimeout(() => disparar('xp-perdida', { texto: `−${d.ayer.menos} XP` }), 700)
     return () => window.clearTimeout(t)
   }, [d, hoy])
 
@@ -482,9 +481,6 @@ export function Hoy({ hoy }: { hoy: string }) {
         </div>
       )}
       {!d.buenosDias && d.ajusteDeAyer && <p className="ajuste-ayer">Ajuste de hoy: <b>{d.ajusteDeAyer}</b></p>}
-      {(d.ayer.mas > 0 || d.ayer.menos > 0) && (
-        <p ref={lineaAyer} className="linea-ayer muy-chico mono"><Link to="/progreso">Ayer: <span className="ayer-mas">+{d.ayer.mas}</span>{d.ayer.menos > 0 && <> / <span className="ayer-menos">−{d.ayer.menos}</span></>} XP</Link></p>
-      )}
 
       {/* Mi horario: dónde estás ahora y qué sigue (tocar abre la semana). Arriba, en la barra fija; sin ella, acá. */}
       {huecoHorario ? createPortal(<LineaDelDia hoy={hoy} />, huecoHorario) : <LineaDelDia hoy={hoy} />}
@@ -550,13 +546,13 @@ export function Hoy({ hoy }: { hoy: string }) {
       <SemanaMetas hoy={hoy} />
 
       {/* Botones importantes: rojizos a pincel; al usarlos en el día pasan a verde */}
-      <div className="col accesos" style={{ gap: 10 }}>
-        <Link to="/revision" className={`boton grande ${d.revision ? 'hecha' : 'rojizo'}`} {...brillo(d.revision ? 'hecho' : 'pendiente', 4, conBrillo)}>
-          {d.revision ? ICONO_OK : ICONO_REV}{d.revision ? 'Revisión diaria hecha' : 'Revisión diaria'}<span className="chico" style={{ fontWeight: 500, opacity: 0.8 }}>{d.revision ? '· ver' : pasoElCierre ? `· sin hacer a las ${d.ventana.horaCierre}` : `· 3 pasos · hasta ${d.ventana.horaAviso}`}</span>
+      <div className="col accesos" style={{ gap: 8 }}>
+        <Link to="/revision" className={`boton grande revision-baja ${d.revision ? 'hecha' : 'rojizo'}`} {...brillo(d.revision ? 'hecho' : 'pendiente', 4, conBrillo)}>
+          {d.revision ? ICONO_OK : ICONO_REV}{d.revision ? 'Revisión diaria hecha' : 'Revisión diaria'}<span className="chico" style={{ fontWeight: 500, opacity: 0.8 }}>{d.revision ? '· ver' : pasoElCierre ? `· sin hacer a las ${d.ventana.horaCierre}` : `· hasta ${d.ventana.horaAviso}`}</span>
         </Link>
         <div className="rejilla-2">
-          <Link to="/321" className={`boton grande ${usadoHoy('321', hoy) ? 'hecha' : 'rojizo'}`} {...brillo(usadoHoy('321', hoy) ? 'hecho' : 'pendiente', 5, conBrillo)}>{usadoHoy('321', hoy) ? ICONO_OK : ICONO_321}3 · 2 · 1</Link>
-          <Link to="/siguiente" className={`boton grande ${usadoHoy('siguiente', hoy) ? 'hecha' : 'rojizo'}`} {...brillo(usadoHoy('siguiente', hoy) ? 'hecho' : 'pendiente', 6, conBrillo)}>{usadoHoy('siguiente', hoy) ? ICONO_OK : ICONO_SIG}Siguiente acción</Link>
+          <Link to="/321" className={`boton grande acceso-medio ${usadoHoy('321', hoy) ? 'hecha' : 'rojizo'}`} {...brillo(usadoHoy('321', hoy) ? 'hecho' : 'pendiente', 5, conBrillo)}>{usadoHoy('321', hoy) ? ICONO_OK : ICONO_321}3 · 2 · 1</Link>
+          <Link to="/siguiente" className={`boton grande acceso-medio ${usadoHoy('siguiente', hoy) ? 'hecha' : 'rojizo'}`} {...brillo(usadoHoy('siguiente', hoy) ? 'hecho' : 'pendiente', 6, conBrillo)}>{usadoHoy('siguiente', hoy) ? ICONO_OK : ICONO_SIG}Siguiente acción</Link>
         </div>
       </div>
 

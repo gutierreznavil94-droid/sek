@@ -8,6 +8,7 @@ import { obtenerAjustes } from '../services/base'
 import { ahora } from '../services/reloj'
 import { fechaDe } from '../domain/fechas'
 import type { Caida } from '../data/tipos'
+import { pedirDuelo } from './Duelo'
 import { EscenaCaida } from '../temas/shinobi/EscenaCaida'
 import { configuracionAnimaciones, sonarEstampida } from './animaciones/motor'
 import { Confirmar, movimientoReducido } from './componentes'
@@ -29,11 +30,17 @@ export async function pedirCaida(origen: Caida['origen'], op: { fecha?: string; 
   avisarOyentes()
 }
 
-function cerrar() {
+/** «Levantarme»: antes de cerrar, el duelo pide las flexiones (la serie más la mitad; desde Tensión, la serie). */
+function levantarme() {
   const p = pedido
+  if (!p) return
   pedido = null
   avisarOyentes()
-  if (!p?.caida) return
+  pedirDuelo({ motivo: p.desdeTension ? 'tension' : 'caida', prueba: !p.caida, onFin: () => avisarCaida(p) })
+}
+
+function avisarCaida(p: NonNullable<typeof pedido>) {
+  if (!p.caida) return
   const id = p.caida.id
   avisar(p.xp > 0 ? `Caída anotada · −${p.xp} XP` : 'Caída anotada', {
     duracionMs: DESHACER_CAIDA_MS,
@@ -51,7 +58,7 @@ function EscenaCaidaConSonido({ xp, desdeTension }: { xp: number; desdeTension: 
   const [reducido] = useState(() => movimientoReducido())
   const sonido = configuracionAnimaciones().sonido
   useEffect(() => { if (!reducido && !desdeTension) sonarEstampida() }, [reducido, desdeTension])
-  return <EscenaCaida xp={xp} reducido={reducido} desdeTension={desdeTension} sonido={sonido} onFin={cerrar} />
+  return <EscenaCaida xp={xp} reducido={reducido} desdeTension={desdeTension} sonido={sonido} onFin={levantarme} />
 }
 
 /** «No cumplí»: botón chico de contorno (borde rojo) en la cabecera de Hoy, junto a «Dudo» y «Tensión». Pide confirmar antes de la escena. */

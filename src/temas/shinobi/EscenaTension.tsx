@@ -34,10 +34,12 @@ export type PropsTension = {
   /** Ver animaciones: elige solo después de cuatro vueltas de la espera. */
   auto?: 'mano' | 'soltar'
   onFin: () => void
+  /** «Salir» antes del final (sin duelo). Si falta, usa onFin. */
+  onSalir?: () => void
   onSoltar: () => void
 }
 
-export function EscenaTension({ kanji, frase, sonido, reducido, auto, onFin, onSoltar }: PropsTension) {
+export function EscenaTension({ kanji, frase, sonido, reducido, auto, onFin, onSalir, onSoltar }: PropsTension) {
   const [paso, setPaso] = useState<Paso>('t1-mirada')
   const [anterior, setAnterior] = useState<ClipTension | null>(null)
   const [quieto, setQuieto] = useState<Set<ClipTension>>(() => new Set())
@@ -157,7 +159,7 @@ export function EscenaTension({ kanji, frase, sonido, reducido, auto, onFin, onS
           <div className="tn-cerrar">tocá para volver</div>
         </div>
       )}
-      {!final && !espera && <button type="button" className="tn-saltar" onClick={onFin}>Salir</button>}
+      {!final && !espera && <button type="button" className="tn-saltar" onClick={onSalir ?? onFin}>Salir</button>}
     </div>
   )
 }

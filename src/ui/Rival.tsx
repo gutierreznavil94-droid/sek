@@ -20,7 +20,7 @@ import { Enemigo } from './animaciones/Escena'
 import { sonarChoque, sonarTaiko } from './animaciones/motor'
 import { HOJA_BASE, type Hoja } from './companero/rutina'
 import { movimientoReducido } from './componentes'
-import { pedirBatalla } from './Batalla'
+import { pedirDuelo } from './Duelo'
 import { pedirPelea } from './Ninja'
 import { avisar, mutar } from './estado'
 
@@ -216,7 +216,12 @@ function RivalEnJuego({ rival, enHoy }: { rival: Rival; enHoy: boolean }) {
     const paso = () => {
       if (!vivo || faseRef.current !== 'paseo') return
       const tope = Math.max(MARGEN, ancho - MARGEN - ANCHO_RIVAL)
-      const destino = Math.round(MARGEN + Math.random() * (tope - MARGEN))
+      // Se pasea de su lado, lejos del shinobi (nunca se le acerca).
+      const lado = rxRef.current >= sxRef.current ? 1 : -1
+      let a0 = MARGEN, a1 = tope
+      if (lado === 1 && sxRef.current + 90 < tope) a0 = sxRef.current + 90
+      if (lado === -1 && sxRef.current - 90 > MARGEN) a1 = sxRef.current - 90
+      const destino = Math.round(a0 + Math.random() * (a1 - a0))
       const dist = Math.abs(destino - rxRef.current)
       setRdir(destino < rxRef.current ? -1 : 1)
       const [a, b] = TIEMPOS.pausaPaseo
@@ -274,7 +279,7 @@ function RivalEnJuego({ rival, enHoy }: { rival: Rival; enHoy: boolean }) {
     const r = await prepararBatalla(pelea.fecha, pelea.distraccion, Math.random, true)
     cerrarRival()
     // Directo a la batalla de flexiones; al ganarla sigue el 3·2·1 con la acción que tocaba.
-    if (r.batalla) pedirBatalla({ ...r.batalla, despues: pelea.momento.pilar?.nombre ?? (await siguientePilar(pelea.fecha)) })
+    if (r.batalla) pedirDuelo({ motivo: 'rival', batalla: r.batalla, despues: pelea.momento.pilar?.nombre ?? (await siguientePilar(pelea.fecha)) })
     else pedirPelea(pelea)
   }
 
@@ -302,12 +307,21 @@ function RivalEnJuego({ rival, enHoy }: { rival: Rival; enHoy: boolean }) {
         if (escapes > 0) {
           setEscapes(escapes - 1)
           setFase('esquiva')
+          // Se escapa del shinobi: corre en la misma dirección en que viene él (nunca hacia él).
           const tope = Math.max(MARGEN, ancho - MARGEN - ANCHO_RIVAL)
-          const lejos = objetivo > ancho / 2 ? MARGEN + Math.random() * 40 : tope - Math.random() * 40
-          setRdir(lejos < objetivo ? -1 : 1)
-          setRdur(reducido ? 0 : TIEMPOS.esquiva / 1000)
-          setRx(Math.round(lejos))
-          luego(() => setFase('paseo'), TIEMPOS.esquiva + 200)
+          const lugar = dir === 1 ? tope - objetivo : objetivo - MARGEN
+          setRdir(dir)
+          if (lugar >= 60) {
+            setRdur(reducido ? 0 : TIEMPOS.esquiva / 1000)
+            setRx(Math.round(objetivo + dir * Math.min(lugar, 110 + Math.random() * 80)))
+          } else {
+            // Contra el borde: sale de la pantalla por ese lado y vuelve a entrar por el otro.
+            setRdur(reducido ? 0 : TIEMPOS.esquiva / 1000)
+            setRx(Math.round(dir === 1 ? ancho + 20 : -ANCHO_RIVAL - 20))
+            luego(() => { setRdur(0); setRx(dir === 1 ? -ANCHO_RIVAL - 20 : ancho + 20) }, TIEMPOS.esquiva + 20)
+            luego(() => { setRdur(reducido ? 0 : 0.6); setRx(Math.round(dir === 1 ? MARGEN + 30 : tope - 30)) }, TIEMPOS.esquiva + 60)
+          }
+          luego(() => setFase('paseo'), TIEMPOS.esquiva + (lugar >= 60 ? 200 : 760))
         } else {
           setFase('atrapado')
           sonarChoque()
@@ -393,7 +407,7 @@ function RivalEnJuego({ rival, enHoy }: { rival: Rival; enHoy: boolean }) {
 /** Qué clip del rival del tema va en cada momento. */
 function clipDelRival(fase: Fase, asomando: boolean, moviendo: boolean, brinco: boolean): string {
   if (fase === 'atrapado') return 'desenvaina'
-  if (fase === 'esquiva') return 'salta'
+  if (fase === 'esquiva') return 'corre'
   if (fase !== 'paseo') return 'quieto'
   if (asomando) return 'asoma'
   if (brinco) return 'salta'

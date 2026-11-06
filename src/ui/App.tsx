@@ -14,6 +14,7 @@ import { PantallaSuenio } from './ModoSuenio'
 import { CapaAnimacion } from './animaciones/CapaAnimacion'
 import { NinjaPelea } from './Ninja'
 import { BatallaCapa } from './Batalla'
+import { DueloCapa } from './Duelo'
 import { TensionCapa } from './Tension'
 import { CaidaCapa } from './Caida'
 import { CapaXpPerdida } from '../temas/xpPerdida'
@@ -160,6 +161,7 @@ export function App() {
       <CapaAnimacion />
       <NinjaPelea />
       <BatallaCapa />
+      <DueloCapa />
       <TensionCapa />
       <CaidaCapa />
       <CapaXpPerdida />

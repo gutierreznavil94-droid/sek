@@ -797,7 +797,7 @@ export type Distraccion = { id: string; nombre: string; momento?: MomentoNinja |
 export type PeleaNinja = { id?: number; fecha: FechaDia; distraccion: string; momento: MomentoNinja; resultado: 'vencido' | 'escapo'; pilar?: string; instante: number; /** Batalla: reps hechas (la serie que se anotó en el contador). */ reps?: number; /** Rival escurridizo ignorado: XP que se llevó. */ robo?: number }
 
 /** Batalla contra la distracción (minijuego de flexiones). Todo editable en Más → Ver animaciones. */
-export type ConfigBatalla = { /** Sí si falta. */ activa?: boolean; /** Contador de reps que se usa (flexiones si falta). */ contadorId?: string; /** Reps por toque (5 si falta). */ repsPorToque?: number }
+export type ConfigBatalla = { /** Sí si falta. */ activa?: boolean; /** Contador de reps que se usa (flexiones si falta). */ contadorId?: string; /** Reps por toque (5 si falta). */ repsPorToque?: number; /** Duelo (v0.85): flexiones si no hay serie rápida de flexiones (10 si falta). */ repsSinSerie?: number }
 
 /** Cinemática «Tensión»: kanji y frase del final (editables en Más → Ver animaciones). */
 export type ConfigTension = { kanji?: string; frase?: string }

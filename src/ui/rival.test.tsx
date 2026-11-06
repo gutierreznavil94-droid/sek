@@ -9,7 +9,8 @@ import { DISTRACCIONES_MUESTRA, peleasDelDia, type Pelea } from '../services/nin
 import { ahora, fijarAhora, reiniciarReloj } from '../services/reloj'
 import { guardarRivalPendiente, rivalPendiente } from '../services/rival'
 import { concederXp, xpTotal } from '../services/xp'
-import { batallaEnCurso, descartarBatalla, hayBatalla } from './Batalla'
+import { descartarBatalla } from './Batalla'
+import { descartarDuelo, dueloEnCurso, hayDuelo } from './Duelo'
 import { RivalCapa, TIEMPOS, descartarRival, hayRival, pedirRival } from './Rival'
 
 const Z = 'America/Argentina/Cordoba'
@@ -19,7 +20,7 @@ const ORIGINAL = { ...TIEMPOS }
 let n = 0
 
 /** Vacía las capas (rival y batalla) entre pruebas: son módulos con estado. */
-function vaciar() { descartarRival(); descartarBatalla() }
+function vaciar() { descartarRival(); descartarBatalla(); descartarDuelo() }
 
 describe('el rival escurridizo en Hoy', () => {
   beforeEach(async () => {
@@ -49,8 +50,8 @@ describe('el rival escurridizo en Hoy', () => {
     const rival = await screen.findByRole('button', { name: 'Atrapar a Pereza' })
     fireEvent.click(rival)
     expect(document.querySelector('.rv-shinobi.corre')).toBeTruthy()
-    await waitFor(() => expect(hayBatalla()).toBe(true), { timeout: 3000 })
-    expect(batallaEnCurso()?.pelea.distraccion.id).toBe('pereza')
+    await waitFor(() => expect(hayDuelo()).toBe(true), { timeout: 3000 })
+    expect(dueloEnCurso()?.batalla?.pelea.distraccion.id).toBe('pereza')
     expect(hayRival()).toBe(false)
     expect(rivalPendiente()).toBeNull()
   })
@@ -63,10 +64,10 @@ describe('el rival escurridizo en Hoy', () => {
     fireEvent.click(rival)
     await waitFor(() => expect(document.querySelector('.rv-rival.esquiva')).toBeTruthy(), { timeout: 3000 })
     await waitFor(() => expect(document.querySelector('.rv-rival.paseo')).toBeTruthy(), { timeout: 3000 })
-    expect(hayBatalla()).toBe(false)
+    expect(hayDuelo()).toBe(false)
     expect(rival.getAttribute('data-escapes')).toBe('0')
     fireEvent.click(rival)
-    await waitFor(() => expect(hayBatalla()).toBe(true), { timeout: 3000 })
+    await waitFor(() => expect(hayDuelo()).toBe(true), { timeout: 3000 })
   })
 
   it('ignorado: advertencia que rompe la pantalla y, pasado el tiempo, el robo de 10 XP con su sello', async () => {
@@ -92,7 +93,7 @@ describe('el rival escurridizo en Hoy', () => {
     pedirRival(PELEA, () => 0)
     const boton = await screen.findByRole('button', { name: '¡Atraparlo!' })
     fireEvent.click(boton)
-    await waitFor(() => expect(hayBatalla()).toBe(true), { timeout: 3000 })
+    await waitFor(() => expect(hayDuelo()).toBe(true), { timeout: 3000 })
     expect(await peleasDelDia(HOY)).toHaveLength(0)
   })
 
