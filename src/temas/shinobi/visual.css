@@ -273,3 +273,8 @@ body .barra-horario-fija:not(.fija) .hor-correr { padding: 3px 9px; font-size: 0
 @keyframes tema-halo-verde-fuerte { 0%, 100% { box-shadow: 0 0 2px 0 rgba(var(--verde-rgb), 0.05), inset 0 0 0 0 rgba(var(--verde-rgb), 0); opacity: 0.25; } 50% { box-shadow: 0 0 18px 4px rgba(var(--verde-rgb), 0.55), inset 0 0 10px 0 rgba(var(--verde-rgb), 0.25); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .pilar-bloque[data-brillo='parcial']::after { animation: none; opacity: 1; box-shadow: 0 0 10px 2px rgba(var(--verde-rgb), 0.35); } }
 .pilar-bloque[data-brillo='parcial'] { border-color: rgba(var(--verde-rgb), 0.3) !important; }
+/* v0.73: barrita de dos topes en pilares con doble meta (igual que las Series rápidas). */
+.pilar-bloque .pilar-barrita { display: block; position: relative; height: 5px; margin: 5px 0 1px; border-radius: 999px; background: rgba(var(--papel-rgb), 0.1); }
+.pilar-bloque .pilar-barrita i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px 0 0 999px; background: var(--verde); transition: width 0.4s ease; }
+.pilar-bloque .pilar-barrita i.capa-extra { border-radius: 0 999px 999px 0; background: #A6E6C1; box-shadow: 0 0 8px rgba(var(--verde-rgb), 0.75); }
+.pilar-bloque .pilar-barrita .marca-cuota { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 1px; background: rgba(var(--papel-rgb), 0.75); }

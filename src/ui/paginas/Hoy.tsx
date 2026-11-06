@@ -690,6 +690,20 @@ function FilaPilar({ p, brillo: b, suenio, zona, tic, flash, marcado, destello, 
       <span className="nombre">{p.accion.nombre}</span>
       <span className="detalle">{detalle}</span>
       {pista && <span className="pista">{pista}</span>}
+      {tieneExtra(p.accion) && p.estado !== 'descanso' && (() => {
+        // Barrita de dos topes, como las series: hasta la 1.ª meta y de ahí al extra.
+        const meta = p.accion.minutosMinimos ?? 0
+        const extra = p.accion.minutosExtra!
+        const hechos = c?.extra ? Math.max(extra, c.minutos ?? 0) : p.estado === 'cumplido' || p.estado === 'tarde' ? Math.max(meta, Math.min(c?.minutos ?? meta, extra)) : 0
+        const marca = (100 * meta) / extra
+        return (
+          <span className="barrita dos-topes pilar-barrita" aria-hidden>
+            <i style={{ width: `${(100 * Math.min(hechos, meta)) / extra}%` }} />
+            <i className="capa-extra" style={{ left: `${marca}%`, width: `${(100 * Math.max(0, Math.min(hechos, extra) - meta)) / extra}%` }} />
+            <b className="marca-cuota" style={{ left: `${marca}%` }} />
+          </span>
+        )
+      })()}
       <span className="estado-ic" aria-hidden>{p.estado === 'cumplido' ? '✓' : p.estado === 'tarde' ? '!' : p.estado === 'omitido' ? '✕' : p.estado === 'descanso' ? '–' : iniciado ? <i className="punto-ambar" /> : ''}</span>
       {flash !== undefined && <span className="flash" aria-hidden>+{flash} XP</span>}
       {c && p.estado !== 'descanso' && !esCelu && <span className="mas" role="button" aria-label="Más opciones" onClick={(e) => { e.stopPropagation(); onMas() }}>…</span>}
