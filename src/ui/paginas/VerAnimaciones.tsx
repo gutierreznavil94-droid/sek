@@ -220,15 +220,21 @@ export function VerAnimaciones() {
       </Tarjeta>
 
       <Tarjeta titulo="Tensión 「進」">
-        <p className="chico texto-2" style={{ margin: 0 }}>Cinemática para el momento de estrés: el shinobi mira, el ejército corre, te da la mano y espera tu toque; desenvaina y carga. Termina con el kanji y la frase de abajo. Sin tope ni XP.</p>
+        <p className="chico texto-2" style={{ margin: 0 }}>Cinemática para el momento de estrés: el shinobi te da la mano y espera tu toque. Termina con el kanji y la frase de abajo. Sin tope ni XP (si no le das la mano, es una caída).</p>
         <div className="fila" style={{ gap: 8 }}>
           <input aria-label="Kanji del final" value={kanjiT} maxLength={2} placeholder={KANJI_TENSION} onChange={(e) => setKanjiT(e.target.value)} style={{ width: 64, textAlign: 'center', fontSize: '1.3rem' }} />
           <input aria-label="Frase del final" value={fraseT} maxLength={60} placeholder={FRASE_TENSION} onChange={(e) => setFraseT(e.target.value)} style={{ flex: 1 }} />
           <button className="boton chico" onClick={() => guardar({ tension: { kanji: kanjiT.trim() || undefined, frase: fraseT } }, 'Guardado')}>Guardar</button>
         </div>
         {clipsTension
-          ? <button className="boton ancho" onClick={() => pedirTension()}>Ver la cinemática</button>
-          : <p className="ayuda">Todavía no están los videos: el botón 「進」 aparece en Hoy (al lado de «Dudo») cuando los clips de Luma estén en animaciones/tension/ (t1-mirada, t2-ejercito, t3-mano, t3b-espera, t4-carga).</p>}
+          ? (
+            <div className="col" style={{ gap: 6 }}>
+              <button className="boton ancho" onClick={() => pedirTension({ prueba: true, auto: 'mano' })}>Tensión: le das la mano</button>
+              <button className="boton ancho" onClick={() => pedirTension({ prueba: true, auto: 'soltar' })}>Tensión: no le das la mano</button>
+            </div>
+          )
+          : <p className="ayuda">Todavía no están los videos: el botón 「進」 aparece en Hoy (al lado de «Dudo») cuando estén los clips en temas/shinobi/tension/.</p>}
+        <p className="ayuda">Mirada, pasos en los charcos, la mano y la espera (los rivales bajan por las laderas, cada vez más cerca). Si le das la mano, se tira del risco y carga. Si no, la derrota y sigue la caída. Acá elige sola después de unos 11 s de espera y no te saca XP.</p>
       </Tarjeta>
 
       <Tarjeta titulo="Caída · Nuevo round 「甦」">
@@ -237,8 +243,8 @@ export function VerAnimaciones() {
           <label>XP que saca una caída (0 a {XP_CAIDA_MAX})</label>
           <input type="number" inputMode="numeric" min={0} max={XP_CAIDA_MAX} value={xpCaidaDe(a)} onChange={(e) => { const v = Number(e.target.value); if (!Number.isNaN(v)) { const x = Math.max(0, Math.min(XP_CAIDA_MAX, Math.round(v))); guardar({ caida: { ...a.caida, xp: x } }, `Una caída saca ${x} XP`) } }} style={{ width: 90 }} />
         </div>
-        <button className="boton ancho" onClick={() => void pedirCaida('boton', { prueba: true })}>Ver la escena (sin perder XP)</button>
-        <p className="ayuda">Queda una tumba rota en el Calendario, en Progreso («Caídas superadas») y en el registro de batallas del día. Al cerrar la escena tenés 10 s para «Deshacer». El video de la tumba (t6-tumba-regreso.mp4) todavía no está: mientras tanto se ve la tumba dibujada.</p>
+        <button className="boton ancho" onClick={() => void pedirCaida('boton', { prueba: true })}>Caída (sin perder XP)</button>
+        <p className="ayuda">Queda una tumba rota en el Calendario, en Progreso («Caídas superadas») y en el registro de batallas del día. Al cerrar la escena tenés 10 s para «Deshacer». </p>
       </Tarjeta>
 
       <Tarjeta titulo="Nombre del personaje">

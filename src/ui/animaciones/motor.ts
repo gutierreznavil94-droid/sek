@@ -346,6 +346,29 @@ export function sonarEstampida(segundos = 2.5): void {
   } catch { /* sin sonido */ }
 }
 
+/** Trueno: un chasquido y un retumbo grave que se apaga (el destello de la tumba). */
+export function sonarTrueno(): void {
+  const ac = audio()
+  if (!ac) return
+  try {
+    const t = ac.currentTime + 0.02
+    const src = ac.createBufferSource()
+    src.buffer = ruido(ac, 2.4)
+    const f = ac.createBiquadFilter()
+    f.type = 'lowpass'
+    f.frequency.setValueAtTime(2400, t)
+    f.frequency.exponentialRampToValueAtTime(120, t + 1.6)
+    const g = ac.createGain()
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.exponentialRampToValueAtTime(0.7, t + 0.03)
+    g.gain.exponentialRampToValueAtTime(0.25, t + 0.5)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 2.3)
+    src.connect(f).connect(g).connect(ac.destination)
+    src.start(t)
+    src.stop(t + 2.4)
+  } catch { /* sin sonido */ }
+}
+
 /** Golpe de taiko grave: un solo aviso a 10 s del fin del descanso (independiente del sonido de animaciones). */
 export function sonarTaiko(): void {
   const ac = audio()

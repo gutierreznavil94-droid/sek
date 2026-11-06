@@ -132,3 +132,51 @@
 .tema-tumba-suelo { stroke: rgba(var(--papel-rgb), 0.45); stroke-width: 1.2; stroke-linecap: round; }
 .tema-chip-batalla[data-chip='caida'] { border-color: rgba(var(--papel-rgb), 0.3); color: var(--texto-2); }
 .tema-chip-batalla[data-chip='caida'] .tema-chip-k { color: rgba(var(--papel-rgb), 0.7); }
+
+/* ----- Cinemáticas con clips verticales (Tensión y la tumba) ----- */
+/* El marco tiene la proporción del clip (9:16) y cubre la pantalla: lo que se dibuja encima cae en el mismo lugar del video. */
+.tema-marco { position: absolute; left: 50%; top: 50%; width: max(100vw, 56.25vh); height: max(177.78vw, 100vh); transform: translate(-50%, -50%); overflow: hidden; background: #0b0b0b; }
+.tema-tn { position: fixed; inset: 0; z-index: 220; background: #000; overflow: hidden; user-select: none; -webkit-tap-highlight-color: transparent; animation: sh-entrar 200ms ease-out both; }
+.tema-tn-clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.tema-tn-clip.oculto { opacity: 0; pointer-events: none; }
+.tema-tn-clip.arriba { z-index: 1; }
+.tema-vineta { position: absolute; inset: 0; z-index: 3; pointer-events: none; background: radial-gradient(ellipse 78% 62% at 50% 45%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%), radial-gradient(circle at 96% 97%, rgba(0,0,0,0.75) 0, rgba(0,0,0,0.4) 9%, rgba(0,0,0,0) 18%); }
+.tema-tn-mano { position: absolute; z-index: 4; left: 25%; top: 37.5%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 8px; background: none; border: 0; padding: 0; cursor: pointer; }
+.tema-tn-mano .tn-aro { width: 96px; height: 96px; }
+.tema-tn-soltar { position: absolute; z-index: 5; left: 50%; bottom: calc(26px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: none; border: 0; padding: 8px 12px; font: inherit; font-size: 0.74rem; color: rgba(243, 239, 230, 0.55); text-decoration: underline; text-decoration-color: rgba(243, 239, 230, 0.25); text-underline-offset: 3px; cursor: pointer; animation: sh-entrar 0.8s ease-out 0.6s both; }
+.tema-tn .tn-saltar { z-index: 5; }
+.tema-tn .tn-final { position: absolute; inset: 0; justify-content: center; cursor: pointer; }
+/* Cortes: tinta que crece y se va, o negro */
+.tema-tn-corte { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+.tema-tn-corte.negro { background: #000; animation: tema-tn-negro 0.9s ease both; }
+@keyframes tema-tn-negro { 0% { opacity: 0; } 40%, 60% { opacity: 1; } 100% { opacity: 0; } }
+.tema-tn-corte.tinta::before { content: ''; position: absolute; left: 50%; top: 50%; width: 60vmax; height: 60vmax; margin: -30vmax 0 0 -30vmax; border-radius: 47% 53% 44% 56% / 52% 45% 55% 48%; background: radial-gradient(circle, #050505 0 58%, rgba(5,5,5,0) 72%); animation: tema-tn-tinta 0.75s cubic-bezier(.5,0,.5,1) both; }
+@keyframes tema-tn-tinta { 0% { transform: scale(0.1); opacity: 1; } 40% { transform: scale(3.2); opacity: 1; } 100% { transform: scale(3.6); opacity: 0; } }
+/* La espera: manchitas de rivales a lo lejos, metidas en la niebla */
+.tema-tn-manchas { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.tema-tn-manchas i { position: absolute; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: #161616; filter: blur(0.4px); transition: left 2.8s linear, top 2.8s linear, opacity 2.8s linear, transform 2.8s linear; }
+.tema-tn-manchas i.raya { width: 2.5px; height: 7px; border-radius: 1px; }
+.tema-tn-niebla { position: absolute; left: 0; right: 0; top: 8%; height: 30%; background: linear-gradient(180deg, rgba(190,192,190,0) 0%, rgba(190,192,190,0.12) 45%, rgba(190,192,190,0) 100%); }
+.tema-tn-horizonte { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+.tema-tn.quieta .tema-tn-clip { animation: sh-entrar 0.5s ease-out both; }
+
+/* La tumba con el clip: acercamiento lento, lluvia de la app, terrones y destello */
+.tema-caida-marco { z-index: 0; }
+.tema-caida.desde-negro.tumba .tema-caida-marco { animation: tema-desde-negro 0.8s ease-out both; }
+@keyframes tema-desde-negro { from { filter: brightness(0); } to { filter: brightness(1); } }
+.tema-caida-clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; transform-origin: 40% 62%; animation: tema-caida-acerca 3s ease-out both; }
+@keyframes tema-caida-acerca { from { transform: scale(1); } to { transform: scale(1.1); } }
+.tema-caida.renacer .tema-caida-clip, .tema-caida.destello .tema-caida-clip { animation: none; transform: scale(1.1); }
+.tema-caida.renacer .tema-caida-marco { filter: brightness(0.42) contrast(1.05); transition: filter 0.6s; }
+.tema-caida.renacer .tema-caida-final { background: radial-gradient(ellipse 70% 45% at 50% 50%, rgba(0,0,0,0.55), rgba(0,0,0,0) 75%); }
+.tema-caida.quieta .tema-caida-clip { transform: scale(1.1); }
+.tema-lluvia-app { position: absolute; inset: -6% 0 0 0; width: 100%; height: 106%; z-index: 2; pointer-events: none; }
+.tema-lluvia-app g { animation: tema-lluvia-app 0.45s linear infinite; }
+@keyframes tema-lluvia-app { from { transform: translate(0, -34px); } to { transform: translate(-8px, 0); } }
+.tema-caida-terrones { position: absolute; z-index: 2; left: 36.5%; top: 63%; width: 0; height: 0; pointer-events: none; }
+.tema-caida-terrones i { position: absolute; left: 0; top: 0; width: 5px; height: 4px; border-radius: 40% 60% 50% 45%; background: #141414; opacity: 0; animation: tema-terron 0.8s cubic-bezier(.3,.1,.6,1) calc(1.05s + var(--i) * 0.06s) both; }
+@keyframes tema-terron { 0% { opacity: 1; transform: translate(0, 0) rotate(0); } 100% { opacity: 0.9; transform: translate(calc((var(--i) - 2.5) * 9px), 34px) rotate(160deg); } }
+.tema-caida-destello { position: absolute; inset: 0; z-index: 5; background: #fff; pointer-events: none; animation: tema-destello 0.3s ease-out both; }
+@keyframes tema-destello { 0% { opacity: 0; } 20% { opacity: 0.95; } 100% { opacity: 0; } }
+.tema-caida-final { z-index: 4; }
+@media (prefers-reduced-motion: reduce) { :root:not(.movimiento-siempre) .tema-tn *, :root:not(.movimiento-siempre) .tema-caida-clip { animation: none !important; transition: none !important; } }
