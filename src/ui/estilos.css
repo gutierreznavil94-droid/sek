@@ -2511,3 +2511,19 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .forja-codigo .av-nota, .forja-codigo .forja-nueva { background: rgba(18, 17, 16, 0.6); }
 .forja-codigo .av-nota { padding: 8px 10px; border-radius: 8px; }
 .forja-progreso { background: rgba(18, 17, 16, var(--vidrio, .6)); }
+
+/* ---------- v0.78: Historial de Juego por día (desplegable + buscador de fecha) ---------- */
+.hj { display: flex; flex-direction: column; gap: 6px; }
+.hj-buscar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 4px; }
+.hj-buscar input { font: inherit; color: var(--texto); background: var(--fondo-2); border: 1px solid var(--borde); border-radius: 8px; padding: 6px 8px; color-scheme: dark; }
+.hj-sin { margin: 0; padding: 6px 0; }
+.hj-dia { border: 1px solid var(--borde); border-radius: 10px; overflow: hidden; }
+.hj-dia.abierto { border-color: rgba(var(--papel-rgb), 0.3); }
+.hj-barra { appearance: none; width: 100%; display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--fondo-2); color: var(--texto); border: 0; font: inherit; font-size: 0.9rem; text-align: left; cursor: pointer; }
+.hj-barra > span:first-child { font-weight: 700; flex: 1; }
+.hj-flecha { transition: transform 0.2s ease; }
+.hj-dia.abierto .hj-flecha { transform: rotate(180deg); }
+.hj-sesiones { padding: 0 12px 4px; }
+.hj-sesion { padding: 8px 0; border-top: 1px solid var(--borde); }
+.hj-sesion.cero { opacity: 0.45; }
+.hj-mas { align-self: center; margin-top: 2px; }
