@@ -109,13 +109,40 @@ function RivalEnJuego({ rival, enHoy }: { rival: Rival; enHoy: boolean }) {
   const [brinco, setBrinco] = useState<{ n: number; dur: number; espera: number } | null>(null)
   const [huye, setHuye] = useState(false)
   useEffect(() => { emitirEvento('aparecer'); emitirEvento('alerta') }, [])
-  // Se asoma desde el borde derecho de la pantalla: el corte del clip queda justo en el borde.
+  // Se asoma desde un borde: el izquierdo o el derecho de la pantalla, o detrás del costado de un botón o tarjeta (al azar),
+  // siempre donde no tape texto ni links. El corte del clip queda justo en ese borde.
+  const [ry, setRy] = useState(0)
+  const [lado, setLado] = useState<'izq' | 'der'>('der')
+  const [colocado, setColocado] = useState(false)
   useEffect(() => {
     if (!conSprite || !asomando || !hojaRival) return
     const corte = hojaRival.clips.asoma?.corte ?? hojaRival.celda[0]
-    setRdur(0); setRdir(-1)
-    setRx(Math.round(ancho + (hojaRival.celda[0] - ANCHO_RIVAL) / 2 - corte))
-  }, [conSprite, asomando, ancho]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!enHoy) { setColocado(false); return } // todavía no está en Hoy: se elige al llegar
+    // Espera a que Hoy termine de dibujarse (las tarjetas llegan un poco después) y recién ahí elige dónde.
+    const id = window.setTimeout(() => {
+      const el = capa.current
+      if (!el) return
+      const lugar = elegirAsomo(el, el.clientWidth || ancho)
+      const cw = hojaRival.celda[0]
+      setRdur(0); setLado(lugar.lado); setRdir(lugar.lado === 'der' ? -1 : 1); setRy(lugar.alto)
+      setRx(Math.round(lugar.lado === 'der' ? lugar.x + (cw - ANCHO_RIVAL) / 2 - corte : lugar.x + (cw - ANCHO_RIVAL) / 2 - cw + corte))
+      setColocado(true)
+    }, 450)
+    return () => window.clearTimeout(id)
+  }, [conSprite, asomando, ancho, enHoy]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Termina de asomarse: baja al piso y empieza el paseo.
+  useEffect(() => { if (!asomando && ry !== 0) { setRdur(0.35); setRy(0) } }, [asomando]) // eslint-disable-line react-hooks/exhaustive-deps
+  // El cartel siempre dentro de la pantalla.
+  const cartel = useRef<HTMLSpanElement>(null)
+  const [corrimiento, setCorrimiento] = useState(0)
+  useEffect(() => {
+    const c = cartel.current
+    if (!c) return
+    const w = c.offsetWidth
+    const centro = rx + ANCHO_RIVAL / 2
+    const izq = centro - w / 2
+    setCorrimiento(izq < 4 ? 4 - izq : izq + w > ancho - 4 ? ancho - 4 - (izq + w) : 0)
+  }, [rx, ancho, nombre])
   // Si la hoja no llega, no espera al «asoma».
   useEffect(() => { if (asomando && !carpetaEscenas()) setAsomando(false) }, [asomando])
   useEffect(() => { if (fase === 'robo') emitirEvento('robo') }, [fase])
@@ -134,7 +161,7 @@ function RivalEnJuego({ rival, enHoy }: { rival: Rival; enHoy: boolean }) {
     medir()
     window.addEventListener('resize', medir)
     return () => window.removeEventListener('resize', medir)
-  }, [])
+  }, [enHoy])
 
   // Cuadros del shinobi: quieto mientras espera, correr y saltar en la persecución.
   useEffect(() => {
@@ -327,9 +354,9 @@ function RivalEnJuego({ rival, enHoy }: { rival: Rival; enHoy: boolean }) {
       <div className={`rv-shinobi ${fase}`} style={{ transform: `translateX(${sx}px)`, transition: `transform ${sdur}s ${fase === 'salta' ? 'ease-out' : 'linear'}`, width: cw, height: ch }} aria-hidden>
         <div ref={sprite} className="shinobi-capa rv-sprite" style={{ ...estiloSprite, transform: sdir === -1 ? 'scaleX(-1)' : undefined }} />
       </div>
-      <button type="button" className={`rv-rival ${fase}`} style={{ transform: `translateX(${rx}px)`, transition: `transform ${rdur}s ${fase === 'esquiva' ? 'cubic-bezier(.2,.9,.3,1)' : 'linear'}`, width: ANCHO_RIVAL, height: ALTO_RIVAL + 22 }} onClick={tocar} aria-label={`Atrapar a ${nombre}`} data-escapes={escapes}>
-        <span className="rv-cartel">{nombre}</span>
-        {conSprite && hojaRival ? (
+      <button type="button" className={`rv-rival ${fase}`} style={{ transform: `translate(${rx}px, ${-ry}px)`, transition: `transform ${rdur}s ${fase === 'esquiva' ? 'cubic-bezier(.2,.9,.3,1)' : 'linear'}`, width: ANCHO_RIVAL, height: ALTO_RIVAL + 22, visibility: conSprite && asomando && !colocado ? "hidden" : undefined }} onClick={tocar} aria-label={`Atrapar a ${nombre}`} data-escapes={escapes}>
+        <span ref={cartel} className="rv-cartel" style={corrimiento ? { position: "relative", left: corrimiento } : undefined}>{nombre}</span>
+        {conSprite && hojaRival && asomando && !colocado ? null : conSprite && hojaRival ? (
           <span className="rv-sprite-rival" style={{ width: hojaRival.celda[0], height: hojaRival.celda[1], marginBottom: -(hojaRival.pies ?? 0), marginTop: -20 }}>
             <span key={brinco?.n ?? 0} className={brinco ? 'rv-brinco' : ''} style={brinco ? { animationDuration: `${brinco.dur}s`, animationDelay: `${brinco.espera}s` } : undefined}>
               <SpriteClip
@@ -342,7 +369,7 @@ function RivalEnJuego({ rival, enHoy }: { rival: Rival; enHoy: boolean }) {
                 onFin={asomando ? () => setAsomando(false) : undefined}
               />
             </span>
-            {asomando && fase === 'paseo' && <Pregunta />}
+            {asomando && fase === 'paseo' && <span className={`rv-pregunta ${lado}`}><Pregunta /></span>}
           </span>
         ) : (
           <svg className="rv-silueta" viewBox="-30 -110 60 114" width={ANCHO_RIVAL} height={ALTO_RIVAL} style={{ transform: rdir === 1 ? 'scaleX(-1)' : undefined }} aria-hidden><Enemigo variante="bandido" sinArma /></svg>
@@ -361,4 +388,63 @@ function clipDelRival(fase: Fase, asomando: boolean, moviendo: boolean, brinco: 
   if (asomando) return 'asoma'
   if (brinco) return 'salta'
   return moviendo ? 'corre' : 'quieto'
+}
+
+/**
+ * Dónde se asoma el rival: borde izquierdo o derecho de la pantalla, o el costado de un botón o tarjeta de Hoy
+ * (con los pies a la altura de su borde de abajo). Se prueba en orden al azar y se queda con el primero donde el
+ * rival y su cartel no tapan texto ni links. `x`: dónde queda el corte del clip; `alto`: px por encima del piso.
+ */
+function elegirAsomo(capa: HTMLElement, ancho: number): { x: number; alto: number; lado: 'izq' | 'der' } {
+  const base = capa.getBoundingClientRect()
+  const piso = base.bottom
+  // Bordes de la pantalla a distintas alturas (desde el piso hasta media pantalla) y costados de botones y tarjetas.
+  const opciones: { x: number; alto: number; lado: 'izq' | 'der' }[] = []
+  for (let alto = 0; alto <= Math.min(420, piso - 160); alto += 10) opciones.push({ x: ancho, alto, lado: 'der' }, { x: 0, alto, lado: 'izq' })
+  if (typeof document !== 'undefined') {
+    for (const e of document.querySelectorAll('.tarjeta, .boton, .pilar')) {
+      const r = e.getBoundingClientRect()
+      if (r.width < 60 || r.bottom > piso - 6 || r.bottom < 120 || r.height > 260) continue
+      const alto = piso - r.bottom
+      if (r.left - base.left > 34) opciones.push({ x: r.left - base.left, alto, lado: 'der' })
+      if (base.right - r.right > 34) opciones.push({ x: r.right - base.left, alto, lado: 'izq' })
+    }
+  }
+  for (let i = opciones.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [opciones[i], opciones[j]] = [opciones[j], opciones[i]] }
+  // Lo que no se puede tapar: cada renglón de texto (de links y botones también), los íconos y los campos.
+  const prohibidos: DOMRect[] = []
+  if (typeof document !== 'undefined' && typeof document.createTreeWalker === 'function') {
+    const caminante = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+    const rango = document.createRange()
+    for (let n = caminante.nextNode(); n; n = caminante.nextNode()) {
+      if (!(n.textContent ?? '').trim() || capa.contains(n) || n.parentElement?.closest('.aviso')) continue
+      rango.selectNodeContents(n)
+      for (const r of rango.getClientRects()) if (r.bottom > 0 && r.top < piso && r.width > 0) prohibidos.push(r)
+    }
+    // Íconos chicos y campos (los links y botones cuentan por su texto).
+    for (const e of document.querySelectorAll('input, select, textarea, svg, img')) {
+      if (capa.contains(e)) continue
+      const r = e.getBoundingClientRect()
+      if (r.width > 0 && r.bottom > 0 && r.top < piso && r.width < 48 && r.height < 48) prohibidos.push(r)
+    }
+  }
+  // El rival y el «?» (≈ 50 px al costado del corte, 48 px de alto) y su cartel arriba (≈ 68 px de ancho, metido en la pantalla).
+  const tapa = (o: { x: number; alto: number; lado: 'izq' | 'der' }): number => {
+    const corte = base.left + o.x
+    const y1 = piso - o.alto
+    // Con margen: el «?» va al costado de la cabeza.
+    const cuerpo = o.lado === 'der' ? [corte - 50, corte] : [corte, corte + 50]
+    const centro = o.lado === 'der' ? corte - 20 : corte + 20
+    const cx0 = Math.max(base.left + 2, Math.min(base.right - 70, centro - 34))
+    const cajas = [[cuerpo[0], y1 - 48, cuerpo[1], y1 + 4], [cx0, y1 - 68, cx0 + 68, y1 - 38]]
+    return prohibidos.filter((r) => cajas.some(([a, b, c, d]) => r.left < c && r.right > a && r.top < d && r.bottom > b)).length
+  }
+  let mejor = opciones[0]
+  let menos = Infinity
+  for (const o of opciones) {
+    const n = tapa(o)
+    if (n === 0) return o
+    if (n < menos) { menos = n; mejor = o }
+  }
+  return mejor ?? { x: ancho, alto: 0, lado: 'der' }
 }

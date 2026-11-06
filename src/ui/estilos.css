@@ -2465,3 +2465,11 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .rv-robo-sprite { position: relative; transform: scale(2.6); transform-origin: 50% 100%; margin-bottom: 20px; transition: transform 1.4s ease-in; }
 .rv-robo-sprite.huye { transform: translateX(130vw) scale(2.6); }
 .rv-robo.reducido .rv-robo-sprite { transition: none; }
+/* v0.68: el «?» sobre la parte visible del rival que se asoma (desde la derecha o desde la izquierda) */
+.rv-pregunta { position: absolute; inset: 0; pointer-events: none; }
+.rv-pregunta.izq .tema-pregunta { left: 52%; }
+/* v0.68: Juego, temporizador más chico (círculo y número 30 % menos, botones de altura normal) */
+.juego-temporizador .enso { width: 76px; height: 76px; }
+.juego-temporizador .enso .juego-segundos { font-size: 1rem; }
+.juego-temporizador { margin: 0 0 4px; gap: 12px; }
+.juego-lado .boton { min-height: 36px; padding: 6px 12px; font-size: 0.85rem; }
