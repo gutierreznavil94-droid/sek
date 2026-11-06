@@ -268,3 +268,8 @@ body .barra-horario-fija:not(.fija) .hor-ahora { top: -3px; height: 12px; }
 body .barra-horario-fija:not(.fija) .hor-correr { padding: 3px 9px; font-size: 0.78rem; min-height: 0; }
 .app .contenido { padding-top: 38px; }
 @media (min-width: 700px) { .app .contenido { padding-top: 40px; } }
+/* v0.72: pilar con la 1.ª meta hecha y el extra pendiente: verde que titila bien notorio (late más fuerte y más rápido). */
+.pilar-bloque[data-brillo='parcial']::after { border: 2px solid rgba(var(--verde-rgb), 0.9); animation: tema-halo-verde-fuerte 1.8s ease-in-out infinite; animation-delay: var(--brillo-desfase, 0s); }
+@keyframes tema-halo-verde-fuerte { 0%, 100% { box-shadow: 0 0 2px 0 rgba(var(--verde-rgb), 0.05), inset 0 0 0 0 rgba(var(--verde-rgb), 0); opacity: 0.25; } 50% { box-shadow: 0 0 18px 4px rgba(var(--verde-rgb), 0.55), inset 0 0 10px 0 rgba(var(--verde-rgb), 0.25); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .pilar-bloque[data-brillo='parcial']::after { animation: none; opacity: 1; box-shadow: 0 0 10px 2px rgba(var(--verde-rgb), 0.35); } }
+.pilar-bloque[data-brillo='parcial'] { border-color: rgba(var(--verde-rgb), 0.3) !important; }
