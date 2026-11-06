@@ -66,9 +66,10 @@ import { BotonNoCumpli } from '../Caida'
 import { brillo, type EstadoBrillo } from '../brillo'
 
 /** Pilar → brillo: pendiente titila, marcado (a tiempo o tarde) verde fijo; omitido y descanso sin brillo. */
-function estadoBrilloPilar(e: Pilar['estado']): EstadoBrillo | null {
-  if (e === 'pendiente') return 'pendiente'
-  if (e === 'cumplido' || e === 'tarde') return 'hecho'
+function estadoBrilloPilar(p: Pilar): EstadoBrillo | null {
+  if (p.estado === 'pendiente') return 'pendiente'
+  // Con segundo tope (ej. Dibujar 15 / 30 min): 1.ª meta = parcial, 2.ª = máximo, como las series.
+  if (p.estado === 'cumplido' || p.estado === 'tarde') return tieneExtra(p.accion) ? (p.compromiso?.extra ? 'maximo' : 'parcial') : 'hecho'
   return null
 }
 
@@ -472,7 +473,7 @@ export function Hoy({ hoy }: { hoy: string }) {
           {d.pilares.pilares.map((p, i) => (
             <FilaPilar
               key={p.accion.id}
-              brillo={brillo(estadoBrilloPilar(p.estado), i, conBrillo)}
+              brillo={brillo(estadoBrilloPilar(p), i, conBrillo)}
               p={p}
               suenio={d.suenio}
               zona={ajustes.zonaHoraria}
