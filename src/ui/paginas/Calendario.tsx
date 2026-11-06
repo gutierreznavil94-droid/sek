@@ -115,7 +115,7 @@ export function Calendario({ hoy }: { hoy: string }) {
                 {claves.length > 0 && <span className="sello-clave" aria-hidden>印</span>}
                 {(d?.caidas.get(f) ?? 0) > 0 && <span className="cal-caida" aria-hidden><TumbaRota ancho={10} /></span>}
                 {d?.marcas.has(f) && <span className="cal-marca" aria-hidden>印</span>}
-                {d?.forja.has(f) && <span className="cal-forja" aria-hidden>鍛</span>}
+                {d?.forja.has(f) && <span className={`cal-rio ${d.forja.has(sumarDias(f, -1)) ? 'une-izq' : ''} ${d.forja.has(sumarDias(f, 1)) ? 'une-der' : ''}`} aria-hidden />}
                 {puntos.length > 0 && (
                   <span className="puntos" aria-hidden>
                     {puntos.map((p) => <i key={p.accionId} className={f > hoy ? '' : p.estado} />)}
@@ -142,7 +142,7 @@ export function Calendario({ hoy }: { hoy: string }) {
           <span><TumbaRota ancho={9} /> caída (seguiste)</span>
           <span><span className="sello-clave muestra">印</span>fecha clave</span>
           <span><span className="cal-marca muestra">印</span>día marcado (mantené apretado un día)</span>
-          <span><span className="cal-forja muestra">鍛</span>día de forja</span>
+          <span><span className="cal-rio muestra" />hábito en forja cumplido</span>
           <span><span className="franjas muestra"><i className="obligatorio" /><i className="entreno" /></span>horario (gris, arriba)</span>
         </div>
         <label className="fila cal-ver-horario chico texto-2">

@@ -425,7 +425,7 @@ export function Hoy({ hoy }: { hoy: string }) {
       {/* «Dudo», «Tensión» y «No cumplí» en la cabecera, juntos y en contorno */}
       {huecoCabecera && createPortal(
         <span className="hoy-arriba">
-          {ajustes.ninjas !== false && <button type="button" className="boton-duda" onClick={batallar} aria-label="Estoy dudando: batalla contra la distracción">Dudo</button>}
+          <button type="button" className="boton-duda" onClick={batallar} aria-label="Estoy dudando: batalla contra la distracción">Dudo</button>
           {clipsTension && <button type="button" className="boton-duda" onClick={() => pedirTension()} aria-label="Tensión: cinemática"><span className="boton-duda-kanji" aria-hidden>進</span>Tensión</button>}
           <BotonNoCumpli fecha={hoy} className="boton-duda rojo" texto="No cumplí" />
         </span>,
