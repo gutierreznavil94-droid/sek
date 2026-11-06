@@ -8,7 +8,7 @@ clip; sin pies, cada cuadro por sus pies), unaVez=1 (queda en el último cuadro)
 mueve solo ahí), corte=1 (el clip se corta en el borde derecho del video: guarda dónde queda ese borde en la celda, así
 la app lo pone justo en el borde de la pantalla y parece que se asoma).
 Mismo proceso que scripts/shinobi-sprites.py: fondo blanco y marca de agua afuera por brillo, el rival en GRIS y lo
-dorado (la bolita de XP) dorado. El tamaño en pantalla es el de la caminata del compañero.
+dorado (la bolita de XP) dorado. --gris R,G,B cambia el gris (el tema usa gris carbón: --gris 62,62,66). El tamaño en pantalla es el de la caminata del compañero.
 """
 import sys, glob, json
 import numpy as np
@@ -23,7 +23,10 @@ d, salida = sys.argv[1], sys.argv[2]
 clips = []
 args = sys.argv[3:]
 while args:
-    if args[0] == '--clip':
+    if args[0] == '--gris':
+        GRIS = np.array([float(v) for v in args[1].split(',')], np.float32)
+        args = args[2:]
+    elif args[0] == '--clip':
         nombre, resto = args[1].split('=', 1)
         partes = resto.split(',')
         c = {'nombre': nombre, 'carpeta': partes[0], 'desde': 0, 'hasta': 10 ** 6, 'paso': 1, 'fps': 24.0, 'escala': 0.72, 'x': None, 'pies': None, 'unaVez': False, 'aire': None, 'corte': False}

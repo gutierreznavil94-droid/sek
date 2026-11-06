@@ -23,6 +23,9 @@ desde = float(op.get('desde', 0))
 hasta = op.get('hasta')
 reves = op.get('reves') in ('1', 'si')
 recorte = [int(v) for v in op['recorte'].split(',')] if 'recorte' in op else None
+# fondo=papel: colores originales (shinobi negro, rival gris) sobre papel blanco cálido; la marca de agua se va igual.
+papel = op.get('fondo') == 'papel'
+PAPEL = np.array((242, 240, 235), np.float32)
 
 info = json.loads(subprocess.check_output(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'json', entrada]))
 W, H = info['streams'][0]['width'], info['streams'][0]['height']
@@ -54,7 +57,18 @@ def limpiar(a):
     return (col * alfa[..., None]).clip(0, 255).astype(np.uint8)
 
 
-limpios = np.stack([limpiar(c) for c in cuadros])
+def en_papel(a):
+    a = a.astype(np.float32)
+    lum = a.mean(2)
+    alfa = np.clip((185 - lum) / 120, 0, 1)[..., None]
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    color = np.clip(((r - np.maximum(g, b)) - 30) / 50, 0, 1) * (r > 90)
+    dorado = np.clip(((np.minimum(r, g) - b) - 40) / 50, 0, 1)
+    alfa = np.maximum(alfa, np.maximum(color, dorado)[..., None])
+    return (a * alfa + PAPEL * (1 - alfa)).clip(0, 255).astype(np.uint8)
+
+
+limpios = np.stack([(en_papel if papel else limpiar)(c) for c in cuadros])
 cod = ['ffmpeg', '-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{ancho}x{alto}', '-r', '24', '-i', '-',
        '-c:v', 'libx264', '-preset', 'slow', '-crf', '27', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', salida]
 subprocess.run(cod, input=limpios.tobytes(), check=True)
