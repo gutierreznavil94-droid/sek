@@ -2560,3 +2560,10 @@ video:not([poster]):not([data-vivo]) { opacity: 0 !important; }
 /* v0.80: los tres botones de la cabecera de Hoy, chicos, en una línea y con contorno visible sobre el papel */
 .hoy-arriba .boton-duda { border-color: currentColor; white-space: nowrap; font-size: 0.66rem; padding: 3px 7px; }
 .hoy-arriba .boton-duda.rojo { border-color: #c8102e; color: #c8102e; }
+
+/* v0.82: días con un hábito en forja cumplido = río verde suave en el borde de abajo; se une entre días seguidos. */
+.cal-rio { display: block; height: 6px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 6' preserveAspectRatio='none'%3E%3Cpath d='M0,3 C5,0.5 10,0.5 15,3 S25,5.5 30,3' fill='none' stroke='%236FAF8E' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x left center / 30px 6px; opacity: 0.6; filter: drop-shadow(0 0 2px rgba(var(--verde-rgb), 0.55)); pointer-events: none; }
+.cal-dia .cal-rio { position: absolute; left: 6px; right: 6px; bottom: 0; border-radius: 3px; }
+.cal-dia .cal-rio.une-izq { left: -5px; }
+.cal-dia .cal-rio.une-der { right: -5px; }
+.cal-rio.muestra { display: inline-block; width: 22px; margin-right: 4px; vertical-align: middle; }
