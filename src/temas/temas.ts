@@ -2,7 +2,6 @@ import { useSyncExternalStore } from 'react'
 import proximamente from './proximamente.json'
 import './shinobi/visual.css'
 import { activarTemaVisual } from './registro'
-import './shinobi/grisPincel'
 
 /**
  * Temas: la cara de la app (personaje, fondos, sprite, color de acento, kanjis).

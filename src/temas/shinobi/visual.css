@@ -186,22 +186,36 @@
 .tema-tn-niebla.horizonte { top: 49%; height: 6%; background: linear-gradient(180deg, rgba(200,202,200,0) 0%, rgba(200,202,200,0.2) 50%, rgba(200,202,200,0) 100%); }
 
 /* ---------- v0.65: escenas nuevas (Juego, noche, Sueño, rival) ---------- */
-/* v0.66: los clips van con sus colores originales sobre papel blanco cálido, en una ventanilla de papel shoji
-   (marco fino de madera oscura) con una ventanita de lluvia de afuera en un costado. Nunca reciben toques. */
-.tema-ventanilla { position: relative; box-sizing: border-box; width: 100%; padding: 5px; border-radius: 3px; background: #2b2119; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.55), 0 2px 10px rgba(0, 0, 0, 0.35); pointer-events: none; }
-.tema-ventanilla::after { content: ''; position: absolute; inset: 5px; border: 1px solid rgba(43, 33, 25, 0.35); pointer-events: none; z-index: 4; }
+/* v0.67: marco épico. Los clips van con sus colores originales (shinobi negro, rival gris) sobre papel blanco; un marco de
+   tinta con filete rojo, esquinas de pincel y un sello los separa del fondo oscuro con lluvia. Nunca reciben toques. */
+.tema-ventanilla { position: relative; box-sizing: border-box; width: 100%; padding: 8px; border-radius: 4px 7px 5px 8px / 7px 4px 8px 5px; pointer-events: none;
+  background: linear-gradient(135deg, #0d0c0b, #1f1c19 45%, #0d0c0b); border: 1.5px solid rgba(238, 236, 231, 0.75);
+  box-shadow: 0 0 0 1px #000, 0 0 16px rgba(200, 16, 46, 0.28), 0 8px 24px rgba(0, 0, 0, 0.65); }
+/* Filete rojo por dentro */
+.tema-ventanilla::after { content: ''; position: absolute; inset: 4px; border: 1.5px solid #C8102E; border-radius: 2px; pointer-events: none; z-index: 4; box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.55); }
+/* Esquinas de pincel */
+.tema-ventanilla::before { content: ''; position: absolute; inset: -5px; z-index: 5; pointer-events: none;
+  background:
+    linear-gradient(#ECEAE5, #ECEAE5) left top / 22px 3px, linear-gradient(#ECEAE5, #ECEAE5) left top / 3px 22px,
+    linear-gradient(#ECEAE5, #ECEAE5) right top / 22px 3px, linear-gradient(#ECEAE5, #ECEAE5) right top / 3px 22px,
+    linear-gradient(#ECEAE5, #ECEAE5) left bottom / 22px 3px, linear-gradient(#ECEAE5, #ECEAE5) left bottom / 3px 22px,
+    linear-gradient(#ECEAE5, #ECEAE5) right bottom / 22px 3px, linear-gradient(#ECEAE5, #ECEAE5) right bottom / 3px 22px;
+  background-repeat: no-repeat; }
+/* Sello rojo con el kanji, arriba a la izquierda */
+.tema-sello { position: absolute; left: -6px; top: -9px; z-index: 6; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 3px 5px 3px 4px;
+  background: #C8102E; color: #F4EFE6; font-family: 'Yuji Syuku', 'Noto Serif JP', serif; font-size: 15px; line-height: 1; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6); transform: rotate(-6deg); }
 .tema-escena { position: relative; width: 100%; aspect-ratio: 16 / 9; pointer-events: none; overflow: hidden; background: #F2F0EB; }
 .tema-escena-clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-/* Ventanita con lluvia de afuera: chiquita, arriba, del lado sin personajes. */
-.tema-ventanita { position: absolute; top: 5%; width: 13%; aspect-ratio: 1; z-index: 2; overflow: hidden; background: linear-gradient(#3b3d41, #2a2b2e); border: 2px solid #2b2119; box-shadow: inset 0 0 0 1px rgba(242, 240, 235, 0.25); }
-.tema-ventanita.izq { left: 3%; }
-.tema-ventanita.der { right: 3%; }
-.tema-ventanita::before, .tema-ventanita::after { content: ''; position: absolute; background: #2b2119; z-index: 1; }
-.tema-ventanita::before { left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; }
-.tema-ventanita::after { top: 50%; left: 0; right: 0; height: 2px; margin-top: -1px; }
-.tema-ventanita .fondo-lluvia { position: absolute; inset: 0; width: 100%; height: 100%; animation: none; }
-/* Juego: sin el marco de rayitas viejo cuando está la ventanilla. */
-.juego-shoji:has(.tema-ventanilla) { padding: 0; background: none; border: 0; box-shadow: none; }
+/* «A jugar»: el marco se enciende (destello rojo y brillo) mientras dejan de pelear y se sientan. */
+.tema-ventanilla.epico { animation: tema-epico 1.6s ease-out both; }
+.tema-ventanilla.epico::after { animation: tema-epico-filete 1.6s ease-out both; }
+.tema-ventanilla.epico .tema-sello { animation: tema-sello 0.6s cubic-bezier(.2, 1.6, .4, 1) both; }
+@keyframes tema-epico { 0% { box-shadow: 0 0 0 1px #000, 0 0 0 rgba(200, 16, 46, 0), 0 8px 24px rgba(0, 0, 0, 0.65); } 25% { box-shadow: 0 0 0 1px #000, 0 0 34px rgba(200, 16, 46, 0.8), 0 8px 24px rgba(0, 0, 0, 0.65); } 100% { box-shadow: 0 0 0 1px #000, 0 0 16px rgba(200, 16, 46, 0.28), 0 8px 24px rgba(0, 0, 0, 0.65); } }
+@keyframes tema-epico-filete { 0% { border-color: #ECEAE5; } 30% { border-color: #ff3b55; } 100% { border-color: #C8102E; } }
+@keyframes tema-sello { from { transform: rotate(-30deg) scale(1.8); opacity: 0; } to { transform: rotate(-6deg) scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .tema-ventanilla.epico, .tema-ventanilla.epico::after, .tema-ventanilla.epico .tema-sello { animation: none; } }
+/* Juego: sin el marco de rayitas viejo cuando está el marco épico. */
+.juego-shoji:has(.tema-ventanilla) { padding: 6px 2px; background: none; border: 0; box-shadow: none; }
 .juego-shoji:has(.tema-ventanilla)::before, .juego-shoji:has(.tema-ventanilla)::after { display: none; }
 .tema-escena-clip.oculto { opacity: 0; }
 .tema-escena-clip.arriba { z-index: 1; }
@@ -228,20 +242,3 @@
 .ga-vista { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px; border-radius: 8px; background: rgba(0, 0, 0, 0.25); }
 .ga-caja { display: flex; align-items: flex-end; justify-content: center; width: 100%; overflow: hidden; }
 .ga-vista figcaption { font-size: 0.72rem; text-align: center; color: var(--texto-2, #b9b3a7); }
-
-/* ---------- v0.66: fondo gris pincel (3 tonos) y personajes con sus colores originales ---------- */
-/* La zona oscura pasa de tinta casi negra a una aguada de tinta. Las tarjetas, un poquito más claras que el fondo. */
-html:root { --fondo: #33312E; --fondo-2: #3C3A36; --fondo-3: #47443F; --borde: #57534D; --texto-3: #A5A199; }
-html:root[data-gris="1"] { --fondo: #2A2926; --fondo-2: #33312E; --fondo-3: #3D3B37; --borde: #4F4B46; --texto-3: #9C9891; }
-html:root[data-gris="3"] { --fondo: #3C3A36; --fondo-2: #45433F; --fondo-3: #504D48; --borde: #615D57; --texto-3: #ADA9A1; }
-/* Shinobi negro y rival gris carbón: una aguada clara difusa detrás (no un borde blanco) para que se lean sobre el gris. */
-.shinobi-capa, .tema-sprite { filter: drop-shadow(0 0 2px rgba(242, 240, 235, 0.38)) drop-shadow(0 0 7px rgba(242, 240, 235, 0.2)); }
-.companero-boton .shinobi-capa { filter: drop-shadow(0 0 2px rgba(242, 240, 235, 0.38)) drop-shadow(0 0 7px rgba(242, 240, 235, 0.2)); }
-.ga-vista { background: rgba(242, 240, 235, 0.06); }
-/* Elegir el tono (Ver animaciones) */
-.ga-tonos { display: flex; gap: 8px; flex-wrap: wrap; }
-.ga-tonos button { display: inline-flex; align-items: center; gap: 6px; }
-.ga-tonos i { width: 16px; height: 16px; border-radius: 4px; border: 1px solid rgba(242, 240, 235, 0.4); display: inline-block; }
-.ga-tonos button.activo { border-color: var(--acento); }
-/* El rival gris carbón sobre el gris pincel: la aguada clara un poco más marcada. */
-.rv-sprite-rival .tema-sprite, .ga-vista .tema-sprite { filter: drop-shadow(0 0 2px rgba(242, 240, 235, 0.55)) drop-shadow(0 0 9px rgba(242, 240, 235, 0.32)); }

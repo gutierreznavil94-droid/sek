@@ -2,13 +2,12 @@
  * Escenas animadas del tema Shinobi: Juego (pelea → a jugar → jugando → té), noche (buenas noches → durmiendo),
  * Sueño (sentado junto a la cama) y el rival gris (hoja de sprites). SEK solo pide la escena con su estado; los clips
  * viven en public/temas/shinobi/<grupo>/ (los arma scripts/shinobi-escenas.py y scripts/rival-sprites.py).
- * Los videos van con sus colores originales (shinobi negro, rival gris) sobre papel blanco cálido, dentro de una ventanilla
- * de papel shoji con una ventanita de lluvia de afuera en un costado (que no tapa a los personajes).
+ * Los videos van con sus colores originales (shinobi negro, rival gris) sobre papel blanco, dentro de un marco épico de tinta
+ * con filete rojo y un sello: el marco los separa del fondo oscuro con lluvia (el resto de los muñequitos va en blanco).
  * Sin pantallas negras: el clip que sigue ya está precargado y debajo queda el último cuadro del anterior.
  * Con movimiento reducido (o si un clip no carga): un cuadro quieto.
  */
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { FondoLluvia } from '../../ui/FondoLluvia'
 
 const BASE = `${import.meta.env.BASE_URL}temas/shinobi/`
 
@@ -23,12 +22,12 @@ type PropsVideo = {
   reducido: boolean
   onFin?: () => void
   className?: string
-  /** De qué lado va la ventanita con lluvia (donde no hay personajes). */
-  ventana?: 'izq' | 'der'
+  /** Kanji del sello del marco (遊 Juego, 眠 Sueño y noche). */
+  sello?: string
   children?: React.ReactNode
 }
 
-export function VideoEscena({ actual, bucle = false, precargar = [], reducido, onFin, className = '', ventana = 'der', children }: PropsVideo) {
+export function VideoEscena({ actual, bucle = false, precargar = [], reducido, onFin, className = '', sello, children }: PropsVideo) {
   const src = (c: string, ext: string) => `${BASE}${c}${ext}`
   const [anterior, setAnterior] = useState<string | null>(null)
   const [roto, setRoto] = useState<Set<string>>(() => new Set())
@@ -58,8 +57,8 @@ export function VideoEscena({ actual, bucle = false, precargar = [], reducido, o
   const quieto = reducido || roto.has(actual)
   return (
     <div className={`tema-ventanilla ${className}`} aria-hidden>
+    {sello && <span className="tema-sello">{sello}</span>}
     <div className="tema-escena">
-      <div className={`tema-ventanita ${ventana}`}>{!reducido && <FondoLluvia variante="hoy" enCaja />}</div>
       {anterior && <img className="tema-escena-clip" src={src(anterior, '-fin.jpg')} alt="" />}
       {quieto && <img className="tema-escena-clip arriba" src={src(actual, '-quieto.jpg')} alt="" />}
       {montados.map((c) => (
@@ -119,7 +118,8 @@ export function JuegoShinobi({ activa, pausada, reducido }: { activa: boolean; p
     <div className="tema-juego">
       <VideoEscena
         actual={rutaJuego(clip)}
-        ventana={clip === 'pelea' ? 'der' : 'izq'}
+        sello="遊"
+        className={clip === 'a-jugar' ? 'epico' : ''}
         bucle={BUCLE_JUEGO.includes(clip)}
         precargar={PRECARGA_JUEGO[clip].map(rutaJuego)}
         reducido={reducido}
@@ -147,14 +147,14 @@ function Chispas() {
 export function NocheShinobi({ reducido, directo = false }: { reducido: boolean; directo?: boolean }) {
   const [clip, setClip] = useState(directo ? 'durmiendo' : 'buenas-noches')
   return (
-    <VideoEscena className="tema-noche" actual={`noche/${clip}`} bucle={clip === 'durmiendo'} precargar={['noche/durmiendo']} reducido={reducido} onFin={() => setClip('durmiendo')} />
+    <VideoEscena sello="眠" className="tema-noche" actual={`noche/${clip}`} bucle={clip === 'durmiendo'} precargar={['noche/durmiendo']} reducido={reducido} onFin={() => setClip('durmiendo')} />
   )
 }
 
 // ---------- Sueño: el shinobi sentado junto a la cama ----------
 
 export function SuenoShinobi({ reducido }: { reducido: boolean }) {
-  return <VideoEscena className="tema-sueno" actual="sueno/sentado" bucle reducido={reducido} />
+  return <VideoEscena sello="眠" className="tema-sueno" actual="sueno/sentado" bucle reducido={reducido} />
 }
 
 // ---------- Hojas de sprites (rival gris y compañero) ----------

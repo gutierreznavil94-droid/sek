@@ -5,7 +5,6 @@
 import { useState } from 'react'
 import { Tarjeta, movimientoReducido } from '../../ui/componentes'
 import { temaActivo } from '../temas'
-import { TONOS_GRIS, elegirTonoGris, tonoGris, type TonoGris } from './grisPincel'
 import { BolitaDorada, HOJA_RIVAL, JuegoShinobi, NocheShinobi, Pregunta, SpriteClip, SuenoShinobi, useHoja } from './Escenas'
 
 const BASE = import.meta.env.BASE_URL
@@ -59,19 +58,8 @@ export function GaleriaShinobi() {
   const [juego, setJuego] = useState<'pelea' | 'jugando' | 'te'>('pelea')
   const [noche, setNoche] = useState(0)
   const hojaCompanero = `${BASE}${temaActivo().sprite}`
-  const [gris, setGris] = useState<TonoGris>(tonoGris)
   return (
     <>
-      <Tarjeta titulo="Fondo · gris pincel">
-        <p className="chico texto-2" style={{ margin: 0 }}>Qué tan claro es el fondo. Queda guardado en este teléfono.</p>
-        <div className="ga-tonos">
-          {TONOS_GRIS.map((t) => (
-            <button key={t.id} type="button" className={`boton chico ${gris === t.id ? 'activo' : ''}`} onClick={() => { elegirTonoGris(t.id); setGris(t.id) }}>
-              <i style={{ background: t.color }} /> {t.nombre}
-            </button>
-          ))}
-        </div>
-      </Tarjeta>
       <Tarjeta titulo="Animaciones · Compañero">
         <div className="ga-grilla">
           {COMPANERO.map((c) => <Vista key={c.clip} hoja={hojaCompanero} clip={c.clip} titulo={c.titulo} escala={2} />)}
