@@ -10,6 +10,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useLocation } from 'react-router-dom'
 import type { Pelea } from '../services/ninjas'
 import { prepararBatalla } from '../services/batalla'
+import { compromisosDelDia } from '../services/dia'
 import { TIEMPO_ADVERTENCIA_MS, TIEMPO_IGNORADO_MS, guardarRivalPendiente, limpiarRivalPendiente, peleaPendiente, robarXp, rivalPendiente, sortearEscapes } from '../services/rival'
 import { ahora } from '../services/reloj'
 import { carpetaEscenas, temaActivo } from '../temas/temas'
@@ -22,6 +23,14 @@ import { movimientoReducido } from './componentes'
 import { pedirBatalla } from './Batalla'
 import { pedirPelea } from './Ninja'
 import { avisar, mutar } from './estado'
+
+/** El primer pilar que falta hoy (para el 3·2·1 después de la batalla); vacío si no queda ninguno. */
+async function siguientePilar(fecha: string): Promise<string> {
+  try {
+    const c = (await compromisosDelDia(fecha)).find((x) => (x.estado === 'pendiente' || x.estado === 'iniciado') && x.accion.tipo !== 'limite_juego' && x.accion.tipo !== 'acostarse')
+    return c?.accion.nombre ?? ''
+  } catch { return '' }
+}
 
 export type Fase = 'paseo' | 'corre' | 'salta' | 'esquiva' | 'atrapado' | 'advertencia' | 'robo'
 type Rival = { pelea: Pelea; escapes: number; faseInicial: Fase }
@@ -265,7 +274,7 @@ function RivalEnJuego({ rival, enHoy }: { rival: Rival; enHoy: boolean }) {
     const r = await prepararBatalla(pelea.fecha, pelea.distraccion, Math.random, true)
     cerrarRival()
     // Directo a la batalla de flexiones; al ganarla sigue el 3·2·1 con la acción que tocaba.
-    if (r.batalla) pedirBatalla({ ...r.batalla, despues: pelea.momento.pilar?.nombre ?? '' })
+    if (r.batalla) pedirBatalla({ ...r.batalla, despues: pelea.momento.pilar?.nombre ?? (await siguientePilar(pelea.fecha)) })
     else pedirPelea(pelea)
   }
 
