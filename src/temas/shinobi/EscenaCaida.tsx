@@ -46,7 +46,7 @@ export function EscenaCaida({ xp, reducido = false, desdeTension = false, sonido
       {enTumba && modo !== 'dibujo' && (
         <div className="tema-marco tema-caida-marco">
           {modo === 'video'
-            ? <video className="tema-caida-clip" src={CLIP_TUMBA} poster={FIN_TUMBA} playsInline muted autoPlay preload="auto" onEnded={() => setFase((f) => (f === 'tumba' ? 'destello' : f))} onError={() => setModo('dibujo')} />
+            ? <video className="tema-caida-clip" src={CLIP_TUMBA} poster={`${BASE}t6-tumba-regreso-inicio.webp`} playsInline muted autoPlay preload="auto" onEnded={() => setFase((f) => (f === 'tumba' ? 'destello' : f))} onError={() => setModo('dibujo')} />
             : <img className="tema-caida-clip" src={FIN_TUMBA} alt="" onError={() => setModo('dibujo')} />}
           {modo === 'video' && fase === 'tumba' && (
             <>
