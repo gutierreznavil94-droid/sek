@@ -9,7 +9,9 @@ import { DISTRACCIONES_MUESTRA, peleasDelDia, type Pelea } from '../services/nin
 import { ahora, fijarAhora, reiniciarReloj } from '../services/reloj'
 import { guardarRivalPendiente, rivalPendiente } from '../services/rival'
 import { concederXp, xpTotal } from '../services/xp'
-import { batallaEnCurso, descartarBatalla, hayBatalla } from './Batalla'
+import { descartarBatalla } from './Batalla'
+import { descartarDuelo, dueloEnCurso, hayDuelo } from './Duelo'
+import { forzarArchivado } from '../temas/archivado'
 import { RivalCapa, TIEMPOS, descartarRival, hayRival, pedirRival } from './Rival'
 
 const Z = 'America/Argentina/Cordoba'
@@ -19,10 +21,12 @@ const ORIGINAL = { ...TIEMPOS }
 let n = 0
 
 /** Vacía las capas (rival y batalla) entre pruebas: son módulos con estado. */
-function vaciar() { descartarRival(); descartarBatalla() }
+function vaciar() { descartarRival(); descartarBatalla(); descartarDuelo() }
 
 describe('el rival escurridizo en Hoy', () => {
   beforeEach(async () => {
+    // El rival está archivado en el tema (v0.86): acá se prueba el código archivado.
+    forzarArchivado({ rival: false })
     await usarBaseDePruebas(`rival-ui-${++n}`)
     reiniciarReloj()
     fijarAhora(instanteDe(HOY, '19:25', Z))
@@ -31,7 +35,7 @@ describe('el rival escurridizo en Hoy', () => {
     await iniciarCiclo(HOY)
     Object.assign(TIEMPOS, { carreraPxPorSeg: 100000, salto: 5, esquiva: 5, destello: 5, robo: 20, pausaPaseo: [100000, 100000], ignorado: 100000, advertencia: 100000 })
   })
-  afterEach(() => { Object.assign(TIEMPOS, ORIGINAL); vaciar() })
+  afterEach(() => { Object.assign(TIEMPOS, ORIGINAL); vaciar(); forzarArchivado(null) })
 
   it('al dispararse, el rival aparece en Hoy con su nombre, y se guarda como pendiente', async () => {
     render(<MemoryRouter initialEntries={['/']}><RivalCapa /></MemoryRouter>)
@@ -49,8 +53,8 @@ describe('el rival escurridizo en Hoy', () => {
     const rival = await screen.findByRole('button', { name: 'Atrapar a Pereza' })
     fireEvent.click(rival)
     expect(document.querySelector('.rv-shinobi.corre')).toBeTruthy()
-    await waitFor(() => expect(hayBatalla()).toBe(true), { timeout: 3000 })
-    expect(batallaEnCurso()?.pelea.distraccion.id).toBe('pereza')
+    await waitFor(() => expect(hayDuelo()).toBe(true), { timeout: 3000 })
+    expect(dueloEnCurso()?.batalla?.pelea.distraccion.id).toBe('pereza')
     expect(hayRival()).toBe(false)
     expect(rivalPendiente()).toBeNull()
   })
@@ -63,10 +67,10 @@ describe('el rival escurridizo en Hoy', () => {
     fireEvent.click(rival)
     await waitFor(() => expect(document.querySelector('.rv-rival.esquiva')).toBeTruthy(), { timeout: 3000 })
     await waitFor(() => expect(document.querySelector('.rv-rival.paseo')).toBeTruthy(), { timeout: 3000 })
-    expect(hayBatalla()).toBe(false)
+    expect(hayDuelo()).toBe(false)
     expect(rival.getAttribute('data-escapes')).toBe('0')
     fireEvent.click(rival)
-    await waitFor(() => expect(hayBatalla()).toBe(true), { timeout: 3000 })
+    await waitFor(() => expect(hayDuelo()).toBe(true), { timeout: 3000 })
   })
 
   it('ignorado: advertencia que rompe la pantalla y, pasado el tiempo, el robo de 10 XP con su sello', async () => {
@@ -92,7 +96,7 @@ describe('el rival escurridizo en Hoy', () => {
     pedirRival(PELEA, () => 0)
     const boton = await screen.findByRole('button', { name: '¡Atraparlo!' })
     fireEvent.click(boton)
-    await waitFor(() => expect(hayBatalla()).toBe(true), { timeout: 3000 })
+    await waitFor(() => expect(hayDuelo()).toBe(true), { timeout: 3000 })
     expect(await peleasDelDia(HOY)).toHaveLength(0)
   })
 
@@ -116,5 +120,34 @@ describe('el rival escurridizo en Hoy', () => {
     render(<MemoryRouter initialEntries={['/mas']}><RivalCapa /></MemoryRouter>)
     await screen.findByRole('dialog', { name: 'Pereza está por robarte progreso' })
     expect(hayRival()).toBe(true)
+  })
+})
+
+describe('rival archivado (v0.86)', () => {
+  beforeEach(async () => {
+    await usarBaseDePruebas(`rival-archivado-${++n}`)
+    reiniciarReloj()
+    fijarAhora(instanteDe(HOY, '19:25', Z))
+    localStorage.clear()
+    await inicializarSiHaceFalta()
+    await iniciarCiclo(HOY)
+  })
+  afterEach(() => { vaciar(); forzarArchivado(null) })
+
+  it('con el tema tal cual (archivado.rival), no aparece nada del rival: ni muñeco, ni robo, ni pendiente', async () => {
+    forzarArchivado(null)
+    render(<MemoryRouter initialEntries={['/']}><RivalCapa /></MemoryRouter>)
+    expect(pedirRival(PELEA, () => 0)).toBe(false)
+    await act(async () => { await new Promise((r) => setTimeout(r, 50)) })
+    expect(hayRival()).toBe(false)
+    expect(rivalPendiente()).toBeNull()
+    expect(document.querySelector('.rv-rival, .rv-shinobi')).toBeNull()
+  })
+
+  it('un rival que quedó guardado de antes tampoco vuelve', async () => {
+    guardarRivalPendiente(PELEA, ahora() - 60_000)
+    render(<MemoryRouter initialEntries={['/']}><RivalCapa /></MemoryRouter>)
+    await act(async () => { await new Promise((r) => setTimeout(r, 50)) })
+    expect(document.querySelector('.rv-capa, .rv-rival, .rv-adv-boton')).toBeNull()
   })
 })

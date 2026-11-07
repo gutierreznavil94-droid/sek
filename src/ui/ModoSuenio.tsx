@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react'
 import type { ModoSuenio } from '../data/tipos'
 import { formatoHora } from '../domain/fechas'
 import { salirModoSuenio } from '../services/suenio'
-import { Confirmar } from './componentes'
+import { Confirmar, movimientoReducido } from './componentes'
 import { mutar, useTic } from './estado'
 import { BuenasNoches } from './animaciones/Siluetas'
+import { carpetaEscenas } from '../temas/temas'
+import { emitirEvento } from '../temas/eventos'
+import { NocheShinobi } from '../temas/shinobi/Escenas'
 
 /**
  * Pantalla del modo sueño: casi negra, con la hora, hasta cuándo dura y la
@@ -21,12 +24,15 @@ export function PantallaSuenio({ estado, zona, horaDormido, horaFin }: { estado:
     const id = window.setTimeout(() => setSaludo(false), 12000)
     return () => window.clearTimeout(id)
   }, [saludo])
+  useEffect(() => { if (saludo) emitirEvento('dormir') }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const escenas = !!carpetaEscenas()
+  const reducido = movimientoReducido()
   const horaReal = formatoHora(estado.inicio, zona)
   return (
     <div className="modo-suenio" role="dialog" aria-label="Modo sueño" onClick={() => saludo && setSaludo(false)}>
       {saludo ? (
         <div className="suenio-saludo">
-          <BuenasNoches />
+          {escenas ? <NocheShinobi reducido={reducido} /> : <BuenasNoches />}
           <div className="suenio-titulo">{estado.tarde ? `Registrado a las ${horaReal}.` : ''} Buenas noches</div>
           <div className="suenio-resumen">{estado.resumen}</div>
           {!estado.tarde && <div className="suenio-nota">Celu dejado a tiempo. +XP guardado.</div>}
@@ -35,6 +41,7 @@ export function PantallaSuenio({ estado, zona, horaDormido, horaFin }: { estado:
       ) : (
         <div className="suenio-reloj">
           <div className="suenio-hora">{formatoHora(tic, zona)}</div>
+          {escenas && <NocheShinobi reducido={reducido} directo />}
           <div className="suenio-linea">Modo sueño hasta las {horaFin}</div>
           <div className="suenio-linea">A dormir a las {horaDormido}</div>
           {estado.aperturas.length > 0 && <div className="suenio-nota">Abriste la app {estado.aperturas.length === 1 ? '1 vez' : `${estado.aperturas.length} veces`} esta noche. Queda anotado, nada más.</div>}

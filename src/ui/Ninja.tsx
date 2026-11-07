@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { accionDePelea, fraseDePelea, registrarPelea, type Pelea } from '../services/ninjas'
 import { prepararBatalla } from '../services/batalla'
 import { pedirBatalla } from './Batalla'
-import { DURACION, animar, lentoDe, type Animacion } from './animaciones/motor'
+import { animar, duracionDe, lentoDe, type Animacion } from './animaciones/motor'
 import { avisar, mutar } from './estado'
 import { fechaDe } from '../domain/fechas'
 import { ahora } from '../services/reloj'
@@ -40,7 +40,7 @@ export function NinjaPelea() {
     if (!pelea) { setCarta(false); return }
     const a: Animacion = { tipo: 'ejecucion', pilar: 'ninja', titulo: `${pelea.distraccion.nombre} cae`, rival: pelea.distraccion.nombre, estilo: 'diagonal' }
     animar(a, { forzar: true })
-    const id = window.setTimeout(() => setCarta(true), DURACION.ejecucion * lentoDe(a) + 350)
+    const id = window.setTimeout(() => setCarta(true), duracionDe(a) * lentoDe(a) + 350)
     return () => window.clearTimeout(id)
   }, [pelea])
   if (!pelea || !carta) return null

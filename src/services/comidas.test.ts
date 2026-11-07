@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, usarBaseDePruebas } from '../data/db'
 import { instanteDe } from '../domain/fechas'
-import { inicializarSiHaceFalta, obtenerAjustes } from './base'
+import { guardarAjustes, inicializarSiHaceFalta, obtenerAjustes } from './base'
 import { iniciarCiclo } from './ciclo'
 import {
   TABLA_ALIMENTOS, activarPilarComida, alimentoDeOff, buscarCodigo, buscarEn, calcularObjetivo, cargarGuardada, comidasDelDia,
@@ -22,6 +22,8 @@ beforeEach(async () => {
   reiniciarReloj()
   fijarAhora(instanteDe('2026-11-04', '13:00', Z))
   await inicializarSiHaceFalta()
+  // Sin «lo no cumplido resta»: acá se mide solo el pilar de comida (la resta se prueba en restas.test.ts).
+  await guardarAjustes({ xpResta: { activa: false } })
   await iniciarCiclo('2026-11-02')
 })
 

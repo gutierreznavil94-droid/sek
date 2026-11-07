@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { pedirDuelo } from '../Duelo'
+import { REPS_SIN_SERIE } from '../../services/duelo'
 import type { Ajustes } from '../../data/tipos'
 import { guardarAjustes, obtenerAjustes } from '../../services/base'
-import { KANJI, animar, nombreDePilar, configurarAnimaciones, useConfigAnimaciones, type Animacion, type ModoAnimaciones } from '../animaciones/motor'
+import { DURACION_EJECUCION, KANJI, animar, nombreDePilar, configurarAnimaciones, useConfigAnimaciones, type Animacion, type ModoAnimaciones, type VelocidadEjecucion } from '../animaciones/motor'
 import { EditorPose } from '../animaciones/EditorPose'
 import { MuniecoVivo } from '../animaciones/Escena'
 import { Atras, Tarjeta } from '../componentes'
@@ -16,6 +18,11 @@ import { forzarPajaroTorpe } from '../Desintegrar'
 import { useNavigate } from 'react-router-dom'
 import { XP_ROBO_MAX, modoRival, xpRoboDe } from '../../services/rival'
 import { FRASE_TENSION, KANJI_TENSION, pedirTension, useClipsTension } from '../Tension'
+import { pedirCaida } from '../Caida'
+import { carpetaEscenas } from '../../temas/temas'
+import { GaleriaRival, GaleriaShinobi } from '../../temas/shinobi/GaleriaShinobi'
+import { rivalArchivado } from '../../temas/archivado'
+import { XP_CAIDA_MAX, xpCaidaDe } from '../../services/caidas'
 import { REPS_POR_TOQUE, TOPE_BATALLAS_DIA, objetivoBatalla, prepararBatalla } from '../../services/batalla'
 import { listarContadores } from '../../services/contadores'
 import { fechaDe } from '../../domain/fechas'
@@ -50,6 +57,7 @@ export function VerAnimaciones() {
   if (!a) return <p className="vacio">Cargando…</p>
   const ver = (x: Animacion) => animar(x, { forzar: true })
   /** Cámara lenta (x4) solo para esa animación; la casilla general no cambia. */
+  const VELOCIDADES: { v: VelocidadEjecucion; t: string }[] = [{ v: 'normal', t: 'Normal' }, { v: 'rapida', t: 'Rápida' }, { v: 'lenta', t: 'Lenta' }]
   const lenta = (x: Animacion) => ver({ ...x, lento: 4 })
   const guardar = (c: Partial<Ajustes>, msg: string) => mutar(() => guardarAjustes(c)).then(() => avisar(msg, { tipo: 'ok' }))
   const EJ: Animacion = { tipo: 'ejecucion', pilar: 'entrenamiento' }
@@ -62,6 +70,79 @@ export function VerAnimaciones() {
       <button className="boton" onClick={() => lenta(x)}><span className="k">{k}</span><span className="chico">{nombre} · cámara lenta</span></button>
       <button className="boton" onClick={() => ver({ ...x, vieja: true })}><span className="k">{k}</span><span className="chico">{nombre} anterior (muñeco)</span></button>
     </div>
+  )
+  const archivado = rivalArchivado()
+  const rivalYBatalla = (
+    <>
+      <Tarjeta titulo="Ninjas de la distracción">
+        <label className="fila chico" style={{ gap: 8 }}>
+          <input type="checkbox" checked={a.ninjas !== false} onChange={(e) => guardar({ ninjas: e.target.checked }, e.target.checked ? 'Ninjas encendidos' : 'Ninjas apagados')} /> Aparecen en los momentos de duda (y el tajo al volver después de horas)
+        </label>
+        <label className="fila chico" style={{ gap: 8 }}>
+          <input type="checkbox" checked={a.ninjasEnProgreso !== false} onChange={(e) => guardar({ ninjasEnProgreso: e.target.checked }, 'Guardado')} /> Tira «Ninjas vencidos esta semana» en Progreso
+        </label>
+        <MisDistracciones lista={distraccionesDe(a)} />
+        <div className="rejilla-2">
+          <button className="boton" onClick={() => { const l = distraccionesDe(a); if (!l.length) return avisar('Agregá una distracción primero'); pedirPelea({ fecha: '0000-00-00', distraccion: l[0], momento: { momento: 'duda' } }) }}>Probar ninja</button>
+          <button className="boton" onClick={() => setTajo(true)}>Probar el tajo</button>
+        </div>
+        {tajo && <Tajo onFin={() => setTajo(false)} />}
+        <p className="ayuda">Un ninja gris con el nombre de la distracción; el shinobi lo bloquea y queda una frase con «Empezar» / «Ahora no» / «⚔ Batalla». Sin XP por la pelea. Máximo 2 por día solos. El tajo aparece solo al volver a la app después de 3 h con un pilar pendiente; acá lo ves cuando quieras.</p>
+      </Tarjeta>
+
+      <Tarjeta>
+        <h2>Pájaro torpe</h2>
+        <label className="fila chico" style={{ gap: 8 }}>
+          <input type="checkbox" checked={a.pajaroTorpe !== false} onChange={(e) => guardar({ pajaroTorpe: e.target.checked }, e.target.checked ? 'Pájaro torpe encendido' : 'Pájaro torpe apagado')} /> A veces, cuando el encabezado de Hoy se hace pájaros, uno se choca con el borde, dice «¡agh!» y se va para arriba
+        </label>
+        <p className="ayuda">Sale 1 de cada 10 veces, nunca dos seguidas.</p>
+        <PajaroTorpeProbar />
+      </Tarjeta>
+
+      <Tarjeta>
+        <h2>El rival escurridizo</h2>
+        <div className="campo">
+          <label>Cuando aparece una distracción</label>
+          <select value={modoRival(a)} onChange={(e) => guardar({ rival: { ...a.rival, modo: e.target.value as 'escurridizo' | 'carta' } }, e.target.value === 'carta' ? 'Carta directa' : 'Rival escurridizo')}>
+            <option value="escurridizo">Rival escurridizo (atraparlo en Hoy)</option>
+            <option value="carta">Carta directa</option>
+          </select>
+        </div>
+        <div className="campo">
+          <label>XP que roba si lo ignorás (0 a {XP_ROBO_MAX})</label>
+          <input type="number" inputMode="numeric" min={0} max={XP_ROBO_MAX} value={xpRoboDe(a)} onChange={(e) => { const v = Number(e.target.value); if (!Number.isNaN(v)) guardar({ rival: { ...a.rival, xpRobo: Math.max(0, Math.min(XP_ROBO_MAX, Math.round(v))) } }, `Roba ${Math.max(0, Math.min(XP_ROBO_MAX, Math.round(v)))} XP`) }} style={{ width: 90 }} />
+        </div>
+        <button className="boton ancho" onClick={() => { const l = distraccionesDe(a); if (!l.length) return avisar('Agregá una distracción primero'); const r = l[Math.floor(Math.random() * l.length)]; if (!pedirRival({ fecha: fechaDe(ahora(), a.zonaHoraria), distraccion: r, momento: { momento: 'duda' } })) avisar('Ya hay un rival en pantalla'); else avisar(`${r.nombre} anda por Hoy`, { tipo: 'bajo' }) }}>Probar rival (aparece en Hoy)</button>
+        <p className="ayuda">Un muñeco gris con el nombre de la distracción se pasea por abajo de Hoy, sin tapar nada. Tocalo: el shinobi corre y salta; la mitad de las veces lo atrapa al primer toque, a veces se escabulle una o dos veces. Al atraparlo arranca la batalla. Si lo dejás 60 s (o cerrás la app con él en pantalla), avisa rompiendo la pantalla, con 10 s para atraparlo; si no, te roba esa XP (nunca te baja de nivel) y queda el sello «se llevó N XP». Es la única penalización de la app: por eso es chica y editable.</p>
+      </Tarjeta>
+
+      <Tarjeta titulo="Batalla contra la distracción">
+        <label className="fila chico" style={{ gap: 8 }}>
+          <input type="checkbox" checked={a.batalla?.activa !== false} onChange={(e) => guardar({ batalla: { ...a.batalla, activa: e.target.checked } }, e.target.checked ? 'Batalla encendida' : 'Batalla apagada: «Dudo» abre la pelea corta')} /> «Dudo» (arriba en Hoy) arranca el minijuego: 3·2·1 y flexiones por rondas
+        </label>
+        <div className="campo">
+          <label>Ejercicio de la batalla</label>
+          <select value={a.batalla?.contadorId ?? (contadores.datos?.find((c) => /flexi/i.test(c.nombre))?.id ?? contadores.datos?.[0]?.id ?? '')} onChange={(e) => guardar({ batalla: { ...a.batalla, contadorId: e.target.value } }, 'Ejercicio guardado')}>
+            {(contadores.datos ?? []).map((c) => <option key={c.id} value={c.id}>{c.nombre} ({c.cantidadPorToque} por serie)</option>)}
+          </select>
+        </div>
+        <div className="campo">
+          <label>Reps por toque</label>
+          <input type="number" inputMode="numeric" min={1} max={50} value={a.batalla?.repsPorToque ?? REPS_POR_TOQUE} onChange={(e) => { const v = Number(e.target.value); if (v > 0) guardar({ batalla: { ...a.batalla, repsPorToque: v } }, `${v} reps por toque`) }} style={{ width: 90 }} />
+        </div>
+        <div className="campo">
+          <label>Flexiones del duelo sin serie rápida</label>
+          <input type="number" inputMode="numeric" min={1} max={200} value={a.batalla?.repsSinSerie ?? REPS_SIN_SERIE} onChange={(e) => { const v = Number(e.target.value); if (v > 0) guardar({ batalla: { ...a.batalla, repsSinSerie: v } }, `Duelo: ${v} flexiones`) }} style={{ width: 90 }} />
+        </div>
+        <p className="ayuda">Duelo (al alcanzar al rival, al final de Tensión y después de «No cumplí»): pide las reps de una serie del ejercicio (en «No cumplí», la serie más la mitad) y cuenta como una serie hecha.</p>
+        <button className="boton ancho" onClick={() => pedirDuelo({ motivo: 'caida', prueba: true })}>Probar el duelo</button>
+        <p className="ayuda">
+          {(() => { const c = (contadores.datos ?? []).find((x) => x.id === (a.batalla?.contadorId ?? '')) ?? (contadores.datos ?? []).find((x) => /flexi/i.test(x.nombre)) ?? contadores.datos?.[0]; const o = objetivoBatalla(c?.cantidadPorToque, a.batalla?.repsPorToque ?? REPS_POR_TOQUE); return `Objetivo hoy: ${o} ${c ? c.nombre.toLowerCase() : 'flexiones'} (las reps por serie redondeadas a múltiplo de ${a.batalla?.repsPorToque ?? REPS_POR_TOQUE}). Al ganar se anota una serie en el contador con esas reps, con la XP de siempre. Rendirse no anota nada. Tope: ${TOPE_BATALLAS_DIA} batallas por día.` })()}
+        </p>
+        <button className="boton ancho" onClick={async () => { const r = await prepararBatalla(fechaDe(ahora(), a.zonaHoraria)); if (r.batalla) pedirBatalla(r.batalla); else avisar(r.motivo) }}>Probar la batalla</button>
+      </Tarjeta>
+
+    </>
   )
   return (
     <>
@@ -79,7 +160,15 @@ export function VerAnimaciones() {
           ))}
         </div>
         {comparar(EJ, '斬', 'Ejecución')}
-        <p className="ayuda">El ronin corta y el rival cae (videos de Luma). La anterior, con el muñeco, queda guardada acá.</p>
+        <p className="chico texto-2" style={{ margin: '12px 0 6px' }}>Velocidad de la ejecución</p>
+        <div className="selector-3">
+          {VELOCIDADES.map((v) => (
+            <button key={v.v} className={`boton chico ${config.velocidadEjecucion === v.v ? 'primario' : ''}`} onClick={() => { configurarAnimaciones({ velocidadEjecucion: v.v }); ver(EJ) }}>
+              {v.t} · {(DURACION_EJECUCION[v.v] / 1000).toLocaleString('es-AR')} s
+            </button>
+          ))}
+        </div>
+        <p className="ayuda">El ronin corta, el golpe se congela un instante y el rival cae (videos de Luma). También vale para la batalla. La anterior, con el muñeco, queda guardada acá.</p>
       </Tarjeta>
 
       <Tarjeta titulo="Caramelo de monje">
@@ -146,78 +235,37 @@ export function VerAnimaciones() {
         <p className="ayuda">El shinobi chiquito camina por el borde de abajo de Hoy y queda quieto en una esquina en Calendario, Comida y Más. Tocalo y habla. Con «reducir movimiento» queda quieto. Sus frases se editan en Más → Ajustes.</p>
       </Tarjeta>
 
-      <Tarjeta titulo="Ninjas de la distracción">
-        <label className="fila chico" style={{ gap: 8 }}>
-          <input type="checkbox" checked={a.ninjas !== false} onChange={(e) => guardar({ ninjas: e.target.checked }, e.target.checked ? 'Ninjas encendidos' : 'Ninjas apagados')} /> Aparecen en los momentos de duda (y el tajo al volver después de horas)
-        </label>
-        <label className="fila chico" style={{ gap: 8 }}>
-          <input type="checkbox" checked={a.ninjasEnProgreso !== false} onChange={(e) => guardar({ ninjasEnProgreso: e.target.checked }, 'Guardado')} /> Tira «Ninjas vencidos esta semana» en Progreso
-        </label>
-        <MisDistracciones lista={distraccionesDe(a)} />
-        <div className="rejilla-2">
-          <button className="boton" onClick={() => { const l = distraccionesDe(a); if (!l.length) return avisar('Agregá una distracción primero'); pedirPelea({ fecha: '0000-00-00', distraccion: l[0], momento: { momento: 'duda' } }) }}>Probar ninja</button>
-          <button className="boton" onClick={() => setTajo(true)}>Probar el tajo</button>
-        </div>
-        {tajo && <Tajo onFin={() => setTajo(false)} />}
-        <p className="ayuda">Un ninja gris con el nombre de la distracción; el shinobi lo bloquea y queda una frase con «Empezar» / «Ahora no» / «⚔ Batalla». Sin XP por la pelea. Máximo 2 por día solos. El tajo aparece solo al volver a la app después de 3 h con un pilar pendiente; acá lo ves cuando quieras.</p>
-      </Tarjeta>
+      {/* Rival, ninjas, batalla y duelo: archivados por ahora (v0.86), plegados al final. */}
+      {!archivado && rivalYBatalla}
 
-      <Tarjeta>
-        <h2>Pájaro torpe</h2>
-        <label className="fila chico" style={{ gap: 8 }}>
-          <input type="checkbox" checked={a.pajaroTorpe !== false} onChange={(e) => guardar({ pajaroTorpe: e.target.checked }, e.target.checked ? 'Pájaro torpe encendido' : 'Pájaro torpe apagado')} /> A veces, cuando el encabezado de Hoy se hace pájaros, uno se choca con el borde, dice «¡agh!» y se va para arriba
-        </label>
-        <p className="ayuda">Sale 1 de cada 10 veces, nunca dos seguidas.</p>
-        <PajaroTorpeProbar />
-      </Tarjeta>
-
-      <Tarjeta>
-        <h2>El rival escurridizo</h2>
-        <div className="campo">
-          <label>Cuando aparece una distracción</label>
-          <select value={modoRival(a)} onChange={(e) => guardar({ rival: { ...a.rival, modo: e.target.value as 'escurridizo' | 'carta' } }, e.target.value === 'carta' ? 'Carta directa' : 'Rival escurridizo')}>
-            <option value="escurridizo">Rival escurridizo (atraparlo en Hoy)</option>
-            <option value="carta">Carta directa</option>
-          </select>
-        </div>
-        <div className="campo">
-          <label>XP que roba si lo ignorás (0 a {XP_ROBO_MAX})</label>
-          <input type="number" inputMode="numeric" min={0} max={XP_ROBO_MAX} value={xpRoboDe(a)} onChange={(e) => { const v = Number(e.target.value); if (!Number.isNaN(v)) guardar({ rival: { ...a.rival, xpRobo: Math.max(0, Math.min(XP_ROBO_MAX, Math.round(v))) } }, `Roba ${Math.max(0, Math.min(XP_ROBO_MAX, Math.round(v)))} XP`) }} style={{ width: 90 }} />
-        </div>
-        <button className="boton ancho" onClick={() => { const l = distraccionesDe(a); if (!l.length) return avisar('Agregá una distracción primero'); const r = l[Math.floor(Math.random() * l.length)]; if (!pedirRival({ fecha: fechaDe(ahora(), a.zonaHoraria), distraccion: r, momento: { momento: 'duda' } })) avisar('Ya hay un rival en pantalla'); else avisar(`${r.nombre} anda por Hoy`, { tipo: 'bajo' }) }}>Probar rival (aparece en Hoy)</button>
-        <p className="ayuda">Un muñeco gris con el nombre de la distracción se pasea por abajo de Hoy, sin tapar nada. Tocalo: el shinobi corre y salta; la mitad de las veces lo atrapa al primer toque, a veces se escabulle una o dos veces. Al atraparlo arranca la batalla. Si lo dejás 60 s (o cerrás la app con él en pantalla), avisa rompiendo la pantalla, con 10 s para atraparlo; si no, te roba esa XP (nunca te baja de nivel) y queda el sello «se llevó N XP». Es la única penalización de la app: por eso es chica y editable.</p>
-      </Tarjeta>
-
-      <Tarjeta titulo="Batalla contra la distracción">
-        <label className="fila chico" style={{ gap: 8 }}>
-          <input type="checkbox" checked={a.batalla?.activa !== false} onChange={(e) => guardar({ batalla: { ...a.batalla, activa: e.target.checked } }, e.target.checked ? 'Batalla encendida' : 'Batalla apagada: «Dudo» abre la pelea corta')} /> «Dudo» (arriba en Hoy) arranca el minijuego: 3·2·1 y flexiones por rondas
-        </label>
-        <div className="campo">
-          <label>Ejercicio de la batalla</label>
-          <select value={a.batalla?.contadorId ?? (contadores.datos?.find((c) => /flexi/i.test(c.nombre))?.id ?? contadores.datos?.[0]?.id ?? '')} onChange={(e) => guardar({ batalla: { ...a.batalla, contadorId: e.target.value } }, 'Ejercicio guardado')}>
-            {(contadores.datos ?? []).map((c) => <option key={c.id} value={c.id}>{c.nombre} ({c.cantidadPorToque} por serie)</option>)}
-          </select>
-        </div>
-        <div className="campo">
-          <label>Reps por toque</label>
-          <input type="number" inputMode="numeric" min={1} max={50} value={a.batalla?.repsPorToque ?? REPS_POR_TOQUE} onChange={(e) => { const v = Number(e.target.value); if (v > 0) guardar({ batalla: { ...a.batalla, repsPorToque: v } }, `${v} reps por toque`) }} style={{ width: 90 }} />
-        </div>
-        <p className="ayuda">
-          {(() => { const c = (contadores.datos ?? []).find((x) => x.id === (a.batalla?.contadorId ?? '')) ?? (contadores.datos ?? []).find((x) => /flexi/i.test(x.nombre)) ?? contadores.datos?.[0]; const o = objetivoBatalla(c?.cantidadPorToque, a.batalla?.repsPorToque ?? REPS_POR_TOQUE); return `Objetivo hoy: ${o} ${c ? c.nombre.toLowerCase() : 'flexiones'} (las reps por serie redondeadas a múltiplo de ${a.batalla?.repsPorToque ?? REPS_POR_TOQUE}). Al ganar se anota una serie en el contador con esas reps, con la XP de siempre. Rendirse no anota nada. Tope: ${TOPE_BATALLAS_DIA} batallas por día.` })()}
-        </p>
-        <button className="boton ancho" onClick={async () => { const r = await prepararBatalla(fechaDe(ahora(), a.zonaHoraria)); if (r.batalla) pedirBatalla(r.batalla); else avisar(r.motivo) }}>Probar la batalla</button>
-      </Tarjeta>
-
+      {/* Animaciones del tema (Shinobi): Compañero, Juego y Noche (el rival, en «Archivado») */}
+      {carpetaEscenas() && <GaleriaShinobi sinRival={archivado} />}
       <Tarjeta titulo="Tensión 「進」">
-        <p className="chico texto-2" style={{ margin: 0 }}>Cinemática para el momento de estrés: el shinobi mira, el ejército corre, te da la mano y espera tu toque; desenvaina y carga. Termina con el kanji y la frase de abajo. Sin tope ni XP.</p>
+        <p className="chico texto-2" style={{ margin: 0 }}>Cinemática para el momento de estrés: el shinobi te da la mano y espera tu toque. Termina con el kanji y la frase de abajo. Sin tope ni XP (si no le das la mano, es una caída).</p>
         <div className="fila" style={{ gap: 8 }}>
           <input aria-label="Kanji del final" value={kanjiT} maxLength={2} placeholder={KANJI_TENSION} onChange={(e) => setKanjiT(e.target.value)} style={{ width: 64, textAlign: 'center', fontSize: '1.3rem' }} />
           <input aria-label="Frase del final" value={fraseT} maxLength={60} placeholder={FRASE_TENSION} onChange={(e) => setFraseT(e.target.value)} style={{ flex: 1 }} />
           <button className="boton chico" onClick={() => guardar({ tension: { kanji: kanjiT.trim() || undefined, frase: fraseT } }, 'Guardado')}>Guardar</button>
         </div>
         {clipsTension
-          ? <button className="boton ancho" onClick={() => pedirTension()}>Ver la cinemática</button>
-          : <p className="ayuda">Todavía no están los videos: el botón 「進」 aparece en Hoy (al lado de «Dudo») cuando los clips de Luma estén en animaciones/tension/ (t1-mirada, t2-ejercito, t3-mano, t3b-espera, t4-carga).</p>}
+          ? (
+            <div className="col" style={{ gap: 6 }}>
+              <button className="boton ancho" onClick={() => pedirTension({ prueba: true, auto: 'mano' })}>Tensión: le das la mano</button>
+              <button className="boton ancho" onClick={() => pedirTension({ prueba: true, auto: 'soltar' })}>Tensión: no le das la mano</button>
+            </div>
+          )
+          : <p className="ayuda">Todavía no están los videos: el botón 「進」 aparece en Hoy (al lado de «Dudo») cuando estén los clips en temas/shinobi/tension/.</p>}
+        <p className="ayuda">Mirada, pasos en los charcos, la mano y la espera (los rivales bajan por las laderas, cada vez más cerca). Si le das la mano, se tira del risco y carga. Si no, la derrota y sigue la caída. Acá elige sola después de unos 11 s de espera y no te saca XP.</p>
+      </Tarjeta>
+
+      <Tarjeta titulo="Caída · Nuevo round 「甦」">
+        <p className="chico texto-2" style={{ margin: 0 }}>Cuando tocás «No cumplí mi palabra» (abajo de todo en Hoy) o no le das la mano en Tensión: los rivales te pasan por encima, la tumba bajo el árbol seco, la mano que sale de la tierra y «NUEVO ROUND». No reinicia nada: el día sigue igual.</p>
+        <div className="campo">
+          <label>XP que saca una caída (0 a {XP_CAIDA_MAX})</label>
+          <input type="number" inputMode="numeric" min={0} max={XP_CAIDA_MAX} value={xpCaidaDe(a)} onChange={(e) => { const v = Number(e.target.value); if (!Number.isNaN(v)) { const x = Math.max(0, Math.min(XP_CAIDA_MAX, Math.round(v))); guardar({ caida: { ...a.caida, xp: x } }, `Una caída saca ${x} XP`) } }} style={{ width: 90 }} />
+        </div>
+        <button className="boton ancho" onClick={() => void pedirCaida('boton', { prueba: true })}>Caída (sin perder XP)</button>
+        <p className="ayuda">Queda una tumba rota en el Calendario, en Progreso («Caídas superadas») y en el registro de batallas del día. Al cerrar la escena tenés 10 s para «Deshacer». </p>
       </Tarjeta>
 
       <Tarjeta titulo="Nombre del personaje">
@@ -232,6 +280,16 @@ export function VerAnimaciones() {
         <p className="chico texto-2">El shinobi es un muñeco articulado: cada pose es una lista de ángulos. Movelos y mirá el resultado. Para calcar un dibujo tuyo, cargá la foto de fondo.</p>
         {editor ? <EditorPose /> : <button className="boton ancho" onClick={() => setEditor(true)}>Abrir el editor</button>}
       </Tarjeta>
+
+      {archivado && (
+        <details className="tarjeta archivado-grupo">
+          <summary><b>Archivado</b> <span className="muy-chico texto-3">· Dudo, el rival, la batalla y el duelo (escondidos por ahora)</span></summary>
+          <div className="col" style={{ gap: 12, marginTop: 10 }}>
+            {rivalYBatalla}
+            {carpetaEscenas() && <GaleriaRival />}
+          </div>
+        </details>
+      )}
     </>
   )
 }

@@ -14,7 +14,10 @@ import { PantallaSuenio } from './ModoSuenio'
 import { CapaAnimacion } from './animaciones/CapaAnimacion'
 import { NinjaPelea } from './Ninja'
 import { BatallaCapa } from './Batalla'
+import { DueloCapa } from './Duelo'
 import { TensionCapa } from './Tension'
+import { CaidaCapa } from './Caida'
+import { CapaXpPerdida } from '../temas/xpPerdida'
 import { RivalCapa } from './Rival'
 import { avisar, mutar, notificarCambio, useDatos, useVersion } from './estado'
 import { Layout } from './Layout'
@@ -55,6 +58,7 @@ import { Protocolo321 } from './paginas/Protocolo321'
 import { RevisionDiaria } from './paginas/RevisionDiaria'
 import { RevisionSemanal } from './paginas/RevisionSemanal'
 import { SiguienteAccion } from './paginas/SiguienteAccion'
+import { Organizacion } from './paginas/Organizacion'
 import { recordatorios } from '../reminders/recordatorios'
 
 const VerAnimaciones = lazy(() => import('./paginas/VerAnimaciones').then((m) => ({ default: m.VerAnimaciones })))
@@ -157,7 +161,10 @@ export function App() {
       <CapaAnimacion />
       <NinjaPelea />
       <BatallaCapa />
+      <DueloCapa />
       <TensionCapa />
+      <CaidaCapa />
+      <CapaXpPerdida />
       <RivalCapa />
       <Avisos />
     </HashRouter>
@@ -220,6 +227,7 @@ function Rutas() {
         <Route path="/calendario/horario" element={<MiHorario />} />
         <Route path="/juego" element={<Juego hoy={hoy} />} />
         <Route path="/progreso/*" element={<Progreso hoy={hoy} />} />
+        <Route path="/organizacion" element={<Organizacion hoy={hoy} />} />
         <Route path="/mas" element={<Mas />} />
         <Route path="/mas/identidad" element={<Identidad />} />
         <Route path="/mas/atributos" element={<Atributos hoy={hoy} />} />

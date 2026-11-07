@@ -24,6 +24,7 @@ import { limiteJuegoDelDia } from './feriados'
 import { ahora } from './reloj'
 import { cuotaDelDia } from '../domain/cuotas'
 import { anularXp, concederXp, reglaDeAccion, xpDelDia } from './xp'
+import { aplicarRestas, asegurarInicioResta, devolverResta } from './restas'
 
 export function idCompromiso(accionId: string, fecha: FechaDia): string {
   return `${accionId}:${fecha}`
@@ -274,6 +275,7 @@ export async function corregirCompromiso(id: string, nuevoEstado: EstadoCompromi
     // Una corrección explícita se evalúa a la hora prevista del día, no a la hora de la corrección.
     const ajustes = await obtenerAjustes()
     await completarCompromiso(id, { minutos, esCorreccion: true, motivo, instante: instanteDe(antes.fecha, '12:00', ajustes.zonaHoraria) })
+    await devolverResta(antes.accionId, antes.fecha, motivo)
   } else {
     const accion = await d.acciones.get(antes.accionId)
     if (accion) {
@@ -435,6 +437,8 @@ export async function cerrarDiasPendientes(): Promise<FechaDia[]> {
   if (!ciclo) return []
   const ajustes = await obtenerAjustes()
   const hoy = fechaDe(ahora(), ajustes.zonaHoraria)
+  // «Lo no cumplido resta»: la primera vez queda anotado que vale desde hoy (nunca hacia atrás).
+  await asegurarInicioResta(hoy)
   const cerradas: FechaDia[] = []
   const ultimoCerrado = (await d.diasCerrados.orderBy('fecha').last())?.fecha
   let f = ultimoCerrado ? sumarDias(ultimoCerrado, 1) : ciclo.inicio
@@ -481,6 +485,8 @@ async function cerrarDia(fecha: FechaDia): Promise<DiaCerrado> {
     else if (r.cumplido) await completarCompromiso(plan.id, { instante: instanteDe(fecha, '23:59', ajustes.zonaHoraria) })
     else await cambiarEstado(plan.id, { estado: 'omitido', nota: `${r.kcal} kcal · ${r.proteina} g de proteína` })
   }
+  // 2c. Lo no cumplido resta (pilares y series rápidas, la mitad de su XP; nunca bajo 0).
+  await aplicarRestas(fecha)
   // 3. Cumplimiento del día y foto de atributos.
   const cerrado = await recalcularDiaCerrado(fecha, minutosJuego, !!excepcion)
   // 4. Bonificación de racha: cada bloque de 7 días.

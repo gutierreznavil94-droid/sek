@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
 import { CLIMA_ACTIVO, elegirModoFondo, useModoFondo, type ModoFondo } from '../../fondos/elegir'
 import type { Ajustes as TipoAjustes } from '../../data/tipos'
-import { guardarAjustes, obtenerAjustes } from '../../services/base'
+import { fechaHoy, guardarAjustes, obtenerAjustes } from '../../services/base'
 import { Atras, Tarjeta, elegirMovimiento, preferenciaMovimiento, sistemaPideReducir, type PreferenciaMovimiento } from '../componentes'
 import { avisar, mutar, useDatos } from '../estado'
 import { FRASES_DORMIR_DEFECTO, MINUTOS_AVISO_DORMIR } from '../../services/dormir'
 import { frasesCompanero } from '../../services/companero'
+import { FORJA_DEFECTO } from '../../domain/forja'
+import { configResta, cuantoResta } from '../../domain/resta'
+import { cambiarResta } from '../../services/restas'
 import { Divisor, elegirDivisor, useVarianteDivisor, type VarianteDivisor } from '../Divisor'
 
 const ZONAS = ['America/Argentina/Cordoba', 'America/Argentina/Buenos_Aires', 'America/Montevideo', 'America/Santiago', 'America/Sao_Paulo', 'America/Lima', 'America/Bogota', 'America/Mexico_City', 'Europe/Madrid', 'UTC']
@@ -81,6 +84,28 @@ function ElegirMovimiento() {
   )
 }
 
+/** «Lo no cumplido resta»: prendido/apagado y el %. Se guarda al tocar; vale desde hoy, nunca hacia atrás. */
+function TarjetaResta({ a, onCambio }: { a: TipoAjustes; onCambio: (a: TipoAjustes) => void }) {
+  const cfg = configResta(a)
+  const [pct, setPct] = useState(String(cfg.porcentaje))
+  const guardar = async (cambios: { activa?: boolean; porcentaje?: number }) => {
+    const hoy = await fechaHoy()
+    const nuevo = await mutar(() => cambiarResta(cambios, hoy))
+    onCambio(nuevo)
+    setPct(String(configResta(nuevo).porcentaje))
+    return nuevo
+  }
+  return (
+    <Tarjeta titulo="Lo no cumplido resta">
+      <label className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={cfg.activa} onChange={async (e) => { await guardar({ activa: e.target.checked }); avisar(e.target.checked ? 'Lo no cumplido resta, desde hoy' : 'Lo no cumplido ya no resta') }} /> Lo no cumplido resta</label>
+      <div className="rejilla-2">
+        <div className="campo"><label>Cuánto resta (% de la XP que da)</label><input type="number" inputMode="numeric" min={10} max={100} disabled={!cfg.activa} value={pct} onChange={(e) => setPct(e.target.value)} onBlur={async () => { const v = Number(pct); if (Number.isFinite(v) && v !== cfg.porcentaje) { await guardar({ porcentaje: v }); avisar('Guardado') } else setPct(String(cfg.porcentaje)) }} /></div>
+      </div>
+      <p className="ayuda">Al cerrar el día, cada pilar o serie rápida que tocaba y no hiciste resta {cfg.porcentaje} % de su XP (Entrenamiento da 30 → −{cuantoResta(30, cfg.porcentaje)}). Con doble meta, la primera ya te cubre. No resta en descanso, lo pausado ni la falla perdonada de la forja. La XP nunca baja de 0.{cfg.desde ? ` Vale desde el ${cfg.desde.split('-').reverse().join('/')}; los días de antes no se tocan.` : ''}</p>
+    </Tarjeta>
+  )
+}
+
 export function Ajustes() {
   const datos = useDatos(() => obtenerAjustes(), [])
   const [a, setA] = useState<TipoAjustes | null>(null)
@@ -117,6 +142,10 @@ export function Ajustes() {
           <label key={k} className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={a.fondoLluvia?.[k] !== false} onChange={async (e) => { const v = { ...a.fondoLluvia, [k]: e.target.checked }; set('fondoLluvia', v); await mutar(() => guardarAjustes({ fondoLluvia: v })); avisar(e.target.checked ? 'Lluvia encendida' : 'Lluvia apagada') }} /> {texto}</label>
         ))}
       </Tarjeta>
+      <Tarjeta titulo="Brillo de pendientes">
+        <label className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={a.brilloPendientes !== false} onChange={async (e) => { set('brilloPendientes', e.target.checked); await mutar(() => guardarAjustes({ brilloPendientes: e.target.checked })); avisar(e.target.checked ? 'Brillo de pendientes encendido' : 'Brillo de pendientes apagado') }} /> En Hoy, lo que falta titila en gris y lo hecho brilla en verde</label>
+        <p className="ayuda">Pilares, Revisión diaria, 3·2·1, Siguiente acción, series rápidas y la fruta. Con «reducir movimiento» no titila: queda el color fijo.</p>
+      </Tarjeta>
       <ElegirMovimiento />
       <Tarjeta titulo="Fondo de las animaciones">
         <div className="fondos-opciones" role="radiogroup" aria-label="Fondo de las animaciones">
@@ -145,6 +174,15 @@ export function Ajustes() {
           <div className="campo"><label>Aviso al (%)</label><input type="number" inputMode="numeric" value={a.avisoJuegoPorcentaje} onChange={num('avisoJuegoPorcentaje', 10, 100)} /></div>
         </div>
         <p className="ayuda">Los feriados se marcan desde el Calendario. El cambio vale de hoy en adelante; los días ya cerrados no se recalculan.</p>
+      </Tarjeta>
+      <TarjetaResta a={a} onCambio={(x) => setA({ ...a, xpResta: x.xpResta })} />
+      <Tarjeta titulo="鍛 Forja de hábitos">
+        <div className="rejilla-2">
+          {([['dias', 'Días de forja', 1, 120], ['validos', 'Días válidos necesarios', 1, 120], ['xpDia', 'XP por día cumplido', 0, 100], ['xpForjado', 'XP al forjarse', 0, 500]] as const).map(([k, t, mn, mx]) => (
+            <div key={k} className="campo"><label>{t}</label><input type="number" inputMode="numeric" value={{ ...FORJA_DEFECTO, ...(a.forja ?? {}) }[k]} onChange={(e) => { const v = Number(e.target.value); if (Number.isFinite(v)) set('forja', { ...(a.forja ?? {}), [k]: Math.max(mn, Math.min(mx, v)) }) }} /></div>
+          ))}
+        </div>
+        <p className="ayuda">Cada semana de la forja perdona 1 falla. Si los válidos son más que los días, se usan los días. La XP ya ganada no cambia.</p>
       </Tarjeta>
       <Tarjeta titulo="XP y niveles">
         <div className="rejilla-2">

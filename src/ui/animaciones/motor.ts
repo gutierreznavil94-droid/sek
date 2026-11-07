@@ -20,7 +20,7 @@ export type ModoAnimaciones = 'todas' | 'logros' | 'ninguna'
 
 /** Duración máxima de cada animación (ms), según lo pedido. */
 export const DURACION: Record<Animacion['tipo'], number> = {
-  ejecucion: 2900, // ejecución con los dos videos de Luma: impacto al 46 % (1,33 s) y la caída del rival estirada hasta el 92 % (ver cuadroEjecucion)
+  ejecucion: 1500, // ejecución con los dos videos de Luma, a velocidad «normal»: corte 0,45 s, golpe congelado hasta 0,6 s, caída hasta 1,2 s, tinta hasta 1,5 s (ver cuadroEjecucion)
   parry: 1900, // parry hecho con el video de Luma (88 cuadros seguidos a ~46 fps: casi el doble de rápido que el video)
   postura: 1400, // caramelo hecho con el video de Luma (56 cuadros a 40 fps)
   logro: 2600, // logro hecho con el video de Luma: 2 s de movimiento + 0,6 s de pose de victoria con el sello
@@ -30,6 +30,7 @@ export const DURACION: Record<Animacion['tipo'], number> = {
 export function duracionDe(a: Animacion): number {
   if (a.tipo === 'parry' && a.vieja) return 600
   if (a.tipo === 'ejecucion' && a.vieja) return 1500
+  if (a.tipo === 'ejecucion') return DURACION_EJECUCION[config.velocidadEjecucion]
   if (a.tipo === 'postura' && a.vieja) return 1200
   if (a.tipo === 'logro' && a.vieja) return 2000
   return DURACION[a.tipo]
@@ -73,15 +74,28 @@ export function elegirCorte(pilar: string, azar = Math.random): EstiloCorte {
   return otros[Math.floor(azar() * otros.length) % otros.length]
 }
 
-type Config = { modo: ModoAnimaciones; sonido: boolean; nombre: string; lento: number; tema: 'claro' | 'oscuro' | 'epico'; tinta: boolean }
+/** Velocidad de la ejecución (se elige en Ver animaciones). El golpe cae siempre al 30 % del total. */
+export type VelocidadEjecucion = 'normal' | 'rapida' | 'lenta'
+export const DURACION_EJECUCION: Record<VelocidadEjecucion, number> = { normal: 1500, rapida: 1200, lenta: 2100 }
+/** Momento del golpe (fracción del total): corte 0,45 s de 1,5 s. Acá caen el destello, el flash, la tinta y el sonido. */
+export const IMPACTO_EJECUCION = 0.3
+
+type Config = { modo: ModoAnimaciones; sonido: boolean; nombre: string; lento: number; tema: 'claro' | 'oscuro' | 'epico'; tinta: boolean; velocidadEjecucion: VelocidadEjecucion }
 function leerTinta(): boolean {
   try { return localStorage.getItem('anim-tinta') !== 'no' } catch { return true }
 }
-let config: Config = { modo: 'todas', sonido: false, nombre: 'Shinobi', lento: 1, tema: 'claro', tinta: leerTinta() }
+function leerVelocidad(): VelocidadEjecucion {
+  try {
+    const v = localStorage.getItem('anim-velocidad-ejecucion')
+    return v === 'rapida' || v === 'lenta' ? v : 'normal'
+  } catch { return 'normal' }
+}
+let config: Config = { modo: 'todas', sonido: false, nombre: 'Shinobi', lento: 1, tema: 'claro', tinta: leerTinta(), velocidadEjecucion: leerVelocidad() }
 
 export function configurarAnimaciones(c: Partial<Config>): void {
   config = { ...config, ...c }
   if (c.tinta !== undefined) try { localStorage.setItem('anim-tinta', c.tinta ? 'si' : 'no') } catch { /* sin almacenamiento */ }
+  if (c.velocidadEjecucion !== undefined) try { localStorage.setItem('anim-velocidad-ejecucion', c.velocidadEjecucion) } catch { /* sin almacenamiento */ }
   avisarOyentes()
 }
 
@@ -297,11 +311,92 @@ export function sonarLluvia(): () => void {
 }
 
 /** Choque de katanas suelto (batalla). Respeta el ajuste de sonido. */
-export function sonarChoque(): void {
+export function sonarChoque(retrasoS = 0): void {
   if (!config.sonido) return
   const ac = audio()
   if (!ac) return
-  try { choque(ac, ac.currentTime + 0.01) } catch { /* sin sonido */ }
+  try { choque(ac, ac.currentTime + 0.01 + retrasoS) } catch { /* sin sonido */ }
+}
+
+/** Estampida (caída): muchos pasos graves que se aceleran y metal suelto, ~2,5 s. Respeta el ajuste de sonido. */
+export function sonarEstampida(segundos = 2.5): void {
+  if (!config.sonido) return
+  const ac = audio()
+  if (!ac) return
+  try {
+    const t0 = ac.currentTime + 0.02
+    let t = t0
+    let paso = 0.22
+    while (t < t0 + segundos) {
+      const src = ac.createBufferSource()
+      src.buffer = ruido(ac, 0.08)
+      const f = ac.createBiquadFilter()
+      f.type = 'lowpass'
+      f.frequency.value = 260 + Math.random() * 160
+      const g = ac.createGain()
+      const vol = 0.25 + 0.45 * ((t - t0) / segundos)
+      g.gain.setValueAtTime(vol, t)
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.08)
+      src.connect(f).connect(g).connect(ac.destination)
+      src.start(t)
+      if (Math.random() < 0.18) choque(ac, t + 0.03)
+      t += paso * (0.6 + Math.random() * 0.6)
+      paso = Math.max(0.05, paso * 0.93)
+    }
+  } catch { /* sin sonido */ }
+}
+
+/** Trueno: un chasquido y un retumbo grave que se apaga (el destello de la tumba). */
+export function sonarTrueno(): void {
+  const ac = audio()
+  if (!ac) return
+  try {
+    const t = ac.currentTime + 0.02
+    const src = ac.createBufferSource()
+    src.buffer = ruido(ac, 2.4)
+    const f = ac.createBiquadFilter()
+    f.type = 'lowpass'
+    f.frequency.setValueAtTime(2400, t)
+    f.frequency.exponentialRampToValueAtTime(120, t + 1.6)
+    const g = ac.createGain()
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.exponentialRampToValueAtTime(0.7, t + 0.03)
+    g.gain.exponentialRampToValueAtTime(0.25, t + 0.5)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 2.3)
+    src.connect(f).connect(g).connect(ac.destination)
+    src.start(t)
+    src.stop(t + 2.4)
+  } catch { /* sin sonido */ }
+}
+
+/** Trueno lejano de la tormenta de los fondos: retumbo grave y suave (más fuerte de vez en cuando). */
+export function sonarTruenoLejano(fuerte = false): void {
+  const ac = audio()
+  if (!ac) return
+  try {
+    const t = ac.currentTime + 0.05
+    const src = ac.createBufferSource()
+    src.buffer = ruido(ac, 3.2)
+    const f = ac.createBiquadFilter()
+    f.type = 'lowpass'
+    f.frequency.setValueAtTime(fuerte ? 700 : 420, t)
+    f.frequency.exponentialRampToValueAtTime(70, t + 2.6)
+    const g = ac.createGain()
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.exponentialRampToValueAtTime(fuerte ? 0.3 : 0.14, t + 0.25)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 3.1)
+    src.connect(f).connect(g).connect(ac.destination)
+    src.start(t)
+    src.stop(t + 3.2)
+  } catch { /* sin sonido */ }
+}
+// Los fondos con lluvia avisan cada relámpago con un evento; acá suena el trueno si el sonido de animaciones está prendido.
+if (typeof window !== 'undefined') {
+  window.addEventListener('sek-trueno', (e) => {
+    if (!config.sonido) return
+    const fuerte = !!(e as CustomEvent<{ fuerte?: boolean }>).detail?.fuerte
+    window.setTimeout(() => sonarTruenoLejano(fuerte), 600 + Math.random() * 1400)
+  })
 }
 
 /** Golpe de taiko grave: un solo aviso a 10 s del fin del descanso (independiente del sonido de animaciones). */
@@ -347,7 +442,7 @@ export function sonar(a: Animacion): void {
   const t = ac.currentTime + 0.01
   const l = lentoDe(a)
   try {
-    if (a.tipo === 'ejecucion') corte(ac, t + (a.vieja ? 0.42 : 1.33) * l)
+    if (a.tipo === 'ejecucion') corte(ac, t + (a.vieja ? 0.42 : IMPACTO_EJECUCION * duracionDe(a) / 1000) * l)
     else if (a.tipo === 'parry') choque(ac, t + (a.vieja ? 0.12 : 0.67) * l)
     else if (a.tipo === 'postura') aura(ac, t + (a.vieja ? 0.5 : 0.72) * l, a.modo === 'siguiente')
     else {
@@ -376,5 +471,36 @@ export function sonarToc(): void {
     o.connect(g).connect(ac.destination)
     o.start(t)
     o.stop(t + 0.12)
+  } catch { /* sin sonido */ }
+}
+
+/** Piedra que cruje: chasquidos secos de ruido grave-medio. */
+function crujido(ac: AudioContext, t: number, fuerte = false) {
+  for (let i = 0; i < (fuerte ? 5 : 3); i++) {
+    const n = ac.createBufferSource()
+    n.buffer = ruido(ac, 0.05)
+    const f = ac.createBiquadFilter()
+    f.type = 'bandpass'
+    f.frequency.value = 600 + Math.random() * 900
+    f.Q.value = 1.2
+    const g = ac.createGain()
+    const ti = t + i * (0.035 + Math.random() * 0.03)
+    g.gain.setValueAtTime(fuerte ? 0.55 : 0.35, ti)
+    g.gain.exponentialRampToValueAtTime(0.0001, ti + 0.05)
+    n.connect(f).connect(g).connect(ac.destination)
+    n.start(ti)
+  }
+}
+
+/** Forja de hábitos: «paso» = tajo + piedra que cruje; «pedazo» = piedra que cae; «forjado» = taiko. Respeta el ajuste de sonido. */
+export function sonarForja(tipo: 'paso' | 'pedazo' | 'forjado', retrasoS = 0): void {
+  if (!config.sonido) return
+  const ac = audio()
+  if (!ac) return
+  try {
+    const t = ac.currentTime + 0.01 + retrasoS
+    if (tipo === 'paso') { corte(ac, t); crujido(ac, t + 0.12) }
+    else if (tipo === 'pedazo') { crujido(ac, t, true); tambor(ac, t + 0.55) }
+    else { crujido(ac, t, true); tambor(ac, t + 0.05); tambor(ac, t + 0.5); aura(ac, t + 0.5) }
   } catch { /* sin sonido */ }
 }

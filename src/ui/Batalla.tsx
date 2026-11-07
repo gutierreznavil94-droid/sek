@@ -6,8 +6,8 @@
  */
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react'
 import { terminarBatalla, rendirse, type Batalla, type ResultadoBatalla } from '../services/batalla'
-import { Enemigo, FondoEpico } from './animaciones/Escena'
-import { configuracionAnimaciones, sonarChoque, sonarTaiko } from './animaciones/motor'
+import { Enemigo, FondoEpico, TRAMOS_EJECUCION, cuadroEjecucion } from './animaciones/Escena'
+import { DURACION_EJECUCION, configuracionAnimaciones, sonarChoque, sonarTaiko } from './animaciones/motor'
 import { avisar, mutar } from './estado'
 
 let pendiente: Batalla | null = null
@@ -41,7 +41,9 @@ const FILAS: Record<string, number> = { parry: 9, ejecucion: 9, logro: 8 }
  * Reproduce los cuadros `desde`–`hasta` de una hoja en `dur` ms. `modo`: una vez (queda en el último), bucle o ida y vuelta.
  * `clave` reinicia la reproducción cuando cambia (un golpe nuevo).
  */
-function Tira({ hoja, desde, hasta, dur, modo = 'una', oscuro, clase, clave = 0, onFin }: { hoja: Hoja; desde: number; hasta: number; dur: number; modo?: 'una' | 'bucle' | 'vaiven'; oscuro?: boolean; clase?: string; clave?: number; onFin?: () => void }) {
+function Tira({ hoja, desde, hasta, dur, modo = 'una', oscuro, clase, clave = 0, onFin, ritmo }: { hoja: Hoja; desde: number; hasta: number; dur: number; modo?: 'una' | 'bucle' | 'vaiven'; oscuro?: boolean; clase?: string; clave?: number; onFin?: () => void; /** Solo en modo «una»: da el cuadro (absoluto) para cada fracción del tiempo, en vez de pasar parejo. */ ritmo?: (f: number) => number }) {
+  const ritmoRef = useRef(ritmo)
+  ritmoRef.current = ritmo
   const ref = useRef<SVGSVGElement>(null)
   const alFin = useRef(onFin)
   alFin.current = onFin
@@ -56,7 +58,8 @@ function Tira({ hoja, desde, hasta, dur, modo = 'una', oscuro, clase, clave = 0,
     const paso = (t: number) => {
       const f = (t - t0) / dur
       let i: number
-      if (modo === 'una') i = Math.min(n - 1, Math.floor(f * n))
+      if (modo === 'una' && ritmoRef.current) i = Math.floor(ritmoRef.current(Math.min(1, f))) - desde
+      else if (modo === 'una') i = Math.min(n - 1, Math.floor(f * n))
       else if (modo === 'bucle') i = Math.floor((f % 1) * n)
       else { const c = f % 2; i = Math.floor((c < 1 ? c : 2 - c) * (n - 1) + 0.0001) }
       const cuadro = desde + Math.max(0, Math.min(n - 1, i))
@@ -80,7 +83,18 @@ function Tira({ hoja, desde, hasta, dur, modo = 'una', oscuro, clase, clave = 0,
 
 type Fase = 'grito' | 'cuenta' | 'pelea' | 'caida' | 'victoria'
 const DUR_GRITO = 1500
-const DUR_CAIDA = 2200
+/**
+ * Caída del rival con el mismo ritmo que la ejecución (corte rápido, golpe congelado, caída, tinta), arrancando desde
+ * el cuadro 26 (el corte ya empezado). La duración sigue la velocidad elegida en Ver animaciones.
+ */
+const CAIDA_DESDE = 26
+const F_CAIDA = (CAIDA_DESDE / 39) * TRAMOS_EJECUCION.impacto
+function tiemposCaida() {
+  const total = DURACION_EJECUCION[configuracionAnimaciones().velocidadEjecucion]
+  const dur = total * (1 - F_CAIDA)
+  return { dur, golpe: total * (TRAMOS_EJECUCION.impacto - F_CAIDA), fin: dur + 500 }
+}
+const ritmoCaida = (f: number) => cuadroEjecucion(F_CAIDA + f * (1 - F_CAIDA))
 const DUR_VICTORIA = 3000
 
 export function BatallaCapa() {
@@ -102,6 +116,12 @@ function BatallaEnCurso({ b }: { b: Batalla }) {
   const rival = b.pelea.distraccion.nombre
   const { rondas, repsPorToque, objetivo, contador } = b.config
   const cerrar = () => { pendiente = null; avisarOyentes() }
+  // Ganada: si vino de alcanzar al rival, sigue el 3·2·1 con la acción que tocaba (arranca contando).
+  const cerrarGanada = () => {
+    cerrar()
+    // Sin pilar a la vista: abre el 3·2·1 para elegir qué empezar.
+    if (b.despues !== undefined) window.location.hash = b.despues ? `#/321?accion=${encodeURIComponent(b.despues)}&auto=1` : '#/321'
+  }
 
   // Grito → cuenta
   useEffect(() => {
@@ -122,9 +142,10 @@ function BatallaEnCurso({ b }: { b: Batalla }) {
   useEffect(() => {
     if (fase !== 'caida' || terminando.current) return
     terminando.current = true
-    if (sonido) sonarChoque()
+    const t = tiemposCaida()
+    if (sonido) sonarChoque(t.golpe / 1000)
     mutar(() => terminarBatalla(b)).then(setResultado).catch((e: unknown) => avisar(e instanceof Error ? e.message : String(e), { tipo: 'bajo' }))
-    const id = window.setTimeout(() => setFase('victoria'), DUR_CAIDA)
+    const id = window.setTimeout(() => setFase('victoria'), t.fin)
     return () => window.clearTimeout(id)
   }, [fase, b, sonido])
   // Victoria: taiko doble, 3 s, un toque cierra
@@ -133,7 +154,7 @@ function BatallaEnCurso({ b }: { b: Batalla }) {
     if (sonido) { sonarTaiko(); window.setTimeout(sonarTaiko, 380) }
     try { navigator.vibrate?.([80, 60, 160]) } catch { /* sin vibración */ }
     const a = window.setTimeout(() => setPuedeCerrar(true), 900)
-    const c = window.setTimeout(cerrar, DUR_VICTORIA + 4000)
+    const c = window.setTimeout(cerrarGanada, DUR_VICTORIA + 4000)
     return () => { window.clearTimeout(a); window.clearTimeout(c) }
   }, [fase, sonido]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -157,7 +178,7 @@ function BatallaEnCurso({ b }: { b: Batalla }) {
   const unidad = (contador?.nombre ?? 'flexiones').toLowerCase()
 
   return (
-    <div className={`sh-capa oscura epica bt-capa ${fase}`} role="dialog" aria-label={`Batalla contra ${rival}`} onPointerDown={victoria && puedeCerrar ? cerrar : undefined}>
+    <div className={`sh-capa oscura epica bt-capa ${fase}`} role="dialog" aria-label={`Batalla contra ${rival}`} onPointerDown={victoria && puedeCerrar ? cerrarGanada : undefined}>
       {!victoria && <FondoEpico />}
       {victoria && (
         <div className="bt-victoria-fondo" aria-hidden>
@@ -196,7 +217,15 @@ function BatallaEnCurso({ b }: { b: Batalla }) {
             ? <Tira key={`g${golpe}`} hoja={PARRY} desde={6} hasta={55} dur={900} modo="una" clase="bt-pelea golpe" clave={golpe} onFin={() => setGolpeando(false)} />
             : <Tira hoja={PARRY} desde={0} hasta={16} dur={1800} modo="vaiven" clase="bt-pelea" />
         )}
-        {fase === 'caida' && <Tira hoja={EJECUCION} desde={26} hasta={83} dur={DUR_CAIDA} modo="una" clase="bt-pelea caida" />}
+        {fase === 'caida' && (() => {
+          const t = tiemposCaida()
+          return (
+            <>
+              <Tira hoja={EJECUCION} desde={CAIDA_DESDE} hasta={83} dur={t.dur} modo="una" clase="bt-pelea caida" ritmo={ritmoCaida} />
+              <span className="bt-golpe-flash" style={{ animationDelay: `${t.golpe}ms` }} aria-hidden />
+            </>
+          )
+        })()}
         {victoria && (
           <div className="bt-pose">
             <Tira hoja={LOGRO} desde={56} hasta={79} dur={700} modo="una" oscuro clase="bt-shinobi victoria" />

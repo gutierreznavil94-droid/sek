@@ -5,6 +5,7 @@
  * cae y rueda, voltereta, se estira, alerta. Tocarlo: se frena, mira al frente y habla con un globo a pincel
  * que lo sigue. Otro toque lo cierra.
  */
+import { CompaneroDormido } from './animaciones/Siluetas'
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { obtenerAjustes } from '../services/base'
@@ -13,10 +14,10 @@ import { anotarVista, cambioVisibilidad } from '../services/ninjas'
 import { temaActivo } from '../temas/temas'
 import { useAnimacionActual } from './animaciones/motor'
 import { useRivalActivo } from './Rival'
+import { alEvento, type EventoTema } from '../temas/eventos'
 import { HOJA_BASE, apoyoEn, arcoSalto, caida, clipPara, duracionDe, elegirMovimiento, escalonCercano, SALTO, type Escalon, type Hoja, type Movimiento } from './companero/rutina'
 import { movimientoReducido } from './componentes'
 import { useDatos, useTic, useVersion } from './estado'
-import { CompaneroDormido } from './animaciones/Siluetas'
 
 const hoja = () => `${import.meta.env.BASE_URL}${temaActivo().sprite}`
 const hojaJson = () => hoja().replace(/\.webp$/, '.json')
@@ -77,6 +78,12 @@ export function Companero({ hoy }: { hoy: string }) {
   const modo = ajustes.datos?.companero ?? 'pasea'
   const lugar = lugarDe(pathname)
   // Después de «Dejo celu» (Hoy lo anota) el compañero no se pasea: duerme en su cama en una esquina.
+  const [, refrescar] = useState(0)
+  useEffect(() => {
+    const f = () => refrescar((x) => x + 1)
+    window.addEventListener('companero-cambio', f)
+    return () => window.removeEventListener('companero-cambio', f)
+  }, [])
   const dormido = companeroDormido()
   // Con el rival escurridizo en pantalla, el shinobi que se ve es el que persigue (Rival.tsx).
   const visible = modo !== 'apagado' && lugar !== null && !dormido && !rivalActivo
@@ -210,7 +217,7 @@ export function Companero({ hoy }: { hoy: string }) {
         return
       }
       if (m === 'caerRodar') return bajar()
-      if (m === 'voltereta') { giro = 0; quedarse('voltereta'); return }
+      if (m === 'voltereta' || m === 'saltoGiro') { giro = 0; quedarse(m); return }
       quedarse(m)
     }
     const ubicar = () => {
@@ -307,15 +314,20 @@ export function Companero({ hoy }: { hoy: string }) {
           if (!suyo) giro = b.dir * ((t - 0.42) / 0.53) * 360
           pintar(nombre, suyo ? (t / 0.95) * clip.n : f += dt * 40, suyo)
         } else { giro = 0; b.y = 0; quedarse('quieto') }
-      } else if (mov === 'voltereta') {
+      } else if (mov === 'voltereta' || mov === 'saltoGiro') {
+        // Festejo: voltereta (logro) o salto con giro (completar). Con el clip del tema, solo se eleva en su tramo «aire».
         t += dt
-        const k = Math.min(1, t / 0.7)
-        b.y = arcoSalto(k, 0, 0)
-        b.x = Math.max(MARGEN, Math.min(ancho() - W_CELDA - MARGEN, b.x - b.dir * 40 * dt))
-        const { nombre, clip, propio: suyo } = propio('voltereta')
-        if (!suyo) giro = -b.dir * k * 360
+        const { nombre, clip, propio: suyo } = propio(mov)
+        const total = suyo ? clip.n / (clip.fps ?? 24) : 0.7
+        const k = Math.min(1, t / total)
+        const [a0, a1] = suyo && clip.aire ? clip.aire : [0, 1]
+        const kk = Math.max(0, Math.min(1, (k - a0) / (a1 - a0)))
+        const y0 = escalon ? altoDe(escalon) : 0
+        b.y = kk > 0 && kk < 1 ? arcoSalto(kk, y0, y0) : y0
+        if (mov === 'voltereta' && kk > 0 && kk < 1) b.x = Math.max(MARGEN, Math.min(ancho() - W_CELDA - MARGEN, b.x - b.dir * 40 * dt))
+        if (!suyo) giro = (mov === 'voltereta' ? -b.dir : b.dir) * k * 360
         pintar(nombre, suyo ? k * clip.n : 0, suyo)
-        if (k >= 1) { giro = 0; b.y = 0; quedarse('quieto') }
+        if (k >= 1) { giro = 0; b.y = y0; quedarse(escalon ? 'enEscalon' : 'quieto') }
       }
       ubicar()
       llevarGlobo(dt)
@@ -329,6 +341,15 @@ export function Companero({ hoy }: { hoy: string }) {
       if (m === 'caerRodar') return bajar()
       giro = 0; quedarse(m)
     }
+    // Eventos genéricos de SEK: el tema decide el gesto. Completar → salto con giro; logro → voltereta; alerta → desenvaina.
+    const GESTO: Partial<Record<EventoTema, Movimiento>> = { completar: 'saltoGiro', logro: 'voltereta', alerta: 'alerta', aparecer: 'alerta' }
+    const dejarEventos = alEvento((e) => {
+      const m = GESTO[e]
+      if (!m || reducido || mov === 'saltar' || mov === 'caerRodar') return
+      giro = 0
+      quedarse(m)
+      if (!pasea) dur = Math.max(dur, 2.5)
+    })
     const alCambiar = () => (document.visibilityState === 'visible' ? arrancar() : cancelAnimationFrame(id))
     // Si deja de pasear a mitad de algo que no se mueve, se queda; lo que se mueve termina y recién ahí se queda.
     if (!pasea) { quedarse(escalon ? 'enEscalon' : 'quieto'); dur = Infinity }
@@ -341,11 +362,12 @@ export function Companero({ hoy }: { hoy: string }) {
     ubicar()
     arrancar()
     document.addEventListener('visibilitychange', alCambiar)
-    return () => { cancelAnimationFrame(id); document.removeEventListener('visibilitychange', alCambiar) }
+    return () => { cancelAnimationFrame(id); dejarEventos(); document.removeEventListener('visibilitychange', alCambiar) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, lugar, pasea, reducido])
 
-  if (dormido && modo !== 'apagado' && lugar !== null) return <div className="companero" aria-hidden><div className="companero-caja dormido"><CompaneroDormido /></div></div>
+  // Dormido: no flota encima de nada. En Hoy la cama va abajo de todo, dentro de la página (ver CamaDelCompanero).
+  if (dormido) return null
   if (!visible) return null
   const [cw, ch] = hojaDatos.celda
   const estilo = { backgroundImage: `url(${hoja()})`, backgroundSize: `${hojaDatos.columnas * cw}px ${hojaDatos.filas * ch}px`, width: cw, height: ch }
@@ -396,4 +418,10 @@ function lugarDe(ruta: string): 'pasea' | 'esquina' | null {
   if (ruta === '/') return 'pasea'
   if (ruta === '/calendario' || ruta.startsWith('/calendario/') || ruta === '/comida' || ruta.startsWith('/comida/') || ruta === '/mas' || ruta.startsWith('/mas/')) return 'esquina'
   return null
+}
+
+/** La cama del compañero, al final de Hoy: ocupa su propio lugar después de la última tarjeta y nunca tapa nada. */
+export function CamaDelCompanero({ dormido, modo }: { dormido: boolean; modo?: string }) {
+  if ((modo ?? 'pasea') === 'apagado' || !dormido) return null
+  return <div className="companero-cama-lugar" aria-hidden><CompaneroDormido /></div>
 }

@@ -25,7 +25,7 @@ export function SiguienteAccion({ hoy }: { hoy: string }) {
 
   const lanzar = async () => {
     const r = await mutar(() => crearSiguienteAccion(ambigua, concreta))
-    try { localStorage.setItem(`usado-siguiente:${hoy}`, '1') } catch { /* sin almacenamiento */ }
+    try { localStorage.setItem(`usado-siguiente:${hoy}`, String(Date.now())) } catch { /* sin almacenamiento */ }
     animar({ tipo: 'postura', modo: 'siguiente' })
     navegar(`/321?accion=${encodeURIComponent(concreta.trim())}&id=${r.id}`)
   }

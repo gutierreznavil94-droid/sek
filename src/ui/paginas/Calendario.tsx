@@ -1,23 +1,26 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { db } from '../../data/db'
 import { diaDelCiclo, diaSemanaDe, esFechaValida, faseDelDia, fechaLegible, nombreMes, sumarDias } from '../../domain/fechas'
 import { cicloActivo, guardarMeta, metasEntre } from '../../services/ciclo'
-import { lineaDeMetas, metasPorDia } from '../../services/metas'
+import { metasPorDia } from '../../services/metas'
 import { CampoMeta, FilaMeta } from '../metas'
 import { compromisosDelDia, corregirCompromiso, marcarExcepcion, ordenarPilares, pilaresPorDia, quitarExcepcion } from '../../services/dia'
 import { feriadosEntre, marcarFeriado, quitarFeriado } from '../../services/feriados'
 import { xpDelDia } from '../../services/xp'
 import { Hoja, IconoPilar, Porcentaje, Tarjeta } from '../componentes'
 import { formatoHora } from '../../domain/fechas'
-import { guardarAjustes, obtenerAjustes } from '../../services/base'
+import { obtenerAjustes } from '../../services/base'
 import { avisar, mutar, useDatos } from '../estado'
+import { HojaMarcar } from '../FotosMarcas'
+import { listarMarcas } from '../../services/fotos'
+import { caidasDelDia, caidasPorDia } from '../../services/caidas'
+import { TumbaRota } from '../../temas/shinobi/TumbaRota'
 import { agregarFechaClave, borrarFechaClave, editarFechaClave, fechasClavePorDia } from '../../services/fechasClave'
 import type { FechaClave } from '../../data/tipos'
 import { Confirmar } from '../componentes'
 import { bloquesEntre } from '../../services/horario'
 import { HorarioDelDia } from './MiHorario'
-import { iconoTema } from '../../temas/temas'
 
 function primerDiaMes(fecha: string): string {
   return fecha.slice(0, 8) + '01'
@@ -45,6 +48,11 @@ export function Calendario({ hoy }: { hoy: string }) {
     }
   }, [pedido, setParams])
   const [hoja, setHoja] = useState(false)
+  // Mantener apretado un día → «Marcar este día» (印).
+  const [marcar, setMarcar] = useState<string | null>(null)
+  const largo = useRef<number | null>(null)
+  const fueLargo = useRef(false)
+  const soltar = () => { if (largo.current) { window.clearTimeout(largo.current); largo.current = null } }
   const dias = diasDelMes(mes)
   const ultimo = dias[dias.length - 1]
   const datos = useDatos(async () => {
@@ -57,7 +65,10 @@ export function Calendario({ hoy }: { hoy: string }) {
     const claves = await fechasClavePorDia(dias[0], ultimo)
     const bloques = await bloquesEntre(dias[0], ultimo)
     const verHorario = (await obtenerAjustes()).calendarioHorario !== false
-    return { ciclo, pilares, metas, excepciones, feriados, acciones, claves, bloques, verHorario }
+    const caidas = await caidasPorDia(dias[0], ultimo)
+    const marcas = new Map((await listarMarcas()).filter((x) => x.fecha >= dias[0] && x.fecha <= ultimo).map((x) => [x.fecha, x]))
+    const forja = new Set((await db().forja.toArray()).flatMap((h) => h.cumplidos ?? []))
+    return { ciclo, pilares, metas, excepciones, feriados, acciones, claves, bloques, verHorario, caidas, marcas, forja }
   }, [mes, hoy])
 
   const d = datos.datos
@@ -82,53 +93,72 @@ export function Calendario({ hoy }: { hoy: string }) {
             const enCiclo = ciclo && f >= ciclo.inicio && fin && f <= fin
             const dia = ciclo ? diaDelCiclo(ciclo.inicio, f) : 0
             const puntos = enCiclo ? d?.pilares.get(f) ?? [] : []
-            const linea = lineaDeMetas(d?.metas.get(f) ?? [], hoy, f)
             const inicioFase = enCiclo && ciclo && (dia - 1) % ciclo.diasPorFase === 0
             const claves = d?.claves.get(f) ?? []
-            const franjas = d?.bloques.get(f) ?? []
             return (
               <div
                 key={f}
                 className={`cal-dia ${!enCiclo ? 'fuera' : ''} ${f === hoy ? 'hoy tema-remarque-hoy' : ''} ${sel === f ? 'seleccionado' : ''} ${d?.excepciones.has(f) ? 'excepcion' : ''} ${d?.feriados.has(f) ? 'feriado' : ''} ${inicioFase ? 'fase-inicio' : ''} ${f <= hoy && puntos.length > 0 && puntos.every((p) => p.estado === 'cumplido' || p.estado === 'descanso') && puntos.some((p) => p.estado === 'cumplido') ? 'completo' : ''}`}
-                onClick={() => { setSel(sel === f ? null : f); setEnfocar(sel !== f) }}
+                onClick={() => { if (fueLargo.current) { fueLargo.current = false; return } setSel(sel === f ? null : f); setEnfocar(sel !== f) }}
+                onPointerDown={() => { fueLargo.current = false; soltar(); largo.current = window.setTimeout(() => { fueLargo.current = true; largo.current = null; setMarcar(f) }, 550) }}
+                onPointerUp={soltar}
+                onPointerLeave={soltar}
+                onContextMenu={(e) => e.preventDefault()}
                 role="button"
-                aria-label={`${fechaLegible(f, false)}${enCiclo ? `, día ${dia}` : ''}${claves.length ? `, fecha clave: ${claves.map((c) => c.titulo).join(', ')}` : ''}`}
+                aria-label={`${fechaLegible(f, false)}${enCiclo ? `, día ${dia}` : ''}${(d?.caidas.get(f) ?? 0) > 0 ? ', caída superada' : ''}${claves.length ? `, fecha clave: ${claves.map((c) => c.titulo).join(', ')}` : ''}`}
               >
+                {/* Lugares fijos: número arriba a la izquierda, un solo ícono arriba a la derecha, la barrita de pilares abajo y el río de la forja debajo. */}
                 <span className="num">{Number(f.slice(8))}</span>
-                {f === hoy && <span className="tema-icono-hoy" aria-hidden>{iconoTema('icono-hoy')}</span>}
-                {claves.length > 0 && <span className="sello-clave" aria-hidden>印</span>}
+                {(() => {
+                  // Hasta 2 íconos, por prioridad: hoy → marcado → fecha clave → caída → feriado. Si hay más, «·» (se ven al tocar el día).
+                  const iconos: { k: string; c: string }[] = []
+                  if (f === hoy) iconos.push({ k: '今', c: 'hoy' })
+                  if (d?.marcas.has(f)) iconos.push({ k: '印', c: 'marca' })
+                  if (claves.length > 0) iconos.push({ k: '印', c: 'clave' })
+                  if ((d?.caidas.get(f) ?? 0) > 0) iconos.push({ k: '墓', c: 'caida' })
+                  if (d?.feriados.has(f)) iconos.push({ k: '祝', c: 'feriado' })
+                  if (!iconos.length) return null
+                  return (
+                    <span className="cal-iconos" aria-hidden>
+                      {iconos.slice(0, 2).map((x) => <span key={x.c} className={`cal-icono ${x.c}`}>{x.k}</span>)}
+                      {iconos.length > 2 && <span className="cal-mas">·</span>}
+                    </span>
+                  )
+                })()}
                 {puntos.length > 0 && (
-                  <span className="puntos" aria-hidden>
+                  <span className="cal-barra" aria-hidden>
                     {puntos.map((p) => <i key={p.accionId} className={f > hoy ? '' : p.estado} />)}
                   </span>
                 )}
-                {linea && <span className={`linea-meta ${linea}`} aria-hidden />}
-                {d?.verHorario && franjas.length > 0 && <span className="franjas" aria-hidden>{franjas.slice(0, 3).map((b) => <i key={b.id} className={b.tipo} />)}</span>}
+                {d?.forja.has(f) && <span className={`cal-rio ${d.forja.has(sumarDias(f, -1)) ? 'une-izq' : ''} ${d.forja.has(sumarDias(f, 1)) ? 'une-der' : ''}`} aria-hidden />}
               </div>
             )
           })}
         </div>
-        <div className="leyenda orden-pilares">
-          {(d?.acciones ?? []).map((a, i) => (
-            <span key={a.id}><b className="mono">{i + 1}</b><span className="ico-mini"><IconoPilar id={a.id} tipo={a.tipo} /></span>{a.nombre}</span>
-          ))}
-        </div>
-        <div className="leyenda">
-          <span><span className="puntos"><i className="cumplido" /></span>cumplido</span>
-          <span><span className="puntos"><i className="omitido" /></span>no cumplido</span>
-          <span><span className="puntos"><i className="descanso" /></span>no aplica</span>
-          <span><span className="puntos"><i /></span>pendiente</span>
-          <span><span className="linea-meta verde muestra" />meta cumplida</span>
-          <span><span className="linea-meta roja muestra" />meta no cumplida</span>
-          <span><span className="sello-clave muestra">印</span>fecha clave</span>
-          <span><span className="franjas muestra"><i className="obligatorio" /><i className="entreno" /></span>horario (gris, arriba)</span>
-        </div>
-        <label className="fila cal-ver-horario chico texto-2">
-          <input type="checkbox" checked={d?.verHorario ?? true} onChange={async (e) => { const v = e.target.checked; await mutar(() => guardarAjustes({ calendarioHorario: v })) }} />
-          Mostrar horario en los días
-        </label>
-        <p className="ayuda">Los 4 puntos van siempre en ese orden: entrenamiento, empresa, manga, dormir. Tocá un día para ver cuál es cada uno. Borde: hoy. Punto arriba: feriado. Línea abajo: meta (gris pendiente). ▎ inicio de fase.</p>
+        {/* Qué es cada cosa: el listado completo, simple y corto, en 2 columnas. El detalle de cada día se ve al tocarlo. */}
+        <ul className="cal-leyenda" aria-label="Qué significa cada marca">
+          <li><span className="cal-barra muestra"><i className="cumplido" /><i className="cumplido" /><i className="omitido" /><i /></span> pilares: verde hecho, rojo no</li>
+          <li><span className="cal-rio muestra" /> forja cumplida</li>
+          <li><b className="cal-icono hoy">今</b> hoy</li>
+          <li><b className="cal-icono marca">印</b> día marcado</li>
+          <li><b className="cal-icono clave">印</b> fecha clave</li>
+          <li><b className="cal-icono caida">墓</b> caída</li>
+          <li><b className="cal-icono feriado">祝</b> feriado</li>
+          <li><span className="cal-muestra-dia completo" /> día completo</li>
+          <li><span className="cal-muestra-dia fase" /> inicio de fase</li>
+          <li><span className="cal-muestra-dia libre" /> día libre</li>
+          <li><b className="cal-mas">·</b> hay más: tocá el día</li>
+        </ul>
+        <p className="cal-pista">Mantené apretado un día para marcarlo (cambio de estilo, algo importante…)</p>
       </Tarjeta>
+
+      {sel && d && (
+        <div className="fila entre tarjeta compacta cal-marca-fila">
+          {d.marcas.get(sel) ? <span><span className="cal-marca muestra">印</span> {d.marcas.get(sel)!.texto}</span> : <span className="texto-3 chico">Sin marca este día</span>}
+          <button type="button" className="boton chico suave" onClick={() => setMarcar(sel)}>{d.marcas.get(sel) ? 'Editar' : '印 Marcar este día'}</button>
+        </div>
+      )}
+      <HojaMarcar fecha={marcar} marca={marcar ? d?.marcas.get(marcar) : undefined} onCerrar={() => setMarcar(null)} />
 
       {sel && d && <PilaresDelDiaSel fecha={sel} hoy={hoy} ciclo={ciclo ?? null} enfocar={enfocar} onMas={() => setHoja(true)} />}
 
@@ -164,7 +194,8 @@ function PilaresDelDiaSel({ fecha, hoy, ciclo, enfocar, onMas }: { fecha: string
     ])
     const acciones = new Map((await db().acciones.toArray()).map((a) => [a.id, a]))
     const metas = (await metasPorDia(fecha, fecha)).get(fecha) ?? []
-    return { fila: pilares.get(fecha) ?? [], compromisos, suenio, xp, cerrado, zona, acciones, metas }
+    const caidas = await caidasDelDia(fecha)
+    return { fila: pilares.get(fecha) ?? [], compromisos, suenio, xp, cerrado, zona, acciones, metas, caidas }
   }, [fecha, hoy])
   const d = datos.datos
   const dia = ciclo ? diaDelCiclo(ciclo.inicio, fecha) : 0
@@ -184,6 +215,12 @@ function PilaresDelDiaSel({ fecha, hoy, ciclo, enfocar, onMas }: { fecha: string
         {d.metas.map((m) => <FilaMeta key={m.id} m={m} hoy={hoy} dia={fecha} />)}
         {fecha < hoy && d.metas.length === 0 && <p className="muy-chico texto-3">Sin metas ese día. En días pasados no se agregan.</p>}
       </div>
+      {d.caidas.length > 0 && (
+        <p className="muy-chico texto-2 fila" style={{ gap: 6, margin: '2px 0' }}>
+          <span className="caidas-fila">{d.caidas.map((c) => <TumbaRota key={c.id} ancho={12} />)}</span>
+          {d.caidas.length === 1 ? 'Una caída' : `${d.caidas.length} caídas`} ese día{d.caidas.some((c) => c.xp > 0) ? ` (−${d.caidas.reduce((s, c) => s + c.xp, 0)} XP)` : ''} · nuevo round, seguiste
+        </p>
+      )}
       <FechasClaveDelDia fecha={fecha} />
       <HorarioDelDia fecha={fecha} hoy={hoy} />
       {!enCiclo && <p className="texto-3 chico">Fuera del ciclo: ese día no se registra nada.</p>}

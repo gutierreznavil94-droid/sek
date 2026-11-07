@@ -114,12 +114,12 @@ export function Atras({ a = '/mas', texto = 'Más' }: { a?: string; texto?: stri
   )
 }
 
-export function Confirmar({ abierta, titulo, texto, confirmar = 'Confirmar', peligro, onConfirmar, onCancelar }: { abierta: boolean; titulo: string; texto: ReactNode; confirmar?: string; peligro?: boolean; onConfirmar: () => void; onCancelar: () => void }) {
+export function Confirmar({ abierta, titulo, texto, confirmar = 'Confirmar', cancelar = 'Cancelar', peligro, onConfirmar, onCancelar }: { abierta: boolean; titulo: string; texto: ReactNode; confirmar?: string; cancelar?: string; peligro?: boolean; onConfirmar: () => void; onCancelar: () => void }) {
   return (
     <Hoja abierta={abierta} onCerrar={onCancelar} titulo={titulo}>
       <div className="texto-2">{texto}</div>
       <div className="botonera">
-        <button className="boton" onClick={onCancelar}>Cancelar</button>
+        <button className="boton" onClick={onCancelar}>{cancelar}</button>
         <button className={`boton ${peligro ? 'peligro' : 'primario'}`} onClick={onConfirmar}>{confirmar}</button>
       </div>
     </Hoja>

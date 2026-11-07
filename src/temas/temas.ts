@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import proximamente from './proximamente.json'
 import './shinobi/visual.css'
+import { activarTemaVisual } from './registro'
 
 /**
  * Temas: la cara de la app (personaje, fondos, sprite, color de acento, kanjis).
@@ -25,6 +26,10 @@ export interface DefinicionTema {
   carpetaFondos: string
   /** Hoja de sprites del personaje que camina en la barra del entreno (dentro de `public/`). */
   sprite: string
+  /** Carpeta de `public/` con las escenas animadas del tema (rival, Juego, noche, Sueño). Sin carpeta, SEK usa sus dibujos simples. */
+  escenas?: string
+  /** Partes escondidas por ahora (no borradas): ver src/temas/archivado.ts. */
+  archivado?: { rival?: boolean }
   /** Vista previa de la tarjeta del tema. */
   vistaPrevia: { video?: string; imagen: string }
   icono?: string
@@ -70,6 +75,11 @@ export function temaActivo(): DefinicionTema {
   return activo
 }
 
+/** Ruta completa de la carpeta de escenas del tema activo, o null si el tema no trae escenas (SEK usa su versión simple). */
+export function carpetaEscenas(): string | null {
+  return activo.escenas ? `${import.meta.env.BASE_URL}${activo.escenas}` : null
+}
+
 function rgb(hex: string): string | null {
   const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex.trim())
   return m ? `${parseInt(m[1], 16)}, ${parseInt(m[2], 16)}, ${parseInt(m[3], 16)}` : null
@@ -78,6 +88,7 @@ function rgb(hex: string): string | null {
 /** Activa un tema: color de acento, kanjis y título de la pestaña. Con Shinobi no cambia nada de lo que ya se ve. */
 export function aplicarTema(id: string | undefined, nombreApp?: string): DefinicionTema {
   activo = temaPorId(id)
+  activarTemaVisual(activo.id)
   if (typeof document !== 'undefined') {
     const raiz = document.documentElement
     const c = rgb(activo.acento)

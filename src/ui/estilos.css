@@ -1786,10 +1786,23 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .co-punto.p { background: var(--texto-2); }
 .co-item-num { white-space: nowrap; }
 
-/* Ejecución de Luma: destello blanco de un cuadro en el impacto (46 %) */
+/* Ejecución de Luma: el golpe cae al 30 % (0,45 s de 1,5 s) y se congela hasta el 40 % (hit-stop).
+   Destello, flash blanco, tinta roja, kanji y sacudida caen en ese mismo cuadro (39). La versión vieja usa los de arriba. */
 .sh-ejv-flash { opacity: 0; pointer-events: none; animation: sh-ejv-flash var(--dur) linear forwards; }
-@keyframes sh-ejv-flash { 0%, 46% { opacity: 0; transform: scale(.6) } 46.3% { opacity: .95 } 48.5% { opacity: .9 } 49%, 100% { opacity: 0 } }
+@keyframes sh-ejv-flash { 0%, 29.8% { opacity: 0; transform: scale(.6) } 30% { opacity: .95; transform: scale(1) } 33% { opacity: .9; transform: scale(1.15) } 34.5%, 100% { opacity: 0; transform: scale(1.2) } }
 .sh-ej-video .sh-ejv-flash { transform-box: fill-box; transform-origin: center; }
+.sh-ej-video .sh-destello { animation-name: sh-destello-v; }
+@keyframes sh-destello-v { 0%, 29.8% { opacity: 0 } 30.5% { opacity: .6 } 40% { opacity: .35 } 48%, 100% { opacity: 0 } }
+.sh-ej-video .sh-gota { animation-name: sh-gota-v; }
+@keyframes sh-gota-v { 0%, 30% { opacity: 0; transform: none } 31.5% { opacity: 1 } 56% { opacity: 1; transform: translate(var(--gx), var(--gy)) } 100% { opacity: .8; transform: translate(var(--gx), calc(var(--gy) + 18px)) } }
+.sh-ej-video .sh-arco { animation-name: sh-arco-v; }
+@keyframes sh-arco-v { 0%, 30% { stroke-dashoffset: 100; opacity: 0 } 30.3% { opacity: .9 } 39% { stroke-dashoffset: 0; opacity: .9 } 62% { opacity: .6 } 100% { stroke-dashoffset: 0; opacity: 0 } }
+.sh-ej-video .sh-kanji { animation-name: sh-kanji-v; }
+@keyframes sh-kanji-v { 0%, 30% { opacity: 0; transform: scale(1.8) } 35% { opacity: 1; transform: scale(.96) } 40% { transform: scale(1) } 100% { opacity: 1; transform: scale(1) } }
+.sh-capa.ej-video .sh-escenario { animation-name: sh-sacudida-v; }
+@keyframes sh-sacudida-v { 0%, 30% { transform: none } 31.2% { transform: translate(-4px, 2px) } 33.4% { transform: translate(4px, -2px) } 35.6% { transform: translate(-2px, -1px) } 37.8% { transform: translate(2px, 1px) } 40%, 100% { transform: none } }
+.sh-capa.ej-video .sh-titulo { animation-delay: calc(var(--dur) * .3); animation-duration: calc(var(--dur) * .3); }
+.sh-capa.ej-video .sh-sub-texto { animation-delay: calc(var(--dur) * .4); }
 
 /* Caramelo de Luma: el caramelo rojo en la mano (29–47 %) y el aura desde que junta las manos (52 %) */
 .sh-caramelo-v { opacity: 0; pointer-events: none; animation: sh-caramelo-v var(--dur) linear forwards; }
@@ -2025,6 +2038,9 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .boton-duda { appearance: none; font: inherit; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; color: var(--texto-3); background: transparent; border: 1px solid rgba(var(--papel-rgb), 0.32); border-radius: 8px 10px 7px 11px / 10px 7px 11px 8px; padding: 3px 9px; line-height: 1.2; cursor: pointer; }
 .boton-duda:active { background: var(--fondo-3); }
 .boton-duda.kanji { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 1rem; padding: 1px 8px; color: var(--texto-2); }
+.boton-duda-kanji { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 0.8rem; margin-right: 3px; font-weight: 400; }
+.boton-duda.rojo { border-color: rgba(200, 16, 46, 0.75); color: #e8a0a8; }
+.hoy-arriba { display: inline-flex; gap: 5px; align-items: center; flex-wrap: nowrap; }
 /* Avisos: una línea cada uno, apilados como líneas finas */
 .avisos { display: flex; flex-direction: column; gap: 4px; }
 .aviso-linea { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 9px 11px 8px 12px / 12px 8px 11px 9px; border: 1px solid var(--borde); background: var(--fondo-2); font-size: 0.9rem; line-height: 1.25; }
@@ -2098,6 +2114,8 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .bt-vida { position: relative; z-index: 2; width: 100%; max-width: 560px; height: 10px; margin-top: 8px; border-radius: 999px; background: rgba(20, 20, 20, 0.18); border: 1px solid rgba(20, 20, 20, 0.35); overflow: hidden; }
 .bt-vida i { display: block; height: 100%; background: linear-gradient(90deg, #8c1020, #c8102e); border-radius: 999px; transition: width 0.45s cubic-bezier(.2,.8,.2,1); }
 .bt-escena { position: relative; z-index: 1; flex: 1; width: 100%; max-width: 560px; display: flex; align-items: flex-end; justify-content: center; min-height: 0; }
+.bt-golpe-flash { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(circle at 55% 45%, #fffbe8 0, rgba(255, 251, 232, .7) 18%, rgba(200, 16, 46, .35) 40%, transparent 65%); animation: bt-golpe-flash 260ms linear both; }
+@keyframes bt-golpe-flash { 0% { opacity: 0 } 8% { opacity: 1 } 45% { opacity: .6 } 100% { opacity: 0 } }
 .bt-tira { width: 100%; height: auto; max-height: 100%; display: block; }
 .bt-tira.bt-shinobi { width: 62%; align-self: flex-end; margin-right: auto; margin-left: 2%; }
 .bt-tira.bt-pelea { width: 100%; }
@@ -2406,3 +2424,233 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .mas-nada { display: flex; flex-direction: column; gap: 10px; padding: 8px 0; }
 .mas-pie { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: space-between; padding: 4px 0; }
 .mas-pie .texto-3 { flex: 1; min-width: 90px; }
+
+/* ----- v0.58: Hoy más simple, como la versión guardada de Navil ----- */
+/* Pilares: ícono en su cuadradito arriba, título en una línea y dos líneas chicas (un poco más altos que antes) */
+.pilar-bloque { min-height: 0; gap: 0; padding: 6px 30px 6px 10px; }
+.pilar-bloque .icono { width: 19px; height: 19px; border-radius: 6px; margin-bottom: 1px; }
+.pilar-bloque .icono svg { width: 12px; height: 12px; }
+.pilar-bloque .nombre { font-size: 0.9rem; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.pilar-bloque .detalle { font-size: 0.7rem; line-height: 1.25; color: var(--texto-2); }
+.pilar-bloque .pista { font-size: 0.64rem; color: var(--texto-3); line-height: 1.2; }
+.pilar-bloque .estado-ic { top: 6px; width: 19px; height: 19px; }
+.linea-horario { margin: 2px 0 0; }
+/* Metas sin caja: título chico, «+ meta» a la derecha, días limpios y «próxima» abajo */
+.semana-metas.simple { gap: 6px; }
+.semana-titulo-simple { display: inline-flex; align-items: center; gap: 6px; }
+.semana-titulo-simple .semana-kanji { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 0.95rem; letter-spacing: 0; color: rgba(200, 16, 46, 0.9); }
+.semana-titulo-simple .semana-sin { font-weight: 500; letter-spacing: 0; text-transform: none; margin-left: 6px; }
+.semana-mas { color: var(--texto); font-size: 0.95rem; font-weight: 600; text-underline-offset: 3px; }
+.semana-metas.simple .semana-proxima { font-size: 0.72rem; }
+/* La cama del compañero, en su propio lugar al final de Hoy (nunca encima de una tarjeta) */
+.companero-cama-lugar { display: flex; justify-content: flex-end; padding: 4px 6px 0; color: var(--texto-2); opacity: 0.9; }
+.companero-cama-lugar .companero-cama { max-width: 40%; height: auto; }
+/* Registro de batallas en una línea (lo de SEK: el orden y que se deslice de costado) */
+.chips-batallas { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.chips-batallas-fila { display: flex; align-items: center; gap: 5px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 1px 1px 2px; }
+.chips-batallas-fila::-webkit-scrollbar { display: none; }
+.chips-batallas-cuenta { flex: none; margin-left: 2px; }
+.chips-batallas-globo { align-self: flex-start; padding: 4px 8px; border-radius: 8px; background: var(--fondo-3); color: var(--texto-2); }
+
+/* v0.60 · «No cumplí mi palabra»: chico, sin color, abajo de todo en Hoy */
+.no-cumpli-lugar { display: flex; justify-content: center; margin-top: 4px; }
+.boton-no-cumpli { background: none; border: 0; padding: 6px 10px; font: inherit; font-size: 0.7rem; color: var(--texto-3); text-decoration: underline; text-decoration-color: rgba(127, 127, 127, 0.35); text-underline-offset: 3px; cursor: pointer; }
+.tn-soltar { position: absolute; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom)); transform: translateX(-50%); padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(243, 239, 230, 0.3); background: rgba(0, 0, 0, 0.35); color: rgba(243, 239, 230, 0.7); font: inherit; font-size: 0.75rem; cursor: pointer; animation: sh-entrar 0.6s ease-out both; }
+.caidas-fila { display: flex; flex-wrap: wrap; gap: 3px; align-items: flex-end; }
+.cal-caida { position: absolute; left: 3px; top: 3px; line-height: 0; pointer-events: none; }
+
+/* ---------- v0.65: rival del tema (hoja de sprites) ---------- */
+.rv-sprite-rival { position: relative; display: block; flex: none; pointer-events: none; }
+.rv-sprite-rival > span { display: block; }
+.rv-brinco { animation: rv-brinco 0.6s ease-out both; }
+@keyframes rv-brinco { 0% { transform: translateY(0) } 50% { transform: translateY(-26px) } 100% { transform: translateY(0) } }
+.rv-adv-sprite { display: flex; justify-content: center; transform: scale(2.4); transform-origin: 50% 100%; margin: 70px auto 6px; }
+.rv-robo-sprite { position: relative; transform: scale(2.6); transform-origin: 50% 100%; margin-bottom: 20px; transition: transform 1.4s ease-in; }
+.rv-robo-sprite.huye { transform: translateX(130vw) scale(2.6); transition: transform 1s cubic-bezier(.3, .2, .6, 1); }
+.rv-robo.reducido .rv-robo-sprite { transition: none; }
+/* v0.68: el «?» sobre la parte visible del rival que se asoma (desde la derecha o desde la izquierda) */
+.rv-pregunta { position: absolute; inset: 0; pointer-events: none; }
+.rv-pregunta.izq .tema-pregunta { left: 52%; }
+/* v0.68: Juego, temporizador más chico (círculo y número 30 % menos, botones de altura normal) */
+.juego-temporizador .enso { width: 76px; height: 76px; }
+.juego-temporizador .enso .juego-segundos { font-size: 1rem; }
+.juego-temporizador { margin: 0 0 4px; gap: 12px; }
+.juego-lado .boton { min-height: 36px; padding: 6px 12px; font-size: 0.85rem; }
+
+/* ---------- v0.74: Forja de hábitos (disposición; la piedra la dibuja el tema) ---------- */
+.forja-hoy { display: flex; flex-direction: column; gap: 6px; }
+.forja-kanji-titulo { font-family: 'Pincel', 'Noto Serif JP', serif; color: rgba(200, 16, 46, 0.9); font-size: 1rem; margin-right: 6px; letter-spacing: 0; }
+.forja-fila { position: relative; display: grid; grid-template-columns: 1fr; gap: 5px; }
+.forja-chica { appearance: none; display: flex; flex-direction: row; align-items: center; gap: 10px; min-height: 54px; padding: 4px 12px 4px 8px; text-align: left; border-radius: 11px 14px 10px 15px / 14px 10px 15px 11px; border: 1.5px solid rgba(var(--papel-rgb), 0.22); background: var(--fondo-2); color: var(--texto); cursor: pointer; -webkit-touch-callout: none; user-select: none; touch-action: manipulation; }
+.forja-chica.hecho { border-color: rgba(var(--verde-rgb), 0.6); }
+.forja-nombre { flex: 1; min-width: 0; font-size: 0.86rem; font-weight: 700; line-height: 1.15; text-align: left; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.forja-cuenta { flex: none; font-size: 0.74rem; color: var(--texto-3); }
+.forja-chica .piedra-forja { flex: none; }
+.forja-chica.hecho .forja-cuenta { color: var(--verde); }
+.forja-codigo .av-nota { margin: 4px 0; }
+.forja-grande { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0 10px; }
+.forja-grande + .forja-grande { border-top: 1px solid rgba(var(--papel-rgb), 0.1); }
+.forja-grande-piedra { appearance: none; border: 0; background: none; padding: 0; cursor: pointer; flex: none; -webkit-touch-callout: none; user-select: none; touch-action: manipulation; }
+.forja-grande-texto { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.forja-camino { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; margin-top: 5px; max-width: 220px; }
+.fc-dia { display: block; aspect-ratio: 1; border-radius: 3px 4px 3px 4px; background: rgba(var(--papel-rgb), 0.08); border: 1px solid rgba(var(--papel-rgb), 0.12); }
+.fc-dia.cumplido { background: #6a645d; border-color: #847d75; }
+.fc-dia.perdonado { background: transparent; border: 1px dashed rgba(var(--papel-rgb), 0.55); }
+.fc-dia.falla { background: rgba(var(--papel-rgb), 0.03); border-color: rgba(var(--papel-rgb), 0.06); }
+.fc-dia.hoy { border: 1.5px solid rgba(200, 16, 46, 0.95); }
+.fc-dia.pedazo { box-shadow: 0 0 0 1px rgba(200, 16, 46, 0.7); }
+.fc-dia.extra { opacity: 0.6; }
+.forja-nueva { margin-top: 4px; }
+.forja-kanjis { display: flex; gap: 6px; flex-wrap: wrap; }
+.forja-kanjis button { width: 44px; height: 44px; border-radius: 10px 12px 9px 13px; border: 1.5px solid rgba(var(--papel-rgb), 0.25); background: var(--fondo-2); color: var(--texto); font-family: 'Pincel', 'Yuji Syuku', 'Noto Serif JP', serif; font-size: 1.5rem; line-height: 1; cursor: pointer; }
+.forja-kanjis button.activa { border-color: rgba(200, 16, 46, 0.95); color: #e0213b; box-shadow: 0 0 8px rgba(200, 16, 46, 0.35); }
+.forja-kanji-propio { width: 64px; height: 44px; text-align: center; font-size: 1.3rem; }
+.forja-regla { cursor: default; }
+.forja-regla-kanji { font-family: 'Pincel', 'Yuji Syuku', 'Noto Serif JP', serif; color: #f3efe6; font-size: 1.5rem; line-height: 1; text-shadow: 2px 2px 0 rgba(200, 16, 46, 0.55); flex: none; width: 30px; text-align: center; }
+.forja-progreso { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; }
+.forja-progreso-fila { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+.forja-comun.forjada text { filter: drop-shadow(0 0 4px rgba(200, 16, 46, 0.6)); }
+.forja-codigo .forja-grande { padding: 12px 12px 12px 10px; border-radius: 4px 14px 4px 14px; background: rgba(18, 17, 16, var(--vidrio, .72)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border-top: 0; margin-bottom: 8px; }
+.forja-codigo .av-nota, .forja-codigo .forja-nueva { background: rgba(18, 17, 16, 0.6); }
+.forja-codigo .av-nota { padding: 8px 10px; border-radius: 8px; }
+.forja-progreso { background: rgba(18, 17, 16, var(--vidrio, .6)); }
+
+/* ---------- v0.78: Historial de Juego por día (desplegable + buscador de fecha) ---------- */
+.hj { display: flex; flex-direction: column; gap: 6px; }
+.hj-buscar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 4px; }
+.hj-buscar input { font: inherit; color: var(--texto); background: var(--fondo-2); border: 1px solid var(--borde); border-radius: 8px; padding: 6px 8px; color-scheme: dark; }
+.hj-sin { margin: 0; padding: 6px 0; }
+.hj-dia { border: 1px solid var(--borde); border-radius: 10px; overflow: hidden; }
+.hj-dia.abierto { border-color: rgba(var(--papel-rgb), 0.3); }
+.hj-barra { appearance: none; width: 100%; display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--fondo-2); color: var(--texto); border: 0; font: inherit; font-size: 0.9rem; text-align: left; cursor: pointer; }
+.hj-barra > span:first-child { font-weight: 700; flex: 1; }
+.hj-flecha { transition: transform 0.2s ease; }
+.hj-dia.abierto .hj-flecha { transform: rotate(180deg); }
+.hj-sesiones { padding: 0 12px 4px; }
+.hj-sesion { padding: 8px 0; border-top: 1px solid var(--borde); }
+.hj-sesion.cero { opacity: 0.45; }
+.hj-mas { align-self: center; margin-top: 2px; }
+
+/* ---------- v0.79: videos sin el ícono de play del navegador ---------- */
+video::-webkit-media-controls, video::-webkit-media-controls-panel, video::-webkit-media-controls-overlay-play-button, video::-webkit-media-controls-start-playback-button, video::-webkit-media-controls-enclosure { display: none !important; -webkit-appearance: none; opacity: 0 !important; }
+/* Sin portada: invisible hasta que reproduce (lo marca videoSinPlay.ts). */
+video:not([poster]):not([data-vivo]) { opacity: 0 !important; }
+
+/* ---------- v0.80: fotos de progreso, días marcados y el camino (disposición) ---------- */
+.fotos-fila { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+.foto-mini { appearance: none; flex: none; position: relative; width: 74px; height: 98px; padding: 0; border: 1.5px solid rgba(var(--papel-rgb), 0.25); border-radius: 8px; overflow: hidden; background: var(--fondo-2); cursor: pointer; -webkit-touch-callout: none; user-select: none; }
+.foto-mini.elegida { border-color: #c8102e; box-shadow: 0 0 0 2px rgba(200, 16, 46, 0.45); }
+.foto-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.foto-dia { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 4px; font-size: 0.66rem; font-weight: 700; color: #f3efe6; background: linear-gradient(transparent, rgba(0, 0, 0, 0.75)); text-align: left; }
+.fotos-par { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+.fotos-par figure { margin: 0; }
+.fotos-par img { width: 100%; border-radius: 6px; display: block; }
+.fotos-par figcaption { font-size: 0.72rem; text-align: center; color: var(--texto-2); margin-top: 2px; }
+.foto-grande { width: 100%; border-radius: 8px; display: block; }
+.marca-sello, .cal-marca { font-family: 'Pincel', serif; line-height: 1; color: #fff4f4; background: #c8102e; border-radius: 2px 3px 2px 3px; padding: 1px 1.5px; transform: rotate(5deg); display: inline-block; box-shadow: 0 0 5px rgba(200, 16, 46, 0.5); }
+.marca-sello { font-size: 0.75rem; margin-right: 6px; }
+.cal-dia .cal-marca { position: absolute; top: -4px; right: -4px; font-size: 0.55rem; z-index: 1; }
+.cal-forja { font-family: 'Pincel', serif; font-size: 0.6rem; line-height: 1; color: #e0213b; }
+.cal-dia .cal-forja { position: absolute; right: 3px; bottom: 2px; pointer-events: none; }
+.cal-marca.muestra, .cal-forja.muestra { position: static; margin-right: 3px; font-size: 0.65rem; }
+.cal-marca-fila { gap: 8px; }
+.marcas-linea { appearance: none; border: 0; font: inherit; text-align: left; width: 100%; cursor: pointer; }
+.marcas-item { gap: 8px; padding: 6px 0; border-top: 1px solid var(--borde); align-items: baseline; }
+.camino-titulo-k { font-family: 'Pincel', 'Noto Serif JP', serif; color: #f3efe6; text-shadow: 1.5px 1.5px 0 rgba(200, 16, 46, 0.6); margin-right: 4px; }
+/* v0.80: los tres botones de la cabecera de Hoy, chicos, en una línea y con contorno visible sobre el papel */
+.hoy-arriba .boton-duda { border-color: currentColor; white-space: nowrap; font-size: 0.66rem; padding: 3px 7px; }
+.hoy-arriba .boton-duda.rojo { border-color: #c8102e; color: #c8102e; }
+
+/* v0.82: días con un hábito en forja cumplido = río verde suave en el borde de abajo; se une entre días seguidos. */
+.cal-rio { display: block; height: 6px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 6' preserveAspectRatio='none'%3E%3Cpath d='M0,3 C5,0.5 10,0.5 15,3 S25,5.5 30,3' fill='none' stroke='%236FAF8E' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x left center / 30px 6px; opacity: 0.6; filter: drop-shadow(0 0 2px rgba(var(--verde-rgb), 0.55)); pointer-events: none; }
+.cal-dia .cal-rio { position: absolute; left: 6px; right: 6px; bottom: 0; border-radius: 3px; }
+.cal-dia .cal-rio.une-izq { left: -5px; }
+.cal-dia .cal-rio.une-der { right: -5px; }
+.cal-rio.muestra { display: inline-block; width: 22px; margin-right: 4px; vertical-align: middle; }
+/* v0.82: «Día N de 90» siempre en una línea; los tres botones bajan a la fila de la fecha, a la derecha (mismo alto de cabecera). */
+.cabecera-int { position: relative; }
+.cabecera .dia { white-space: nowrap; }
+.cabecera-int > .fase:has(.hoy-arriba) { position: absolute; right: 0; bottom: 0; }
+
+/* ---------- v0.83 · lo no cumplido resta ---------- */
+.linea-ayer { margin: 0 0 2px; text-align: right; color: var(--texto-3); }
+.linea-ayer a { color: inherit; text-decoration: none; }
+.linea-ayer .ayer-mas { color: var(--texto-2); font-weight: 700; }
+.linea-ayer .ayer-menos { color: #e8443a; font-weight: 700; }
+.aviso-resta { display: block; margin: 2px 0; padding: 7px 10px; border-left: 2px solid var(--acento); background: var(--acento-suave); border-radius: 4px; font-size: 0.85rem; }
+.aviso-resta-k { color: var(--acento); font-weight: 700; margin-right: 4px; }
+.xpc-menos { position: fixed; z-index: 80; pointer-events: none; transform: translate(-50%, -50%); font: 800 1.1rem/1 var(--fuente); color: #d8312a; animation: xpc-menos 1.8s ease-out forwards; }
+@keyframes xpc-menos { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -150%); } }
+@media (prefers-reduced-motion: reduce) { .xpc-menos { animation: none; } }
+.xp-historial .xp-dia { padding: 6px 0; border-top: 1px solid rgba(255, 255, 255, 0.07); }
+.xp-historial .xp-dia:first-of-type { border-top: 0; }
+.xp-historial .xp-dia-cab { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 2px; }
+.xp-historial .xp-linea { display: flex; gap: 8px; font-size: 0.78rem; color: var(--texto-2); line-height: 1.5; }
+.xp-historial .xp-cant { min-width: 58px; text-align: right; color: var(--texto); }
+.xp-historial .xp-linea.resta .xp-cant, .xp-historial .xp-menos { color: #e8443a; }
+.xp-historial .xp-linea.resta .xp-desc { color: #c9a39e; }
+.camino-mas { color: var(--texto); }
+.camino-menos { color: #e8443a; }
+
+/* ---------- v0.85 · simplificar ---------- */
+/* Hoy: forjas una al lado de la otra (2 o 3): piedra arriba, nombre corto y la cuenta abajo. */
+.forja-fila.en-columnas .forja-chica { flex-direction: column; justify-content: center; gap: 2px; min-height: 0; padding: 6px 4px 5px; text-align: center; }
+.forja-fila.en-columnas .forja-nombre { flex: none; font-size: 0.74rem; text-align: center; width: 100%; }
+.forja-fila.en-columnas .forja-cuenta { font-size: 0.68rem; }
+/* Hoy: Revisión diaria baja (una línea; el aviso fuerte lo da la alarma de las 20:50); 3·2·1 y Siguiente un poco más chicos. */
+.accesos .boton.grande.revision-baja { min-height: 40px; padding: 6px 12px; font-size: 0.95rem; gap: 6px; }
+.accesos .boton.grande.revision-baja svg { width: 16px; height: 16px; }
+.accesos .boton.grande.acceso-medio { min-height: 46px; padding: 6px 10px; font-size: 1rem; }
+.accesos .boton.grande.acceso-medio svg { width: 16px; height: 16px; }
+/* Calendario ordenado: número arriba a la izquierda, un ícono arriba a la derecha, barrita de 4 tramos abajo, río debajo. */
+.calendario.tinta .cal-dia { aspect-ratio: auto; height: 46px; display: block; padding: 0; border-top-color: transparent; }
+.calendario.tinta .cal-dia .num { position: absolute; top: 5px; left: 6px; font-size: 0.82rem; }
+.calendario.tinta .cal-dia.completo::after, .calendario.tinta .cal-dia.feriado::after { display: none; }
+.cal-icono { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 0.68rem; line-height: 1; font-weight: 400; }
+.cal-dia .cal-icono { position: absolute; top: 4px; right: 4px; }
+.cal-icono.hoy { color: var(--acento); }
+.cal-icono.marca { color: #f3efe6; background: var(--acento); border-radius: 2px; padding: 1px 1.5px; }
+.cal-icono.clave { color: #f4eefc; background: rgba(var(--violeta-rgb), 0.9); border-radius: 2px; padding: 1px 1.5px; }
+.cal-icono.caida { color: var(--texto-3); }
+.cal-barra { display: flex; gap: 1.5px; height: 3px; }
+.cal-dia .cal-barra { position: absolute; left: 6px; right: 6px; bottom: 9px; }
+.cal-barra i { flex: 1; border-radius: 1px; background: rgba(var(--papel-rgb), 0.16); }
+.cal-barra i.cumplido { background: var(--verde); box-shadow: 0 0 3px rgba(var(--verde-rgb), 0.5); }
+.cal-barra i.tarde { background: rgba(var(--verde-rgb), 0.5); }
+.cal-barra i.omitido { background: var(--rojo-apagado); }
+.cal-barra i.descanso { background: transparent; border: 0.5px dashed rgba(var(--papel-rgb), 0.25); }
+.calendario.tinta .cal-dia .cal-rio { height: 4px; bottom: 2px; }
+.cal-leyenda { display: flex; flex-wrap: nowrap; white-space: nowrap; align-items: center; gap: 3px; margin: 8px 0 0; font-size: 0.66rem !important; overflow: hidden; }
+.cal-leyenda .cal-barra.muestra { display: inline-flex; width: 22px; }
+.cal-leyenda .cal-rio.muestra { display: inline-block; width: 18px; height: 5px; }
+.cal-leyenda b.cal-icono { font-size: 0.72rem; }
+/* Sueño: «Anoche» en una tarjeta baja de dos líneas; los ajustes detrás de un botón. */
+.anoche-baja { appearance: none; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; width: 100%; padding: 10px 14px; text-align: left; color: var(--texto); cursor: pointer; font: inherit; }
+.anoche-grande { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.01em; }
+.ajustes-sueno-boton { align-self: flex-start; background: transparent; }
+/* Progreso: «El camino» compacto; los forjados dentro de Mi código. */
+.camino-tarjeta { padding-top: 8px !important; padding-bottom: 6px !important; }
+.av-codigo-forjados { font-size: 11.5px; color: var(--texto-2); display: flex; align-items: center; gap: 2px; }
+.av-codigo-forjados-k { font-family: 'Pincel', 'Noto Serif JP', serif; color: #f3efe6; text-shadow: 1px 1px 0 rgba(200, 16, 46, 0.7); letter-spacing: 2px; margin-left: 4px; font-size: 13px; }
+.cal-dia.feriado .num { text-decoration: none; }
+.anoche-chica { font-size: 0.74rem; line-height: 1.35; }
+.anoche-chica .texto-verde { white-space: nowrap; }
+.archivado-grupo > summary { cursor: pointer; list-style: revert; }
+/* v0.88 · Calendario: hasta 2 íconos por día y la leyenda completa en 2 columnas. */
+.cal-dia .cal-icono { position: static; }
+.cal-dia .cal-iconos { position: absolute; top: 4px; right: 4px; display: flex; gap: 1.5px; align-items: center; }
+.cal-icono.feriado { color: var(--texto-2); }
+.cal-mas { font-size: 0.8rem; line-height: 0.5; color: var(--texto-2); font-weight: 800; }
+.cal-dia.feriado::after, .calendario.tinta .cal-dia.completo::after { display: none; }
+ul.cal-leyenda { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; list-style: none; padding: 0; margin: 10px 0 0; white-space: normal; overflow: visible; font-size: 0.68rem !important; color: var(--texto-3); }
+ul.cal-leyenda li { display: flex; align-items: center; gap: 5px; min-width: 0; }
+ul.cal-leyenda li:first-child { grid-column: 1 / -1; }
+.cal-muestra-dia { display: inline-block; width: 14px; height: 11px; border-radius: 3px; border: 1px solid rgba(var(--papel-rgb), 0.18); flex: none; }
+.cal-muestra-dia.completo { background: rgba(200, 16, 46, 0.18); }
+.cal-muestra-dia.fase { border-left: 3px solid var(--acento); }
+.cal-muestra-dia.libre { background: repeating-linear-gradient(45deg, var(--fondo-3), var(--fondo-3) 2px, var(--fondo-2) 2px, var(--fondo-2) 4px); }
+.cal-pista { margin: 8px 0 0; font-size: 0.66rem; color: var(--texto-3); }
+.cal-dia .cal-iconos { top: 3px; right: 2px; gap: 1px; }
+.cal-dia .cal-iconos .cal-icono { font-size: 0.56rem; }
+.cal-dia .cal-iconos .cal-icono.marca, .cal-dia .cal-iconos .cal-icono.clave { padding: 0.5px 1px; }
+.cal-dia .num { position: relative; z-index: 1; }

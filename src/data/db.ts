@@ -8,6 +8,7 @@
 import Dexie, { type EntityTable } from 'dexie'
 import { nombreBaseActual } from './modoPrueba'
 import type {
+  Caida,
   Accion,
   Ajustes,
   ReglaCodigo,
@@ -15,6 +16,7 @@ import type {
   AlimentoPropio,
   RegistroComida,
   TomaAgua,
+  TomaFruta,
   Recomendacion,
   RegistroPeso,
   ComidaGuardada,
@@ -42,7 +44,7 @@ import type {
   Revision,
   SesionJuego,
   SiguienteAccion,
-  TemporizadorActivo, PeleaNinja } from './tipos'
+  TemporizadorActivo, PeleaNinja, HabitoForja, FotoProgreso, MarcaDia } from './tipos'
 
 export class BaseDatos extends Dexie {
   identidad!: EntityTable<Identidad, 'id'>
@@ -74,6 +76,8 @@ export class BaseDatos extends Dexie {
   alimentosPropios!: EntityTable<AlimentoPropio, 'id'>
   comidas!: EntityTable<RegistroComida, 'id'>
   agua!: EntityTable<TomaAgua, 'id'>
+  frutas!: EntityTable<TomaFruta, 'id'>
+  caidas!: EntityTable<Caida, 'id'>
   recomendaciones!: EntityTable<Recomendacion, 'id'>
   ninjas!: EntityTable<PeleaNinja, 'id'>
   pesos!: EntityTable<RegistroPeso, 'id'>
@@ -81,6 +85,11 @@ export class BaseDatos extends Dexie {
   eventos!: EntityTable<Evento, 'id'>
   temporizador!: EntityTable<TemporizadorActivo, 'id'>
   modoSuenio!: EntityTable<ModoSuenio, 'id'>
+  /** Organización (notas y tareas): un solo objeto JSON en la fila 'datos'. El formato lo define src/organizacion/CONTRATO.md. */
+  organizacion!: EntityTable<{ id: string; datos: unknown; actualizado: number }, 'id'>
+  forja!: EntityTable<HabitoForja, 'id'>
+  fotos!: EntityTable<FotoProgreso, 'id'>
+  marcas!: EntityTable<MarcaDia, 'fecha'>
 
   constructor(nombre = 'sistema-progreso') {
     super(nombre)
@@ -142,6 +151,24 @@ export class BaseDatos extends Dexie {
     this.version(11).stores({
       ninjas: '++id, fecha',
     })
+    this.version(12).stores({
+      organizacion: 'id',
+    })
+    this.version(13).stores({
+      frutas: 'id, fecha',
+    })
+    this.version(14).stores({
+      caidas: 'id, fecha',
+    })
+    // Forja de hábitos: solo agrega su tabla.
+    this.version(15).stores({
+      forja: 'id, estado',
+    })
+    // Fotos de progreso y días marcados: solo agregan sus tablas.
+    this.version(16).stores({
+      fotos: 'id, fecha',
+      marcas: 'fecha',
+    })
   }
 
   /** Todas las tablas, para exportar e importar. */
@@ -153,8 +180,11 @@ export class BaseDatos extends Dexie {
 export const TABLAS = [
   'identidad', 'atributos', 'ciclos', 'fases', 'objetivos', 'acciones', 'reglasXp', 'metas', 'ajustes',
   'compromisos', 'sesionesJuego', 'suenio', 'siguienteAccion', 'revisiones', 'xp', 'niveles',
-  'atributosDiarios', 'diasCerrados', 'excepciones', 'feriados', 'contadores', 'registrosContador', 'eventos', 'temporizador', 'modoSuenio', 'rutinas', 'sesionesEntreno', 'codigo', 'fechasClave', 'alimentosPropios', 'comidas', 'pesos', 'comidasGuardadas', 'agua', 'recomendaciones', 'ninjas',
+  'atributosDiarios', 'diasCerrados', 'excepciones', 'feriados', 'contadores', 'registrosContador', 'eventos', 'temporizador', 'modoSuenio', 'rutinas', 'sesionesEntreno', 'codigo', 'fechasClave', 'alimentosPropios', 'comidas', 'pesos', 'comidasGuardadas', 'agua', 'recomendaciones', 'ninjas', 'organizacion', 'frutas', 'caidas', 'forja', 'marcas',
 ] as const
+
+/** Las fotos van aparte en la copia: pueden pesar mucho (se incluyen solo si se pide). */
+export const TABLA_FOTOS = 'fotos'
 
 let instancia: BaseDatos | null = null
 

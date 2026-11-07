@@ -244,6 +244,43 @@ export type ReglaCodigo = {
   creado: number
 }
 
+/** Foto de progreso (opcional): queda con el día en que se cargó, sin poder cambiarlo. Solo en el celu. */
+export type FotoProgreso = {
+  id: string
+  fecha: string
+  /** Día del ciclo (Día N de 90) en que se cargó; 0 si no había ciclo. */
+  dia: number
+  /** Imagen achicada (máx. ~1080 px) como data URL (webp o jpg). */
+  imagen: string
+  creada: number
+}
+
+/** Día marcado en el Calendario (印): algo importante que hiciste, con un texto corto. */
+export type MarcaDia = {
+  fecha: string
+  texto: string
+  creada: number
+  editada?: number
+}
+
+/** Hábito en forja: algo nuevo que se vuelve costumbre (ver domain/forja.ts). */
+export type HabitoForja = {
+  id: string
+  nombre: string
+  /** El kanji escondido en la piedra. */
+  kanji: string
+  /** Día 1 de la forja. */
+  inicio: FechaDia
+  /** Días cumplidos (AAAA-MM-DD). */
+  cumplidos: FechaDia[]
+  /** Fallas no perdonadas al último cálculo (se guarda para el historial; la regla la calcula de nuevo). */
+  fallas: number
+  estado: 'forja' | 'forjado' | 'abandonado'
+  forjadoEn?: FechaDia
+  abandonadoEn?: FechaDia
+  creado: number
+}
+
 export type Ajustes = {
   id: 'unicos'
   /** Ya se cargaron las reglas de ejemplo de «Mi código» (para no volver a cargarlas si se borran). */
@@ -297,12 +334,21 @@ export type Ajustes = {
   distracciones?: Distraccion[]
   /** Ninjas de la distracción y el tajo: sí / no (sí si falta). */
   ninjas?: boolean
+  /** Brillo de pendientes en Hoy (pilares, reglas y series titilan según el estado). Encendido si falta. */
+  brilloPendientes?: boolean
+  /** Fruta del día (la manzana al lado del agua): nombre y dos objetivos. Si falta: «Fruta», 1 y 2. */
+  fruta?: ConfigFruta
   /** Tira «Ninjas vencidos esta semana» en Progreso (sí si falta). */
   ninjasEnProgreso?: boolean
   /** Batalla contra la distracción (minijuego): activa, contador y reps por toque. */
   batalla?: ConfigBatalla
   /** Cinemática «Tensión»: kanji y frase del final. */
   tension?: ConfigTension
+  caida?: ConfigCaida
+  /** Lo no cumplido resta (v0.83): prendido, % de la XP que da y desde qué día vale (nunca hacia atrás). */
+  xpResta?: { activa?: boolean; porcentaje?: number; desde?: FechaDia }
+  /** Forja de hábitos: días, válidos necesarios, XP por día y al forjarse, máximo a la vez (si falta, los de domain/forja). */
+  forja?: Partial<{ dias: number; validos: number; xpDia: number; xpForjado: number; maximo: number }>
   /** Rival escurridizo: modo y XP que roba. */
   rival?: ConfigRival
   /** Adaptación del sueño: desde cuándo, etapas editables y tolerancia de «a horario». */
@@ -721,6 +767,17 @@ export type Recomendacion = {
   intentos: number
 }
 
+/** Fruta del día: dos objetivos, como las series (cuota y extra). */
+export type ConfigFruta = { nombre: string; objetivo1: number; objetivo2: number }
+
+/** Una fruta comida (un toque en la manzana de Hoy). */
+export type TomaFruta = { id: string; fecha: FechaDia; instante: number }
+
+/** Una caída («No cumplí mi palabra» o soltar la mano en Tensión): no reinicia nada, saca XP y deja una tumba rota. */
+export type Caida = { id: string; fecha: FechaDia; instante: number; origen: 'boton' | 'tension'; xp: number }
+/** Caída: cuánta XP saca (el precio de volver). */
+export type ConfigCaida = { xp?: number }
+
 /** Una toma de agua (un toque). */
 export type TomaAgua = { id: string; fecha: FechaDia; ml: number; envase?: string; instante: number }
 
@@ -740,7 +797,7 @@ export type Distraccion = { id: string; nombre: string; momento?: MomentoNinja |
 export type PeleaNinja = { id?: number; fecha: FechaDia; distraccion: string; momento: MomentoNinja; resultado: 'vencido' | 'escapo'; pilar?: string; instante: number; /** Batalla: reps hechas (la serie que se anotó en el contador). */ reps?: number; /** Rival escurridizo ignorado: XP que se llevó. */ robo?: number }
 
 /** Batalla contra la distracción (minijuego de flexiones). Todo editable en Más → Ver animaciones. */
-export type ConfigBatalla = { /** Sí si falta. */ activa?: boolean; /** Contador de reps que se usa (flexiones si falta). */ contadorId?: string; /** Reps por toque (5 si falta). */ repsPorToque?: number }
+export type ConfigBatalla = { /** Sí si falta. */ activa?: boolean; /** Contador de reps que se usa (flexiones si falta). */ contadorId?: string; /** Reps por toque (5 si falta). */ repsPorToque?: number; /** Duelo (v0.85): flexiones si no hay serie rápida de flexiones (10 si falta). */ repsSinSerie?: number }
 
 /** Cinemática «Tensión»: kanji y frase del final (editables en Más → Ver animaciones). */
 export type ConfigTension = { kanji?: string; frase?: string }

@@ -15,10 +15,11 @@ type Seccion = { a: string; t: string; d: string; claves: string; icono?: string
 
 /** Lo de la app en sí: primera fila, cada uno con su botón. */
 const SISTEMA: Seccion[] = [
+  { a: '/organizacion', t: 'Organización', d: 'Notas y tareas', icono: 'icono-organizacion', claves: 'organizacion tareas notas pendientes frentes bandeja anotar me toca hoy' },
   { a: '/mas/copia', t: 'Copia', d: 'Exportar e importar', icono: 'icono-copia', claves: 'copia seguridad backup exportar importar json csv texto guardar datos' },
   { a: '/mas/animaciones', t: 'Animaciones', d: 'Ver y elegir', icono: 'icono-animaciones', claves: 'animaciones shinobi pajaro torpe rival batalla sonido video' },
   { a: '/mas/tema', t: 'Tema', d: 'Tema y nombres', icono: 'icono-tema', claves: 'tema nombres nombre app fases color' },
-  { a: '/mas/ajustes', t: 'Ajustes', d: 'Juego, racha, lluvia', icono: 'icono-ajustes', claves: 'ajustes configuracion limite juego racha niveles zona horaria lluvia fondo movimiento' },
+  { a: '/mas/ajustes', t: 'Ajustes', d: 'Juego, racha, lluvia', icono: 'icono-ajustes', claves: 'ajustes configuracion limite juego racha niveles zona horaria lluvia fondo movimiento resta no cumplido xp' },
   { a: '/mas/historial', t: 'Historial', d: 'Lo que cambió', icono: 'icono-historial', claves: 'historial cambios registro corregir' },
   { a: '/mas/sincronizar', t: 'Sincronizar', d: 'Celu y compu', icono: 'icono-sincronizar', claves: 'sincronizar compu celu nube' },
   { a: '/mas/actualizar', t: 'Buscar actualización', d: 'Versión nueva', icono: 'icono-actualizar', claves: 'buscar actualizacion actualizar version nueva apk instalar descargar' },

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { rivalArchivado } from '../../temas/archivado'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import type { Compromiso } from '../../data/tipos'
@@ -9,10 +10,10 @@ import { NOMBRES_FASES_INICIALES } from '../../data/semilla'
 import { TarjetaComida } from './Comida'
 import { TarjetaAgua } from './Agua'
 import { cerrarAvisoDormir, minutosAvisoDormir, mostrarAvisoDormir } from '../../services/dormir'
-import { debeMostrarTajo, distraccionesDe, marcarTajo, momentoActivo, nombreDistraccion, peleasDelDia, prepararPelea, tajoMostradoHoy, vistaAnterior, type Pelea } from '../../services/ninjas'
+import { debeMostrarTajo, marcarTajo, momentoActivo, peleasDelDia, prepararPelea, tajoMostradoHoy, vistaAnterior, type Pelea } from '../../services/ninjas'
 import { hayPelea, pedirPelea } from '../Ninja'
 import { hayRival, pedirRival } from '../Rival'
-import { modoRival, selloRobo } from '../../services/rival'
+import { modoRival } from '../../services/rival'
 import { Tajo } from '../Tajo'
 import { LineaDelDia } from './MiHorario'
 import { finDeObligatorio } from '../../services/horario'
@@ -44,8 +45,10 @@ import {
   type CompromisoConAccion,
   type Pilar,
 } from '../../services/dia'
+import { emitirEvento } from '../../temas/eventos'
 import { duracionSuenio, entrarModoSuenio, horaDeMinutos, resumenSuenio } from '../../services/suenio'
 import { estadoAdaptacion, veredictoDe } from '../../services/adaptacion'
+import { FilaForjaHoy } from '../Forja'
 import { celebrarFase, celebrarNivel, celebrarPilar, celebrarRacha } from '../animaciones/logros'
 import { animar, configuracionAnimaciones } from '../animaciones/motor'
 import { resumenJuego } from '../../services/juego'
@@ -56,8 +59,24 @@ import { ahora } from '../../services/reloj'
 import { rutinaDelDia, sesionEnCurso } from '../../services/entreno'
 import { obtenerRevision } from '../../services/revisiones'
 import { xpDelDia, xpTotal } from '../../services/xp'
+import { avisoRestaHoy, balanceDelDia } from '../../services/restas'
+import { textoAvisoResta } from '../../domain/resta'
+import { disparar } from '../../temas/eventos'
 import { Celebracion, Hoja, IconoPilar } from '../componentes'
 import { avisar, mutar, useDatos, useTic } from '../estado'
+import { TiraOrganizacion } from './Organizacion'
+import { CamaDelCompanero } from '../Companero'
+import { ChipsBatallas } from '../ChipsBatallas'
+import { BotonNoCumpli } from '../Caida'
+import { brillo, type EstadoBrillo } from '../brillo'
+
+/** Pilar → brillo: pendiente titila, marcado (a tiempo o tarde) verde fijo; omitido y descanso sin brillo. */
+function estadoBrilloPilar(p: Pilar): EstadoBrillo | null {
+  if (p.estado === 'pendiente') return 'pendiente'
+  // Con segundo tope (ej. Dibujar 15 / 30 min): 1.ª meta = parcial, 2.ª = máximo, como las series.
+  if (p.estado === 'cumplido' || p.estado === 'tarde') return tieneExtra(p.accion) ? (p.compromiso?.extra ? 'maximo' : 'parcial') : 'hecho'
+  return null
+}
 
 async function cargarPanel(hoy: string) {
   const ajustes = await obtenerAjustes()
@@ -95,7 +114,10 @@ async function cargarPanel(hoy: string) {
   const rutina = (await rutinaDelDia(hoy)) ?? null
   const entrenoEnCurso = !!(await sesionEnCurso())
   const peleas = await peleasDelDia(hoy)
-  return { antes: false as const, peleas, rutina, entrenoEnCurso, metasSemana, ajustes, estado, compromisos, nivel, atributos, racha, juego, semana, xpHoy, revision, nocheAbierta, suenio, pilares, propuestas, contadores, ventana, ajusteDeAyer, buenosDias, anoche, veredictoAnoche }
+  // «Ayer: +35 / −8» y lo que restaría hoy si queda sin hacer.
+  const ayer = await balanceDelDia(sumarDias(hoy, -1))
+  const avisoResta = await avisoRestaHoy(hoy)
+  return { antes: false as const, ayer, avisoResta, peleas, rutina, entrenoEnCurso, metasSemana, ajustes, estado, compromisos, nivel, atributos, racha, juego, semana, xpHoy, revision, nocheAbierta, suenio, pilares, propuestas, contadores, ventana, ajusteDeAyer, buenosDias, anoche, veredictoAnoche }
 }
 
 
@@ -128,14 +150,17 @@ export function Hoy({ hoy }: { hoy: string }) {
   useEffect(() => { setHuecoHorario(document.getElementById('barra-horario-slot')) }, [])
   const clipsTension = useClipsTension()
   const batallas = useDatos(() => puedeBatallar(hoy), [hoy]).datos
-  // El compañero duerme después de «Dejo celu» (y vuelve a pasear al deshacerlo o al otro día).
+  // El compañero duerme después de «Dejo celu», pero solo de noche: desde la hora de alistarse (20:00 si no hay)
+  // hasta la mañana. Si «Dejo celu» se toca de tarde, sigue paseando hasta esa hora.
+  const deNoche = !!d && !d.antes && tic >= instanteDe(d.nocheAbierta, d.ajustes.horaAlistarse || '20:00', d.ajustes.zonaHoraria)
   useEffect(() => {
     if (!d || d.antes) return
     try {
-      if (d.suenio) localStorage.setItem('companero-dormido', d.nocheAbierta)
+      if (d.suenio && deNoche) localStorage.setItem('companero-dormido', d.nocheAbierta)
       else localStorage.removeItem('companero-dormido')
     } catch { /* sin almacenamiento */ }
-  }, [d])
+    window.dispatchEvent(new Event('companero-cambio'))
+  }, [d, deNoche])
   // A las 20:50 en punto (y al cierre) la pantalla se actualiza sola, sin esperar al reloj de 30 s.
   const [, forzar] = useState(0)
   useEffect(() => {
@@ -208,6 +233,23 @@ export function Hoy({ hoy }: { hoy: string }) {
     return () => window.clearTimeout(id)
   }, [d])
 
+  // «Lo no cumplido resta»: aviso a la hora de alistarse con lo que falta y cuánto restaría.
+  useEffect(() => {
+    if (!d || d.antes) return
+    const texto = d.avisoResta ? textoAvisoResta(d.avisoResta.faltantes, d.avisoResta.porcentaje) : null
+    const instante = instanteDe(hoy, d.ajustes.horaAlistarse || '20:00', d.ajustes.zonaHoraria)
+    if (!texto || instante <= Date.now()) { recordatorios.cancelar('resta-alistarse'); return }
+    recordatorios.programar({ id: 'resta-alistarse', titulo: 'Todavía estás a tiempo', cuerpo: `${texto} · ${d.avisoResta!.faltantes.map((f) => f.nombre).join(', ')}`, instante })
+  }, [d, hoy])
+  // Lo que se perdió ayer: el tema lo muestra una vez (la bolita de XP se apaga y cae como ceniza), arriba.
+  useEffect(() => {
+    if (!d || d.antes || !d.ayer.menos) return
+    const clave = `xp-perdida:${sumarDias(hoy, -1)}`
+    try { if (localStorage.getItem(clave)) return; localStorage.setItem(clave, '1') } catch { /* sin almacenamiento */ }
+    const t = window.setTimeout(() => disparar('xp-perdida', { texto: `−${d.ayer.menos} XP` }), 700)
+    return () => window.clearTimeout(t)
+  }, [d, hoy])
+
   // Primer día de una fase nueva: logro grande (una sola vez).
   useEffect(() => {
     if (!d || d.antes || !d.estado?.fase) return
@@ -265,6 +307,7 @@ export function Hoy({ hoy }: { hoy: string }) {
   }
 
   const { ajustes } = d
+  const conBrillo = ajustes.brilloPendientes !== false
   const faseTerminada = d.estado?.fase && d.estado.dia > d.estado.fase.diaFin
   // La revisión diaria tiene su botón grande arriba: no se repite en la lista.
   const otros = d.compromisos.filter((c) => !c.accion.pilar && c.accion.tipo !== 'limite_juego' && c.accion.tipo !== 'acostarse' && c.accion.tipo !== 'revision_diaria')
@@ -291,6 +334,7 @@ export function Hoy({ hoy }: { hoy: string }) {
   // «Dudo»: con el rival escurridizo, aparece el muñeco (atraparlo lleva a la batalla). Con la carta directa, la batalla
   // (minijuego de flexiones); si la batalla está apagada, la pelea corta de antes.
   const batallar = async () => {
+    emitirEvento('duda')
     if (modoRival(ajustes) === 'escurridizo' || ajustes.batalla?.activa === false) return dudar()
     const r = await prepararBatalla(hoy)
     if (r.batalla) pedirBatalla(r.batalla)
@@ -402,11 +446,12 @@ export function Hoy({ hoy }: { hoy: string }) {
         </div>
       )}
 
-      {/* «Dudo» (batalla) y 「進」 (tensión) en la cabecera, al lado de la fecha */}
+      {/* «Dudo», «Tensión» y «No cumplí» en la cabecera, juntos y en contorno */}
       {huecoCabecera && createPortal(
         <span className="hoy-arriba">
-          {clipsTension && <button type="button" className="boton-duda kanji" onClick={() => pedirTension()} aria-label="Tensión: cinemática">進</button>}
-          {ajustes.ninjas !== false && <button type="button" className="boton-duda" onClick={batallar} aria-label="Estoy dudando: batalla contra la distracción">Dudo</button>}
+          {!rivalArchivado() && <button type="button" className="boton-duda" onClick={batallar} aria-label="Estoy dudando: batalla contra la distracción">Dudo</button>}
+          {clipsTension && <button type="button" className="boton-duda" onClick={() => pedirTension()} aria-label="Tensión: cinemática"><span className="boton-duda-kanji" aria-hidden>進</span>Tensión</button>}
+          <BotonNoCumpli fecha={hoy} className="boton-duda rojo" texto="No cumplí" />
         </span>,
         huecoCabecera,
       )}
@@ -451,9 +496,10 @@ export function Hoy({ hoy }: { hoy: string }) {
           </span>
         </div>
         <div className="pilares-bloques">
-          {d.pilares.pilares.map((p) => (
+          {d.pilares.pilares.map((p, i) => (
             <FilaPilar
               key={p.accion.id}
+              brillo={brillo(estadoBrilloPilar(p), i, conBrillo)}
               p={p}
               suenio={d.suenio}
               zona={ajustes.zonaHoraria}
@@ -463,16 +509,16 @@ export function Hoy({ hoy }: { hoy: string }) {
               destello={destello === p.accion.id}
               onTocar={() => tocarPilar(p)}
               onMas={() => p.compromiso && setPilarSel(p)}
+              onConfigurar={() => navegar(`/mas/acciones?editar=${encodeURIComponent(p.accion.id)}`)}
               horaLimiteCelu={ajustes.horaLimiteCelu}
               entrenoEnCurso={d.entrenoEnCurso}
             />
           ))}
         </div>
-        {ajustes.ninjas !== false && (d.peleas.length > 0 || (batallas && batallas.hechas > 0)) && (
-          <div className="fila entre ninja-fila">
-            <span className="muy-chico texto-3">{resumenPeleas(d.peleas, d.contadores.find((c) => c.contador.id === (ajustes.batalla?.contadorId ?? 'flexiones'))?.contador.nombre.toLowerCase() ?? 'flexiones', (id) => nombreDistraccion(distraccionesDe(ajustes), id))}</span>
-            {batallas && batallas.hechas > 0 && <span className="muy-chico texto-3" style={{ whiteSpace: 'nowrap' }}>Batallas hoy: {batallas.hechas} de {batallas.tope}</span>}
-          </div>
+        {/* Línea simple del horario de la noche */}
+        <p className="linea-horario muy-chico texto-3 centro">Alistarse {ajustes.horaAlistarse} · dejo celu hasta {ajustes.horaDejarCelu} · dormido {ajustes.horaDormido}</p>
+        {!rivalArchivado() && ajustes.ninjas !== false && (d.peleas.length > 0 || (batallas && batallas.hechas > 0)) && (
+          <ChipsBatallas hoy={hoy} ajustes={ajustes} unidad={d.contadores.find((c) => c.contador.id === (ajustes.batalla?.contadorId ?? 'flexiones'))?.contador.nombre.toLowerCase() ?? 'flexiones'} hechas={batallas?.hechas} tope={batallas?.tope} />
         )}
         {!d.suenio && esHoraDeAlistarse && !ventanaCeluCerrada && (
           <button className="boton celu ancho grande" onClick={dejoCelu}>
@@ -494,17 +540,20 @@ export function Hoy({ hoy }: { hoy: string }) {
       {/* Comida: dos anillos (calorías y proteína) y «+ Comí» */}
       <TarjetaComida hoy={hoy} />
 
+      {/* Forja de hábitos: hasta 3 piedras chicas (si no hay, no aparece) */}
+      <FilaForjaHoy hoy={hoy} />
+
       {/* Metas de la semana: fila mini de 7 días, debajo de los pilares */}
       <SemanaMetas hoy={hoy} />
 
       {/* Botones importantes: rojizos a pincel; al usarlos en el día pasan a verde */}
-      <div className="col accesos" style={{ gap: 10 }}>
-        <Link to="/revision" className={`boton grande ${d.revision ? 'hecha' : 'rojizo'}`}>
-          {d.revision ? ICONO_OK : ICONO_REV}{d.revision ? 'Revisión diaria hecha' : 'Revisión diaria'}<span className="chico" style={{ fontWeight: 500, opacity: 0.8 }}>{d.revision ? '· ver' : pasoElCierre ? `· sin hacer a las ${d.ventana.horaCierre}` : `· 3 pasos · hasta ${d.ventana.horaAviso}`}</span>
+      <div className="col accesos" style={{ gap: 8 }}>
+        <Link to="/revision" className={`boton grande revision-baja ${d.revision ? 'hecha' : 'rojizo'}`} {...brillo(d.revision ? 'hecho' : 'pendiente', 4, conBrillo)}>
+          {d.revision ? ICONO_OK : ICONO_REV}{d.revision ? 'Revisión diaria hecha' : 'Revisión diaria'}<span className="chico" style={{ fontWeight: 500, opacity: 0.8 }}>{d.revision ? '· ver' : pasoElCierre ? `· sin hacer a las ${d.ventana.horaCierre}` : `· hasta ${d.ventana.horaAviso}`}</span>
         </Link>
         <div className="rejilla-2">
-          <Link to="/321" className={`boton grande ${usadoHoy('321', hoy) ? 'hecha' : 'rojizo'}`}>{usadoHoy('321', hoy) ? ICONO_OK : ICONO_321}3 · 2 · 1</Link>
-          <Link to="/siguiente" className={`boton grande ${usadoHoy('siguiente', hoy) ? 'hecha' : 'rojizo'}`}>{usadoHoy('siguiente', hoy) ? ICONO_OK : ICONO_SIG}Siguiente acción</Link>
+          <Link to="/321" className={`boton grande acceso-medio ${usadoHoy('321', hoy) ? 'hecha' : 'rojizo'}`} {...brillo(usadoHoy('321', hoy) ? 'hecho' : 'pendiente', 5, conBrillo)}>{usadoHoy('321', hoy) ? ICONO_OK : ICONO_321}3 · 2 · 1</Link>
+          <Link to="/siguiente" className={`boton grande acceso-medio ${usadoHoy('siguiente', hoy) ? 'hecha' : 'rojizo'}`} {...brillo(usadoHoy('siguiente', hoy) ? 'hecho' : 'pendiente', 6, conBrillo)}>{usadoHoy('siguiente', hoy) ? ICONO_OK : ICONO_SIG}Siguiente acción</Link>
         </div>
       </div>
 
@@ -525,8 +574,8 @@ export function Hoy({ hoy }: { hoy: string }) {
             </div>
           ))}
           <div className="rejilla-2">
-            {d.contadores.map((c) => (
-              <BotonContador key={c.contador.id} r={c} destello={destello === c.contador.id} onToque={async () => {
+            {d.contadores.map((c, i) => (
+              <BotonContador key={c.contador.id} r={c} brillo={brillo(c.extraLogradoHoy ? 'maximo' : c.metaLogradaHoy ? 'parcial' : 'pendiente', 7 + i, conBrillo)} destello={destello === c.contador.id} onToque={async () => {
                 const res = await mutar(() => sumarToque(c.contador.id))
                 animar({ tipo: 'parry' })
                 subioNivel(res.nuevoNivel)
@@ -556,7 +605,15 @@ export function Hoy({ hoy }: { hoy: string }) {
         </section>
       )}
 
+      {/* Organización: lo que me toca hoy (tareas de los frentes). */}
+      <TiraOrganizacion hoy={hoy} />
+
       {/* Juego, Entrenamiento y Calendario ya están en la barra de abajo: no se repiten acá. */}
+
+      {/* De noche, después de «Dejo celu»: la cama del compañero, abajo de todo sin tapar nada */}
+      <CamaDelCompanero dormido={!!d.suenio && deNoche} modo={ajustes.companero} />
+
+      {/* Discreto, abajo de todo: una caída no reinicia nada, saca un poco de XP y deja la marca */}
 
       <DetalleCompromiso c={seleccion} hoy={hoy} onCerrar={() => setSeleccion(null)} />
       <DetallePilar p={pilarSel} hoy={hoy} onCerrar={() => setPilarSel(null)} onResultado={(id, xp, n) => celebrarYFlash(id, xp, n)} />
@@ -565,7 +622,7 @@ export function Hoy({ hoy }: { hoy: string }) {
   )
 }
 
-function BotonContador({ r, destello, onToque, onDeshacer }: { r: ResumenContador; destello: boolean; onToque: () => void; onDeshacer: () => void }) {
+function BotonContador({ r, brillo: b, destello, onToque, onDeshacer }: { r: ResumenContador; brillo: ReturnType<typeof brillo>; destello: boolean; onToque: () => void; onDeshacer: () => void }) {
   const c = r.contador
   // La barra llega hasta el extra: primera capa hasta la cuota, segunda capa (más brillante) de la cuota al extra.
   const tope = Math.max(1, r.extraHoy)
@@ -575,7 +632,7 @@ function BotonContador({ r, destello, onToque, onDeshacer }: { r: ResumenContado
   const falta = r.extraHoy - r.hoy
   const detalle = r.extraLogradoHoy ? `${r.hoy} · extra ✓` : r.metaLogradaHoy ? `${r.hoy} · faltan ${falta} al extra` : `${r.hoy} / ${r.cuotaHoy} hoy`
   return (
-    <button type="button" className={`contador-boton compacto ${r.metaLogradaHoy ? 'logrado' : ''} ${r.extraLogradoHoy ? 'extra' : ''} ${destello ? 'destello-extra' : ''}`} onClick={onToque} aria-label={`Sumar ${c.cantidadPorToque} ${c.nombre.toLowerCase()}. Hoy ${r.hoy}, cuota ${r.cuotaHoy}, extra ${r.extraHoy}`}>
+    <button type="button" className={`contador-boton compacto ${r.metaLogradaHoy ? 'logrado' : ''} ${r.extraLogradoHoy ? 'extra' : ''} ${destello ? 'destello-extra' : ''}`} {...b} onClick={onToque} aria-label={`Sumar ${c.cantidadPorToque} ${c.nombre.toLowerCase()}. Hoy ${r.hoy}, cuota ${r.cuotaHoy}, extra ${r.extraHoy}`}>
       <span className="fila" style={{ gap: 6, alignItems: 'baseline' }}>
         <span className="mas-n">+{c.cantidadPorToque}</span>
         <span className="nombre">{c.nombre}</span>
@@ -598,17 +655,6 @@ function lanzarDistraccion(p: Pelea, modo: 'escurridizo' | 'carta'): void {
 }
 
 /** Una sola línea chica: la última batalla ganada con sus reps, cuántos se escaparon y si alguno se llevó XP. */
-function resumenPeleas(peleas: { resultado: 'vencido' | 'escapo'; reps?: number; robo?: number; distraccion: string }[], unidad: string, nombre: (id: string) => string = (id) => id): string {
-  const vencidos = peleas.filter((p) => p.resultado === 'vencido')
-  const robos = peleas.filter((p) => p.robo)
-  const escapados = peleas.length - vencidos.length - robos.length
-  const conReps = [...vencidos].reverse().find((p) => p.reps)
-  const partes: string[] = []
-  if (vencidos.length) partes.push(conReps ? `${vencidos.length === 1 ? 'Venciste' : `${vencidos.length} vencidos, el último`} con ${conReps.reps} ${unidad}` : `${vencidos.length} ninja${vencidos.length === 1 ? '' : 's'} vencido${vencidos.length === 1 ? '' : 's'}`)
-  if (escapados) partes.push(`${escapados} se escap${escapados === 1 ? 'ó' : 'aron'} hoy`)
-  for (const r of robos) partes.push(selloRobo(nombre(r.distraccion), r))
-  return partes.join(' · ')
-}
 
 /** ¿Se usó hoy 3·2·1 o Siguiente acción? (lo anotan esas pantallas al empezar). */
 function usadoHoy(que: '321' | 'siguiente', hoy: string): boolean {
@@ -616,9 +662,15 @@ function usadoHoy(que: '321' | 'siguiente', hoy: string): boolean {
 }
 
 /** Un pilar en una sola fila: ícono, nombre, el dato que importa y el estado a la derecha (tilde grande hecho, punto ámbar iniciado). */
-function FilaPilar({ p, suenio, zona, tic, flash, marcado, destello, onTocar, onMas, horaLimiteCelu, entrenoEnCurso }: { p: Pilar; suenio: { horaReal: number } | undefined; zona: string; tic: number; flash?: number; marcado: boolean; destello?: boolean; onTocar: () => void; onMas: () => void; horaLimiteCelu: string; entrenoEnCurso?: boolean }) {
+function FilaPilar({ p, brillo: b, suenio, zona, tic, flash, marcado, destello, onTocar, onMas, onConfigurar, horaLimiteCelu, entrenoEnCurso }: { p: Pilar; brillo: ReturnType<typeof brillo>; suenio: { horaReal: number } | undefined; zona: string; tic: number; flash?: number; marcado: boolean; destello?: boolean; onTocar: () => void; onMas: () => void; onConfigurar: () => void; horaLimiteCelu: string; entrenoEnCurso?: boolean }) {
   const c = p.compromiso
   const esCelu = p.accion.tipo === 'acostarse'
+  // Mantener apretado (0,55 s) abre la configuración del pilar; el toque normal sigue igual.
+  const largo = useRef<number | null>(null)
+  const fueLargo = useRef(false)
+  useEffect(() => () => { if (largo.current) window.clearTimeout(largo.current) }, [])
+  const empezar = () => { fueLargo.current = false; largo.current = window.setTimeout(() => { fueLargo.current = true; largo.current = null; onConfigurar() }, 550) }
+  const soltar = () => { if (largo.current) { window.clearTimeout(largo.current); largo.current = null } }
   const esEntreno = p.accion.tipo === 'entrenamiento'
   const iniciado = p.estado === 'pendiente' && (c?.estado === 'iniciado' || (esEntreno && !!entrenoEnCurso))
   // Últimos 30 minutos antes de la hora límite: el brillo se nota más.
@@ -643,22 +695,43 @@ function FilaPilar({ p, suenio, zona, tic, flash, marcado, destello, onTocar, on
       texto = 'Descanso'; detalle = texto
       break
     default:
-      texto = p.ventanaCerrada ? 'Ya no se registra' : p.vencido ? (esCelu ? `Tarde · hasta las ${horaLimiteCelu}` : `Venció ${p.horaLimite}`) : esCelu ? `Dejo celu hasta las ${p.horaLimite}` : esEntreno ? (entrenoEnCurso ? 'En curso' : `hasta las ${p.accion.horaLimiteInicio ?? p.horaLimite ?? '—'}`) : p.accion.tipo === 'comida_plan' ? 'se mide al cerrar el día' : `hasta las ${p.horaLimite ?? '—'}${p.accion.minutosMinimos ? ` · ${p.accion.minutosMinimos} min` : ''}`
+      texto = p.ventanaCerrada ? 'Ya no se registra' : p.vencido ? (esCelu ? `Tarde · hasta las ${horaLimiteCelu}` : `Venció ${p.horaLimite}`) : esCelu ? `Dejo celu hasta ${p.horaLimite}` : esEntreno ? (entrenoEnCurso ? 'En curso' : `Hasta ${p.accion.horaLimiteInicio ?? p.horaLimite ?? '—'}`) : p.accion.tipo === 'comida_plan' ? 'Se mide al cerrar el día' : `Hasta ${p.horaLimite ?? '—'}${p.accion.minutosMinimos ? ` · ${p.accion.minutosMinimos} min` : ''}`
       detalle = texto
   }
+  // Segunda línea chica, como en la versión guardada: qué hacer con un toque.
+  const pista = p.estado !== 'pendiente' || p.ventanaCerrada || p.accion.tipo === 'comida_plan' ? '' : esEntreno ? (entrenoEnCurso ? 'Tocá para seguir' : 'Tocá para empezar') : esCelu ? 'Tocá para registrar' : 'Tocá si lo hiciste'
   return (
     <button
       type="button"
       className={`pilar-bloque ${p.estado} ${p.vencido ? 'vencido' : ''} ${cerca ? 'cerca' : ''} ${marcado ? 'marcado' : ''} ${c?.extra ? 'extra' : ''} ${destello ? 'destello-extra' : ''} ${iniciado ? 'iniciado' : ''}`}
-      onClick={onTocar}
-      aria-label={`${p.accion.nombre}: ${texto}`}
+      {...b}
+      onPointerDown={empezar}
+      onPointerUp={soltar}
+      onPointerLeave={soltar}
+      onPointerCancel={soltar}
+      onContextMenu={(e) => e.preventDefault()}
+      onClick={() => { if (fueLargo.current) { fueLargo.current = false; return } onTocar() }}
+      aria-label={`${p.accion.nombre}: ${texto}. Mantené apretado para configurarlo`}
       disabled={p.estado === 'descanso'}
     >
-      <span className="fila" style={{ gap: 8, alignItems: 'center', minWidth: 0 }}>
-        <span className="icono"><IconoPilar id={p.accion.id} tipo={p.accion.tipo} /></span>
-        <span className="nombre">{p.accion.nombre}</span>
-      </span>
+      <span className="icono"><IconoPilar id={p.accion.id} tipo={p.accion.tipo} /></span>
+      <span className="nombre">{p.accion.nombre}</span>
       <span className="detalle">{detalle}</span>
+      {pista && <span className="pista">{pista}</span>}
+      {tieneExtra(p.accion) && p.estado !== 'descanso' && (() => {
+        // Barrita de dos topes, como las series: hasta la 1.ª meta y de ahí al extra.
+        const meta = p.accion.minutosMinimos ?? 0
+        const extra = p.accion.minutosExtra!
+        const hechos = c?.extra ? Math.max(extra, c.minutos ?? 0) : p.estado === 'cumplido' || p.estado === 'tarde' ? Math.max(meta, Math.min(c?.minutos ?? meta, extra)) : 0
+        const marca = (100 * meta) / extra
+        return (
+          <span className="barrita dos-topes pilar-barrita" aria-hidden>
+            <i style={{ width: `${(100 * Math.min(hechos, meta)) / extra}%` }} />
+            <i className="capa-extra" style={{ left: `${marca}%`, width: `${(100 * Math.max(0, Math.min(hechos, extra) - meta)) / extra}%` }} />
+            <b className="marca-cuota" style={{ left: `${marca}%` }} />
+          </span>
+        )
+      })()}
       <span className="estado-ic" aria-hidden>{p.estado === 'cumplido' ? '✓' : p.estado === 'tarde' ? '!' : p.estado === 'omitido' ? '✕' : p.estado === 'descanso' ? '–' : iniciado ? <i className="punto-ambar" /> : ''}</span>
       {flash !== undefined && <span className="flash" aria-hidden>+{flash} XP</span>}
       {c && p.estado !== 'descanso' && !esCelu && <span className="mas" role="button" aria-label="Más opciones" onClick={(e) => { e.stopPropagation(); onMas() }}>…</span>}
@@ -888,10 +961,10 @@ function SemanaMetas({ hoy }: { hoy: string }) {
   const proxima = dias.slice(1).flatMap((f) => porDia.get(f) ?? []).find((m) => estadoVisible(m, hoy) === 'pendiente')
   const abrir = (f: string) => navigate(`/calendario?dia=${f}`)
   return (
-    <section className="semana-metas tinta" aria-label="Metas de la semana">
+    <section className="semana-metas simple" aria-label="Metas de la semana">
       <div className="fila entre">
-        <span className="semana-titulo"><span className="semana-kanji" aria-hidden>的</span>Metas{deHoy.length === 0 && !proxima && <span className="semana-sin">sin metas esta semana</span>}</span>
-        <button type="button" className="sello-rojo" onClick={() => abrir(hoy)}>Sumar meta</button>
+        <span className="seccion-titulo semana-titulo-simple"><span className="semana-kanji" aria-hidden>的</span>Metas{deHoy.length === 0 && !proxima && <span className="semana-sin">sin metas esta semana</span>}</span>
+        <button type="button" className="enlace semana-mas" onClick={() => abrir(hoy)} aria-label="Sumar meta">+ meta</button>
       </div>
       <div className="semana-fila">
         {dias.map((f, i) => {

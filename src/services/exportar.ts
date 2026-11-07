@@ -3,7 +3,7 @@
  * Como los datos viven solo en el teléfono, esto es la única copia.
  */
 
-import { db, TABLAS } from '../data/db'
+import { db, TABLAS, TABLA_FOTOS } from '../data/db'
 import { guardarAjustes, registrarEvento } from './base'
 import { ahora } from './reloj'
 
@@ -16,10 +16,12 @@ export type Exportacion = {
   tablas: Record<string, unknown[]>
 }
 
-export async function exportarTodo(): Promise<Exportacion> {
+/** `incluirFotos`: las fotos de progreso pueden pesar mucho; van solo si se pide. */
+export async function exportarTodo(opciones: { incluirFotos?: boolean } = {}): Promise<Exportacion> {
   const d = db()
   const tablas: Record<string, unknown[]> = {}
   for (const nombre of TABLAS) tablas[nombre] = await d.table(nombre).toArray()
+  if (opciones.incluirFotos) tablas[TABLA_FOTOS] = await d.table(TABLA_FOTOS).toArray()
   const salida: Exportacion = { app: 'sistema-progreso', version: VERSION_EXPORTACION, exportado: ahora(), tablas }
   await guardarAjustes({ ultimaExportacion: ahora() }, 'Exportación')
   await d.transaction('rw', [d.eventos], async () => {
@@ -52,6 +54,12 @@ export async function importarTodo(datos: Exportacion): Promise<{ filas: number 
         await t.bulkAdd(lista)
         filas += lista.length
       }
+    }
+    // Las fotos solo se reemplazan si la copia las trae; si no, quedan las del celu.
+    const fotos = datos.tablas[TABLA_FOTOS]
+    if (Array.isArray(fotos)) {
+      await d.table(TABLA_FOTOS).clear()
+      if (fotos.length) { await d.table(TABLA_FOTOS).bulkAdd(fotos); filas += fotos.length }
     }
     await registrarEvento({ tipo: 'importar', entidad: 'todo', entidadId: String(datos.exportado), motivo: `${filas} filas` })
   })
@@ -88,5 +96,6 @@ export async function borrarTodo(): Promise<void> {
   const d = db()
   await d.transaction('rw', d.tables, async () => {
     for (const nombre of TABLAS) await d.table(nombre).clear()
+    await d.table(TABLA_FOTOS).clear()
   })
 }

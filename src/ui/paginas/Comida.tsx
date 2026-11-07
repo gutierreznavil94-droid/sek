@@ -11,6 +11,7 @@ import {
 import { db } from '../../data/db'
 import { Atras, Confirmar, Hoja, Tarjeta } from '../componentes'
 import { avisar, mutar, useDatos } from '../estado'
+import { ConfigFrutaTarjeta, SeccionFruta, TarjetaFruta } from './Fruta'
 import { AguaEnComida, ConfigAguaTarjeta, SeccionAgua, TarjetaAgua, resumenAgua } from './Agua'
 
 // ---------- Anillos ----------
@@ -43,7 +44,7 @@ export function AnilloComida({ valor, objetivo, etiqueta, unidad, tam = 72, alPa
 // ---------- Tarjeta de Hoy ----------
 
 export function TarjetaComida({ hoy }: { hoy: string }) {
-  const datos = useDatos(async () => { const a = await obtenerAjustes(); return { dia: await comidasDelDia(hoy), objetivo: a.comida, aguaChica: (a.agua?.enHoy ?? 'chica') === 'chica' } }, [hoy])
+  const datos = useDatos(async () => { const a = await obtenerAjustes(); return { dia: await comidasDelDia(hoy), objetivo: a.comida, aguaChica: (a.agua?.enHoy ?? 'chica') === 'chica', brillo: a.brilloPendientes !== false } }, [hoy])
   const [cargar, setCargar] = useState(false)
   const d = datos.datos
   if (!d) return null
@@ -67,6 +68,7 @@ export function TarjetaComida({ hoy }: { hoy: string }) {
         )}
       </Link>
       {d.aguaChica && <TarjetaAgua hoy={hoy} chica />}
+      <TarjetaFruta hoy={hoy} conBrillo={d.brillo} indice={5} />
       {o ? <button className="boton primario co-comi" onClick={() => setCargar(true)}>+ Comí</button> : <Link to="/mas/comida" className="boton co-comi">Objetivo</Link>}
       {cargar && <CargarComida hoy={hoy} onCerrar={() => setCargar(false)} />}
     </section>
@@ -460,6 +462,7 @@ export function MasComida({ hoy }: { hoy: string }) {
         </Tarjeta>
       )}
       <ConfigAguaTarjeta />
+      <ConfigFrutaTarjeta />
       <Tarjeta titulo="Pilar «Comer según el plan»">
         <p className="chico texto-2">Se cumple si el día cierra entre −10 % y +10 % de tus calorías y llegás a tu proteína. 15 XP. Un día sin cargar comidas no cuenta: retomás sin castigo.</p>
         <button className={`boton ancho ${pilarActivo ? '' : 'primario'}`} disabled={!o} onClick={() => (pilarActivo ? setConfirmar(true) : mutar(() => activarPilarComida(true, hoy)).then(() => avisar('Pilar de comida activado', { tipo: 'ok' })))}>
@@ -522,6 +525,7 @@ export function SeccionComida({ r, hoy }: { r: ResumenComida; hoy: string }) {
         <p className="chico texto-2">{r.ultraprocesadosSemana ? `${r.ultraprocesadosSemana} ultraprocesado${r.ultraprocesadosSemana === 1 ? '' : 's'} esta semana.` : 'Sin ultraprocesados esta semana.'}</p>
       </section>
       {agua.datos && <SeccionAgua r={agua.datos} hoy={hoy} />}
+      <SeccionFruta hoy={hoy} />
       <Link to="/comida" className="boton ancho">Ver la comida de hoy</Link>
     </div>
   )

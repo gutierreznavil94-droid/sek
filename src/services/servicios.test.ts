@@ -40,6 +40,8 @@ async function preparar(fechaInicio = '2026-11-02', horaInicio = '08:00') {
   reiniciarReloj()
   fijarAhora(instanteDe(fechaInicio, horaInicio, Z))
   await inicializarSiHaceFalta()
+  // Estas pruebas miden el XP sin «lo no cumplido resta» (tiene sus propias pruebas en restas.test.ts).
+  await guardarAjustes({ xpResta: { activa: false } })
   // Estas pruebas usan el calendario anterior (entreno lun, mié y vie) para probar los días de descanso.
   await db().acciones.update('entrenamiento', { dias: [1, 3, 5] })
   await iniciarCiclo(fechaInicio)

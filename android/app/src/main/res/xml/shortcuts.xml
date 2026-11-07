@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Accesos directos: mantener apretado el ícono de SEK. -->
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="tareas" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/atajo_tareas">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="ar.sek.app" android:targetClass="ar.sek.app.MainActivity">
+            <extra android:name="ruta" android:value="tareas" />
+        </intent>
+    </shortcut>
     <shortcut android:shortcutId="dejo-celu" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/atajo_celu">
         <intent android:action="android.intent.action.VIEW" android:targetPackage="ar.sek.app" android:targetClass="ar.sek.app.MainActivity">
             <extra android:name="ruta" android:value="dejo-celu" />
@@ -11,7 +16,8 @@
             <extra android:name="ruta" android:value="vaso" />
         </intent>
     </shortcut>
-    <shortcut android:shortcutId="batalla" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/atajo_batalla">
+    <!-- Batalla: archivada con el rival (v0.86); queda apagada hasta retomarla. -->
+    <shortcut android:shortcutId="batalla" android:enabled="false" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/atajo_batalla">
         <intent android:action="android.intent.action.VIEW" android:targetPackage="ar.sek.app" android:targetClass="ar.sek.app.MainActivity">
             <extra android:name="ruta" android:value="batalla" />
         </intent>

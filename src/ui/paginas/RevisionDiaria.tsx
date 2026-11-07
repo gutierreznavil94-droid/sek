@@ -7,6 +7,8 @@ import { completarCompromiso, cumplimientoDelDia, omitirCompromiso, pilaresDelDi
 import { resumenJuego } from '../../services/juego'
 import { ahora } from '../../services/reloj'
 import { guardarRevision, obtenerRevision } from '../../services/revisiones'
+import { avisoRestaHoy, balanceDelDia } from '../../services/restas'
+import { textoAvisoResta } from '../../domain/resta'
 import { Atras, Chips, IconoPilar } from '../componentes'
 import { avisar, mutar, useDatos } from '../estado'
 
@@ -45,6 +47,8 @@ export function RevisionDiaria({ hoy }: { hoy: string }) {
     revision: await obtenerRevision('diaria', fecha),
     ventana: await ventanaNoche(fecha),
     zona: (await obtenerAjustes()).zonaHoraria,
+    resta: fecha === hoy ? await avisoRestaHoy(fecha) : null,
+    balance: fecha < hoy ? await balanceDelDia(fecha) : null,
   }), [fecha, hoy])
   const d = datos.datos
   useEffect(() => {
@@ -108,6 +112,8 @@ export function RevisionDiaria({ hoy }: { hoy: string }) {
               </div>
             ))}
           </div>
+          {d.resta && <p className="aviso-resta" role="status"><span className="aviso-resta-k" aria-hidden>減</span>{textoAvisoResta(d.resta.faltantes, d.resta.porcentaje)}<span className="muy-chico texto-3"> · {d.resta.faltantes.map((f) => f.nombre).join(', ')}</span></p>}
+          {d.balance && (d.balance.mas > 0 || d.balance.menos > 0) && <p className="chico texto-2 mono" style={{ margin: 0 }}>Ese día: <span className="ok">+{d.balance.mas}</span>{d.balance.menos > 0 && <> / <span className="acento">−{d.balance.menos}</span></>} XP</p>}
           <div className="fila entre chico texto-2">
             <span>{d.pilares.cumplidos} de {d.pilares.aplican} pilares · juego {d.juego.minutosHoy} / {d.juego.limiteMinutos} min</span>
           </div>

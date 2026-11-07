@@ -3,6 +3,7 @@
  * directos («Dejo celu», «+1 vaso», «Batalla», «Revisión diaria») y revisa una vez por día si hay versión nueva.
  * En la web no hace nada.
  */
+import { rivalArchivado } from '../temas/archivado'
 import { useEffect } from 'react'
 import { fechaDe } from '../domain/fechas'
 import { esAndroid, guardarDatosWidget, leerAccionesWidget, rutaDeAtajo } from '../nativo/sek'
@@ -47,12 +48,15 @@ async function atenderAtajo(ruta: string) {
   }
   if (ruta === 'batalla') {
     window.location.hash = '#/'
+    if (rivalArchivado()) return
     const r = await prepararBatalla(hoy)
     if (!r.batalla) return avisar(r.motivo)
     pedirBatalla(r.batalla)
     return
   }
   if (ruta === 'revision') { window.location.hash = '#/revision'; return }
+  // Widget y acceso directo «Tareas»: abre el módulo de Tareas (Organización).
+  if (ruta === 'tareas') { window.location.hash = '#/organizacion'; return }
 }
 
 async function alAbrir() {

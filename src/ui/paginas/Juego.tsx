@@ -6,14 +6,17 @@ import { obtenerAjustes } from '../../services/base'
 import { agregarSesionManual, borrarSesion, corregirSesion, finalizarJuego, historialJuego, iniciarJuego, pausarJuego, reanudarJuego, resumenJuego } from '../../services/juego'
 import { ahora } from '../../services/reloj'
 import { recordatorios } from '../../reminders/recordatorios'
-import { Barra, Confirmar, Explicacion, Hoja, Tarjeta } from '../componentes'
+import { Barra, Confirmar, Explicacion, Hoja, Tarjeta, movimientoReducido } from '../componentes'
 import { avisar, mutar, useDatos, useTic } from '../estado'
 import { CasaDelJuego } from '../animaciones/Siluetas'
+import { carpetaEscenas } from '../../temas/temas'
+import { emitirEvento } from '../../temas/eventos'
+import { JuegoShinobi } from '../../temas/shinobi/Escenas'
 import { CLASE_JUEGO_CORRIENDO } from '../FondoLluvia'
 
 export function Juego({ hoy }: { hoy: string }) {
   const tic = useTic(1000)
-  const datos = useDatos(async () => ({ resumen: await resumenJuego(hoy), historial: await historialJuego(40), ajustes: await obtenerAjustes() }), [hoy])
+  const datos = useDatos(async () => ({ resumen: await resumenJuego(hoy), historial: await historialJuego(3000), ajustes: await obtenerAjustes() }), [hoy])
   const [editar, setEditar] = useState<SesionJuego | null | 'nueva'>(null)
   const [borrar, setBorrar] = useState<SesionJuego | null>(null)
   const d = datos.datos
@@ -32,6 +35,7 @@ export function Juego({ hoy }: { hoy: string }) {
 
   const iniciar = async () => {
     await mutar(iniciarJuego)
+    emitirEvento('jugar')
     const restante = Math.max(0, r.limiteMinutos - r.minutosHoy)
     const aviso = Math.max(0, (r.limiteMinutos * ajustes.avisoJuegoPorcentaje) / 100 - r.minutosHoy)
     // Avisos mientras la app esté abierta (la web no garantiza más).
@@ -67,14 +71,14 @@ export function Juego({ hoy }: { hoy: string }) {
             {!activa && <button className="boton primario pincel" onClick={iniciar}>▶ Iniciar</button>}
             {activa && (
               <div className="fila" style={{ gap: 6, flexWrap: 'wrap' }}>
-                {r.pausada ? <button className="boton pincel" onClick={() => mutar(reanudarJuego)}>▶ Reanudar</button> : <button className="boton pincel" onClick={() => mutar(pausarJuego)}>❚❚ Pausar</button>}
+                {r.pausada ? <button className="boton pincel" onClick={() => { emitirEvento('jugar'); void mutar(reanudarJuego) }}>▶ Reanudar</button> : <button className="boton pincel" onClick={() => { emitirEvento('pausa'); void mutar(pausarJuego) }}>❚❚ Pausar</button>}
                 <button className="boton peligro pincel" onClick={finalizar}>■ Finalizar</button>
               </div>
             )}
           </div>
         </div>
         {/* La casa, enmarcada como un shōji: pelean hasta que empezás a jugar; jugando, concentrados; en pausa, té. */}
-        <div className="juego-shoji"><CasaDelJuego activa={!!activa} pausada={!!r.pausada} /></div>
+        <div className="juego-shoji">{carpetaEscenas() ? <JuegoShinobi activa={!!activa} pausada={!!r.pausada} reducido={movimientoReducido()} /> : <CasaDelJuego activa={!!activa} pausada={!!r.pausada} />}</div>
       </Tarjeta>
 
       <Tarjeta compacta>
@@ -106,22 +110,7 @@ export function Juego({ hoy }: { hoy: string }) {
       </Tarjeta>
 
       <Tarjeta titulo="Historial" derecha={<button className="boton chico" onClick={() => setEditar('nueva')}>+ Añadir a mano</button>}>
-        {d.historial.length === 0 && <p className="vacio">Todavía no hay sesiones.</p>}
-        <div>
-          {d.historial.map((s) => (
-            <div key={s.id} className="fila entre chico" style={{ padding: '8px 0', borderTop: '1px solid var(--borde)' }}>
-              <div>
-                <div>{fechaLegible(fechaDe(s.inicio, ajustes.zonaHoraria))} · {formatoHora(s.inicio, ajustes.zonaHoraria)}–{s.fin ? formatoHora(s.fin, ajustes.zonaHoraria) : '…'}</div>
-                <div className="texto-3 muy-chico">{s.corregida && 'corregida · '}{s.pausas.length > 0 && `${s.pausas.length} pausa${s.pausas.length > 1 ? 's' : ''} · `}{s.nota}</div>
-              </div>
-              <div className="fila" style={{ gap: 4 }}>
-                <b className="mono">{duracionLegible(duracionMs(s, tic) / 60_000)}</b>
-                {s.fin && <button className="boton chico suave" onClick={() => setEditar(s)} aria-label="Corregir">✎</button>}
-                <button className="boton chico suave" onClick={() => setBorrar(s)} aria-label="Borrar">🗑</button>
-              </div>
-            </div>
-          ))}
-        </div>
+        <HistorialPorDia historial={d.historial} zona={ajustes.zonaHoraria} hoy={hoy} tic={tic} onEditar={setEditar} onBorrar={setBorrar} />
       </Tarjeta>
 
       {editar && <EditarSesion sesion={editar === 'nueva' ? null : editar} zona={ajustes.zonaHoraria} hoy={hoy} onCerrar={() => setEditar(null)} />}
@@ -193,5 +182,82 @@ function EditarSesion({ sesion, zona, hoy, onCerrar }: { sesion: SesionJuego | n
       {error && <p className="error">{error}</p>}
       <button className="boton primario ancho" onClick={guardar}>Guardar</button>
     </Hoja>
+  )
+}
+
+/** Historial agrupado por día: una barra desplegable por día (solo una abierta) y un buscador de fecha arriba. */
+function HistorialPorDia({ historial, zona, hoy, tic, onEditar, onBorrar }: {
+  historial: SesionJuego[]
+  zona: string
+  hoy: string
+  tic: number
+  onEditar: (s: SesionJuego) => void
+  onBorrar: (s: SesionJuego) => void
+}) {
+  const [abierto, setAbierto] = useState<string | null>(null)
+  const [buscada, setBuscada] = useState(hoy)
+  const [cuantos, setCuantos] = useState(7)
+  const [sinJuego, setSinJuego] = useState<string | null>(null)
+  const dias: { fecha: string; sesiones: SesionJuego[] }[] = []
+  for (const s of historial) {
+    const f = fechaDe(s.inicio, zona)
+    const ult = dias[dias.length - 1]
+    if (ult && ult.fecha === f) ult.sesiones.push(s)
+    else dias.push({ fecha: f, sesiones: [s] })
+  }
+  const buscar = (f: string) => {
+    setBuscada(f)
+    if (!f) return
+    const i = dias.findIndex((x) => x.fecha === f)
+    if (i < 0) { setSinJuego(f); setAbierto(null); return }
+    setSinJuego(null)
+    setAbierto(f)
+    if (i >= cuantos) setCuantos(i + 1)
+    window.setTimeout(() => document.getElementById(`hj-${f}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60)
+  }
+  if (historial.length === 0) return <p className="vacio">Todavía no hay sesiones.</p>
+  return (
+    <div className="hj">
+      <label className="hj-buscar">
+        <span className="texto-3 chico">Buscar día</span>
+        <input type="date" value={buscada} max={hoy} onChange={(e) => buscar(e.target.value)} />
+      </label>
+      {sinJuego && <p className="vacio hj-sin">Sin juego ese día ({fechaLegible(sinJuego)}).</p>}
+      {dias.slice(0, cuantos).map((dia) => {
+        const abiertoEste = abierto === dia.fecha
+        const min = dia.sesiones.reduce((t, s) => t + duracionMs(s, tic), 0) / 60_000
+        const n = dia.sesiones.length
+        return (
+          <div key={dia.fecha} id={`hj-${dia.fecha}`} className={`hj-dia ${abiertoEste ? 'abierto' : ''}`}>
+            <button type="button" className="hj-barra" aria-expanded={abiertoEste} onClick={() => setAbierto(abiertoEste ? null : dia.fecha)}>
+              <span>{fechaLegible(dia.fecha)}{dia.fecha === hoy ? ' · hoy' : ''}</span>
+              <span className="texto-3">{duracionLegible(min)} · {n} {n === 1 ? 'sesión' : 'sesiones'}</span>
+              <span className="hj-flecha" aria-hidden>▾</span>
+            </button>
+            {abiertoEste && (
+              <div className="hj-sesiones">
+                {dia.sesiones.map((s) => {
+                  const ms = duracionMs(s, tic)
+                  return (
+                    <div key={s.id} className={`fila entre chico hj-sesion ${s.fin && ms < 60_000 ? 'cero' : ''}`}>
+                      <div>
+                        <div>{formatoHora(s.inicio, zona)}–{s.fin ? formatoHora(s.fin, zona) : '…'}</div>
+                        <div className="texto-3 muy-chico">{s.corregida && 'corregida · '}{s.pausas.length > 0 && `${s.pausas.length} pausa${s.pausas.length > 1 ? 's' : ''} · `}{s.nota}</div>
+                      </div>
+                      <div className="fila" style={{ gap: 4 }}>
+                        <b className="mono">{duracionLegible(ms / 60_000)}</b>
+                        {s.fin && <button className="boton chico suave" onClick={() => onEditar(s)} aria-label="Corregir">✎</button>}
+                        <button className="boton chico suave" onClick={() => onBorrar(s)} aria-label="Borrar">🗑</button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )
+      })}
+      {dias.length > cuantos && <button type="button" className="boton chico suave hj-mas" onClick={() => setCuantos((c) => c + 7)}>Ver más</button>}
+    </div>
   )
 }

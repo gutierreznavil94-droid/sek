@@ -7,9 +7,10 @@ import { guardarAjustes, obtenerAjustes } from '../../services/base'
 import { cicloActivo } from '../../services/ciclo'
 import { corregirNoche, duracionSuenio, horaDeMinutos, nochesDeSuenio, resumenSuenio, volverAEstimado, type NocheDeSuenio, type ResumenSuenio } from '../../services/suenio'
 import { finVentana, LATENCIA_MAX, LATENCIA_MIN } from '../../sueno/estimar'
-import { Hoja, Tarjeta } from '../componentes'
-import { iconoTema } from '../../temas/temas'
-import { ETAPAS_SUGERIDAS, TOLERANCIA_SUGERIDA, discursoDeSemana, estadoAdaptacion, etapaDe, normalizarEtapas, ultimaSemanaConInfo, veredictoDe, type ConfigEtapa, type EstadoAdaptacion, type Veredicto } from '../../services/adaptacion'
+import { Hoja, Tarjeta, movimientoReducido } from '../componentes'
+import { carpetaEscenas, iconoTema } from '../../temas/temas'
+import { SuenoShinobi } from '../../temas/shinobi/Escenas'
+import { ETAPAS_SUGERIDAS, TOLERANCIA_SUGERIDA, discursoDeSemana, estadoAdaptacion, etapaDe, normalizarEtapas, ultimaSemanaConInfo, type ConfigEtapa, type EstadoAdaptacion } from '../../services/adaptacion'
 import { avisar, mutar, useDatos } from '../estado'
 
 type Rango = 'semana' | 'mes' | 'ciclo'
@@ -37,16 +38,15 @@ export function Sueno({ hoy }: { hoy: string }) {
     <div className="pagina-sueno">
       <h1 className="sueno-titulo"><span className="sueno-kanji" aria-hidden>眠</span>Sueño</h1>
 
-      <Tarjeta titulo="Anoche">
-        {r.anoche ? (
-          <Anoche n={r.anoche} objetivo={r.objetivoMinutos} veredicto={veredictoDe(r.anoche, ad, r.noches)} onEditar={() => setEditar({ noche: r.anoche!.noche, n: r.anoche })} />
-        ) : (
-          <div className="col" style={{ gap: 8 }}>
-            <p className="texto-2 chico">Todavía no hay registro de anoche. Se completa solo cuando tocás «Dejo celu» en Hoy.</p>
-            <button className="boton chico" onClick={() => setEditar({ noche: anocheFecha, n: null })}>Cargar anoche a mano</button>
-          </div>
-        )}
-      </Tarjeta>
+      {/* Anoche: una tarjeta baja, dos líneas (tocar corrige las horas). */}
+      {r.anoche ? (
+        <Anoche n={r.anoche} onEditar={() => setEditar({ noche: r.anoche!.noche, n: r.anoche })} />
+      ) : (
+        <button type="button" className="tarjeta anoche-baja" onClick={() => setEditar({ noche: anocheFecha, n: null })}>
+          <span className="anoche-grande">Anoche · sin registro</span>
+          <span className="muy-chico texto-3">Se completa solo con «Dejo celu» · tocá para cargarlo a mano</span>
+        </button>
+      )}
 
       <Tarjeta titulo="Noches" derecha={
         <div className="seg" role="tablist" aria-label="Rango del gráfico">
@@ -76,21 +76,13 @@ export function Sueno({ hoy }: { hoy: string }) {
   )
 }
 
-function Anoche({ n, objetivo, veredicto, onEditar }: { n: NocheDeSuenio; objetivo: number; veredicto: Veredicto; onEditar: () => void }) {
-  const ok = n.minutos >= objetivo - 15
-  const dormido = n.dormidoRango ? `${horaDeMinutos(n.dormidoRango[0])}–${horaDeMinutos(n.dormidoRango[1])}` : horaDeMinutos(n.dormido)
+function Anoche({ n, onEditar }: { n: NocheDeSuenio; onEditar: () => void }) {
+  const dormido = n.dormidoRango ? horaDeMinutos(Math.round((n.dormidoRango[0] + n.dormidoRango[1]) / 2)) : horaDeMinutos(n.dormido)
   return (
-    <div className="col" style={{ gap: 6 }}>
-      <div className="sueno-grande">{duracionSuenio(n.minutos)}<span>{n.estimado ? ' aprox.' : ''}</span></div>
-      <p className={`sueno-veredicto ${veredicto.tono}`} role="status">{veredicto.texto}</p>
-      <span className={`muy-chico ${ok ? 'texto-verde' : 'texto-3'}`}>{ok ? 'Llegaste al objetivo' : `${duracionSuenio(objetivo - n.minutos)} menos que el objetivo de ${duracionSuenio(objetivo)}`}{n.despertares !== undefined ? ` · despertares: ${n.despertares === 3 ? '3 o más' : n.despertares}` : ''}</span>
-      <div className="sueno-linea">
-        <button className="sueno-dato" onClick={onEditar}><b>{horaDeMinutos(n.acostado)}</b><span>acostado{n.fuentes.acostado !== 'estimado' ? ` · ${NOMBRE_FUENTE[n.fuentes.acostado]}` : n.cumplido ? '' : n.sinDejoCelu ? ' · a mano' : ' · tarde'}</span></button>
-        <button className="sueno-dato" onClick={onEditar}><b>{dormido}</b><span>dormido{n.fuentes.dormido !== 'estimado' ? ` · ${NOMBRE_FUENTE[n.fuentes.dormido]}` : ''}</span></button>
-        <button className="sueno-dato" onClick={onEditar}><b>{horaDeMinutos(n.levantado)}</b><span>levantado{n.fuentes.levantado !== 'estimado' ? ` · ${NOMBRE_FUENTE[n.fuentes.levantado]}` : ''}</span></button>
-      </div>
-      <span className="ayuda">Tocá cualquier hora para corregirla.</span>
-    </div>
+    <button type="button" className="tarjeta anoche-baja" onClick={onEditar} aria-label="Anoche. Tocá para corregir las horas">
+      <span className="anoche-grande">Anoche · {duracionSuenio(n.minutos)}{n.estimado ? <span className="muy-chico texto-3"> aprox.</span> : null}</span>
+      <span className="anoche-chica texto-2">dejé el celu {horaDeMinutos(n.acostado)} · dormido {dormido} · desperté {horaDeMinutos(n.levantado)} · {n.cumplido ? <span className="texto-verde">a horario ✓</span> : <span className="texto-3">tarde</span>}{n.despertares ? ` · ${n.despertares === 3 ? '3+' : n.despertares} despertares` : ''}</span>
+    </button>
   )
 }
 
@@ -268,6 +260,7 @@ function AjustesSueno({ onGuardado }: { onGuardado: () => void }) {
   const [latencia, setLatencia] = useState(15)
   const [ventana, setVentana] = useState('05:00')
   const [objetivo, setObjetivo] = useState(7.5)
+  const [abierta, setAbierta] = useState(false)
   useEffect(() => {
     if (!datos.datos) return
     const a = datos.datos.a
@@ -288,10 +281,13 @@ function AjustesSueno({ onGuardado }: { onGuardado: () => void }) {
       if (acostarse && acostarse.horaLimite !== celu) await guardarAccion({ ...acostarse, hora: celu, horaLimite: celu })
     })
     avisar('Guardado. Vale de esta noche en adelante.', { tipo: 'ok' })
+    setAbierta(false)
     onGuardado()
   }
   return (
-    <Tarjeta titulo="Ajustes del sueño">
+    <>
+    <button type="button" className="boton chico suave ajustes-sueno-boton" onClick={() => setAbierta(true)}>⚙ Ajustes del sueño</button>
+    <Hoja abierta={abierta} onCerrar={() => setAbierta(false)} titulo="Ajustes del sueño">
       <div className="rejilla-2">
         <div className="campo"><label htmlFor="aj-celu">Hora de «Dejo celu»</label><input id="aj-celu" type="time" value={celu} onChange={(e) => setCelu(e.target.value)} /></div>
         <div className="campo"><label htmlFor="aj-lat">Minutos hasta dormirte</label><input id="aj-lat" type="number" inputMode="numeric" min={LATENCIA_MIN} max={LATENCIA_MAX} value={latencia} onChange={(e) => setLatencia(Number(e.target.value))} /><span className="ayuda">De {LATENCIA_MIN} a {LATENCIA_MAX}. Se muestra como rango de ±5.</span></div>
@@ -300,7 +296,8 @@ function AjustesSueno({ onGuardado }: { onGuardado: () => void }) {
       </div>
       <label className="fila chico texto-3" style={{ gap: 8, marginTop: 4 }}><input type="checkbox" checked={a.relojInteligente} disabled /> Reloj inteligente: no conectado (próximamente)</label>
       <button className="boton primario ancho" onClick={guardar}>Guardar</button>
-    </Tarjeta>
+    </Hoja>
+    </>
   )
 }
 
@@ -327,6 +324,7 @@ function ShinobiDice({ ad }: { ad: EstadoAdaptacion }) {
   const viendo = etapaDe(sumarDias(ad.inicio, (sem - 1) * 7), ad.inicio, ad.etapas).indice
   return (
     <div className="sh-dice">
+      {carpetaEscenas() && <SuenoShinobi reducido={movimientoReducido()} />}
       <div className="sh-barra" role="group" aria-label="Dónde estás en la adaptación">
         {tramos.map((t) => (
           <div key={t.i} className={`sh-tramo ${t.i < ad.actual.indice ? 'pasado' : t.i === ad.actual.indice ? 'actual' : ''}`} style={{ flexGrow: t.semanas }}>

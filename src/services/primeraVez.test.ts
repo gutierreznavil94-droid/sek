@@ -131,7 +131,7 @@ describe('temas', () => {
   it('Shinobi existe, es el de siempre y hay tarjetas «Próximamente»', () => {
     expect(TEMAS.map((t) => t.id)).toContain('shinobi')
     const s = temaPorId('shinobi')
-    expect(s).toMatchObject({ personaje: 'Shinobi', nombreApp: 'SEK', kanjis: true, carpetaFondos: 'fondos/', sprite: 'shinobi/camina.webp' })
+    expect(s).toMatchObject({ personaje: 'Shinobi', nombreApp: 'SEK', kanjis: true, carpetaFondos: 'fondos/', sprite: 'temas/shinobi/companero/camina.webp' })
     expect(TEMAS_PROXIMOS.length).toBeGreaterThan(0)
   })
 
@@ -140,7 +140,7 @@ describe('temas', () => {
     const n = temaPorId('nay')
     expect(n.id).toBe('nay')
     expect(n.oculto).toBe(true)
-    expect(n.sprite).toBe('shinobi/camina.webp')
+    expect(n.sprite).toBe('temas/shinobi/companero/camina.webp')
     expect(n.saludo).toContain('{personaje}')
   })
 
@@ -165,10 +165,10 @@ describe('recomendaciones del creador (4 nov)', () => {
     await configurarPrimeraVez(config({ pilares: [{ clave: 'entrenar', nombre: 'Entrenar', dias: [2, 4], horaLimite: '18:30', minutos: 25 }] }))
     expect([...(await pilaresDelCreadorQueTiene())]).toEqual(['entrenar'])
     const r = await agregarPilaresDelCreador('2026-11-02')
-    expect(r).toEqual(['Dormir a horario', 'Dibujar', 'Proyecto propio'])
+    expect(r).toEqual(['Dormir a horario', 'Dibujar manga', 'Proyecto propio'])
     expect((await pilaresDelCreadorQueTiene()).size).toBe(PILARES_DEL_CREADOR.length)
     const dibujar = (await db().acciones.get('manga'))!
-    expect(dibujar).toMatchObject({ nombre: 'Dibujar', pilar: true, activa: true, horaLimite: '20:50', minutosMinimos: 15 })
+    expect(dibujar).toMatchObject({ nombre: 'Dibujar manga', pilar: true, activa: true, horaLimite: '20:50', minutosMinimos: 15, minutosExtra: 30, xpExtra: 10 })
     // El pilar que ya tenía no se toca
     expect((await db().acciones.get('entrenamiento'))!.horaLimiteInicio).toBe('18:30')
     // Segunda vez: nada que agregar

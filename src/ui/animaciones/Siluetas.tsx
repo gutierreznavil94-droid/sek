@@ -141,17 +141,28 @@ export function BuenasNoches({ estilo }: { estilo?: CSSProperties }) {
   )
 }
 
-/** El compañero dormido en su cama, en una esquina de Hoy (después de «Dejo celu»). */
+/** El compañero dormido en su cama, abajo de todo en Hoy (de noche, después de «Dejo celu»). Se ve el shinobi acostado. */
 export function CompaneroDormido() {
   return (
-    <svg className="companero-cama" viewBox="0 0 120 56" width={120} height={56} aria-label="El compañero duerme">
-      <rect x={10} y={30} width={100} height={16} rx={2} fill="none" stroke="currentColor" strokeWidth={1.6} />
-      <rect x={12} y={36} width={96} height={10} fill="currentColor" opacity={0.25} />
-      <rect x={14} y={26} width={22} height={9} rx={3} fill="currentColor" />
-      <g className="companero-cama-cuerpo"><path d="M34,35 C50,27 92,28 106,33 C106,38 96,39 70,39 C48,39 36,39 34,35 Z" fill="currentColor" /><circle cx={26} cy={30} r={5} fill="currentColor" /></g>
-      <line x1={10} y1={46} x2={10} y2={52} stroke="currentColor" strokeWidth={1.6} /><line x1={110} y1={46} x2={110} y2={52} stroke="currentColor" strokeWidth={1.6} />
-      <path d="M100,10 L112,10 L104,20 L100,20" fill="none" stroke="currentColor" strokeWidth={1.2} className="companero-cama-z" />
-      <text x={84} y={20} fontSize={11} fontFamily="'Noto Serif JP', serif" fill="currentColor" opacity={0.8}>眠</text>
+    <svg className="companero-cama" viewBox="0 0 140 60" width={140} height={60} role="img" aria-label="El compañero duerme">
+      {/* Cama: marco y patas */}
+      <path d="M8,40 H132 V50 H8 Z" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinejoin="round" />
+      <line x1={10} y1={50} x2={10} y2={57} stroke="currentColor" strokeWidth={1.6} /><line x1={130} y1={50} x2={130} y2={57} stroke="currentColor" strokeWidth={1.6} />
+      {/* Almohada */}
+      <path d="M12,40 C12,33 34,32 38,36 C40,39 38,40 36,40 Z" fill="currentColor" opacity={0.35} />
+      {/* El shinobi: cabeza en la almohada con el kasa ladeado y la bufanda que cuelga */}
+      <g className="companero-cama-cuerpo">
+        <circle cx={27} cy={31} r={5.5} fill="currentColor" />
+        <path d="M14,27 L30,18 L40,27 Z" fill="currentColor" />
+        <path d="M33,34 C36,38 40,42 39,47" fill="none" stroke="#c8102e" strokeWidth={1.8} strokeLinecap="round" opacity={0.85} />
+        {/* Cuerpo bajo la manta: hombro, cadera y pies */}
+        <path d="M34,38 C40,28 60,27 76,31 C90,27 108,29 116,33 C124,33 128,36 128,40 H34 Z" fill="currentColor" />
+      </g>
+      {/* Manta encima, más clara, con un pliegue */}
+      <path d="M44,40 C50,34 70,33 84,35 C100,33 118,34 128,40 Z" fill="currentColor" opacity={0.45} />
+      <path d="M60,36 C70,38 80,38 92,36" fill="none" stroke="currentColor" strokeWidth={0.9} opacity={0.5} />
+      <path d="M112,8 L124,8 L116,18 L112,18" fill="none" stroke="currentColor" strokeWidth={1.2} className="companero-cama-z" />
+      <text x={96} y={18} fontSize={11} fontFamily="'Noto Serif JP', serif" fill="currentColor" opacity={0.8}>眠</text>
     </svg>
   )
 }

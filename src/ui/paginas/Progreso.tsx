@@ -1,5 +1,9 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { rivalArchivado } from '../../temas/archivado'
 import { MiCodigo } from './MiCodigo'
+import { TarjetaFotos, LineaMarcas } from '../FotosMarcas'
+import { CaminoMontana, type DiaCamino } from '../../temas/shinobi/Camino'
+import { listarMarcas } from '../../services/fotos'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { db } from '../../data/db'
@@ -14,6 +18,8 @@ import { duracionSuenio, resumenSuenio, type ResumenSuenio } from '../../service
 import { kg, progresionEjercicio, resumenFuerza, type ResumenFuerza } from '../../services/entreno'
 import { Hoja, clasePorcentaje, elegirMovimiento, movimientoReducido } from '../componentes'
 import { useDatos } from '../estado'
+import { todasLasCaidas } from '../../services/caidas'
+import { TumbaRota } from '../../temas/shinobi/TumbaRota'
 import { graficoMetas, lineaDeMetas, metasPorDia } from '../../services/metas'
 import { ninjasVencidosSemana } from '../../services/ninjas'
 import { FilaMeta } from '../metas'
@@ -89,10 +95,19 @@ export function Progreso({ hoy }: { hoy: string }) {
     const conExtra: PilarConExtra[] = []
     // Serie del gráfico: desde el Día 1 hasta hoy.
     const serie: PuntoSerie[] = []
+    const balance = new Map<string, { mas: number; menos: number }>()
     if (estado && !estado.noEmpezado) {
       const inicio = estado.ciclo.inicio
       const hasta = hoy < estado.fechaFin ? hoy : estado.fechaFin
       const porDia = await xpPorDia(inicio, hasta)
+      // Lo ganado y lo perdido de cada día (para «道 El camino» y el historial de XP).
+      for (const r of await db().xp.where('fecha').between(inicio, hasta, true, true).toArray()) {
+        if (r.anulado) continue
+        const b = balance.get(r.fecha) ?? { mas: 0, menos: 0 }
+        if (r.cantidad >= 0) b.mas += r.cantidad
+        else b.menos -= r.cantidad
+        balance.set(r.fecha, b)
+      }
       const pil = await pilaresPorDia(inicio, hasta, hoy)
       let acumulado = await xpAntesDe(inicio)
       for (let f = inicio, dia = 1; f <= hasta; f = sumarDias(f, 1), dia++) {
@@ -145,7 +160,23 @@ export function Progreso({ hoy }: { hoy: string }) {
       comida: comida.pesos.slice(-8).map((p) => p.kg),
     }
     const ninjas = await ninjasVencidosSemana(hoy)
-    return { ninjas, ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados, conExtra, reglasCodigo: await db().codigo.count(), comida, metasSemana: { cumplidas: metasSemana.filter((m) => m.cumplida).length, total: metasSemana.length }, mini }
+    const caidas = await todasLasCaidas()
+    // «道 El camino»: un punto por día del ciclo, con sus marcas (caída, forja, día marcado).
+    const marcas = await listarMarcas()
+    const diasForja = new Set((await db().forja.toArray()).flatMap((h) => h.cumplidos ?? []))
+    const fechasCaida = new Set(caidas.map((c) => c.fecha))
+    const marcaDe = new Map(marcas.map((m) => [m.fecha, m.texto]))
+    const camino: DiaCamino[] = serie.map((p) => {
+      const cont = p.pilares.filter((x) => x.estado !== 'descanso')
+      const hechos = cont.filter((x) => x.estado === 'cumplido' || x.estado === 'tarde').length
+      const b = balance.get(p.fecha) ?? { mas: 0, menos: 0 }
+      return {
+        fecha: p.fecha, xp: p.xp, mas: b.mas, menos: b.menos, total: Math.max(0, p.acumulado), cumplido: cont.length ? hechos / cont.length : null,
+        caida: fechasCaida.has(p.fecha), forja: diasForja.has(p.fecha), marca: marcaDe.get(p.fecha),
+        etiqueta: `Día ${p.dia} · ${fechaLegible(p.fecha)} · ${cont.length ? `${hechos}/${cont.length} pilares` : 'sin pilares'}`,
+      }
+    })
+    return { camino, marcas, caidas, ninjas, ajustes, estado, total, nivel, racha, niveles, xpSemana, xpHoy, serie, atributos, acciones, contadores, sueno, fuerza, pilares, diasCumplidos, diasContados, conExtra, reglasCodigo: await db().codigo.count(), forjados: (await db().forja.toArray()).filter((h) => h.estado === 'forjado').map((h) => h.kanji), comida, metasSemana: { cumplidas: metasSemana.filter((m) => m.cumplida).length, total: metasSemana.length }, mini }
   }, [hoy])
   const reducido = useMemo(() => movimientoReducido(), [])
   const modo = useModoFondo()
@@ -219,7 +250,7 @@ export function Progreso({ hoy }: { hoy: string }) {
       )}
 
       <div className="av-contenido">
-        {enCodigo ? <MiCodigo /> : seccion ? (
+        {enCodigo ? <MiCodigo hoy={hoy} /> : seccion ? (
           <div className="av-seccion" key={seccion}>
             <Link to="/progreso" className="codigo-volver" onClick={() => recordarSeccion(hoy, null)}>‹ Progreso</Link>
             <h1 className="av-seccion-titulo">{NOMBRE_SECCION[seccion]}</h1>
@@ -242,6 +273,7 @@ export function Progreso({ hoy }: { hoy: string }) {
                     )}
                   </section>
                 )}
+                {seccion === 'xp' && <HistorialXp hoy={hoy} />}
 
                 {seccion === 'metas' && <TarjetaMetas hoy={hoy} inicio={d.estado && !d.estado.noEmpezado ? d.estado.ciclo.inicio : hoy} fin={d.estado ? d.estado.fechaFin : sumarDias(hoy, 89)} />}
 
@@ -300,8 +332,22 @@ export function Progreso({ hoy }: { hoy: string }) {
               <Dato grande={String(d.racha)} chico="RACHA" sub={d.racha === 1 ? 'día seguido' : 'días seguidos'} rojo={d.racha > 0} />
               <div className="av-barra" aria-hidden="true"><div style={{ width: `${Math.round(100 * d.nivel.progreso)}%` }} /></div>
             </section>
-            {d.ajustes.ninjas !== false && d.ajustes.ninjasEnProgreso !== false && d.ninjas.peleas > 0 && (
-              <div className="av-ninjas av-nota" aria-label="Ninjas vencidos esta semana"><span className="av-ninjas-k">忍</span> Ninjas vencidos esta semana: <b>{d.ninjas.vencidos}</b><span className="texto-3"> de {d.ninjas.peleas}</span></div>
+            {/* 道 El camino: el progreso no es lineal */}
+            {d.estado && !d.estado.noEmpezado && d.camino.length > 0 && (
+              <section className="av-tarjeta camino-tarjeta" aria-label="El camino">
+                <CaminoMontana dias={d.camino} duracion={d.estado.ciclo.duracionDias} reducido={reducido} />
+              </section>
+            )}
+            {!rivalArchivado() && d.ajustes.ninjas !== false && d.ajustes.ninjasEnProgreso !== false && d.ninjas.peleas > 0 && (
+              <div className="av-ninjas av-nota" aria-label={`Ninjas vencidos esta semana: ${d.ninjas.vencidos} de ${d.ninjas.peleas}`}><span className="av-ninjas-k">忍</span> <b>{d.ninjas.vencidos}</b><span className="texto-3"> de {d.ninjas.peleas}</span> · ninjas esta semana</div>
+            )}
+
+            {/* Caídas: se ve que hubo una falla, pero también que seguiste */}
+            {d.caidas.length > 0 && (
+              <div className="av-ninjas av-nota" aria-label={`Caídas superadas: ${d.caidas.length}`}>
+                <span className="caidas-fila" aria-hidden><TumbaRota ancho={12} /></span>
+                <b>{d.caidas.length}</b> · Caídas superadas<span className="texto-3"> · nuevo round cada vez</span>
+              </div>
             )}
 
             {/* Los 4 pilares en una fila compacta; tocar abre el detalle con la tira del manga y los atributos */}
@@ -331,11 +377,15 @@ export function Progreso({ hoy }: { hoy: string }) {
                 <span className="av-codigo-textos">
                   <b>Mi código</b>
                   <span className="av-nota">Okite · lo que un shinobi no rompe</span>
+                  {/* Los hábitos forjados viven acá adentro: sus kanji chiquitos, no una fila aparte. */}
+                  {d.forjados.length > 0 && <span className="av-codigo-forjados"><span className="forja-kanji-titulo" aria-hidden>鍛</span>{d.forjados.length} forjado{d.forjados.length > 1 ? 's' : ''} <span className="av-codigo-forjados-k" aria-hidden>{d.forjados.join('')}</span></span>}
                 </span>
                 <span className="av-codigo-sello" aria-hidden><span>誓</span><em>{d.reglasCodigo}</em></span>
                 <svg className="av-codigo-trazo" viewBox="0 0 300 8" preserveAspectRatio="none" aria-hidden><path d="M3,5 C50,2 110,7 170,4 C220,2 265,6 297,4" /></svg>
               </Link>
             </nav>
+            <LineaMarcas marcas={d.marcas} />
+            <TarjetaFotos hoy={hoy} />
           </div>
         )}
         </>}
@@ -559,6 +609,43 @@ function GraficoXp({ serie, rango, hoy, ciclo, base, total, xpSemana, xpHoy }: {
         <div className="av-nota">hoy +{xpHoy} · esta semana +{xpSemana} · desde el Día 1 ({fechaLegible(fechaDelDiaDelCiclo(ciclo.inicio, 1))}). Tocá un punto para ver ese día.</div>
       )}
     </div>
+  )
+}
+
+/** Historial de XP por día: lo que sumó y lo que restó, con su nombre («−8 XP · Entrenamiento sin hacer»). */
+function HistorialXp({ hoy }: { hoy: string }) {
+  const [dias, setDias] = useState(7)
+  const datos = useDatos(async () => {
+    const desde = sumarDias(hoy, -(dias - 1))
+    const regs = (await db().xp.where('fecha').between(desde, hoy, true, true).toArray()).filter((r) => !r.anulado)
+    const porDia = new Map<string, typeof regs>()
+    for (const r of regs) porDia.set(r.fecha, [...(porDia.get(r.fecha) ?? []), r])
+    const masViejo = await db().xp.where('fecha').below(desde).count()
+    return { dias: [...porDia.entries()].sort((a, b) => b[0].localeCompare(a[0])).map(([f, l]) => ({ fecha: f, lista: l.sort((x, y) => x.creado - y.creado) })), masViejo }
+  }, [hoy, dias])
+  const h = datos.datos
+  if (!h) return null
+  return (
+    <section className="av-tarjeta xp-historial" aria-label="Historial de XP">
+      <div className="av-tarjeta-titulo"><span>Historial de XP</span></div>
+      {h.dias.length === 0 && <p className="av-nota" style={{ margin: 0 }}>Sin XP en estos días.</p>}
+      {h.dias.map((g) => {
+        const mas = g.lista.filter((r) => r.cantidad > 0).reduce((s, r) => s + r.cantidad, 0)
+        const menos = -g.lista.filter((r) => r.cantidad < 0).reduce((s, r) => s + r.cantidad, 0)
+        return (
+          <div key={g.fecha} className="xp-dia">
+            <div className="xp-dia-cab"><b>{g.fecha === hoy ? 'Hoy' : fechaLegible(g.fecha)}</b><span className="av-mono">+{mas}{menos > 0 && <> / <span className="xp-menos">−{menos}</span></>}</span></div>
+            {g.lista.map((r) => (
+              <div key={r.id ?? r.clave} className={`xp-linea ${r.cantidad < 0 ? 'resta' : ''}`}>
+                <span className="av-mono xp-cant">{r.cantidad < 0 ? `−${-r.cantidad}` : `+${r.cantidad}`} XP</span>
+                <span className="xp-desc">{r.descripcion}</span>
+              </div>
+            ))}
+          </div>
+        )
+      })}
+      {h.masViejo > 0 && <button type="button" className="boton chico suave ancho" onClick={() => setDias((x) => x + 7)}>Ver más</button>}
+    </section>
   )
 }
 

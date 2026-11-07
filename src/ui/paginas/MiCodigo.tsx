@@ -11,6 +11,7 @@ import type { GrupoCodigo, MomentoCodigo, ReglaCodigo } from '../../data/tipos'
 import { agregarRegla, borrarRegla, editarRegla, GRUPOS_CODIGO, listarCodigo, momentoDe, MOMENTOS_CODIGO, moverRegla, reglasDelGrupo, type VistaCodigo } from '../../services/codigo'
 import { Confirmar, Hoja, movimientoReducido } from '../componentes'
 import { avisar, mutar, useDatos } from '../estado'
+import { SeccionForjaCodigo } from '../Forja'
 
 const Juramento = lazy(() => import('./Juramento'))
 
@@ -35,7 +36,7 @@ export function numeral(n: number): string {
 const areaDe = (r: ReglaCodigo) => GRUPOS_CODIGO.find((g) => g.id === r.grupo)!
 const momentoInfo = (r: ReglaCodigo) => MOMENTOS_CODIGO.find((m) => m.id === momentoDe(r))!
 
-export function MiCodigo() {
+export function MiCodigo({ hoy }: { hoy: string }) {
   const datos = useDatos(() => listarCodigo(), [])
   const [nueva, setNueva] = useState(false)
   const [editar, setEditar] = useState<ReglaCodigo | null>(null)
@@ -72,6 +73,8 @@ export function MiCodigo() {
         {reglas.length > 0 && <span className="codigo-cabeza-sello" aria-label={`${reglas.length} ${reglas.length === 1 ? 'regla jurada' : 'reglas juradas'}`}><span aria-hidden>誓</span><b>{reglas.length}</b></span>}
         <svg className="codigo-cabeza-trazo" viewBox="0 0 300 10" preserveAspectRatio="none" aria-hidden><path d="M3,6 C50,2 110,9 170,5 C220,2 265,7 297,4" /></svg>
       </header>
+
+      <SeccionForjaCodigo hoy={hoy} />
 
       <div className="codigo-vistas" role="tablist" aria-label="Ordenar el código">
         {(['momento', 'area'] as VistaCodigo[]).map((v) => (
