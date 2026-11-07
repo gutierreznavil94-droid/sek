@@ -16,7 +16,8 @@
             <extra android:name="ruta" android:value="vaso" />
         </intent>
     </shortcut>
-    <shortcut android:shortcutId="batalla" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/atajo_batalla">
+    <!-- Batalla: archivada con el rival (v0.86); queda apagada hasta retomarla. -->
+    <shortcut android:shortcutId="batalla" android:enabled="false" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/atajo_batalla">
         <intent android:action="android.intent.action.VIEW" android:targetPackage="ar.sek.app" android:targetClass="ar.sek.app.MainActivity">
             <extra android:name="ruta" android:value="batalla" />
         </intent>
