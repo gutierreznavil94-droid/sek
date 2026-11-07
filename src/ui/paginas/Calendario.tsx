@@ -110,12 +110,20 @@ export function Calendario({ hoy }: { hoy: string }) {
                 {/* Lugares fijos: número arriba a la izquierda, un solo ícono arriba a la derecha, la barrita de pilares abajo y el río de la forja debajo. */}
                 <span className="num">{Number(f.slice(8))}</span>
                 {(() => {
-                  // Un solo ícono, por prioridad: hoy → marcado (o fecha clave) → caída. El resto se ve al tocar el día.
-                  if (f === hoy) return <span className="cal-icono hoy" aria-hidden>今</span>
-                  if (d?.marcas.has(f)) return <span className="cal-icono marca" aria-hidden>印</span>
-                  if (claves.length > 0) return <span className="cal-icono clave" aria-hidden>印</span>
-                  if ((d?.caidas.get(f) ?? 0) > 0) return <span className="cal-icono caida" aria-hidden>墓</span>
-                  return null
+                  // Hasta 2 íconos, por prioridad: hoy → marcado → fecha clave → caída → feriado. Si hay más, «·» (se ven al tocar el día).
+                  const iconos: { k: string; c: string }[] = []
+                  if (f === hoy) iconos.push({ k: '今', c: 'hoy' })
+                  if (d?.marcas.has(f)) iconos.push({ k: '印', c: 'marca' })
+                  if (claves.length > 0) iconos.push({ k: '印', c: 'clave' })
+                  if ((d?.caidas.get(f) ?? 0) > 0) iconos.push({ k: '墓', c: 'caida' })
+                  if (d?.feriados.has(f)) iconos.push({ k: '祝', c: 'feriado' })
+                  if (!iconos.length) return null
+                  return (
+                    <span className="cal-iconos" aria-hidden>
+                      {iconos.slice(0, 2).map((x) => <span key={x.c} className={`cal-icono ${x.c}`}>{x.k}</span>)}
+                      {iconos.length > 2 && <span className="cal-mas">·</span>}
+                    </span>
+                  )
                 })()}
                 {puntos.length > 0 && (
                   <span className="cal-barra" aria-hidden>
@@ -127,8 +135,21 @@ export function Calendario({ hoy }: { hoy: string }) {
             )
           })}
         </div>
-        {/* La explicación en una línea; el detalle de cada día se ve al tocarlo. */}
-        <p className="cal-leyenda muy-chico texto-3"><span className="cal-barra muestra"><i className="cumplido" /><i className="cumplido" /><i /><i /></span> pilares · <span className="cal-rio muestra" /> forja · <b className="cal-icono marca">印</b> marcado · <b className="cal-icono caida">墓</b> caída · <b className="cal-icono hoy">今</b> hoy</p>
+        {/* Qué es cada cosa: el listado completo, simple y corto, en 2 columnas. El detalle de cada día se ve al tocarlo. */}
+        <ul className="cal-leyenda" aria-label="Qué significa cada marca">
+          <li><span className="cal-barra muestra"><i className="cumplido" /><i className="cumplido" /><i className="omitido" /><i /></span> pilares: verde hecho, rojo no</li>
+          <li><span className="cal-rio muestra" /> forja cumplida</li>
+          <li><b className="cal-icono hoy">今</b> hoy</li>
+          <li><b className="cal-icono marca">印</b> día marcado</li>
+          <li><b className="cal-icono clave">印</b> fecha clave</li>
+          <li><b className="cal-icono caida">墓</b> caída</li>
+          <li><b className="cal-icono feriado">祝</b> feriado</li>
+          <li><span className="cal-muestra-dia completo" /> día completo</li>
+          <li><span className="cal-muestra-dia fase" /> inicio de fase</li>
+          <li><span className="cal-muestra-dia libre" /> día libre</li>
+          <li><b className="cal-mas">·</b> hay más: tocá el día</li>
+        </ul>
+        <p className="cal-pista">Mantené apretado un día para marcarlo (cambio de estilo, algo importante…)</p>
       </Tarjeta>
 
       {sel && d && (
