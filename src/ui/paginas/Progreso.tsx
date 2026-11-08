@@ -24,7 +24,7 @@ import { graficoMetas, lineaDeMetas, metasPorDia } from '../../services/metas'
 import { ninjasVencidosSemana } from '../../services/ninjas'
 import { FilaMeta } from '../metas'
 import { VERSION_APP } from '../../version'
-import { rutaTema } from '../../temas/temas'
+import { rutaTema, simbolo, temaActivo } from '../../temas/temas'
 import { resumenComida, type ResumenComida } from '../../services/comidas'
 import { SeccionComida } from './Comida'
 import { VIDEOS, VIDRIO_EN_DESTELLO, intensidadDestello, type VideoFondo, elegirVideo, useModoFondo, usePantallaHorizontal, VIDEO_PC, video as datosVideo } from '../../fondos/elegir'
@@ -237,7 +237,7 @@ export function Progreso({ hoy }: { hoy: string }) {
   const fondo = d ? (horizontal ? VIDEO_PC : datosVideo(elegirVideo(modo, hoy, d.estado?.ciclo.inicio))) : null
 
   return (
-    <div className="progreso-tinta" data-fondo={fondo?.tipo ?? 'oscuro'} data-vidrio={vidrioClaro() && fondo?.tipo === 'claro' ? 'claro' : undefined} style={{ '--av-arriba': `${arriba}px` } as React.CSSProperties}>
+    <div className="progreso-tinta" data-fondo={fondo?.tipo ?? 'oscuro'} data-vidrio={(vidrioClaro() && fondo?.tipo === 'claro') || temaActivo().vidrio === 'claro' ? 'claro' : undefined} style={{ '--av-arriba': `${arriba}px` } as React.CSSProperties}>
       {/* Fondo fijo: el video vertical cubre toda la pantalla y no se mueve al desplazar */}
       {createPortal(
         <div className="av-fondo" aria-hidden="true" data-orientacion={horizontal ? 'horizontal' : undefined} data-vista={seccion ? 'codigo' : undefined}>
@@ -364,7 +364,7 @@ export function Progreso({ hoy }: { hoy: string }) {
             <nav className="av-secciones" aria-label="Secciones de Progreso">
               {SECCIONES.filter((x) => x.id !== 'codigo' && (x.id !== 'series' || d.contadores.length > 0)).map((x) => (
                 <Link key={x.id} to={`/progreso/${x.id}`} onClick={guardarScroll} className="av-tarjeta av-seccion-boton">
-                  <span className="av-seccion-kanji" aria-hidden>{x.kanji}</span>
+                  <span className="av-seccion-kanji" aria-hidden>{simbolo(x.kanji)}</span>
                   <b>{x.nombre}</b>
                   <Miniatura s={x.id} m={d.mini} />
                   <span className="av-nota">{datoClave(x.id, d)}</span>
@@ -372,15 +372,15 @@ export function Progreso({ hoy }: { hoy: string }) {
               ))}
               {/* Mi código va aparte: una franja ancha, como un pergamino sellado, distinta de las demás */}
               <Link to="/progreso/codigo" onClick={guardarScroll} className="av-tarjeta av-seccion-boton av-codigo-banner" aria-label={`Mi código, ${datoClave('codigo', d)}`}>
-                <span className="av-codigo-fondo" aria-hidden>掟</span>
-                <span className="av-codigo-kanji" aria-hidden>掟</span>
+                <span className="av-codigo-fondo" aria-hidden>{simbolo('掟')}</span>
+                <span className="av-codigo-kanji" aria-hidden>{simbolo('掟')}</span>
                 <span className="av-codigo-textos">
                   <b>Mi código</b>
                   <span className="av-nota">Okite · lo que un shinobi no rompe</span>
                   {/* Los hábitos forjados viven acá adentro: sus kanji chiquitos, no una fila aparte. */}
                   {d.forjados.length > 0 && <span className="av-codigo-forjados"><span className="forja-kanji-titulo" aria-hidden>鍛</span>{d.forjados.length} forjado{d.forjados.length > 1 ? 's' : ''} <span className="av-codigo-forjados-k" aria-hidden>{d.forjados.join('')}</span></span>}
                 </span>
-                <span className="av-codigo-sello" aria-hidden><span>誓</span><em>{d.reglasCodigo}</em></span>
+                <span className="av-codigo-sello" aria-hidden><span>{simbolo('誓')}</span><em>{d.reglasCodigo}</em></span>
                 <svg className="av-codigo-trazo" viewBox="0 0 300 8" preserveAspectRatio="none" aria-hidden><path d="M3,5 C50,2 110,7 170,4 C220,2 265,6 297,4" /></svg>
               </Link>
             </nav>
@@ -467,7 +467,7 @@ function Miniatura({ s, m }: { s: Seccion; m: Mini }) {
       const hi = Math.max(...v)
       cuerpo = <path d={v.map((y, i) => `${i ? 'L' : 'M'}${((i / (v.length - 1)) * (W - 4) + 2).toFixed(1)},${(H - 3 - ((y - lo) / (hi - lo || 1)) * (H - 6)).toFixed(1)}`).join(' ')} className="mini-linea" />
     }
-  } else if (s === 'codigo') return <span className="mini-sello" aria-hidden>誓</span>
+  } else if (s === 'codigo') return <span className="mini-sello" aria-hidden>{simbolo('誓')}</span>
   return <svg className={`mini-grafico ${s}`} viewBox={`0 0 ${W} ${H}`} aria-hidden>{cuerpo}</svg>
 }
 

@@ -77,6 +77,7 @@ function estadoBrilloPilar(p: Pilar): EstadoBrillo | null {
   if (p.estado === 'cumplido' || p.estado === 'tarde') return tieneExtra(p.accion) ? (p.compromiso?.extra ? 'maximo' : 'parcial') : 'hecho'
   return null
 }
+import { simbolo } from '../../temas/temas'
 
 async function cargarPanel(hoy: string) {
   const ajustes = await obtenerAjustes()
@@ -732,7 +733,7 @@ function FilaPilar({ p, brillo: b, suenio, zona, tic, flash, marcado, destello, 
           </span>
         )
       })()}
-      <span className="estado-ic" aria-hidden>{p.estado === 'cumplido' ? '✓' : p.estado === 'tarde' ? '!' : p.estado === 'omitido' ? '✕' : p.estado === 'descanso' ? '–' : iniciado ? <i className="punto-ambar" /> : ''}</span>
+      <span className="estado-ic" aria-hidden>{p.estado === 'cumplido' ? '✓' : p.estado === 'tarde' ? '!' : p.estado === 'omitido' ? simbolo('✕') : p.estado === 'descanso' ? '–' : iniciado ? <i className="punto-ambar" /> : ''}</span>
       {flash !== undefined && <span className="flash" aria-hidden>+{flash} XP</span>}
       {c && p.estado !== 'descanso' && !esCelu && <span className="mas" role="button" aria-label="Más opciones" onClick={(e) => { e.stopPropagation(); onMas() }}>…</span>}
     </button>
@@ -848,7 +849,7 @@ function iconoEstado(estado: Compromiso['estado']): string {
     case 'completado': return '✓'
     case 'tarde': return '!'
     case 'iniciado': return '●'
-    case 'omitido': return '✕'
+    case 'omitido': return simbolo('✕')
     case 'no_registrado': return '–'
     case 'reprogramado': return '→'
     default: return ''

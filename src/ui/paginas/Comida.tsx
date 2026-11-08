@@ -13,6 +13,7 @@ import { Atras, Confirmar, Hoja, Tarjeta } from '../componentes'
 import { avisar, mutar, useDatos } from '../estado'
 import { ConfigFrutaTarjeta, SeccionFruta, TarjetaFruta } from './Fruta'
 import { AguaEnComida, ConfigAguaTarjeta, SeccionAgua, TarjetaAgua, resumenAgua } from './Agua'
+import { simbolo } from '../../temas/temas'
 
 // ---------- Anillos ----------
 
@@ -53,7 +54,7 @@ export function TarjetaComida({ hoy }: { hoy: string }) {
   return (
     <section className="co-tarjeta" aria-label="Comida">
       <Link to="/comida" className="co-tarjeta-link">
-        <span className="co-kanji" aria-hidden>食</span>
+        <span className="co-kanji" aria-hidden>{simbolo('食')}</span>
         <span className="co-tarjeta-texto">
           <b>Comida</b>
           <span className="co-tarjeta-estado">
@@ -89,7 +90,7 @@ export function Comida({ hoy }: { hoy: string }) {
   return (
     <div className="co-pantalla">
       <Atras a="/" texto="Hoy" />
-      <div className="co-titulo"><span className="co-kanji grande" aria-hidden>食</span><h1>Comida</h1><span className="texto-3 chico">{fechaLegible(hoy)}</span></div>
+      <div className="co-titulo"><span className="co-kanji grande" aria-hidden>{simbolo('食')}</span><h1>Comida</h1><span className="texto-3 chico">{fechaLegible(hoy)}</span></div>
       {!o ? (
         <Tarjeta>
           <p>Para ver tus anillos, primero calculá tu objetivo: calorías y proteína por día.</p>
@@ -454,7 +455,7 @@ export function MasComida({ hoy }: { hoy: string }) {
       </Tarjeta>
       {o && (
         <Tarjeta titulo="Peso de hoy">
-          <p className="chico texto-2">Queda en la curva de Progreso → 食. Último: {o.peso} kg.</p>
+          <p className="chico texto-2">Queda en la curva de Progreso → {simbolo('食')}. Último: {o.peso} kg.</p>
           <div className="co-dos">
             <input type="number" inputMode="decimal" placeholder="kg" value={peso} onChange={(e) => setPeso(e.target.value)} aria-label="Peso de hoy" />
             <button className="boton" disabled={!Number(peso)} onClick={async () => { try { await mutar(() => registrarPeso(hoy, Number(peso))); setPeso(''); avisar('Peso guardado', { tipo: 'ok' }) } catch (e) { avisar(e instanceof Error ? e.message : String(e)) } }}>Guardar</button>

@@ -36,8 +36,6 @@ export interface DefinicionTema {
   orden?: number
   /** Nombres que se proponen para las tres fases (si falta, los de SEK). */
   nombresFases?: string[]
-  /** Tema en preparación: no aparece en la primera entrada ni en Más → Tema hasta que se saque esto. */
-  oculto?: boolean
   /** «Recomendar algo»: link de respuesta del formulario de Google (…/formResponse) y los ids de sus campos (entry.NNN). Sin link, el botón no aparece. */
   recomendaciones?: { formulario: string; campos: { texto: string; parte: string; contacto: string; app: string } }
   /** Frases sueltas del compañero (cortas, alentadoras). Editables desde Ajustes. */
@@ -46,26 +44,77 @@ export interface DefinicionTema {
   iconos?: Record<string, string>
   /** Colores por nombre genérico («color-principal», «color-papel», «color-tinta»), para lo que no es CSS (widgets de Android). */
   colores?: Record<string, string>
+  /** `true`: el tema existe pero no aparece en la lista (se está armando). Se ve igual con VITE_TEMAS_OCULTOS=1. */
+  oculto?: boolean
+  /** Tarjetas de Progreso: vidrio oscuro (Shinobi) o claro, para temas de fondo claro. */
+  vidrio?: 'oscuro' | 'claro'
+  /** Adornos del tema. Lo que falte queda como en Shinobi. */
+  adornos?: AdornosTema
+}
+
+export interface AdornosTema {
+  /** En qué se convierte la cabecera al bajar: pájaros de tinta (Shinobi) o estrellitas y corazones. */
+  aves?: 'pajaros' | 'estrellas'
+  /** Animación al cumplir un pilar: el corte (Shinobi) o un chispazo de estrellitas. */
+  cumplir?: 'corte' | 'chispazo'
+  /** Reemplazos de símbolos que se ven en la app (kanjis, la cruz de «no cumplido»): `{ "食": "🍓" }`. */
+  simbolos?: Record<string, string>
+  /** `true`: Mi código numera con 1, 2, 3 en vez de 一, 二, 三. */
+  numerosComunes?: boolean
+  /** Animaciones grandes (pilar, nivel, racha, fase, récord, 3-2-1, serie): las de Shinobi o las del hada. */
+  animaciones?: 'shinobi' | 'hada'
+  /** Imagen del personaje de las animaciones del hada (dentro de `public/`, fondo transparente). */
+  imagenAnimaciones?: string
 }
 
 export interface TemaProximo { id: string; nombre: string; pista: string }
 
-const archivos = import.meta.glob<{ default: DefinicionTema }>('./*/tema.json', { eager: true })
-const todos = Object.values(archivos).map((m) => m.default)
-const base = todos.find((t) => t.id === 'shinobi') ?? todos[0]
-/** Todos los temas, incluso los ocultos. Lo que le falte a un tema lo toma de Shinobi, así la app no se rompe a medio armar. */
-export const TEMAS_TODOS: DefinicionTema[] = todos
-  .map((t) => ({ ...base, ...Object.fromEntries(Object.entries(t).filter(([, v]) => v !== '' && v !== null && v !== undefined)) }) as DefinicionTema)
-  .sort((a, b) => (a.orden ?? 99) - (b.orden ?? 99))
-/** Temas elegibles (los ocultos quedan afuera). */
-export const TEMAS: DefinicionTema[] = TEMAS_TODOS.filter((t) => !t.oculto)
-export const TEMAS_PROXIMOS: TemaProximo[] = proximamente.temas
 export const TEMA_POR_DEFECTO = 'shinobi'
+
+/**
+ * Completa un tema a medio armar con los valores del tema por defecto: lo que falte en su
+ * `tema.json` (personaje, color, fondos, sprite…) se toma de Shinobi, así nada se rompe.
+ */
+export function completarTema(parcial: Partial<DefinicionTema>, carpeta: string, base?: DefinicionTema): DefinicionTema {
+  // Lo vacío ('' o null) cuenta como «falta» y se toma del tema base.
+  const lleno = Object.fromEntries(Object.entries(parcial).filter(([, v]) => v !== '' && v !== null && v !== undefined)) as Partial<DefinicionTema>
+  const t = base ? { ...base, ...lleno } : (lleno as DefinicionTema)
+  return {
+    ...t,
+    id: parcial.id ?? carpeta,
+    vistaPrevia: { ...(base?.vistaPrevia ?? {}), ...(parcial.vistaPrevia ?? {}) } as DefinicionTema['vistaPrevia'],
+    oculto: parcial.oculto === true,
+  }
+}
+
+/**
+ * Estilos propios de un tema (cabecera, decoración): `src/temas/<id>/tema.css`, opcional.
+ * Cada regla tiene que empezar con `:root[data-tema="<id>"]`, así solo se aplica con ese tema
+ * activo y los demás (Shinobi) quedan idénticos. Lo verifica un test.
+ */
+import.meta.glob('./*/tema.css', { eager: true })
+
+const archivos = import.meta.glob<{ default: Partial<DefinicionTema> }>('./*/tema.json', { eager: true })
+const crudos = Object.entries(archivos).map(([ruta, m]) => ({ carpeta: ruta.split('/')[1], datos: m.default }))
+const crudoBase = crudos.find((c) => c.carpeta === TEMA_POR_DEFECTO)
+const BASE = crudoBase ? completarTema(crudoBase.datos, crudoBase.carpeta) : undefined
+const mostrarOcultos = import.meta.env?.VITE_TEMAS_OCULTOS === '1'
+
+/** Todos los temas, también los ocultos (sirve para no perder el tema de quien ya lo eligió). */
+export const TODOS_LOS_TEMAS: DefinicionTema[] = crudos
+  .map((c) => (c.carpeta === TEMA_POR_DEFECTO ? BASE! : completarTema(c.datos, c.carpeta, BASE)))
+  .sort((a, b) => (a.orden ?? 99) - (b.orden ?? 99))
+/** Los temas que se ofrecen en la lista. */
+export const TEMAS: DefinicionTema[] = TODOS_LOS_TEMAS.filter((t) => !t.oculto || mostrarOcultos)
+export const TEMAS_PROXIMOS: TemaProximo[] = proximamente.temas
+/** Mismo que TODOS_LOS_TEMAS (nombre viejo). */
+export const TEMAS_TODOS = TODOS_LOS_TEMAS
+const base: DefinicionTema = BASE ?? TODOS_LOS_TEMAS[0]
 /** Acento de estilos.css: si el tema usa este, no se pisa nada. */
 const ACENTO_BASE = '#c8102e'
 
 export function temaPorId(id: string | undefined): DefinicionTema {
-  return TEMAS_TODOS.find((t) => t.id === id) ?? TEMAS.find((t) => t.id === TEMA_POR_DEFECTO) ?? TEMAS[0]
+  return TODOS_LOS_TEMAS.find((t) => t.id === id) ?? TODOS_LOS_TEMAS.find((t) => t.id === TEMA_POR_DEFECTO) ?? TODOS_LOS_TEMAS[0]
 }
 
 let activo: DefinicionTema = temaPorId(TEMA_POR_DEFECTO)
@@ -106,6 +155,17 @@ export function aplicarTema(id: string | undefined, nombreApp?: string): Definic
   }
   for (const o of oyentes) o()
   return activo
+}
+
+/** Símbolo a mostrar con el tema activo: el reemplazo del tema o el mismo (Shinobi no reemplaza nada). */
+export function simbolo(s: string, tema: DefinicionTema = activo): string {
+  return tema.adornos?.simbolos?.[s] ?? s
+}
+
+/** Adorno elegido por el tema activo, con el de Shinobi si no eligió. */
+export function adorno<K extends 'aves' | 'cumplir' | 'animaciones'>(clave: K, tema: DefinicionTema = activo): NonNullable<AdornosTema[K]> {
+  const porDefecto = { aves: 'pajaros', cumplir: 'corte', animaciones: 'shinobi' } as const
+  return (tema.adornos?.[clave] ?? porDefecto[clave]) as NonNullable<AdornosTema[K]>
 }
 
 /** Ruta de un archivo de fondo según el tema activo («fondos/lluvia.mp4» → «<carpetaFondos>lluvia.mp4»). */

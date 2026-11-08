@@ -24,9 +24,15 @@ Un tema es la cara de la app: personaje, fondos, sprite del entreno, color de ac
 | `sprite` | `"temas/<id>/camina.webp"` |
 | `vistaPrevia` | `{ "video": "temas/<id>/lluvia.mp4", "imagen": "temas/<id>/lluvia.jpg" }` |
 | `orden` | Posición en la lista de temas |
+| `adornos` | Opcional. `aves`: `"pajaros"` (Shinobi) o `"estrellas"` (la cabecera se deshace en estrellitas y corazones). `cumplir`: `"corte"` (Shinobi) o `"chispazo"` (estrellitas al cumplir un pilar). `simbolos`: reemplazos de kanjis y de la cruz de «no cumplido», por ejemplo `{ "食": "🍓" }`. `numerosComunes`: `true` para numerar Mi código con 1, 2, 3. `animaciones`: `"shinobi"` o `"hada"` (las 7 animaciones grandes con el personaje de `imagenAnimaciones`, una imagen con fondo transparente en `public/`) |
+| `vidrio` | Opcional. `"claro"`: las tarjetas de Progreso van en vidrio claro (para temas de fondo claro). Shinobi: oscuro |
+| `oculto` | `true`: el tema no aparece en la lista mientras se arma (con `VITE_TEMAS_OCULTOS=1` se ve igual, para probarlo) |
 
-3. Si el tema estaba en `src/temas/proximamente.json`, sacá su tarjeta de ahí.
-4. Publicar. La app encuentra sola cada carpeta con `tema.json` (y los tests verifican que Shinobi siga siendo el tema por defecto).
+Lo que falte en `tema.json` se completa con los valores de Shinobi: un tema puede arrancar con solo `nombre` y `descripcion`.
+
+3. **Estilos propios (opcional)** en `src/temas/<id>/tema.css`: cabecera, decoración y colores de fondo (redefiniendo `--fondo`, `--fondo-2`, `--texto`… en `:root[data-tema="<id>"]`). Cada regla empieza con `:root[data-tema="<id>"]`, así solo se ve con ese tema; un test lo verifica y también que Shinobi no tenga `tema.css` (queda idéntico).
+4. Si el tema estaba en `src/temas/proximamente.json`, sacá su tarjeta de ahí.
+5. Publicar. La app encuentra sola cada carpeta con `tema.json` (y los tests verifican que Shinobi siga siendo el tema por defecto).
 
 ## Qué es del tema y qué no
 

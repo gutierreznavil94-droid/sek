@@ -21,6 +21,7 @@ import type { FechaClave } from '../../data/tipos'
 import { Confirmar } from '../componentes'
 import { bloquesEntre } from '../../services/horario'
 import { HorarioDelDia } from './MiHorario'
+import { simbolo } from '../../temas/temas'
 
 function primerDiaMes(fecha: string): string {
   return fecha.slice(0, 8) + '01'
@@ -82,7 +83,7 @@ export function Calendario({ hoy }: { hoy: string }) {
       <Link to="/calendario/horario" className="boton ancho hor-boton"><span>Mi horario<span className="desc">bloques fijos de la semana: colegio, trabajo, entreno</span></span><span className="flecha">›</span></Link>
       <div className="fila entre">
         <button className="boton chico" onClick={() => setMes(sumarDias(mes, -1).slice(0, 8) + '01')} aria-label="Mes anterior">‹</button>
-        <h1 style={{ textTransform: 'capitalize' }} className="cal-titulo"><span className="cal-kanji" aria-hidden>暦</span>{nombreMes(m)} {a}</h1>
+        <h1 style={{ textTransform: 'capitalize' }} className="cal-titulo"><span className="cal-kanji" aria-hidden>{simbolo('暦')}</span>{nombreMes(m)} {a}</h1>
         <button className="boton chico" onClick={() => setMes(sumarDias(ultimo, 1).slice(0, 8) + '01')} aria-label="Mes siguiente">›</button>
       </div>
       <Tarjeta>
@@ -112,11 +113,11 @@ export function Calendario({ hoy }: { hoy: string }) {
                 {(() => {
                   // Hasta 2 íconos, por prioridad: hoy → marcado → fecha clave → caída → feriado. Si hay más, «·» (se ven al tocar el día).
                   const iconos: { k: string; c: string }[] = []
-                  if (f === hoy) iconos.push({ k: '今', c: 'hoy' })
-                  if (d?.marcas.has(f)) iconos.push({ k: '印', c: 'marca' })
-                  if (claves.length > 0) iconos.push({ k: '印', c: 'clave' })
-                  if ((d?.caidas.get(f) ?? 0) > 0) iconos.push({ k: '墓', c: 'caida' })
-                  if (d?.feriados.has(f)) iconos.push({ k: '祝', c: 'feriado' })
+                  if (f === hoy) iconos.push({ k: simbolo('今'), c: 'hoy' })
+                  if (d?.marcas.has(f)) iconos.push({ k: simbolo('印'), c: 'marca' })
+                  if (claves.length > 0) iconos.push({ k: simbolo('印'), c: 'clave' })
+                  if ((d?.caidas.get(f) ?? 0) > 0) iconos.push({ k: simbolo('墓'), c: 'caida' })
+                  if (d?.feriados.has(f)) iconos.push({ k: simbolo('祝'), c: 'feriado' })
                   if (!iconos.length) return null
                   return (
                     <span className="cal-iconos" aria-hidden>
@@ -139,11 +140,11 @@ export function Calendario({ hoy }: { hoy: string }) {
         <ul className="cal-leyenda" aria-label="Qué significa cada marca">
           <li><span className="cal-barra muestra"><i className="cumplido" /><i className="cumplido" /><i className="omitido" /><i /></span> pilares: verde hecho, rojo no</li>
           <li><span className="cal-rio muestra" /> forja cumplida</li>
-          <li><b className="cal-icono hoy">今</b> hoy</li>
-          <li><b className="cal-icono marca">印</b> día marcado</li>
-          <li><b className="cal-icono clave">印</b> fecha clave</li>
-          <li><b className="cal-icono caida">墓</b> caída</li>
-          <li><b className="cal-icono feriado">祝</b> feriado</li>
+          <li><b className="cal-icono hoy">{simbolo('今')}</b> hoy</li>
+          <li><b className="cal-icono marca">{simbolo('印')}</b> día marcado</li>
+          <li><b className="cal-icono clave">{simbolo('印')}</b> fecha clave</li>
+          <li><b className="cal-icono caida">{simbolo('墓')}</b> caída</li>
+          <li><b className="cal-icono feriado">{simbolo('祝')}</b> feriado</li>
           <li><span className="cal-muestra-dia completo" /> día completo</li>
           <li><span className="cal-muestra-dia fase" /> inicio de fase</li>
           <li><span className="cal-muestra-dia libre" /> día libre</li>
@@ -368,7 +369,7 @@ function FechasClaveDelDia({ fecha }: { fecha: string }) {
     <div className="claves-del-dia">
       {lista.map((fc) => (
         <button key={fc.id} type="button" className="clave-fila" onClick={() => setEditor(fc)} aria-label={`Fecha clave: ${fc.titulo}. Tocá para editar`}>
-          <span className="sello-clave grande" aria-hidden>印</span>
+          <span className="sello-clave grande" aria-hidden>{simbolo('印')}</span>
           <span className="crece col" style={{ gap: 0 }}>
             <b className="chico">{fc.titulo}</b>
             {(fc.nota || fc.anual || fc.hora) && <span className="muy-chico texto-3">{[fc.hora ? `${fc.hora}${fc.horaFin ? `–${fc.horaFin}` : ''}` : '', fc.nota, fc.anual ? `cada año${fc.fecha.slice(0, 4) !== fecha.slice(0, 4) ? ` · desde ${fc.fecha.slice(0, 4)}` : ''}` : ''].filter(Boolean).join(' · ')}</span>}
@@ -392,7 +393,7 @@ function EditorFechaClave({ fecha, fc, onCerrar }: { fecha: string; fc?: FechaCl
     if (!titulo.trim()) return
     if (fc) await mutar(() => editarFechaClave(fc.id, { titulo, nota, anual, hora, horaFin }))
     else await mutar(() => agregarFechaClave(fecha, titulo, nota, anual, { hora, horaFin }))
-    avisar(fc ? 'Fecha clave guardada' : 'Fecha clave marcada 印', { tipo: 'ok' })
+    avisar(fc ? 'Fecha clave guardada' : `Fecha clave marcada ${simbolo('印')}`, { tipo: 'ok' })
     onCerrar()
   }
   return (

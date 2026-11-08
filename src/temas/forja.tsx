@@ -1,5 +1,5 @@
 /**
- * La piedra de la forja según el tema: Shinobi (y los temas con escenas, como el de Nay) usa la piedra que se rompe;
+ * La piedra de la forja según el tema: Shinobi (y los temas con escenas) usa la piedra que se rompe;
  * los demás, el círculo simple de Común. SEK solo pasa los días válidos.
  */
 import { ForjaComun } from './comun/ForjaComun'

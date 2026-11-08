@@ -11,13 +11,15 @@
  */
 
 import { db } from '../data/db'
+import { rutinasDeEleccion, type EleccionEntreno } from '../data/planes'
 import { RUTINAS_INICIALES } from '../data/semilla'
 import type { BloqueEjercicio, BloqueRondas, BloqueRutina, FaseDescanso, Rutina, SerieHecha, SesionEntreno, TiempoHecho } from '../data/tipos'
 import { diaSemanaDe, instanteDe, lunesDe, sumarDias, type FechaDia } from '../domain/fechas'
 import { claveXp } from '../domain/xp'
 import { fechaHoy, obtenerAjustes, registrarEvento } from './base'
 import { completarCompromiso, deshacerCompromiso, generarCompromisosDelDia, idCompromiso } from './dia'
-import { ahora } from './reloj'
+import { guardarAccion } from './acciones'
+import { ahora, nuevoId } from './reloj'
 import { anularXp, concederXp } from './xp'
 
 /** +5 por récord: superar las reps actuales con el mismo peso. */
@@ -89,9 +91,10 @@ export async function cargarRutinasIniciales(): Promise<void> {
   }
 }
 
-export async function listarRutinas(incluirInactivas = false): Promise<Rutina[]> {
-  const todas = await db().rutinas.orderBy('orden').toArray()
-  return incluirInactivas ? todas : todas.filter((r) => r.activa)
+/** Rutinas en orden. Las pausadas solo con `incluirInactivas`; las borradas solo con `incluirBorradas` (para el historial). */
+export async function listarRutinas(incluirInactivas = false, incluirBorradas = false): Promise<Rutina[]> {
+  const todas = (await db().rutinas.orderBy('orden').toArray()).filter((r) => incluirBorradas || !r.borrada)
+  return incluirInactivas ? todas : todas.filter((r) => r.activa && !r.borrada)
 }
 
 export async function obtenerRutina(id: string): Promise<Rutina | undefined> {
@@ -119,6 +122,85 @@ export async function guardarRutina(r: Rutina): Promise<void> {
   r = { ...r, bloques }
   await db().rutinas.put({ ...r, nombre: r.nombre.trim() })
   await registrarEvento({ tipo: antes ? 'editar' : 'crear', entidad: 'rutina', entidadId: r.id, antes, despues: r })
+}
+
+/** Suma una rutina vacía al final de la lista (se arma en el editor). */
+export async function crearRutina(nombre = 'Nueva rutina', dias: number[] = []): Promise<Rutina> {
+  const d = db()
+  const orden = Math.max(0, ...(await d.rutinas.toArray()).map((r) => r.orden)) + 1
+  const r: Rutina = { id: nuevoId('rutina'), nombre, dias: [...dias], bloques: [], minutos: 30, orden, activa: true, creado: ahora() }
+  await d.rutinas.put(r)
+  await registrarEvento({ tipo: 'crear', entidad: 'rutina', entidadId: r.id, despues: r })
+  return r
+}
+
+/**
+ * Borra una rutina. Si tiene entrenos guardados no se elimina: queda marcada
+ * como borrada para que el historial y los récords sigan mostrando sus ejercicios.
+ */
+export async function borrarRutina(id: string, motivo = 'Mis rutinas: borrar'): Promise<'eliminada' | 'guardada para el historial'> {
+  const d = db()
+  const r = await d.rutinas.get(id)
+  if (!r) throw new Error('Esa rutina no existe')
+  const conEntrenos = (await d.sesionesEntreno.where('rutinaId').equals(id).count()) > 0
+  if (conEntrenos) await d.rutinas.put({ ...r, borrada: true, activa: false })
+  else await d.rutinas.delete(id)
+  await registrarEvento({ tipo: 'borrar', entidad: 'rutina', entidadId: id, antes: r, motivo })
+  return conEntrenos ? 'guardada para el historial' : 'eliminada'
+}
+
+/**
+ * Carga las rutinas de una elección (plan completo, de a poco o desde cero).
+ * - `reemplazar`: las rutinas actuales se borran (las que tienen entrenos quedan para el historial).
+ * - `sumar`: se agregan al final; las que ya estaban (mismo plan) no se repiten.
+ * Si una rutina del plan ya existía borrada, vuelve con su historial.
+ * Con `igualarDias`, el pilar Entrenar pasa a los días de las rutinas.
+ */
+export async function aplicarEleccionEntreno(e: EleccionEntreno, opciones: { reemplazar: boolean; igualarDias?: boolean; diasPilar?: number[]; motivo?: string }): Promise<{ cargadas: number; borradas: number }> {
+  const d = db()
+  const entreno = await d.acciones.get('entrenamiento')
+  const nuevas = rutinasDeEleccion(e, opciones.diasPilar ?? entreno?.dias ?? [1, 3, 5])
+  const motivo = opciones.motivo ?? 'Mis rutinas: elegir cómo empezar'
+  const ids = new Set(nuevas.map((r) => r.id))
+  let borradas = 0
+  if (opciones.reemplazar) {
+    for (const r of await listarRutinas(true)) {
+      if (ids.has(r.id)) continue
+      await borrarRutina(r.id, motivo)
+      borradas++
+    }
+  }
+  const actuales = new Map((await d.rutinas.toArray()).map((r) => [r.id, r]))
+  let orden = opciones.reemplazar ? 0 : Math.max(0, ...[...actuales.values()].filter((r) => !r.borrada).map((r) => r.orden))
+  let cargadas = 0
+  for (const r of nuevas) {
+    const antes = actuales.get(r.id)
+    if (!opciones.reemplazar && antes && !antes.borrada) continue
+    const despues: Rutina = { ...r, orden: ++orden, activa: true, creado: antes?.creado ?? ahora() }
+    await d.rutinas.put(despues)
+    await registrarEvento({ tipo: antes ? 'editar' : 'crear', entidad: 'rutina', entidadId: r.id, antes, despues, motivo })
+    cargadas++
+  }
+  if (opciones.igualarDias) await igualarDiasEntrenar()
+  return { cargadas, borradas }
+}
+
+/** Días de todas las rutinas activas, de lunes a domingo. */
+export async function diasDeRutinas(): Promise<number[]> {
+  const dias = new Set((await listarRutinas()).flatMap((r) => r.dias))
+  return [...dias].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7))
+}
+
+/** El pilar Entrenar pasa a los días de las rutinas (si hay alguna con días). Devuelve si cambió. */
+export async function igualarDiasEntrenar(): Promise<boolean> {
+  const entreno = await db().acciones.get('entrenamiento')
+  const dias = await diasDeRutinas()
+  if (!entreno || !dias.length) return false
+  if ([...entreno.dias].sort().join() === [...dias].sort().join()) return false
+  const { creado, ...resto } = entreno
+  void creado
+  await guardarAccion({ ...resto, dias })
+  return true
 }
 
 /** La rutina que toca ese día (la primera activa que incluye el día de la semana). */
@@ -776,7 +858,7 @@ export type ResumenFuerza = {
 export async function resumenFuerza(hoy: FechaDia, inicioCiclo: FechaDia, semanas = 6): Promise<ResumenFuerza> {
   const todas = (await db().sesionesEntreno.filter((s) => s.estado === 'terminada').toArray()).sort((a, b) => (a.fin ?? a.inicio) - (b.fin ?? b.inicio))
   const activas = await listarRutinas()
-  const rutinas = new Map((await listarRutinas(true)).map((r) => [r.id, r]))
+  const rutinas = new Map((await listarRutinas(true, true)).map((r) => [r.id, r]))
   const nombre = (s: SesionEntreno, id: string) => rutinas.get(s.rutinaId)?.bloques.find((b) => b.id === id)?.nombre ?? id
   const records = new Map<string, { nombre: string; marca: Marca; fecha: FechaDia }>()
   const mejoraron = new Set<string>()

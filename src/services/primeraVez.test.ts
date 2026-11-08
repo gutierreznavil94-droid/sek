@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, usarBaseDePruebas } from '../data/db'
 import { instanteDe } from '../domain/fechas'
-import { TEMAS, TEMAS_PROXIMOS, aplicarTema, rutaTema, saludoDe, temaActivo, temaPorId } from '../temas/temas'
+import { TEMAS, TEMAS_PROXIMOS, TODOS_LOS_TEMAS, adorno, aplicarTema, completarTema, simbolo, rutaTema, saludoDe, temaActivo, temaPorId } from '../temas/temas'
 import { inicializarSiHaceFalta, obtenerAjustes, obtenerIdentidad } from './base'
 import { cicloActivo, iniciarCiclo } from './ciclo'
 import { pilaresDelDia } from './dia'
@@ -135,15 +135,6 @@ describe('temas', () => {
     expect(TEMAS_PROXIMOS.length).toBeGreaterThan(0)
   })
 
-  it('un tema oculto (plantilla «nay») no se ofrece, pero existe y completa lo que le falta con Shinobi', () => {
-    expect(TEMAS.map((t) => t.id)).not.toContain('nay')
-    const n = temaPorId('nay')
-    expect(n.id).toBe('nay')
-    expect(n.oculto).toBe(true)
-    expect(n.sprite).toBe('temas/shinobi/companero/camina.webp')
-    expect(n.saludo).toContain('{personaje}')
-  })
-
   it('un tema desconocido cae en Shinobi y Shinobi no pisa el color', () => {
     expect(temaPorId('no-existe').id).toBe('shinobi')
     aplicarTema('shinobi', 'SEK')
@@ -157,6 +148,38 @@ describe('temas', () => {
     expect(rutaTema('fondos/lluvia.mp4')).toBe('fondos/lluvia.mp4')
     expect(rutaTema('fondos/lluvia.mp4', otro)).toBe('temas/otro/lluvia.mp4')
     expect(saludoDe(otro, 'Lu')).toContain('Soy Shinobi')
+  })
+
+  it('un tema a medio armar se completa con Shinobi (también lo que llega vacío)', () => {
+    const base = temaPorId('shinobi')
+    const t = completarTema({ nombre: 'Nuevo', acento: '#123456', personaje: '' }, 'nuevo', base)
+    expect(t).toMatchObject({ id: 'nuevo', nombre: 'Nuevo', acento: '#123456', personaje: 'Shinobi', sprite: base.sprite, oculto: false })
+    expect(t.vistaPrevia.imagen).toBe(base.vistaPrevia.imagen)
+  })
+
+  it('un tema oculto no aparece en la lista pero se puede seguir usando', () => {
+    for (const t of TODOS_LOS_TEMAS.filter((t) => t.oculto)) {
+      expect(TEMAS.map((x) => x.id)).not.toContain(t.id)
+      expect(temaPorId(t.id).id).toBe(t.id)
+    }
+    expect(temaPorId('shinobi').oculto).toBe(false)
+  })
+
+  it('Shinobi conserva sus adornos: kanjis, cruz, pájaros y corte', () => {
+    const s = temaPorId('shinobi')
+    for (const k of ['食', '掟', '誓', '印', '鍛', '昇', '✕']) expect(simbolo(k, s)).toBe(k)
+    expect(adorno('aves', s)).toBe('pajaros')
+    expect(adorno('cumplir', s)).toBe('corte')
+    expect(s.adornos?.numerosComunes).toBeFalsy()
+    expect(s.vidrio).toBeUndefined()
+  })
+
+  it('un tema puede reemplazar símbolos y adornos', () => {
+    const t = completarTema({ adornos: { aves: 'estrellas', cumplir: 'chispazo', simbolos: { '食': '🍓' } } }, 'otro', temaPorId('shinobi'))
+    expect(simbolo('食', t)).toBe('🍓')
+    expect(simbolo('掟', t)).toBe('掟')
+    expect(adorno('aves', t)).toBe('estrellas')
+    expect(adorno('cumplir', t)).toBe('chispazo')
   })
 })
 

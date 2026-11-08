@@ -17,6 +17,8 @@ import { ShinobiRespira } from '../../temas/shinobi/ShinobiRespira'
 import { avisar, mutar } from '../estado'
 import { temaTieneFormulario } from '../../services/recomendaciones'
 import { ListaAvisos } from './AlarmasTelefono'
+import { diasDeEleccion, type EleccionEntreno } from '../../data/planes'
+import { ComoEmpezar, nombreEleccion } from '../ComoEmpezar'
 
 const MuniecoVivo = lazy(() => import('../animaciones/Escena').then((m) => ({ default: m.MuniecoVivo })))
 const BASE = import.meta.env.BASE_URL
@@ -158,7 +160,14 @@ export function PrimeraVez({ hoy, deNuevo = false }: { hoy: string; deNuevo?: bo
           </>
         )}
 
-        {paso === 1 && <ElegirPilares valor={c.pilares} onChange={(pilares) => cambiar({ pilares })} />}
+        {paso === 1 && (
+          <ElegirPilares
+            valor={c.pilares}
+            onChange={(pilares) => cambiar({ pilares })}
+            entreno={c.entreno ?? { modo: 'poco' }}
+            onEntreno={deNuevo ? undefined : (entreno, pilares) => cambiar(pilares ? { entreno, pilares } : { entreno })}
+          />
+        )}
 
         {paso === 2 && <ElegirSeries c={c} onChange={cambiar} />}
 
@@ -289,7 +298,8 @@ export function ListaTemas({ valor, onElegir }: { valor: string; onElegir: (id: 
   )
 }
 
-function ElegirPilares({ valor, onChange }: { valor: EleccionPilar[]; onChange: (v: EleccionPilar[]) => void }) {
+/** `onEntreno` solo en la primera vez: «¿Cómo querés empezar a entrenar?» dentro del pilar Entrenar (en «Configurar de nuevo» las rutinas no se tocan). */
+function ElegirPilares({ valor, onChange, entreno, onEntreno }: { valor: EleccionPilar[]; onChange: (v: EleccionPilar[]) => void; entreno: EleccionEntreno; onEntreno?: (e: EleccionEntreno, pilares?: EleccionPilar[]) => void }) {
   const [visibles, setVisibles] = useState<ClavePilar[]>(() => [...new Set([...valor.map((p) => p.clave), ...PILARES_DEL_CREADOR.map((p) => p.clave)])])
   const elegido = (c: ClavePilar) => valor.find((p) => p.clave === c)
   const lleno = valor.length >= MAX_PILARES
@@ -297,11 +307,17 @@ function ElegirPilares({ valor, onChange }: { valor: EleccionPilar[]; onChange: 
     if (lleno) return avisar(`Máximo ${MAX_PILARES} pilares: pocos y firmes.`)
     const del = PILARES_DEL_CREADOR.find((p) => p.clave === c)
     const s = SUGERENCIAS_PILARES.find((x) => x.clave === c)!
-    onChange([...valor, del ? { ...del, dias: [...del.dias] } : { clave: c, nombre: c === 'otro' ? '' : s.nombre, dias: [...s.dias], horaLimite: s.pideHora ? s.horaLimite : undefined, minutos: s.pideMinutos ? s.minutos : undefined }])
+    const dias = (c === 'entrenar' && onEntreno && diasDeEleccion(entreno)) || (del ? del.dias : s.dias)
+    onChange([...valor, del ? { ...del, dias: [...dias] } : { clave: c, nombre: c === 'otro' ? '' : s.nombre, dias: [...dias], horaLimite: s.pideHora ? s.horaLimite : undefined, minutos: s.pideMinutos ? s.minutos : undefined }])
   }
   const alternar = (c: ClavePilar) => (elegido(c) ? onChange(valor.filter((p) => p.clave !== c)) : prender(c))
   const cambiar = (c: ClavePilar, cambios: Partial<EleccionPilar>) => onChange(valor.map((p) => (p.clave === c ? { ...p, ...cambios } : p)))
   const resto = SUGERENCIAS_PILARES.filter((s) => !visibles.includes(s.clave))
+  // Un plan completo trae sus días: el pilar Entrenar los toma (se pueden cambiar igual). Va en un solo cambio para no pisar nada.
+  const elegirEntreno = (e: EleccionEntreno) => {
+    const dias = diasDeEleccion(e)
+    onEntreno?.(e, dias ? valor.map((p) => (p.clave === 'entrenar' ? { ...p, dias: [...dias] } : p)) : undefined)
+  }
   return (
     <>
       <p className="pv-lead">Lo que querés cumplir cada día. De entrada, los 4 del creador: apagá los que no quieras, cambiales el nombre y la hora. Hasta {MAX_PILARES}. <b className="pv-cuenta">{valor.length}/{MAX_PILARES}</b></p>
@@ -335,6 +351,13 @@ function ElegirPilares({ valor, onChange }: { valor: EleccionPilar[]; onChange: 
                     </div>
                   )}
                   {clave === 'dormir' && <span className="texto-3 chico">La hora límite es la de «Dejo el celu» (paso Sueño).</span>}
+                  {clave === 'entrenar' && onEntreno && (
+                    <>
+                      <span className="texto-3 chico">¿Cómo querés empezar a entrenar?</span>
+                      <ComoEmpezar valor={entreno} onChange={elegirEntreno} />
+                      <span className="texto-3 chico">Todo se puede cambiar después en Más → Mis rutinas.</span>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -472,6 +495,7 @@ function Resumen({ c, deNuevo, tema }: { c: ConfigPrimeraVez; deNuevo: boolean; 
   const filas: [string, string][] = [
     ['Pilares', c.pilares.map((p) => p.nombre.trim()).join(' · ')],
     ['Series rápidas', usadas.length ? usadas.map((s) => `${s.nombre} ${s.reps}×${s.series}`).join(' · ') + (c.subidaSugerida === false ? ' · sin subida' : ' · sube cada 3 días') : `No usás · Tensión: ${c.repsSinSerie ?? 10} flexiones`],
+    ...(!deNuevo && c.pilares.some((p) => p.clave === 'entrenar') ? [['Entreno', nombreEleccion(c.entreno ?? { modo: 'poco' })] as [string, string]] : []),
     ['Sueño', `Me alisto ${c.horarios.alistarse} · dejo el celu ${c.horarios.dejarCelu} · me duermo ${c.horarios.dormir}`],
     ['Juego', c.juego ? `${textoMinutos(c.juego.semana)} lun–vie · ${textoMinutos(c.juego.finde)} finde` : ''],
     ['Comida y agua', `${c.agua?.usar ? `Agua ${String(c.agua.litros).replace('.', ',')} L` : 'Sin agua'} · ${c.fruta?.usar ? `${c.fruta.porDia} ${c.fruta.porDia === 1 ? 'fruta' : 'frutas'} por día` : 'sin fruta'}`],

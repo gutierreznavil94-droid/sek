@@ -29,7 +29,7 @@ describe('Temas · eventos e íconos', () => {
 
   it('los íconos se piden por nombre y caen en Shinobi', () => {
     expect(iconoSvg('icono-celu')).toContain('<svg')
-    expect(iconoSvg('icono-celu', 'nay')).toContain('<svg')
+    expect(iconoSvg('icono-celu', 'otro')).toContain('<svg')
     expect(iconoSvg('no-existe')).toBe('')
   })
 

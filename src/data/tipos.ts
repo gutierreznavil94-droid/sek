@@ -656,6 +656,8 @@ export type Rutina = {
   orden: number
   activa: boolean
   creado: number
+  /** Borrada desde Mis rutinas: ya no aparece, pero sigue guardada para el historial de sus entrenos. */
+  borrada?: boolean
 }
 
 /** `ayuda`: reps con ayuda (solo en ejercicios que la admiten). Quedan en el historial y suman al volumen, pero no cuentan para récord ni para subir peso. */

@@ -4,6 +4,7 @@ import { PapelMojado } from '../temas/PapelMojado'
 import { dibujarPajaroTorpe } from '../temas/shinobi/pajaroTorpe'
 import { obtenerAjustes } from '../services/base'
 import { sonarToc } from './animaciones/motor'
+import { adorno } from '../temas/temas'
 
 /**
  * La cabecera es parte del fondo. Al bajar (pasado el 30 % de su alto) se
@@ -101,6 +102,34 @@ function dibujarAve(ctx: CanvasRenderingContext2D, x: number, y: number, e: numb
   ctx.fill()
 }
 
+/** Estrellita (k par) o corazoncito (k impar) que brilla: para los temas con `adornos.aves: "estrellas"`. */
+function dibujarEstrella(ctx: CanvasRenderingContext2D, x: number, y: number, e: number, k: number, t: number) {
+  const brillo = 0.75 + 0.25 * Math.sin(t * 7 + k * 1.7)
+  const r = (e / 2.6) * brillo
+  ctx.beginPath()
+  if (k % 2 === 0) {
+    for (let i = 0; i < 10; i++) {
+      const ang = -Math.PI / 2 + (i * Math.PI) / 5
+      const rr = i % 2 === 0 ? r : r * 0.45
+      ctx.lineTo(x + rr * Math.cos(ang), y + rr * Math.sin(ang))
+    }
+  } else {
+    ctx.moveTo(x, y + r * 0.85)
+    ctx.bezierCurveTo(x - r * 1.3, y - r * 0.1, x - r * 0.6, y - r * 1.1, x, y - r * 0.35)
+    ctx.bezierCurveTo(x + r * 0.6, y - r * 1.1, x + r * 1.3, y - r * 0.1, x, y + r * 0.85)
+  }
+  ctx.closePath()
+  ctx.lineJoin = 'round'
+  ctx.shadowColor = 'rgba(255, 255, 255, 0.9)'
+  ctx.shadowBlur = 8 * brillo
+  ctx.fillStyle = k % 2 === 0 ? '#FFE27A' : '#F4A6C8'
+  ctx.fill()
+  ctx.shadowBlur = 0
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)'
+  ctx.lineWidth = 1.2
+  ctx.stroke()
+}
+
 export function Desintegracion({ cabecera, texto, conHorario = false }: { cabecera: RefObject<HTMLElement | null>; texto: string; conHorario?: boolean }) {
   const lienzo = useRef<HTMLCanvasElement>(null)
   /** El pájaro torpe va en su propio lienzo, por delante de todo (tarjetas, polvo y barra). */
@@ -165,8 +194,11 @@ export function Desintegracion({ cabecera, texto, conHorario = false }: { cabece
 
     function pedir() { if (!rafScroll) rafScroll = requestAnimationFrame(alDesplazar) }
 
+    let estrellas = false
     const prepararAnimacion = () => {
-      torpe = tocaPajaroTorpe(torpeActivo)
+      estrellas = adorno('aves') === 'estrellas'
+      // El pájaro torpe es de los pájaros de tinta: con estrellitas no sale.
+      torpe = !estrellas && tocaPajaroTorpe(torpeActivo)
       tocado = false
       const r = azar(97 + (corrida++ % 7))
       const top = fijo
@@ -196,7 +228,7 @@ export function Desintegracion({ cabecera, texto, conHorario = false }: { cabece
       const tf = Math.max(0, t - 0.6)
       const dx = a.curva * Math.sin(tf * 2.2)
       const vuelo = Math.max(0, t - 1.1)
-      const imp = vuelo ** 1.35
+      const imp = vuelo ** 1.35 * (estrellas ? 0.3 : 1) // las estrellitas flotan despacio
       return [a.cx + dx + a.vx * imp, a.cy - tf * 14 + a.vy * imp]
     }
 
@@ -313,21 +345,23 @@ export function Desintegracion({ cabecera, texto, conHorario = false }: { cabece
             ctx.globalAlpha = nace * fundePolvo * 0.95
             ctx.beginPath()
             ctx.arc(x, y, rad, 0, Math.PI * 2)
-            if (g.papel) { ctx.fillStyle = '#F1EBDF'; ctx.fill() }
+            if (estrellas) { ctx.fillStyle = g.papel ? '#F7B6D2' : '#D9C2F0'; ctx.fill() }
+            else if (g.papel) { ctx.fillStyle = '#F1EBDF'; ctx.fill() }
             else { ctx.fillStyle = '#121110'; ctx.fill(); ctx.strokeStyle = 'rgba(241, 235, 223, 0.7)'; ctx.lineWidth = 0.8; ctx.stroke() }
           }
         }
         // Pájaros: aparecen donde se juntó el polvo, aletean y se van
         const aparecen = suave((t - 1.0) / 0.15)
         if (aparecen > 0) {
-          for (const a of aves) {
+          for (const [k, a] of aves.entries()) {
             const vuelo = Math.max(0, t - 1.1)
             const desvanece = 1 - suave((t - (a.fin - 0.45)) / 0.45)
             if (desvanece <= 0) continue
             const [x, y] = centroAve(a, t)
             const cuadro = Math.floor((t * 9 + a.fase) % 3)
             ctx.globalAlpha = aparecen * desvanece
-            dibujarAve(ctx, x, y, a.envergadura * (1 - 0.45 * clamp(vuelo / 1.1)), vuelo > 0 ? cuadro : 1)
+            if (estrellas) dibujarEstrella(ctx, x, y, a.envergadura * (1 - 0.3 * clamp(vuelo / 1.1)), k, t)
+            else dibujarAve(ctx, x, y, a.envergadura * (1 - 0.45 * clamp(vuelo / 1.1)), vuelo > 0 ? cuadro : 1)
           }
         }
         ctx.globalAlpha = 1

@@ -19,7 +19,7 @@ import { useNavigate } from 'react-router-dom'
 import { XP_ROBO_MAX, modoRival, xpRoboDe } from '../../services/rival'
 import { FRASE_TENSION, KANJI_TENSION, pedirTension, useClipsTension } from '../Tension'
 import { pedirCaida } from '../Caida'
-import { carpetaEscenas } from '../../temas/temas'
+import { adorno, carpetaEscenas, simbolo } from '../../temas/temas'
 import { GaleriaRival, GaleriaShinobi } from '../../temas/shinobi/GaleriaShinobi'
 import { rivalArchivado } from '../../temas/archivado'
 import { XP_CAIDA_MAX, xpCaidaDe } from '../../services/caidas'
@@ -54,6 +54,8 @@ export function VerAnimaciones() {
     if (datos.datos) setNombre(datos.datos.nombrePersonaje || 'Shinobi')
   }, [datos.datos])
   const a = datos.datos
+  /** Temas con animaciones del hada: mismos botones, con sus dibujitos y textos (y sin las versiones del muñeco). */
+  const hada = adorno('animaciones') === 'hada'
   if (!a) return <p className="vacio">Cargando…</p>
   const ver = (x: Animacion) => animar(x, { forzar: true })
   /** Cámara lenta (x4) solo para esa animación; la casilla general no cambia. */
@@ -65,7 +67,7 @@ export function VerAnimaciones() {
   const LOG: Animacion = { tipo: 'logro', clase: 'nivel', texto: 'Nivel 5', sub: `${KANJI.nivel.k} · ascender` }
   const PARRY: Animacion = { tipo: 'parry' }
   /** Botones «cámara lenta» y «anterior (muñeco)» de una animación, para compararla con la versión vieja. */
-  const comparar = (x: Animacion, k: string, nombre: string) => (
+  const comparar = (x: Animacion, k: string, nombre: string) => hada ? null : (
     <div className="anim-grilla anim-comparar">
       <button className="boton" onClick={() => lenta(x)}><span className="k">{k}</span><span className="chico">{nombre} · cámara lenta</span></button>
       <button className="boton" onClick={() => ver({ ...x, vieja: true })}><span className="k">{k}</span><span className="chico">{nombre} anterior (muñeco)</span></button>
@@ -150,11 +152,11 @@ export function VerAnimaciones() {
       <h1>Ver animaciones</h1>
       <p className="texto-2 chico">Prototipo: tocá cada botón para ver cómo queda. Un toque en la animación la salta. Nada de esto cambia tu XP ni tus registros.</p>
 
-      <Tarjeta titulo="Cumplir un pilar · ejecución">
+      <Tarjeta titulo={hada ? 'Cumplir un pilar' : 'Cumplir un pilar · ejecución'}>
         <div className="anim-grilla">
           {PILARES.map((p) => (
             <button key={p} className="boton" onClick={() => ver({ tipo: 'ejecucion', pilar: p })}>
-              <span className="k">{KANJI[p].k}</span>
+              <span className="k">{simbolo(KANJI[p].k)}</span>
               <span className="chico">{nombreDePilar(p)}</span>
             </button>
           ))}
@@ -168,40 +170,41 @@ export function VerAnimaciones() {
             </button>
           ))}
         </div>
-        <p className="ayuda">El ronin corta, el golpe se congela un instante y el rival cae (videos de Luma). También vale para la batalla. La anterior, con el muñeco, queda guardada acá.</p>
+        <p className="ayuda">{hada ? 'El hada pasa volando, toca con la varita y llueven estrellitas.' : 'El ronin corta, el golpe se congela un instante y el rival cae (videos de Luma). También vale para la batalla. La anterior, con el muñeco, queda guardada acá.'}</p>
       </Tarjeta>
 
-      <Tarjeta titulo="Caramelo de monje">
+      <Tarjeta titulo={hada ? '3-2-1 y Siguiente acción' : 'Caramelo de monje'}>
         <div className="anim-grilla">
-          <button className="boton" onClick={() => ver(CAR)}><span className="k">{KANJI['321'].k}</span><span className="chico">3-2-1</span></button>
-          <button className="boton" onClick={() => ver({ tipo: 'postura', modo: 'siguiente' })}><span className="k">{KANJI.siguiente.k}</span><span className="chico">Siguiente acción</span></button>
+          <button className="boton" onClick={() => ver(CAR)}><span className="k">{simbolo(KANJI['321'].k)}</span><span className="chico">3-2-1</span></button>
+          <button className="boton" onClick={() => ver({ tipo: 'postura', modo: 'siguiente' })}><span className="k">{simbolo(KANJI.siguiente.k)}</span><span className="chico">Siguiente acción</span></button>
         </div>
         {comparar(CAR, KANJI['321'].k, 'Caramelo')}
-        <p className="ayuda">Se arrodilla, caramelo en la mano y aura al juntar las manos (video de Luma).</p>
+        <p className="ayuda">{hada ? 'El hada junta las manitos y aparece un cupcake brillante.' : 'Se arrodilla, caramelo en la mano y aura al juntar las manos (video de Luma).'}</p>
       </Tarjeta>
 
-      <Tarjeta titulo="Series · parry">
+      <Tarjeta titulo={hada ? 'Series' : 'Series · parry'}>
         <div className="anim-grilla">
-          <button className="boton" onClick={() => ver(PARRY)}><span className="k">弾</span><span className="chico">Parry (sumar serie)</span></button>
-          <button className="boton" onClick={() => { for (let i = 0; i < 3; i++) window.setTimeout(() => ver(PARRY), i * 280) }}><span className="k">弾弾</span><span className="chico">Tres series seguidas</span></button>
+          <button className="boton" onClick={() => ver(PARRY)}><span className="k">{simbolo('弾')}</span><span className="chico">{hada ? 'Sumar una serie' : 'Parry (sumar serie)'}</span></button>
+          <button className="boton" onClick={() => { for (let i = 0; i < 3; i++) window.setTimeout(() => ver(PARRY), i * 280) }}><span className="k">{simbolo('弾')}{simbolo('弾')}</span><span className="chico">Tres series seguidas</span></button>
         </div>
         {comparar(PARRY, '弾', 'Parry')}
       </Tarjeta>
 
       <Tarjeta titulo="Logros grandes">
         <div className="anim-grilla">
-          <button className="boton" onClick={() => ver(LOG)}><span className="k">{KANJI.nivel.k}</span><span className="chico">Subir de nivel</span></button>
-          <button className="boton" onClick={() => ver({ tipo: 'logro', clase: 'racha', texto: '7 días seguidos', sub: `${KANJI.racha.k} · racha` })}><span className="k">{KANJI.racha.k}</span><span className="chico">Racha de 7 días</span></button>
-          <button className="boton" onClick={() => ver({ tipo: 'logro', clase: 'fase', texto: 'Fase 2', sub: `${KANJI.fase.k} · nueva etapa` })}><span className="k">{KANJI.fase.k}</span><span className="chico">Cambio de fase</span></button>
+          <button className="boton" onClick={() => ver(LOG)}><span className="k">{simbolo(KANJI.nivel.k)}</span><span className="chico">Subir de nivel</span></button>
+          <button className="boton" onClick={() => ver({ tipo: 'logro', clase: 'racha', texto: '7 días seguidos', sub: `${KANJI.racha.k} · racha` })}><span className="k">{simbolo(KANJI.racha.k)}</span><span className="chico">Racha de 7 días</span></button>
+          <button className="boton" onClick={() => ver({ tipo: 'logro', clase: 'fase', texto: 'Fase 2', sub: `${KANJI.fase.k} · nueva etapa` })}><span className="k">{simbolo(KANJI.fase.k)}</span><span className="chico">Cambio de fase</span></button>
+          {hada && <button className="boton" onClick={() => ver({ tipo: 'logro', clase: 'record', texto: 'Récord · Sentadillas', sub: `${KANJI.record.k} · fuerza` })}><span className="k">{simbolo(KANJI.record.k)}</span><span className="chico">Récord en el entreno</span></button>}
         </div>
         {comparar(LOG, KANJI.nivel.k, 'Logro')}
-        <p className="ayuda">El ronin corta, el kasa vuela y alza la katana (video de Luma). El anterior, con el muñeco, queda guardado acá.</p>
+        <p className="ayuda">{hada ? 'Nivel: el hada gira con un arcoíris. Racha: 7 corazoncitos y pétalos. Fase: un regalo con mariposas. Récord: pesita rosa y medalla.' : 'El ronin corta, el kasa vuela y alza la katana (video de Luma). El anterior, con el muñeco, queda guardado acá.'}</p>
       </Tarjeta>
 
-      <Tarjeta titulo="El shinobi, en reposo">
+      {!hada && <Tarjeta titulo="El shinobi, en reposo">
         <div className="sh-reposo-marco"><MuniecoVivo /></div>
         <p className="ayuda">Nunca queda quieto: respira, el kasa se mece y la bufanda y el abrigo van con el viento.</p>
-      </Tarjeta>
+      </Tarjeta>}
 
       <Tarjeta titulo="Cuándo se muestran">
         <div className="selector-3">
@@ -209,12 +212,14 @@ export function VerAnimaciones() {
             <button key={m.v} className={`boton chico ${(a.animaciones ?? 'todas') === m.v ? 'primario' : ''}`} onClick={() => guardar({ animaciones: m.v }, `Animaciones: ${m.t.toLowerCase()}`)}>{m.t}</button>
           ))}
         </div>
-        <p className="ayuda">Si el teléfono tiene «reducir movimiento», solo se ve un destello de color y el texto.</p>
+        <p className="ayuda">{hada ? 'Si el teléfono tiene «reducir movimiento», se ve la escena quieta, sin moverse.' : 'Si el teléfono tiene «reducir movimiento», solo se ve un destello de color y el texto.'}</p>
+        {!hada && (
         <div className="selector-3" style={{ marginTop: 10 }}>
           <button className={`boton chico ${(a.temaAnimaciones ?? 'epico') === 'epico' ? 'primario' : ''}`} onClick={() => guardar({ temaAnimaciones: 'epico' }, 'Escenas con fondo épico')}>Épico</button>
           <button className={`boton chico ${a.temaAnimaciones === 'claro' ? 'primario' : ''}`} onClick={() => guardar({ temaAnimaciones: 'claro' }, 'Escenas sobre papel claro')}>Papel claro</button>
           <button className={`boton chico ${a.temaAnimaciones === 'oscuro' ? 'primario' : ''}`} onClick={() => guardar({ temaAnimaciones: 'oscuro' }, 'Escenas oscuras')}>Fondo oscuro</button>
         </div>
+        )}
         <label className="fila chico" style={{ gap: 8, marginTop: 10 }}>
           <input type="checkbox" checked={!!a.sonidoAnimaciones} onChange={(e) => guardar({ sonidoAnimaciones: e.target.checked }, e.target.checked ? 'Sonido activado' : 'Sonido desactivado')} /> Sonido (corte, choque y aura, generados por la app)
         </label>

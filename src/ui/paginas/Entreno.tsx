@@ -35,6 +35,7 @@ import {
   kg,
   listarRutinas,
   marcarBloque,
+  obtenerRutina,
   moverBloque,
   objetivoSerie,
   pesoInicial,
@@ -64,6 +65,7 @@ import { AguadaFondo, TintaPolvo } from '../TintaPolvo'
 import { FondoLluvia } from '../FondoLluvia'
 import { ShinobiBarra } from '../Shinobi'
 import { avisar, mutar, useDatos, useTic } from '../estado'
+import { simbolo } from '../../temas/temas'
 
 function vibrar(patron: number | number[]) {
   try { if ('vibrate' in navigator) navigator.vibrate(patron) } catch { /* sin vibración */ }
@@ -124,7 +126,8 @@ async function cargar(hoy: string) {
   const sesion = await sesionEnCurso()
   const rutinas = await listarRutinas()
   const delDia = await rutinaDelDia(hoy)
-  const rutina = sesion ? rutinas.find((r) => r.id === sesion.rutinaId) ?? null : null
+  // La rutina del entreno en curso aunque la hayan pausado o borrado mientras tanto.
+  const rutina = sesion ? rutinas.find((r) => r.id === sesion.rutinaId) ?? (await obtenerRutina(sesion.rutinaId)) ?? null : null
   const ctx: Contexto = { anterior: [] }
   if (sesion && rutina) {
     const bloque = rutina.bloques.find((b) => b.id === sesion.orden[sesion.paso])
@@ -161,7 +164,7 @@ export function Entreno({ hoy }: { hoy: string }) {
     <div className="app entreno-app">
       {!d?.sesion && <LluviaEntreno />}
       <main className="contenido entreno">
-        {resultado ? <Resumen r={resultado} rutina={d?.rutinas.find((x) => x.id === resultado.sesion.rutinaId)} onReabrir={async () => { await mutar(() => reabrirEntreno(resultado.sesion.id!)); setResultado(null) }} />
+        {resultado ? <Resumen r={resultado} rutina={d?.rutinas.find((x) => x.id === resultado.sesion.rutinaId) ?? d?.rutina ?? undefined} onReabrir={async () => { await mutar(() => reabrirEntreno(resultado.sesion.id!)); setResultado(null) }} />
           : !d ? <p className="vacio">Cargando…</p>
           : d.sesion && d.rutina ? <EnCurso s={d.sesion} r={d.rutina} ctx={d.ctx} onTerminado={setResultado} />
           : <Empezar hoy={hoy} rutinas={d.rutinas} delDia={d.delDia} limiteInicio={d.limiteInicio} tarde={d.tarde} />}
@@ -198,6 +201,8 @@ function Empezar({ hoy, rutinas, delDia, limiteInicio, tarde }: { hoy: string; r
       <div className="chips">
         {rutinas.map((x) => <button key={x.id} className={x.id === elegida ? 'activo' : ''} onClick={() => setElegida(x.id)}>{x.nombre.split(' · ')[0]}</button>)}
       </div>
+      {!rutinas.length && <p className="ayuda">Todavía no tenés rutinas. Armá la tuya o elegí un plan en Mis rutinas.</p>}
+      {!rutinas.length && <Link to="/mas/rutinas" className="boton primario grande ancho">Ir a Mis rutinas</Link>}
       {r && (
         <ol className="entreno-lista">
           {r.bloques.map((b) => (
@@ -273,7 +278,7 @@ function EnCurso({ s, r, ctx, onTerminado }: { s: SesionEntreno; r: Rutina; ctx:
         <Descanso key={s.descanso.inicio} s={s} fase={fase} r={r} ctx={ctx} />
       ) : !bloque ? (
         <section className="entreno-fin col">
-          <span className="entreno-k" aria-hidden>鍛</span>
+          <span className="entreno-k" aria-hidden>{simbolo('鍛')}</span>
           <h1 className="entreno-titulo">Todo hecho</h1>
           <p className="texto-2">{s.series.length} series anotadas. Terminá para guardar y marcar el pilar.</p>
           <button className="boton primario grande ancho" onClick={terminar}>Terminar entreno</button>
@@ -699,7 +704,7 @@ function Resumen({ r, rutina, onReabrir }: { r: ResultadoTerminar; rutina?: Ruti
   const records = x.ejercicios.filter((e) => e.record)
   return (
     <section className="col entreno-resumen" style={{ gap: 14 }}>
-      <span className="entreno-k" aria-hidden>鍛</span>
+      <span className="entreno-k" aria-hidden>{simbolo('鍛')}</span>
       <h1 className="entreno-titulo centro">Entreno terminado</h1>
       <p className="texto-2 centro">{rutina?.nombre}</p>
       <div className="entreno-stats">

@@ -9,8 +9,6 @@ import { efectosShinobi } from './shinobi/efectos'
 
 registrarEfectos('comun', efectosComun)
 registrarEfectos('shinobi', efectosShinobi)
-// Nay todavía no tiene efectos propios: usa los de Común a propósito (cada tema tiene su versión de cada evento).
-registrarEfectos('nay', efectosComun)
 
 /** Cambia el tema que decide cómo se ven los eventos y los íconos. */
 export function activarTemaVisual(temaId: string): void {

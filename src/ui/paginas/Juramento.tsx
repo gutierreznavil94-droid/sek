@@ -8,6 +8,7 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { movimientoReducido } from '../componentes'
+import { simbolo } from '../../temas/temas'
 
 export const DURACION_JURAMENTO = 2800
 
@@ -40,9 +41,9 @@ export default function Juramento({ texto, grupo, onFin, kanjiSello = '誓' }: {
         <svg className="jur-trazo" viewBox="0 0 300 14" preserveAspectRatio="none" aria-hidden>
           <path d="M4,9 C60,4 120,11 180,6 C230,3 270,8 296,5" />
         </svg>
-        <div className="jur-sello" aria-hidden><span>{kanjiSello}</span></div>
+        <div className="jur-sello" aria-hidden><span>{kanjiSello === '誓' ? simbolo('誓') : kanjiSello}</span></div>
       </div>
-      <div className="jur-pie">{kanjiSello === '誓' ? '誓 · juramento' : `${kanjiSello} · forjado`} · tocá para seguir</div>
+      <div className="jur-pie">{kanjiSello === '誓' ? `${simbolo('誓')} · juramento` : `${kanjiSello} · forjado`} · tocá para seguir</div>
     </div>,
     document.body,
   )
