@@ -6,6 +6,7 @@ import { obtenerAjustes } from '../../services/base'
 import { agregarSesionManual, borrarSesion, corregirSesion, finalizarJuego, historialJuego, iniciarJuego, pausarJuego, reanudarJuego, resumenJuego } from '../../services/juego'
 import { ahora } from '../../services/reloj'
 import { recordatorios } from '../../reminders/recordatorios'
+import { cancelarAvisosJuego, programarAvisosJuego } from '../../services/alarmas'
 import { Barra, Confirmar, Explicacion, Hoja, Tarjeta, movimientoReducido } from '../componentes'
 import { avisar, mutar, useDatos, useTic } from '../estado'
 import { CasaDelJuego } from '../animaciones/Siluetas'
@@ -36,17 +37,23 @@ export function Juego({ hoy }: { hoy: string }) {
   const iniciar = async () => {
     await mutar(iniciarJuego)
     emitirEvento('jugar')
-    const restante = Math.max(0, r.limiteMinutos - r.minutosHoy)
-    const aviso = Math.max(0, (r.limiteMinutos * ajustes.avisoJuegoPorcentaje) / 100 - r.minutosHoy)
-    // Avisos mientras la app esté abierta (la web no garantiza más).
-    await recordatorios.programar({ id: 'juego-cerca', titulo: 'Juego', cuerpo: `Vas por el ${ajustes.avisoJuegoPorcentaje} % del límite`, instante: Date.now() + aviso * 60_000 })
-    await recordatorios.programar({ id: 'juego-limite', titulo: 'Juego', cuerpo: `Llegaste al límite de ${r.limiteMinutos} min`, instante: Date.now() + restante * 60_000 })
+    // Avisos de Más → Alarmas (Notificación, Alarma o Nada), según lo que queda hoy.
+    await programarAvisosJuego(r.minutosHoy, r.limiteMinutos)
     recordatorios.pedirPermiso()
+  }
+  const pausar = async () => {
+    emitirEvento('pausa')
+    await mutar(pausarJuego)
+    await cancelarAvisosJuego()
+  }
+  const reanudar = async () => {
+    emitirEvento('jugar')
+    await mutar(reanudarJuego)
+    await programarAvisosJuego(minutosHoy, r.limiteMinutos)
   }
   const finalizar = async () => {
     await mutar(() => finalizarJuego())
-    await recordatorios.cancelar('juego-cerca')
-    await recordatorios.cancelar('juego-limite')
+    await cancelarAvisosJuego()
     avisar('Sesión guardada')
   }
 
@@ -58,7 +65,7 @@ export function Juego({ hoy }: { hoy: string }) {
           <span className="seccion-titulo">Temporizador de juego</span>
           <Explicacion titulo="Cómo funciona">
             <p>Es manual: iniciás, pausás y finalizás. La sesión activa queda guardada en el teléfono, así que cerrar la app no la pierde.</p>
-            <p className="texto-2 chico">Registrar el juego no da XP. Respetar el límite del día ({r.limiteMinutos} min hoy: {ajustes.limiteJuegoSemana} de lunes a viernes, {ajustes.limiteJuegoFinde} sábados, domingos y feriados) sí, y se resuelve al cerrar el día. Los avisos de límite solo suenan con la app abierta; con la app cerrada, poné una alarma en el teléfono.</p>
+            <p className="texto-2 chico">Registrar el juego no da XP. Respetar el límite del día ({r.limiteMinutos} min hoy: {ajustes.limiteJuegoSemana} de lunes a viernes, {ajustes.limiteJuegoFinde} sábados, domingos y feriados) sí, y se resuelve al cerrar el día. Los avisos del límite se eligen en Más → Alarmas (Notificación, Alarma o Nada).</p>
           </Explicacion>
         </div>
         <div className="juego-temporizador">
@@ -71,7 +78,7 @@ export function Juego({ hoy }: { hoy: string }) {
             {!activa && <button className="boton primario pincel" onClick={iniciar}>▶ Iniciar</button>}
             {activa && (
               <div className="fila" style={{ gap: 6, flexWrap: 'wrap' }}>
-                {r.pausada ? <button className="boton pincel" onClick={() => { emitirEvento('jugar'); void mutar(reanudarJuego) }}>▶ Reanudar</button> : <button className="boton pincel" onClick={() => { emitirEvento('pausa'); void mutar(pausarJuego) }}>❚❚ Pausar</button>}
+                {r.pausada ? <button className="boton pincel" onClick={() => void reanudar()}>▶ Reanudar</button> : <button className="boton pincel" onClick={() => void pausar()}>❚❚ Pausar</button>}
                 <button className="boton peligro pincel" onClick={finalizar}>■ Finalizar</button>
               </div>
             )}

@@ -141,7 +141,7 @@ export async function datosConsejo(hoy: FechaDia, diasSinAbrir = 0): Promise<Dat
   return {
     minutoActual,
     pilaresPendientes,
-    agua: { ml: agua.ml, objetivo: agua.objetivo },
+    agua: a.agua?.enHoy === 'no' ? null : { ml: agua.ml, objetivo: agua.objetivo },
     comida: { activa: !!comidaAccion?.activa, cargadas: comidas.lista.length },
     racha,
     minutosHastaDejoCelu,

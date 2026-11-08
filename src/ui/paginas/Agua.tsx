@@ -220,8 +220,8 @@ export function ConfigAguaTarjeta() {
       <div className="col" style={{ gap: 4 }}>
         <span className="seccion-titulo">En Hoy</span>
         <div className="fila" style={{ gap: 6 }}>
-          {([['chica', 'Chiquita, en Comida'], ['tarjeta', 'Tarjeta aparte']] as const).map(([v, t]) => (
-            <button key={v} className={`boton chico ${(d.config.enHoy ?? 'chica') === v ? 'primario' : 'suave'}`} aria-pressed={(d.config.enHoy ?? 'chica') === v} onClick={() => guardar({ enHoy: v }, v === 'chica' ? 'Agua chiquita en Comida' : 'Agua como tarjeta')}>{t}</button>
+          {([['chica', 'Chiquita, en Comida'], ['tarjeta', 'Tarjeta aparte'], ['no', 'No usar']] as const).map(([v, t]) => (
+            <button key={v} className={`boton chico ${(d.config.enHoy ?? 'chica') === v ? 'primario' : 'suave'}`} aria-pressed={(d.config.enHoy ?? 'chica') === v} onClick={() => guardar({ enHoy: v }, v === 'chica' ? 'Agua chiquita en Comida' : v === 'tarjeta' ? 'Agua como tarjeta' : 'Agua: no se usa')}>{t}</button>
           ))}
         </div>
       </div>

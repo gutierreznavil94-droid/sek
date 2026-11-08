@@ -56,29 +56,44 @@ describe('alarmas directas (etapa 1)', () => {
 
   it('un día de entrenamiento tiene 5 alarmas en orden (con el aviso de las 19:00); un día de descanso, 3', async () => {
     const lunes = await alarmasDelDia('2026-11-02')
-    expect(lunes.map((a) => `${a.hora} ${a.tipo}`)).toEqual(['07:00 entrenamiento', '19:00 entreno-aviso', '20:45 alistarse', '20:50 revision', '21:15 celu', '21:20 dormido'])
+    // «Dejo celu» viene en Nada (v0.88.3): ya se entiende con la alarma de alistarse.
+    expect(lunes.map((a) => `${a.hora} ${a.tipo} ${a.modo}`)).toEqual(['07:00 entrenamiento notificacion', '19:00 entreno-aviso notificacion', '20:50 revision notificacion', '20:50 alistarse alarma', '21:20 dormido notificacion'])
     expect(lunes[0].instante).toBe(instanteDe('2026-11-02', '07:00', Z))
     const martes = await alarmasDelDia('2026-11-03')
-    expect(martes.map((a) => a.tipo)).toEqual(['alistarse', 'revision', 'celu', 'dormido'])
+    expect(martes.map((a) => a.tipo)).toEqual(['revision', 'alistarse', 'dormido'])
   })
 
   it('si el entrenamiento ya se hizo, su alarma no suena; y las horas siguen a los ajustes', async () => {
     await completarCompromiso('entrenamiento:2026-11-02', { minutos: 42 })
-    expect((await alarmasDelDia('2026-11-02')).map((a) => a.tipo)).toEqual(['alistarse', 'revision', 'celu', 'dormido'])
-    await guardarAjustes({ horaDejarCelu: '22:00', horaDormido: '22:10' })
+    expect((await alarmasDelDia('2026-11-02')).map((a) => a.tipo)).toEqual(['revision', 'alistarse', 'dormido'])
+    await guardarAjustes({ horaDejarCelu: '22:00', horaDormido: '22:10', avisos: { celu: { modo: 'notificacion' } } })
     const hoy = await alarmasDelDia('2026-11-03')
     expect(hoy.find((a) => a.tipo === 'celu')?.hora).toBe('22:00')
     expect(hoy.find((a) => a.tipo === 'dormido')?.hora).toBe('22:10')
-    // Tenue 30 min antes de «Dejo celu»; y cada aviso se puede apagar.
-    expect(hoy.find((a) => a.tipo === 'alistarse')?.hora).toBe('21:30')
+    // Alistarse sigue a la hora de alistarse de Sueño (20:50).
+    expect(hoy.find((a) => a.tipo === 'alistarse')?.hora).toBe('20:50')
+    // Lo apagado antes de v0.88.3 pasa a «Nada».
     await guardarAjustes({ alarmasApagadas: ['alistarse', 'dormido'] })
     expect((await alarmasDelDia('2026-11-03')).map((a) => a.tipo)).toEqual(['revision', 'celu'])
+  })
+
+  it('cada aviso: Notificación, Alarma o Nada, con hora a mano y avisos propios', async () => {
+    await guardarAjustes({
+      avisos: { dormido: { modo: 'alarma', hora: '22:40', vibrar: false }, revision: { modo: 'nada' } },
+      avisosPropios: [{ id: 'propio-agua', nombre: 'Tomar agua', hora: '12:00', dias: [2], modo: 'alarma' }],
+    })
+    const martes = await alarmasDelDia('2026-11-03')
+    expect(martes.map((a) => `${a.hora} ${a.tipo} ${a.modo}`)).toEqual(['12:00 propio alarma', '20:50 alistarse alarma', '22:40 dormido alarma'])
+    expect(martes.find((a) => a.tipo === 'dormido')?.vibrar).toBe(false)
+    expect(martes[2].instante).toBe(instanteDe('2026-11-03', '22:40', Z))
+    // El aviso propio solo los días elegidos.
+    expect((await alarmasDelDia('2026-11-04')).some((a) => a.tipo === 'propio')).toBe(false)
   })
 
   it('las próximas solo incluyen las que todavía no sonaron, y en la web no se programa nada', async () => {
     fijarAhora(instanteDe('2026-11-02', '21:00', Z))
     const prox = await alarmasProximas(2)
-    expect(prox.map((a) => `${a.fecha} ${a.tipo}`)).toEqual(['2026-11-02 celu', '2026-11-02 dormido', '2026-11-03 alistarse', '2026-11-03 revision', '2026-11-03 celu', '2026-11-03 dormido'])
+    expect(prox.map((a) => `${a.fecha} ${a.tipo}`)).toEqual(['2026-11-02 dormido', '2026-11-03 revision', '2026-11-03 alistarse', '2026-11-03 dormido'])
     expect(await programarAlarmas()).toBe(0)
   })
 })

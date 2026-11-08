@@ -300,7 +300,7 @@ export function Hoy({ hoy }: { hoy: string }) {
           <Link to="/mas/entrenamiento"><span>Descanso<span className="desc">alistarse {d.ajustes.horaAlistarse} · dejo celu {d.ajustes.horaDejarCelu} · dormido {d.ajustes.horaDormido}</span></span><span className="flecha">›</span></Link>
           <Link to="/mas/ajustes"><span>Límite de juego<span className="desc">{d.ajustes.limiteJuegoSemana} min lun–vie · {d.ajustes.limiteJuegoFinde} min sáb, dom y feriados</span></span><span className="flecha">›</span></Link>
           <Link to="/mas/objetivos"><span>Objetivos por fase<span className="desc">qué querés lograr en cada etapa</span></span><span className="flecha">›</span></Link>
-          <Link to="/mas/alarmas"><span>Alarmas del teléfono<span className="desc">horas para cargar en el reloj</span></span><span className="flecha">›</span></Link>
+          <Link to="/mas/alarmas"><span>Alarmas<span className="desc">cada aviso: Notificación, Alarma o Nada</span></span><span className="flecha">›</span></Link>
         </div>
       </>
     )

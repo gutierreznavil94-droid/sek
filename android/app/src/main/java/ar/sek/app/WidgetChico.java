@@ -5,16 +5,15 @@ import android.widget.RemoteViews;
 
 import org.json.JSONObject;
 
-/** Widget chico (2×1): Día N de 90, racha y los pilares de hoy como puntos. Un toque abre Hoy. */
+/** Widget chico (2×1) sobre la tormenta: Día N de 90, racha, los pilares como tildes y «Tareas». Un toque abre Hoy. */
 public class WidgetChico extends WidgetBase {
     @Override
     protected RemoteViews dibujar(Context c, JSONObject d) {
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.widget_chico);
-        int tinta = Datos.color(d, "color-tinta", TINTA);
-        v.setTextViewText(R.id.wc_dia, tituloDia(d));
-        v.setTextColor(R.id.wc_dia, tinta);
+        v.setImageViewBitmap(R.id.wc_dia, Dibujo.titulo(c, tituloDia(d), 20));
+        v.setContentDescription(R.id.wc_dia, tituloDia(d));
         v.setTextViewText(R.id.wc_racha, racha(d));
-        v.setTextColor(R.id.wc_racha, Datos.color(d, "color-principal", ROJO));
+        v.setTextColor(R.id.wc_racha, aclarar(Datos.color(d, "color-principal", ROJO)));
         v.setTextViewText(R.id.wc_puntos, puntos(d));
         v.setOnClickPendingIntent(R.id.wc_raiz, abrir(c, null, 100));
         v.setOnClickPendingIntent(R.id.wc_tareas, abrir(c, "tareas", 101));

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tormenta de fondo de los widgets: 4 cuadros del video de Hoy (lluvia y un relámpago) que se cruzan despacio.
+     Los widgets de Android no corren video; ViewFlipper es lo más parecido sin gastar batería. -->
+<ViewFlipper xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_tormenta"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:autoStart="true"
+    android:flipInterval="5000"
+    android:inAnimation="@android:anim/fade_in"
+    android:outAnimation="@android:anim/fade_out">
+
+    <ImageView android:layout_width="match_parent" android:layout_height="match_parent"
+        android:scaleType="centerCrop" android:src="@drawable/widget_tormenta_1" android:importantForAccessibility="no" />
+    <ImageView android:layout_width="match_parent" android:layout_height="match_parent"
+        android:scaleType="centerCrop" android:src="@drawable/widget_tormenta_2" android:importantForAccessibility="no" />
+    <ImageView android:layout_width="match_parent" android:layout_height="match_parent"
+        android:scaleType="centerCrop" android:src="@drawable/widget_tormenta_3" android:importantForAccessibility="no" />
+    <ImageView android:layout_width="match_parent" android:layout_height="match_parent"
+        android:scaleType="centerCrop" android:src="@drawable/widget_tormenta_4" android:importantForAccessibility="no" />
+</ViewFlipper>

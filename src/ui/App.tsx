@@ -221,6 +221,7 @@ function Rutas() {
   }
   return (
     <Routes>
+      <Route path="/configurar" element={<PrimeraVez hoy={hoy} deNuevo />} />
       <Route element={<Layout hoy={hoy} />}>
         <Route path="/" element={<Hoy hoy={hoy} />} />
         <Route path="/calendario" element={<Calendario hoy={hoy} />} />

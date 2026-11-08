@@ -70,6 +70,10 @@ export function ConfigFrutaTarjeta() {
   return (
     <Tarjeta titulo="Fruta del día">
       <p className="chico texto-2">La manzana de Hoy, al lado del agua: cada toque suma una y se muerde más. Mantené apretado para deshacer.</p>
+      <label className="fila entre chico">
+        <span>Usar la fruta del día</span>
+        <input type="checkbox" checked={d.usar !== false} onChange={() => void guardar({ usar: d.usar === false })} />
+      </label>
       <div className="campo">
         <label htmlFor="fruta-nombre">Nombre</label>
         <input id="fruta-nombre" defaultValue={d.nombre} onBlur={(e) => { if (e.target.value.trim() !== d.nombre) void guardar({ nombre: e.target.value }) }} />

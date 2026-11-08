@@ -175,3 +175,48 @@ describe('recomendaciones del creador (4 nov)', () => {
     expect(await agregarPilaresDelCreador('2026-11-02')).toEqual([])
   })
 })
+
+describe('primer arranque configurable (7 pasos)', () => {
+  it('guarda series elegidas, sin subida, juego, agua y fruta', async () => {
+    const { seriesDeEntrada, numerosDeNivel } = await import('./primeraVez')
+    const series = seriesDeEntrada().map((s) => (s.id === 'sentadillas' ? { ...s, usar: true, ...numerosDeNivel('sentadillas', 'fuerte') } : s.id === 'dominadas' ? { ...s, usar: false } : s))
+    await configurarPrimeraVez(config({ series, subidaSugerida: false, juego: { semana: 45, finde: 90 }, agua: { usar: false, litros: 2 }, fruta: { usar: true, porDia: 3 } }))
+    const cont = await db().contadores.toArray()
+    const flex = cont.find((c) => c.id === 'flexiones')!
+    expect([flex.activo, flex.cantidadPorToque, flex.seriesPorDia, flex.metaDiaria, flex.sinSubida]).toEqual([true, 5, 4, 20, true])
+    expect(cont.find((c) => c.id === 'sentadillas')).toMatchObject({ activo: true, cantidadPorToque: 20, seriesPorDia: 5, metaDiaria: 100 })
+    expect(cont.find((c) => c.id === 'dominadas')?.activo).toBe(false)
+    const a = await obtenerAjustes()
+    expect([a.limiteJuegoSemana, a.limiteJuegoFinde]).toEqual([45, 90])
+    expect(a.agua?.enHoy).toBe('no')
+    expect(a.fruta).toMatchObject({ usar: true, objetivo1: 3, objetivo2: 4 })
+  })
+
+  it('sin series: ninguna activa y Tensión usa el número fijo', async () => {
+    const { seriesDeEntrada } = await import('./primeraVez')
+    const { configDuelo } = await import('./duelo')
+    await configurarPrimeraVez(config({ series: seriesDeEntrada().map((s) => ({ ...s, usar: false })), repsSinSerie: 12 }))
+    expect((await db().contadores.toArray()).some((c) => c.activo)).toBe(false)
+    expect((await configDuelo('tension')).reps).toBe(12)
+  })
+
+  it('Configurar de nuevo no borra datos y conserva lo que no se tocó de los pilares', async () => {
+    const { configDeEntrada, configurarDeNuevo } = await import('./primeraVez')
+    await configurarPrimeraVez(config({ pilares: PILARES_DEL_CREADOR.map((p) => ({ ...p, dias: [...p.dias] })) }))
+    const ciclo = await cicloActivo()
+    const manga = await db().acciones.get('manga')
+    expect(manga?.minutosExtra).toBe(30)
+    const c = await configDeEntrada('2026-11-04', true)
+    expect(c.nombrePersona).toBe('Lu')
+    expect(c.pilares.map((p) => p.clave).sort()).toEqual(['dibujar', 'dormir', 'entrenar', 'proyecto'])
+    // Cambia solo la hora del proyecto y apaga «Dormir a horario».
+    c.pilares = c.pilares.filter((p) => p.clave !== 'dormir').map((p) => (p.clave === 'proyecto' ? { ...p, horaLimite: '21:30' } : p))
+    c.juego = { semana: 30, finde: 60 }
+    await configurarDeNuevo(c)
+    expect((await cicloActivo())?.id).toBe(ciclo?.id)
+    expect((await db().acciones.get('manga'))?.minutosExtra).toBe(30)
+    expect((await db().acciones.get('empresa'))?.horaLimite).toBe('21:30')
+    expect((await db().acciones.get('acostarse'))?.pilar).toBe(false)
+    expect((await obtenerAjustes()).limiteJuegoSemana).toBe(30)
+  })
+})

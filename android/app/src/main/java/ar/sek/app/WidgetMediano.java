@@ -8,8 +8,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
- * Widget mediano (4×2): los pilares de hoy con su tilde (se marcan desde acá), el agua con «+1 vaso» y la franja
- * de Mi horario. Un toque en el título abre Hoy. Lo marcado con la app cerrada se anota al abrirla.
+ * Widget mediano (4×2) sobre la tormenta: a la izquierda los pilares de hoy (se marcan desde acá); a la derecha
+ * «Tareas», la botella de agua y la manzana (se tocan para +1 vaso / +1 fruta). Abajo, la franja de Mi horario. Un toque en el título abre Hoy. Lo marcado con la app cerrada se anota al abrirla.
  */
 public class WidgetMediano extends WidgetBase {
     private static final int[] FILAS = { R.id.wm_fila0, R.id.wm_fila1, R.id.wm_fila2, R.id.wm_fila3, R.id.wm_fila4 };
@@ -19,13 +19,11 @@ public class WidgetMediano extends WidgetBase {
     @Override
     protected RemoteViews dibujar(Context c, JSONObject d) {
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.widget_mediano);
-        int tinta = Datos.color(d, "color-tinta", TINTA);
-        int suave = Datos.color(d, "color-tinta-suave", TINTA_SUAVE);
         int rojo = Datos.color(d, "color-principal", ROJO);
-        v.setTextViewText(R.id.wm_titulo, tituloDia(d));
-        v.setTextColor(R.id.wm_titulo, tinta);
+        v.setImageViewBitmap(R.id.wm_titulo, Dibujo.titulo(c, tituloDia(d), 24));
+        v.setContentDescription(R.id.wm_titulo, tituloDia(d));
         v.setTextViewText(R.id.wm_racha, racha(d));
-        v.setTextColor(R.id.wm_racha, rojo);
+        v.setTextColor(R.id.wm_racha, aclarar(rojo));
         v.setOnClickPendingIntent(R.id.wm_cabeza, abrir(c, null, 200));
 
         JSONArray p = d.optJSONArray("pilares");
@@ -35,11 +33,13 @@ public class WidgetMediano extends WidgetBase {
             JSONObject x = p.optJSONObject(i);
             String estado = x.optString("estado");
             boolean hecho = "hecho".equals(estado);
+            boolean descanso = "descanso".equals(estado);
             v.setViewVisibility(FILAS[i], View.VISIBLE);
-            v.setTextViewText(TILDES[i], hecho ? "✓" : "descanso".equals(estado) ? "–" : "○");
-            v.setTextColor(TILDES[i], hecho ? rojo : suave);
+            v.setTextViewText(TILDES[i], hecho ? "✓" : descanso ? "–" : "");
+            v.setInt(TILDES[i], "setBackgroundResource",
+                    hecho ? R.drawable.widget_circulo_hecho : descanso ? R.drawable.widget_circulo_descanso : R.drawable.widget_circulo);
             v.setTextViewText(NOMBRES[i], x.optString("nombre"));
-            v.setTextColor(NOMBRES[i], hecho ? suave : tinta);
+            v.setTextColor(NOMBRES[i], hecho || descanso ? PAPEL_SUAVE : PAPEL);
             if (x.optBoolean("marcable")) {
                 v.setOnClickPendingIntent(FILAS[i], difusion(c, WidgetMediano.class, MARCAR, x.optString("id"), 210 + i));
             } else {
@@ -50,8 +50,11 @@ public class WidgetMediano extends WidgetBase {
         }
         v.setViewVisibility(R.id.wm_vacio, n == 0 ? View.VISIBLE : View.GONE);
 
-        v.setTextViewText(R.id.wm_agua, Datos.icono(d, "icono-agua", "💧") + "  " + agua(d) + "   " + Datos.icono(d, "icono-fruta", "🍎") + " " + fruta(d));
-        v.setTextColor(R.id.wm_agua, tinta);
+        // Botella y manzana dibujadas: se llenan con lo del día y se tocan para sumar.
+        v.setImageViewBitmap(R.id.wm_botella, Dibujo.botella(fraccionAgua(d)));
+        v.setTextViewText(R.id.wm_agua, agua(d).replace(" / ", "/"));
+        v.setImageViewBitmap(R.id.wm_manzana, Dibujo.manzana(fraccionFruta(d)));
+        v.setTextViewText(R.id.wm_fruta_txt, fruta(d).replace("/", " / "));
         v.setOnClickPendingIntent(R.id.wm_tareas, abrir(c, "tareas", 240));
         v.setOnClickPendingIntent(R.id.wm_vaso, difusion(c, WidgetMediano.class, VASO, null, 230));
         v.setOnClickPendingIntent(R.id.wm_fruta, difusion(c, WidgetMediano.class, FRUTA, null, 231));
@@ -59,7 +62,6 @@ public class WidgetMediano extends WidgetBase {
         String franja = franja(d);
         v.setViewVisibility(R.id.wm_franja, franja.isEmpty() ? View.GONE : View.VISIBLE);
         v.setTextViewText(R.id.wm_franja, franja);
-        v.setTextColor(R.id.wm_franja, suave);
         return v;
     }
 }

@@ -1,6 +1,12 @@
 package ar.sek.app;
 
+import android.app.NotificationManager;
+import android.content.Context;
 import android.content.Intent;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+
+import androidx.activity.result.ActivityResult;
 import android.content.pm.PackageInfo;
 import android.net.Uri;
 import android.os.Build;
@@ -12,7 +18,10 @@ import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
+
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -21,7 +30,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-/** Puente de la web con Android: widgets, accesos directos y «Buscar actualización» (bajar e instalar el APK). */
+/** Puente de la web con Android: widgets, accesos directos, «Buscar actualización» y las alarmas reales (Más → Alarmas). */
 @CapacitorPlugin(name = "Sek")
 public class SekPlugin extends Plugin {
 
@@ -132,5 +141,128 @@ public class SekPlugin extends Plugin {
             return;
         }
         throw new Exception("Demasiadas redirecciones");
+    }
+
+    // ---------- Alarmas reales (modo «Alarma» de Más → Alarmas) ----------
+
+    @PluginMethod
+    public void programarAlarma(PluginCall call) {
+        JSONObject a = new JSONObject();
+        try {
+            a.put("id", call.getString("id", ""));
+            a.put("instante", call.getData().optLong("instante"));
+            a.put("titulo", call.getString("titulo", "SEK"));
+            a.put("cuerpo", call.getString("cuerpo", ""));
+            a.put("vibrar", call.getBoolean("vibrar", true));
+            a.put("sonido", call.getString("sonido", "sek"));
+        } catch (Exception e) {
+            call.reject("Datos de alarma inválidos");
+            return;
+        }
+        Alarmas.programar(getContext(), a);
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void cancelarAlarma(PluginCall call) {
+        String id = call.getString("id", "");
+        Alarmas.cancelar(getContext(), id);
+        Alarmas.cancelar(getContext(), id + ":pospuesta");
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void cancelarAlarmas(PluginCall call) {
+        Alarmas.cancelarPorPrefijo(getContext(), call.getString("prefijo", ""));
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void listarAlarmas(PluginCall call) {
+        JSObject r = new JSObject();
+        r.put("alarmas", Alarmas.listar(getContext()));
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void probarAlarma(PluginCall call) {
+        int segundos = call.getInt("segundos", 5);
+        JSONObject a = new JSONObject();
+        try {
+            a.put("id", "prueba:" + System.currentTimeMillis());
+            a.put("instante", System.currentTimeMillis() + segundos * 1000L);
+            a.put("titulo", "Alarma de prueba");
+            a.put("cuerpo", "Así suena una Alarma de SEK. Tocá Apagar o Posponer 5 min.");
+            a.put("vibrar", call.getBoolean("vibrar", true));
+            a.put("sonido", call.getString("sonido", "sek"));
+        } catch (Exception e) {
+            call.reject("No se pudo armar la prueba");
+            return;
+        }
+        Alarmas.programar(getContext(), a);
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void estadoAlarmas(PluginCall call) {
+        JSObject r = new JSObject();
+        r.put("exactas", Alarmas.puedeExactas(getContext()));
+        boolean completa = true;
+        if (Build.VERSION.SDK_INT >= 34) {
+            NotificationManager nm = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+            completa = nm == null || nm.canUseFullScreenIntent();
+        }
+        r.put("pantallaCompleta", completa);
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void abrirAjusteAlarmas(PluginCall call) {
+        String cual = call.getString("cual", "exactas");
+        Uri paquete = Uri.parse("package:" + getContext().getPackageName());
+        Intent i;
+        if ("pantalla".equals(cual) && Build.VERSION.SDK_INT >= 34) i = new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, paquete);
+        else if (Build.VERSION.SDK_INT >= 31) i = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, paquete);
+        else i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, paquete);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            getContext().startActivity(i);
+        } catch (Exception e) {
+            getContext().startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, paquete).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        }
+        call.resolve();
+    }
+
+    /** Selector de tonos de Android (alarmas y tonos del celu). */
+    @PluginMethod
+    public void elegirTono(PluginCall call) {
+        Intent i = new Intent(RingtoneManager.ACTION_RINGTONE_PICKER);
+        i.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM | RingtoneManager.TYPE_RINGTONE | RingtoneManager.TYPE_NOTIFICATION);
+        i.putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Sonido de la alarma");
+        i.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false);
+        i.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true);
+        startActivityForResult(call, i, "tonoElegido");
+    }
+
+    @ActivityCallback
+    private void tonoElegido(PluginCall call, ActivityResult resultado) {
+        JSObject r = new JSObject();
+        Intent datos = resultado.getData();
+        Uri u = datos == null ? null : datos.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI);
+        if (u == null) {
+            r.put("uri", null);
+            r.put("nombre", "");
+        } else {
+            r.put("uri", u.toString());
+            String nombre = "Tono del celu";
+            try {
+                Ringtone t = RingtoneManager.getRingtone(getContext(), u);
+                if (t != null) nombre = t.getTitle(getContext());
+            } catch (Exception ignorado) {
+                // Queda el nombre genérico.
+            }
+            r.put("nombre", nombre);
+        }
+        call.resolve(r);
     }
 }

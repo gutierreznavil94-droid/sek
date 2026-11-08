@@ -19,7 +19,18 @@ type PluginSek = {
   puedeInstalar(): Promise<{ puede: boolean }>
   pedirPermisoInstalar(): Promise<void>
   descargarEInstalar(o: { url: string }): Promise<void>
+  programarAlarma(o: AlarmaNativa): Promise<void>
+  cancelarAlarma(o: { id: string }): Promise<void>
+  cancelarAlarmas(o: { prefijo: string }): Promise<void>
+  listarAlarmas(): Promise<{ alarmas: string }>
+  probarAlarma(o: { segundos: number; sonido: string; vibrar: boolean }): Promise<void>
+  estadoAlarmas(): Promise<{ exactas: boolean; pantallaCompleta: boolean }>
+  abrirAjusteAlarmas(o: { cual: 'exactas' | 'pantalla' }): Promise<void>
+  elegirTono(): Promise<{ uri: string | null; nombre: string }>
 }
+
+/** Alarma real de Android: suena y vibra con pantalla completa hasta «Apagar» o «Posponer 5 min». */
+export type AlarmaNativa = { id: string; instante: number; titulo: string; cuerpo: string; vibrar: boolean; sonido: string }
 
 const Sek = registerPlugin<PluginSek>('Sek')
 
@@ -67,4 +78,56 @@ export async function pedirPermisoInstalar(): Promise<void> {
 export async function descargarEInstalar(url: string): Promise<void> {
   if (!esAndroid()) { window.open(url, '_blank'); return }
   await Sek.descargarEInstalar({ url })
+}
+
+// ---------- Alarmas reales ----------
+
+export async function programarAlarmaNativa(a: AlarmaNativa): Promise<void> {
+  if (esAndroid()) await Sek.programarAlarma(a)
+}
+
+export async function cancelarAlarmaNativa(id: string): Promise<void> {
+  if (esAndroid()) await Sek.cancelarAlarma({ id }).catch(() => {})
+}
+
+export async function cancelarAlarmasNativas(prefijo = ''): Promise<void> {
+  if (esAndroid()) await Sek.cancelarAlarmas({ prefijo }).catch(() => {})
+}
+
+/** Las alarmas reales programadas ahora mismo. */
+export async function alarmasNativas(): Promise<AlarmaNativa[]> {
+  if (!esAndroid()) return []
+  try {
+    const lista = JSON.parse((await Sek.listarAlarmas()).alarmas || '[]') as AlarmaNativa[]
+    return Array.isArray(lista) ? lista : []
+  } catch {
+    return []
+  }
+}
+
+/** Hace sonar una alarma de prueba dentro de unos segundos (para escuchar el tono con la pantalla apagada). */
+export async function probarAlarma(segundos: number, sonido: string, vibrar: boolean): Promise<boolean> {
+  if (!esAndroid()) return false
+  try { await Sek.probarAlarma({ segundos, sonido, vibrar }); return true } catch { return false }
+}
+
+/** Permisos que necesita la alarma real: alarmas exactas y pantalla completa (Android 14+). */
+export async function estadoAlarmasNativas(): Promise<{ exactas: boolean; pantallaCompleta: boolean } | null> {
+  if (!esAndroid()) return null
+  try { return await Sek.estadoAlarmas() } catch { return null }
+}
+
+export async function abrirAjusteAlarmas(cual: 'exactas' | 'pantalla'): Promise<void> {
+  if (esAndroid()) await Sek.abrirAjusteAlarmas({ cual }).catch(() => {})
+}
+
+/** Abre el selector de tonos de Android. Devuelve null si se canceló. */
+export async function elegirTonoDelCelu(): Promise<{ uri: string; nombre: string } | null> {
+  if (!esAndroid()) return null
+  try {
+    const r = await Sek.elegirTono()
+    return r.uri ? { uri: r.uri, nombre: r.nombre } : null
+  } catch {
+    return null
+  }
 }

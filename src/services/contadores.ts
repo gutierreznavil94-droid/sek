@@ -92,7 +92,7 @@ function propuestaPara(c: Contador): PropuestaSubida {
  * Nunca sube sola. Después de responder (sí o todavía no), no vuelve a proponer hasta 3 días después.
  */
 export async function propuestaDeSubida(c: Contador, hoy: FechaDia): Promise<PropuestaSubida | null> {
-  if (!c.activo) return null
+  if (!c.activo || c.sinSubida) return null
   if (c.proximaPropuesta && hoy < c.proximaPropuesta) return null
   const ciclo = await cicloActivo()
   if (!ciclo || sumarDias(hoy, -3) < ciclo.inicio) return null

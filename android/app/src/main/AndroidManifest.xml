@@ -37,6 +37,28 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
 
+        <!-- Alarmas reales (Más → Alarmas, modo «Alarma»): pantalla completa, sonido y reinicio del celu. -->
+        <activity
+            android:name=".AlarmaActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:taskAffinity=""
+            android:theme="@style/AppTheme.NoActionBar" />
+        <service
+            android:name=".AlarmaServicio"
+            android:exported="false"
+            android:foregroundServiceType="systemExempted|mediaPlayback" />
+        <receiver android:name=".AlarmaReceptor" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
         <!-- Widgets de la pantalla de inicio. -->
         <receiver android:name=".WidgetChico" android:exported="false" android:label="SEK · chico">
             <intent-filter>
@@ -62,6 +84,11 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Alarma real: pantalla completa con el celu bloqueado y sonido en primer plano hasta Apagar/Posponer. -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <!-- «Buscar actualización»: instalar la versión nueva encima (Android lo pregunta la primera vez). -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 </manifest>

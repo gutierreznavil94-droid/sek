@@ -34,6 +34,10 @@ public abstract class WidgetBase extends AppWidgetProvider {
     static final int TINTA = Color.parseColor("#121110");
     static final int TINTA_SUAVE = Color.parseColor("#6B655C");
     static final int ROJO = Color.parseColor("#C8102E");
+    /** Texto sobre la tormenta: blanco papel, y apagado para lo ya hecho. */
+    static final int PAPEL_CLARO = Color.parseColor("#F1EBDF");
+    static final int PAPEL_SUAVE = Color.parseColor("#B3F1EBDF");
+    static final int VERDE = Color.parseColor("#5CC46E");
 
     protected abstract RemoteViews dibujar(Context c, JSONObject d);
 
@@ -166,23 +170,43 @@ public abstract class WidgetBase extends AppWidgetProvider {
         return Datos.icono(d, "icono-racha", "🔥") + " " + d.optInt("racha", 0);
     }
 
-    /** «● ● ○»: lleno y rojo = hecho; vacío = falta; guion = descanso. */
+    /** «✓ ✓ ○»: tilde verde = hecho; círculo = falta; guion = descanso. */
     static CharSequence puntos(JSONObject d) {
         JSONArray p = d.optJSONArray("pilares");
         SpannableStringBuilder s = new SpannableStringBuilder();
         if (p == null || p.length() == 0) return "Sin pilares hoy";
-        int rojo = Datos.color(d, "color-principal", ROJO);
-        int suave = Datos.color(d, "color-tinta-suave", TINTA_SUAVE);
         for (int i = 0; i < p.length(); i++) {
             JSONObject x = p.optJSONObject(i);
             String estado = x == null ? "" : x.optString("estado");
-            String signo = "hecho".equals(estado) ? "●" : "descanso".equals(estado) ? "–" : "○";
+            String signo = "hecho".equals(estado) ? "✓" : "descanso".equals(estado) ? "–" : "○";
             int desde = s.length();
             s.append(signo);
-            s.setSpan(new ForegroundColorSpan("hecho".equals(estado) ? rojo : suave), desde, s.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            s.setSpan(new ForegroundColorSpan("hecho".equals(estado) ? VERDE : "descanso".equals(estado) ? PAPEL_SUAVE : PAPEL_CLARO), desde, s.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             if (i < p.length() - 1) s.append("  ");
         }
         return s;
+    }
+
+    /** Rojo del tema un poco más claro, para que se lea sobre la tormenta. */
+    static int aclarar(int color) {
+        int r = Color.red(color), g = Color.green(color), b = Color.blue(color);
+        return Color.rgb(r + (255 - r) / 5, g + (255 - g) / 5, b + (255 - b) / 5);
+    }
+
+    /** Cuánto se llenó el agua del día (0 a 1). */
+    static float fraccionAgua(JSONObject d) {
+        JSONObject a = d.optJSONObject("agua");
+        if (a == null) return 0;
+        int objetivo = a.optInt("objetivo", 2000);
+        return objetivo <= 0 ? 0 : a.optInt("ml") / (float) objetivo;
+    }
+
+    /** Cuánto se llenó la fruta del día (0 a 1). */
+    static float fraccionFruta(JSONObject d) {
+        JSONObject f = d.optJSONObject("fruta");
+        if (f == null) return 0;
+        int objetivo = f.optInt("objetivo", 2);
+        return objetivo <= 0 ? 0 : f.optInt("n") / (float) objetivo;
     }
 
     /** Agua: «1,25 / 2 L». */

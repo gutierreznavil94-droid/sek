@@ -44,7 +44,7 @@ export function AnilloComida({ valor, objetivo, etiqueta, unidad, tam = 72, alPa
 // ---------- Tarjeta de Hoy ----------
 
 export function TarjetaComida({ hoy }: { hoy: string }) {
-  const datos = useDatos(async () => { const a = await obtenerAjustes(); return { dia: await comidasDelDia(hoy), objetivo: a.comida, aguaChica: (a.agua?.enHoy ?? 'chica') === 'chica', brillo: a.brilloPendientes !== false } }, [hoy])
+  const datos = useDatos(async () => { const a = await obtenerAjustes(); return { dia: await comidasDelDia(hoy), objetivo: a.comida, aguaChica: (a.agua?.enHoy ?? 'chica') === 'chica', fruta: a.fruta?.usar !== false, brillo: a.brilloPendientes !== false } }, [hoy])
   const [cargar, setCargar] = useState(false)
   const d = datos.datos
   if (!d) return null
@@ -68,7 +68,7 @@ export function TarjetaComida({ hoy }: { hoy: string }) {
         )}
       </Link>
       {d.aguaChica && <TarjetaAgua hoy={hoy} chica />}
-      <TarjetaFruta hoy={hoy} conBrillo={d.brillo} indice={5} />
+      {d.fruta && <TarjetaFruta hoy={hoy} conBrillo={d.brillo} indice={5} />}
       {o ? <button className="boton primario co-comi" onClick={() => setCargar(true)}>+ Comí</button> : <Link to="/mas/comida" className="boton co-comi">Objetivo</Link>}
       {cargar && <CargarComida hoy={hoy} onCerrar={() => setCargar(false)} />}
     </section>

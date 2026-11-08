@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- «Posponer 5 min»: tinta translúcida con borde papel. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#B3121110" />
+    <stroke android:width="2dp" android:color="#99F3EFE6" />
+    <corners android:radius="18dp" />
+</shape>

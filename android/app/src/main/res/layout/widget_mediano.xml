@@ -1,285 +1,362 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Widget mediano (4×2): a la izquierda los pilares; a la derecha Tareas, la botella de agua y la manzana. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/wm_raiz"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_fondo"
-    android:orientation="vertical"
-    android:padding="12dp">
+    android:background="@drawable/widget_fondo_tormenta"
+    android:clipToOutline="true">
+
+    <include layout="@layout/widget_tormenta" />
 
     <LinearLayout
-        android:id="@+id/wm_cabeza"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_marco"
+        android:orientation="vertical"
+        android:paddingStart="14dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp">
+
+        <LinearLayout
+            android:id="@+id/wm_cabeza"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/wm_titulo"
+                android:layout_width="0dp"
+                android:layout_height="34dp"
+                android:layout_weight="1"
+                android:adjustViewBounds="true"
+                android:contentDescription="Día del ciclo"
+                android:scaleType="fitStart"
+                android:src="@drawable/widget_ej_titulo" />
+
+            <TextView
+                android:id="@+id/wm_racha"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="炎 0"
+                android:textColor="#E8304A"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:shadowColor="#E6000000"
+                android:shadowDy="1"
+                android:shadowRadius="4" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="6dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1.45"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/wm_vacio"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Abrí SEK para ver tus pilares"
+                    android:textColor="#F1EBDF"
+                    android:textSize="13sp"
+                    android:shadowColor="#CC000000"
+                    android:shadowDy="1"
+                    android:shadowRadius="3"
+                    android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/wm_fila0"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/wm_tilde0"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:background="@drawable/widget_circulo_hecho"
+                    android:gravity="center"
+                    android:text="✓"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/wm_nombre0"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="7dp"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:lineSpacingMultiplier="0.9"
+                    android:text="Entrenamiento"
+                    android:textColor="#B3F1EBDF"
+                    android:textSize="13sp"
+                    android:shadowColor="#CC000000"
+                    android:shadowDy="1"
+                    android:shadowRadius="3" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/wm_fila1"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/wm_tilde1"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:background="@drawable/widget_circulo_hecho"
+                    android:gravity="center"
+                    android:text="✓"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/wm_nombre1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="7dp"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:lineSpacingMultiplier="0.9"
+                    android:text="Dormir a horario"
+                    android:textColor="#B3F1EBDF"
+                    android:textSize="13sp"
+                    android:shadowColor="#CC000000"
+                    android:shadowDy="1"
+                    android:shadowRadius="3" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/wm_fila2"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/wm_tilde2"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:background="@drawable/widget_circulo"
+                    android:gravity="center"
+                    android:text=""
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/wm_nombre2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="7dp"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:lineSpacingMultiplier="0.9"
+                    android:text="Empresa"
+                    android:textColor="#F1EBDF"
+                    android:textSize="13sp"
+                    android:shadowColor="#CC000000"
+                    android:shadowDy="1"
+                    android:shadowRadius="3" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/wm_fila3"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/wm_tilde3"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:background="@drawable/widget_circulo"
+                    android:gravity="center"
+                    android:text=""
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/wm_nombre3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="7dp"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:lineSpacingMultiplier="0.9"
+                    android:text="Manga"
+                    android:textColor="#F1EBDF"
+                    android:textSize="13sp"
+                    android:shadowColor="#CC000000"
+                    android:shadowDy="1"
+                    android:shadowRadius="3" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/wm_fila4"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/wm_tilde4"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:background="@drawable/widget_circulo"
+                    android:gravity="center"
+                    android:text=""
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/wm_nombre4"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="7dp"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:lineSpacingMultiplier="0.9"
+                    android:text=""
+                    android:textColor="#F1EBDF"
+                    android:textSize="13sp"
+                    android:shadowColor="#CC000000"
+                    android:shadowDy="1"
+                    android:shadowRadius="3" />
+            </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/wm_tareas"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:background="@drawable/widget_boton_tareas"
+                    android:gravity="center"
+                    android:text="Tareas"
+                    android:textColor="#F1EBDF"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:id="@+id/wm_vaso"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1.1"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:id="@+id/wm_botella"
+                            android:layout_width="match_parent"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
+                            android:contentDescription="Sumar un vaso de agua"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/widget_ej_botella" />
+
+                        <TextView
+                            android:id="@+id/wm_agua"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:maxLines="1"
+                            android:text="0/2,25 L"
+                            android:textColor="#F1EBDF"
+                            android:textSize="10sp"
+                            android:shadowColor="#CC000000"
+                            android:shadowDy="1"
+                            android:shadowRadius="3" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/wm_fruta"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:id="@+id/wm_manzana"
+                            android:layout_width="match_parent"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
+                            android:contentDescription="Sumar una fruta"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/widget_ej_manzana" />
+
+                        <TextView
+                            android:id="@+id/wm_fruta_txt"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:maxLines="1"
+                            android:text="0 / 2"
+                            android:textColor="#F1EBDF"
+                            android:textSize="11sp"
+                            android:shadowColor="#CC000000"
+                            android:shadowDy="1"
+                            android:shadowRadius="3" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
 
         <TextView
-            android:id="@+id/wm_titulo"
-            android:layout_width="0dp"
+            android:id="@+id/wm_franja"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
             android:maxLines="1"
-            android:text="Día 1 de 90"
-            android:textColor="#121110"
-            android:textSize="15sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/wm_racha"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="🔥 0"
-            android:textColor="#C8102E"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            android:text="Ahora: Dibujar, hasta 20:50"
+            android:textColor="#D9F1EBDF"
+            android:textSize="12sp"
+            android:shadowColor="#CC000000"
+            android:shadowDy="1"
+            android:shadowRadius="3"
+            android:visibility="gone" />
     </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="4dp"
-        android:layout_weight="1"
-        android:orientation="horizontal">
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1.4"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/wm_vacio"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Abrí SEK para ver tus pilares"
-                android:textColor="#6B655C"
-                android:textSize="13sp"
-                android:visibility="gone" />
-
-        <LinearLayout
-            android:id="@+id/wm_fila0"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/wm_tilde0"
-                android:layout_width="22dp"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="○"
-                android:textColor="#6B655C"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/wm_nombre0"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="#121110"
-                android:textSize="13sp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/wm_fila1"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/wm_tilde1"
-                android:layout_width="22dp"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="○"
-                android:textColor="#6B655C"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/wm_nombre1"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="#121110"
-                android:textSize="13sp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/wm_fila2"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/wm_tilde2"
-                android:layout_width="22dp"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="○"
-                android:textColor="#6B655C"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/wm_nombre2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="#121110"
-                android:textSize="13sp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/wm_fila3"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/wm_tilde3"
-                android:layout_width="22dp"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="○"
-                android:textColor="#6B655C"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/wm_nombre3"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="#121110"
-                android:textSize="13sp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/wm_fila4"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/wm_tilde4"
-                android:layout_width="22dp"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="○"
-                android:textColor="#6B655C"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/wm_nombre4"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="#121110"
-                android:textSize="13sp" />
-        </LinearLayout>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/wm_agua"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:maxLines="1"
-                android:text="0 / 2 L"
-                android:textColor="#121110"
-                android:textSize="13sp" />
-
-            <TextView
-                android:id="@+id/wm_tareas"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/widget_boton_rojo"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp"
-                android:text="Tareas"
-                android:textColor="#F1EBDF"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/wm_vaso"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:background="@drawable/widget_boton_suave"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:paddingTop="3dp"
-                android:paddingBottom="3dp"
-                android:text="+1 vaso"
-                android:textColor="#6B655C"
-                android:textSize="11sp"
-                />
-
-            <TextView
-                android:id="@+id/wm_fruta"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/widget_boton_suave"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:paddingTop="3dp"
-                android:paddingBottom="3dp"
-                android:text="+1 fruta"
-                android:textColor="#6B655C"
-                android:textSize="11sp"
-                />
-        </LinearLayout>
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/wm_franja"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:textColor="#6B655C"
-        android:textSize="12sp"
-        android:visibility="gone" />
-</LinearLayout>
+</FrameLayout>

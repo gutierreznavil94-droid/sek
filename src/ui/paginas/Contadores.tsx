@@ -74,6 +74,7 @@ function EditarContador({ contador, atributos, onCerrar }: { contador: Contador 
   const [porToque, setPorToque] = useState(contador?.cantidadPorToque ?? 10)
   const [series, setSeries] = useState(contador ? seriesDe(contador) : 5)
   const [cuotaAMano, setCuotaAMano] = useState(contador?.cuotaAMano ?? false)
+  const [sinSubida, setSinSubida] = useState(contador?.sinSubida ?? false)
   const [cuotaManual, setCuotaManual] = useState(contador?.metaDiaria ?? 50)
   const metaDiaria = cuotaAMano ? cuotaManual : porToque * series
   const [extraManual, setExtraManual] = useState<number | null>(contador?.metaExtra !== undefined && contador.metaExtra !== extraPorDefecto(contador.metaDiaria) ? contador.metaExtra : null)
@@ -85,7 +86,7 @@ function EditarContador({ contador, atributos, onCerrar }: { contador: Contador 
   const [activo, setActivo] = useState(contador?.activo ?? true)
   const [errores, setErrores] = useState<string[]>([])
   const guardar = async () => {
-    const base = { id: contador?.id ?? nuevoIdContador(), nombre, cantidadPorToque: porToque, seriesPorDia: series, metaDiaria, cuotaAMano, metaSemanal: metaSemanal > 0 ? metaSemanal : undefined, xpMetaDiaria: xp, metaExtra: extra, xpExtra, atributoIds, activo, ...(contador ? { pasoSubida: contador.pasoSubida, historialCuota: contador.historialCuota, proximaPropuesta: contador.proximaPropuesta } : {}) }
+    const base = { id: contador?.id ?? nuevoIdContador(), nombre, cantidadPorToque: porToque, seriesPorDia: series, metaDiaria, cuotaAMano, metaSemanal: metaSemanal > 0 ? metaSemanal : undefined, xpMetaDiaria: xp, metaExtra: extra, xpExtra, atributoIds, activo, sinSubida: sinSubida || undefined, ...(contador ? { pasoSubida: contador.pasoSubida, historialCuota: contador.historialCuota, proximaPropuesta: contador.proximaPropuesta } : {}) }
     const errs = validarContador(base)
     if (errs.length) return setErrores(errs)
     await mutar(() => guardarContador(base))
@@ -110,6 +111,7 @@ function EditarContador({ contador, atributos, onCerrar }: { contador: Contador 
         <div className="campo"><label>Meta semanal (opcional)</label><input type="number" inputMode="numeric" min={0} value={metaSemanal} onChange={(e) => setMetaSemanal(Number(e.target.value))} /></div>
       </div>
       <div className="campo"><label>Atributo que alimenta</label><Chips opciones={atributos} valor={atributoIds} onChange={setAtributoIds} multiple /></div>
+      <label className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={!sinSubida} onChange={(e) => setSinSubida(!e.target.checked)} /> Proponer subir las reps cada 3 días</label>
       <label className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={cuotaAMano} onChange={(e) => { setCuotaAMano(e.target.checked); if (e.target.checked) setCuotaManual(metaDiaria) }} /> Cuota a mano (en vez de reps × series)</label>
       {contador && <label className="fila chico" style={{ gap: 8 }}><input type="checkbox" checked={activo} onChange={(e) => setActivo(e.target.checked)} /> Activo (aparece en Hoy)</label>}
       {errores.map((e) => <p key={e} className="error">{e}</p>)}

@@ -11,12 +11,18 @@
  * El resto de la app no sabe cuál está activa: usa `recordatorios`.
  */
 
+import { alarmasNativas, cancelarAlarmaNativa, cancelarAlarmasNativas, programarAlarmaNativa } from '../nativo/sek'
+
 export type Recordatorio = {
   id: string
   titulo: string
   cuerpo: string
   /** Instante en que debe sonar. */
   instante: number
+  /** Notificación normal (si falta) o alarma real: en la app Android suena con pantalla completa hasta apagarla. */
+  modo?: 'notificacion' | 'alarma' | 'nada'
+  /** Vibrar (sí si falta). */
+  vibrar?: boolean
 }
 
 export type Capacidades = {
@@ -192,8 +198,15 @@ export function idNumerico(id: string): number {
 
 type ModuloNotificaciones = typeof import('@capacitor/local-notifications')
 
+/** Sonido de las alarmas reales (Más → Alarmas): lo fija la app al leer los ajustes. */
+let sonidoAlarmas = 'sek'
+export function fijarSonidoAlarmas(s: string | undefined): void {
+  sonidoAlarmas = s || 'sek'
+}
+
 const CANAL_ALARMAS = 'sek-alarmas'
 const CANAL_TENUE = 'sek-tenue'
+const CANAL_SIN_VIBRAR = 'sek-avisos-sin-vibrar'
 
 /** App Android: notificaciones locales programadas en el dispositivo. */
 class RecordatoriosNativo implements Recordatorios {
@@ -213,6 +226,7 @@ class RecordatoriosNativo implements Recordatorios {
       this.canales = Promise.all([
         LocalNotifications.createChannel({ id: CANAL_ALARMAS, name: 'Alarmas', description: 'Entreno, Dejo celu, A dormir y Mi horario', importance: 5, visibility: 1, vibration: true }),
         LocalNotifications.createChannel({ id: CANAL_TENUE, name: 'Avisos tenues', description: 'Alistarse para dormir', importance: 2, visibility: 1, vibration: false }),
+        LocalNotifications.createChannel({ id: CANAL_SIN_VIBRAR, name: 'Avisos sin vibrar', description: 'Avisos con sonido y sin vibración', importance: 4, visibility: 1, vibration: false }),
       ]).then(() => {}).catch(() => {})
     }
     await this.canales
@@ -264,7 +278,13 @@ class RecordatoriosNativo implements Recordatorios {
   async programar(r: Recordatorio): Promise<void> {
     const ln = await this.plugin()
     await this.cancelar(r.id)
-    if (r.instante <= Date.now()) return
+    if (r.instante <= Date.now() || r.modo === 'nada') return
+    if (r.modo === 'alarma') {
+      // Alarma real de Android (pantalla completa, suena hasta apagarla).
+      await programarAlarmaNativa({ id: r.id, instante: r.instante, titulo: r.titulo, cuerpo: r.cuerpo, vibrar: r.vibrar ?? true, sonido: sonidoAlarmas })
+      this.lista.set(r.id, r)
+      return
+    }
     await ln.schedule({
       notifications: [{
         id: idNumerico(r.id),
@@ -272,7 +292,7 @@ class RecordatoriosNativo implements Recordatorios {
         body: r.cuerpo,
         schedule: { at: new Date(r.instante), allowWhileIdle: true },
         extra: { id: r.id },
-        channelId: r.id.startsWith('alarma:alistarse') ? CANAL_TENUE : CANAL_ALARMAS,
+        channelId: r.vibrar === false ? CANAL_SIN_VIBRAR : CANAL_ALARMAS,
       }],
     })
     this.lista.set(r.id, r)
@@ -281,6 +301,7 @@ class RecordatoriosNativo implements Recordatorios {
   async cancelar(id: string): Promise<void> {
     const ln = await this.plugin()
     await ln.cancel({ notifications: [{ id: idNumerico(id) }] }).catch(() => {})
+    await cancelarAlarmaNativa(id)
     this.lista.delete(id)
   }
 
@@ -288,15 +309,17 @@ class RecordatoriosNativo implements Recordatorios {
     const ln = await this.plugin()
     const p = await ln.getPending()
     if (p.notifications.length) await ln.cancel({ notifications: p.notifications.map((n) => ({ id: n.id })) })
+    await cancelarAlarmasNativas('')
     this.lista.clear()
   }
 
   async programados(): Promise<Recordatorio[]> {
     const ln = await this.plugin()
     const p = await ln.getPending()
-    return p.notifications
+    const notis: Recordatorio[] = p.notifications
       .map((n) => this.lista.get(String(n.extra?.id ?? '')) ?? { id: String(n.id), titulo: n.title ?? '', cuerpo: n.body ?? '', instante: n.schedule?.at ? new Date(n.schedule.at).getTime() : 0 })
-      .sort((a, b) => a.instante - b.instante)
+    const alarmas: Recordatorio[] = (await alarmasNativas()).map((x) => ({ id: x.id, titulo: x.titulo, cuerpo: x.cuerpo, instante: x.instante, modo: 'alarma', vibrar: x.vibrar }))
+    return [...notis, ...alarmas].sort((a, b) => a.instante - b.instante)
   }
 
   alDisparar(o: Oyente): () => void {

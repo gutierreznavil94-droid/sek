@@ -29,6 +29,7 @@ const SISTEMA: Seccion[] = [
 /** El resto, en tres grupos cortos (la explicación larga va adentro de cada pantalla). */
 const GRUPOS: { titulo: string; items: Seccion[] }[] = [
   { titulo: 'Yo', items: [
+    { a: '/configurar', t: 'Configurar de nuevo', d: 'Los 7 pasos del primer día, sin borrar nada', claves: 'configurar de nuevo asistente primer arranque bienvenida pilares series flexiones dominadas sueno juego agua fruta avisos' },
     { a: '/mas/identidad', t: 'Identidad', d: 'Visión y obstáculos', claves: 'identidad vision obstaculos quien soy' },
     { a: '/mas/atributos', t: 'Atributos', d: 'Tus cinco áreas', claves: 'atributos areas stats fuerza' },
     { a: '/mas/metas', t: 'Metas con fecha', d: 'Qué querés lograr y cuándo', claves: 'metas fecha objetivo lograr verde rojo' },
@@ -43,7 +44,7 @@ const GRUPOS: { titulo: string; items: Seccion[] }[] = [
   { titulo: 'Entreno y descanso', items: [
     { a: '/mas/rutinas', t: 'Mis rutinas', d: 'Rutinas, ejercicios y días', claves: 'rutinas ejercicios entreno gimnasio colgarse barra historial series' },
     { a: '/mas/entrenamiento', t: 'Entrenamiento y descanso', d: 'Días, horas y sueño', claves: 'entrenamiento descanso dormir sueno acostarse hora dias' },
-    { a: '/mas/alarmas', t: 'Alarmas del teléfono', d: 'Qué cargar en el reloj', claves: 'alarmas telefono reloj android despertador' },
+    { a: '/mas/alarmas', t: 'Alarmas', d: 'Cada aviso: Notificación, Alarma o Nada', claves: 'alarmas avisos notificaciones telefono reloj android despertador juego' },
   ] },
 ]
 

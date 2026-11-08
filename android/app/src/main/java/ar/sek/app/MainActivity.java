@@ -15,6 +15,8 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(SekPlugin.class);
         super.onCreate(savedInstanceState);
         guardarRuta(getIntent());
+        // Por las dudas (reinicio sin aviso, actualización): vuelve a programar las alarmas reales que faltan.
+        Alarmas.reprogramarTodas(this);
     }
 
     @Override

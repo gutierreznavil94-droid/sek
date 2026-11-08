@@ -38,7 +38,7 @@ describe('envío', () => {
     expect(mandados[0].datos['entry.1']).toBe('Que el entreno avise antes')
     expect(mandados[0].datos['entry.2']).toBe('Entreno')
     expect(mandados[0].datos['entry.3']).toBe('navil@x.com')
-    expect(mandados[0].datos['entry.4']).toMatch(/^SEK v\d+\.\d+ · tema shinobi$/)
+    expect(mandados[0].datos['entry.4']).toMatch(/^SEK v\d+\.\d+(\.\d+)? · tema shinobi$/)
     expect((await exportarTodo()).tablas.recomendaciones).toHaveLength(1)
   })
   it('sin internet queda pendiente y sale al reintentar', async () => {

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- «Apagar»: rojo del kasa, lleno. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#C8102E" />
+    <stroke android:width="2dp" android:color="#F3EFE6" />
+    <corners android:radius="18dp" />
+</shape>

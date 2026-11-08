@@ -7,29 +7,21 @@
 
 import { db } from '../data/db'
 import { diaSemanaDe, fechaDe, instanteDe, minutosDe, sumarDias, type FechaDia } from '../domain/fechas'
-import { recordatorios, type Recordatorio } from '../reminders/recordatorios'
+import { fijarSonidoAlarmas, recordatorios, type Recordatorio } from '../reminders/recordatorios'
 import { obtenerAjustes } from './base'
 import { cicloActivo } from './ciclo'
 import { horaFinMargen } from './dia'
 import { fraseDormir, minutosAvisoDormir } from './dormir'
 import { bloquesDelDia } from './horario'
 import { ahora } from './reloj'
+import { AVISOS, configAviso } from './avisos'
 
 export type Alarma = Recordatorio & { fecha: FechaDia; hora: string; tipo: TipoAlarma }
 
-export type TipoAlarma = 'entrenamiento' | 'entreno-aviso' | 'revision' | 'alistarse' | 'celu' | 'dormido' | 'horario' | 'salida'
+export type TipoAlarma = 'entrenamiento' | 'entreno-aviso' | 'revision' | 'alistarse' | 'celu' | 'dormido' | 'horario' | 'salida' | 'propio'
 
-/** Los avisos que se pueden apagar uno por uno (Más → Alarmas). */
-export const TIPOS_ALARMA: { tipo: TipoAlarma; nombre: string }[] = [
-  { tipo: 'entrenamiento', nombre: 'Entrenamiento a su hora' },
-  { tipo: 'entreno-aviso', nombre: 'Empezá el entreno (si no empezaste)' },
-  { tipo: 'revision', nombre: 'Revisión diaria (manga y empresa)' },
-  { tipo: 'alistarse', nombre: 'Alistarse para dormir (tenue, antes de «Dejo celu»)' },
-  { tipo: 'celu', nombre: 'Dejo celu' },
-  { tipo: 'dormido', nombre: 'A dormir' },
-  { tipo: 'horario', nombre: 'Mi horario: al empezar cada franja' },
-  { tipo: 'salida', nombre: 'Al salir de un obligatorio: lo que falta' },
-]
+/** Los avisos de hora fija (Más → Alarmas); los de Juego se programan al arrancar el temporizador. */
+export const TIPOS_ALARMA = AVISOS.filter((x) => !x.tipo.startsWith('juego'))
 
 /** Las alarmas de una fecha según la configuración actual. Solo dentro del ciclo. */
 export async function alarmasDelDia(fecha: FechaDia): Promise<Alarma[]> {
@@ -59,16 +51,32 @@ export async function alarmasDelDia(fecha: FechaDia): Promise<Alarma[]> {
   lista.push({ id: `alarma:revision:${fecha}`, tipo: 'revision', fecha, hora: horaRev, titulo: 'Completá tu revisión ahora', cuerpo: `Menos de 3 min. Marcá manga y empresa si faltan: a las ${horaFinMargen(horaRev, a.margenNocheMinutos)} queda sin cumplir.`, instante: instanteDe(fecha, horaRev, a.zonaHoraria) })
   const minAlistarse = minutosAvisoDormir(a)
   const instCelu = instanteDe(fecha, a.horaDejarCelu, a.zonaHoraria)
-  lista.push({ id: `alarma:alistarse:${fecha}`, tipo: 'alistarse', fecha, hora: horaMenos(a.horaDejarCelu, minAlistarse), titulo: `Dejo celu en ${minAlistarse} min`, cuerpo: fraseDormir(a, fecha), instante: instCelu - minAlistarse * 60_000 })
+  // Alistarse para dormir: a la hora de alistarse de Sueño (20:50); si falta, unos minutos antes de «Dejo celu».
+  const horaAlist = a.horaAlistarse && minutosDe(a.horaAlistarse) < minutosDe(a.horaDejarCelu) ? a.horaAlistarse : horaMenos(a.horaDejarCelu, minAlistarse)
+  const faltanCelu = Math.round((instCelu - instanteDe(fecha, horaAlist, a.zonaHoraria)) / 60_000)
+  lista.push({ id: `alarma:alistarse:${fecha}`, tipo: 'alistarse', fecha, hora: horaAlist, titulo: `Alistarse para dormir · Dejo celu en ${faltanCelu} min`, cuerpo: fraseDormir(a, fecha), instante: instanteDe(fecha, horaAlist, a.zonaHoraria) })
   lista.push({ id: `alarma:celu:${fecha}`, tipo: 'celu', fecha, hora: a.horaDejarCelu, titulo: 'Dejo celu', cuerpo: 'Celular abajo, fuera del cuarto. Tocá «Dejo celu» en la app.', instante: instanteDe(fecha, a.horaDejarCelu, a.zonaHoraria) })
   lista.push({ id: `alarma:dormido:${fecha}`, tipo: 'dormido', fecha, hora: a.horaDormido, titulo: 'A dormir', cuerpo: 'Hora de estar dormido. Buenas noches.', instante: instanteDe(fecha, a.horaDormido, a.zonaHoraria) })
   // Mi horario: un aviso al empezar cada franja (los obligatorios también: «Ahora: Facultad, hasta 18:00»).
   for (const b of (await bloquesDelDia(fecha)).filter((x) => x.origen === 'bloque')) {
     lista.push({ id: `alarma:horario:${fecha}:${b.id}`, tipo: 'horario', fecha, hora: b.desde, titulo: `Ahora: ${b.nombre}`, cuerpo: `Hasta las ${b.hasta}.`, instante: instanteDe(fecha, b.desde, a.zonaHoraria) })
   }
-  const apagadas = new Set(a.alarmasApagadas ?? [])
-  const conHorario = await callarEnObligatorios(fecha, lista.filter((x) => x.tipo === 'horario' || !apagadas.has(x.tipo)), a.zonaHoraria)
-  return conHorario.filter((x) => !apagadas.has(x.tipo))
+  // Avisos propios («+ Agregar aviso»).
+  for (const p of a.avisosPropios ?? []) {
+    if (!p.dias.includes(ds) || p.modo === 'nada' || !/^\d\d:\d\d$/.test(p.hora)) continue
+    lista.push({ id: `alarma:propio:${fecha}:${p.id}`, tipo: 'propio', fecha, hora: p.hora, titulo: p.nombre, cuerpo: 'Aviso propio', instante: instanteDe(fecha, p.hora, a.zonaHoraria), modo: p.modo, vibrar: p.vibrar ?? true })
+  }
+  // Cada aviso como Notificación, Alarma o Nada, con la hora cambiada a mano si la hay.
+  const configurados = lista.map((x) => {
+    if (x.tipo === 'propio') return x
+    const c = configAviso(a, x.tipo)
+    const conHora = c.hora && c.hora !== x.hora ? { ...x, hora: c.hora, instante: instanteDe(fecha, c.hora, a.zonaHoraria) } : x
+    return { ...conHora, modo: c.modo, vibrar: c.vibrar }
+  })
+  const conHorario = await callarEnObligatorios(fecha, configurados.filter((x) => x.tipo === 'horario' || x.modo !== 'nada'), a.zonaHoraria)
+  return conHorario
+    .map((x) => (x.tipo === 'salida' ? { ...x, modo: configAviso(a, 'salida').modo, vibrar: configAviso(a, 'salida').vibrar } : x))
+    .filter((x) => x.modo !== 'nada')
 }
 
 /** «22:30» menos 30 min → «22:00». */
@@ -114,6 +122,7 @@ export async function alarmasProximas(dias = 7): Promise<Alarma[]> {
  */
 export async function programarAlarmas(dias = 7): Promise<number> {
   if (!recordatorios.capacidades().conAppCerrada) return 0
+  fijarSonidoAlarmas((await obtenerAjustes()).sonidoAlarma)
   const previas = await recordatorios.programados()
   for (const p of previas) if (p.id.startsWith('alarma:')) await recordatorios.cancelar(p.id)
   const proximas = await alarmasProximas(dias)
@@ -121,3 +130,46 @@ export async function programarAlarmas(dias = 7): Promise<number> {
   return proximas.length
 }
 
+/**
+ * Avisos de Juego (al % y al 100 % del tiempo diario), según lo que queda hoy. Se programan al arrancar o reanudar
+ * el temporizador y se cancelan al pausar o terminar.
+ */
+export async function programarAvisosJuego(minutosHoy: number, limiteMinutos: number): Promise<void> {
+  const a = await obtenerAjustes()
+  fijarSonidoAlarmas(a.sonidoAlarma)
+  const t = ahora()
+  const mitad = configAviso(a, 'juego-mitad')
+  const limite = configAviso(a, 'juego-limite')
+  await cancelarAvisosJuego()
+  const enMitad = (limiteMinutos * mitad.porcentaje) / 100 - minutosHoy
+  if (mitad.modo !== 'nada' && enMitad > 0) {
+    await recordatorios.programar({ id: 'juego-cerca', titulo: 'Juego', cuerpo: `Vas por el ${mitad.porcentaje} % del tiempo de hoy (${limiteMinutos} min).`, instante: t + enMitad * 60_000, modo: mitad.modo, vibrar: mitad.vibrar })
+  }
+  const enLimite = limiteMinutos - minutosHoy
+  if (limite.modo !== 'nada' && enLimite > 0) {
+    await recordatorios.programar({ id: 'juego-limite', titulo: 'Juego: tiempo cumplido', cuerpo: `Llegaste a los ${limiteMinutos} min de hoy. Pausá o terminá la sesión.`, instante: t + enLimite * 60_000, modo: limite.modo, vibrar: limite.vibrar })
+  }
+}
+
+export async function cancelarAvisosJuego(): Promise<void> {
+  await recordatorios.cancelar('juego-cerca')
+  await recordatorios.cancelar('juego-limite')
+}
+
+/** La hora que usa la app para cada aviso hoy (antes de cambiarla a mano), para mostrarla en Más → Alarmas. */
+export async function horasDeEntrada(fecha: FechaDia): Promise<Partial<Record<TipoAlarma, string>>> {
+  const a = await obtenerAjustes()
+  const d = db()
+  const ds = diaSemanaDe(fecha)
+  const entreno = await d.acciones.get('entrenamiento')
+  const revision = await d.acciones.get('revision_diaria')
+  const minAlistarse = minutosAvisoDormir(a)
+  return {
+    entrenamiento: entreno?.horasPorDia?.[ds] ?? entreno?.hora ?? '07:00',
+    'entreno-aviso': entreno?.avisoInicio?.hora,
+    revision: revision?.horaLimite ?? a.horaAlistarse,
+    alistarse: a.horaAlistarse && minutosDe(a.horaAlistarse) < minutosDe(a.horaDejarCelu) ? a.horaAlistarse : horaMenos(a.horaDejarCelu, minAlistarse),
+    celu: a.horaDejarCelu,
+    dormido: a.horaDormido,
+  }
+}

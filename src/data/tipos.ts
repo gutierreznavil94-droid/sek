@@ -164,6 +164,8 @@ export type Contador = {
   historialCuota?: CambioCuota[]
   /** No proponer subir la cuota antes de esta fecha. */
   proximaPropuesta?: FechaDia
+  /** Sin la propuesta de subir cada 3 días (se eligió en el primer arranque o en el contador). */
+  sinSubida?: boolean
   atributoIds: string[]
   orden: number
   activo: boolean
@@ -355,8 +357,16 @@ export type Ajustes = {
   adaptacion?: ConfigAdaptacion
   /** Fondo con lluvia dibujada en Hoy, Calendario, Juego y Sueño (todos encendidos si falta). */
   fondoLluvia?: { hoy?: boolean; calendario?: boolean; juego?: boolean; sueno?: boolean; comida?: boolean; entreno?: boolean; mas?: boolean }
-  /** Avisos de la app Android apagados uno por uno (tipos de alarma: 'celu', 'horario'…). */
+  /** Ya no se usa (v0.88.3): reemplazado por `avisos` (lo apagado acá pasa a «Nada»). */
   alarmasApagadas?: string[]
+  /** Avisos (Más → Alarmas): por tipo, si es Notificación, Alarma o Nada, y lo editado a mano. Si falta, los de entrada. */
+  avisos?: Record<string, ConfigAviso>
+  /** Avisos propios agregados con «+ Agregar aviso». */
+  avisosPropios?: AvisoPropio[]
+  /** Sonido de las alarmas: 'sek' (gong de la app), 'celu' (alarma del teléfono) o la dirección de un tono elegido. */
+  sonidoAlarma?: string
+  /** Nombre del tono elegido del celu (para mostrarlo). */
+  sonidoAlarmaNombre?: string
   /** Calendario: mostrar la franja fina de Mi horario arriba de cada día (gris). */
   calendarioHorario?: boolean
   /** Pájaro torpe: a veces uno de los pájaros del encabezado se choca con el borde (sí si falta). */
@@ -751,8 +761,8 @@ export type ConfigAgua = {
   principal: string
   /** Objetivo diario a mano, en ml. Sin esto se calcula del peso. */
   objetivoMl?: number
-  /** Cómo se ve en Hoy: chiquita dentro de la tarjeta de Comida (lo normal) o como tarjeta aparte. */
-  enHoy?: 'chica' | 'tarjeta'
+  /** Cómo se ve en Hoy: chiquita dentro de la tarjeta de Comida (lo normal), como tarjeta aparte, o no se usa. */
+  enHoy?: 'chica' | 'tarjeta' | 'no'
 }
 
 /** Recomendación de un usuario: se manda a un formulario de Google de Navil; si no hay internet, espera. */
@@ -768,7 +778,7 @@ export type Recomendacion = {
 }
 
 /** Fruta del día: dos objetivos, como las series (cuota y extra). */
-export type ConfigFruta = { nombre: string; objetivo1: number; objetivo2: number }
+export type ConfigFruta = { nombre: string; objetivo1: number; objetivo2: number; /** false = no se usa (no aparece en Hoy). */ usar?: boolean }
 
 /** Una fruta comida (un toque en la manzana de Hoy). */
 export type TomaFruta = { id: string; fecha: FechaDia; instante: number }
@@ -804,3 +814,26 @@ export type ConfigTension = { kanji?: string; frase?: string }
 /** Rival escurridizo: cómo aparece una distracción y cuánto XP roba si se lo ignora. */
 export type ConfigAdaptacion = { desde?: FechaDia; etapas?: { nombre: string; semanas: number; horasMin: number; horasMax: number; despertaresNormales: number }[]; toleranciaMinutos?: number }
 export type ConfigRival = { /** «escurridizo» (muñequito en Hoy, se lo atrapa) o «carta» (la carta directa). Escurridizo si falta. */ modo?: 'escurridizo' | 'carta'; /** XP que roba si se lo ignora (10 si falta, 0 a 30). */ xpRobo?: number }
+
+/** Cómo avisa un aviso: notificación normal, alarma real (pantalla completa, suena hasta apagarla) o nada. */
+export type ModoAviso = 'notificacion' | 'alarma' | 'nada'
+
+export type ConfigAviso = {
+  modo?: ModoAviso
+  /** Hora cambiada a mano («HH:MM»). Si falta, la de la app (se actualiza sola con Sueño o Mi horario). */
+  hora?: string
+  /** Juego: a qué porcentaje del tiempo diario avisa. */
+  porcentaje?: number
+  /** Vibrar (sí si falta). */
+  vibrar?: boolean
+}
+
+export type AvisoPropio = {
+  id: string
+  nombre: string
+  hora: string
+  /** Días de la semana (0 domingo). */
+  dias: number[]
+  modo: ModoAviso
+  vibrar?: boolean
+}
