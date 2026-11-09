@@ -24,7 +24,7 @@ import { graficoMetas, lineaDeMetas, metasPorDia } from '../../services/metas'
 import { ninjasVencidosSemana } from '../../services/ninjas'
 import { FilaMeta } from '../metas'
 import { VERSION_APP } from '../../version'
-import { rutaTema, simbolo, temaActivo } from '../../temas/temas'
+import { rutaTema, simbolo, temaActivo, urlTema } from '../../temas/temas'
 import { resumenComida, type ResumenComida } from '../../services/comidas'
 import { SeccionComida } from './Comida'
 import { VIDEOS, VIDRIO_EN_DESTELLO, intensidadDestello, type VideoFondo, elegirVideo, useModoFondo, usePantallaHorizontal, VIDEO_PC, video as datosVideo } from '../../fondos/elegir'
@@ -692,10 +692,12 @@ function vidrioClaro(): boolean {
  */
 function VideoDeFondo({ fondo, quieto, pausado }: { fondo: VideoFondo; quieto: boolean; pausado: boolean }) {
   const ref = useRef<HTMLVideoElement>(null)
-  const archivo = BASE + rutaTema(fondo.archivo)
-  const cuadro = BASE + rutaTema(fondo.cuadroFijo)
+  const archivo = urlTema(rutaTema(fondo.archivo))
+  const cuadro = urlTema(rutaTema(fondo.cuadroFijo))
+  // Tema subido: una imagen quieta en vez de video.
+  const soloImagen = !!temaActivo().fondo
   const [conMovimiento, setConMovimiento] = useState(false)
-  const fijo = quieto && !conMovimiento
+  const fijo = (quieto && !conMovimiento) || soloImagen
   const [frenado, setFrenado] = useState(false)
   // El video se carga entero y se reproduce desde la memoria del teléfono: así anda
   // aunque el servidor no entregue el video por partes (Safari lo exige) y sin conexión.
@@ -758,7 +760,8 @@ function VideoDeFondo({ fondo, quieto, pausado }: { fondo: VideoFondo; quieto: b
   }, [fondo, fijo])
   // Guardar los otros videos enteros para usarlos sin conexión (una sola vez, sin apuro).
   useEffect(() => {
-    const t = setTimeout(() => { for (const v of [...VIDEOS, VIDEO_PC]) guardarVideo(BASE + rutaTema(v.archivo)).catch(() => {}) }, 6000)
+    const t = setTimeout(() => { if (temaActivo().fondo) return
+      for (const v of [...VIDEOS, VIDEO_PC]) guardarVideo(BASE + rutaTema(v.archivo)).catch(() => {}) }, 6000)
     return () => clearTimeout(t)
   }, [])
   const mover = () => {
@@ -773,7 +776,7 @@ function VideoDeFondo({ fondo, quieto, pausado }: { fondo: VideoFondo; quieto: b
       ) : (
         <video ref={ref} className="av-video" src={src ?? undefined} poster={cuadro} onError={() => { if (src === archivo) cargarVideo(archivo).then(setSrc).catch(() => {}) }} autoPlay muted loop playsInline preload="auto" disablePictureInPicture />
       )}
-      {(fijo || frenado) && createPortal(
+      {(fijo || frenado) && !soloImagen && createPortal(
         <button className="av-play" onClick={mover} aria-label="Ver el video en movimiento">▶</button>,
         document.body,
       )}

@@ -9,7 +9,8 @@ import {
 import { AVISOS, configAviso } from '../../services/avisos'
 import { programarAlarmas } from '../../services/alarmas'
 import { recordatorios } from '../../reminders/recordatorios'
-import { TEMAS, TEMAS_PROXIMOS, aplicarTema, saludoDe, temaPorId, type DefinicionTema } from '../../temas/temas'
+import { TEMAS_PROXIMOS, aplicarTema, saludoDe, temaPorId, urlTema, useTemasElegibles, type DefinicionTema } from '../../temas/temas'
+import { EXTENSION_TEMA, borrarTemaPropio, importarTema } from '../../temas/propios'
 import { Cargando, DiasSemana, movimientoReducido } from '../componentes'
 import { Divisor } from '../Divisor'
 import { FondoLluvia } from '../FondoLluvia'
@@ -313,28 +314,61 @@ function FilaHora({ id, etiqueta, ayuda, valor, onChange }: { id: string; etique
   )
 }
 
-/** Tarjetas de temas: los listos con vista previa animada y los «Próximamente» apagados. */
+/** Tarjetas de temas: los listos con vista previa animada, los subidos por la persona, «Importar tema» y los «Próximamente» apagados. */
 export function ListaTemas({ valor, onElegir }: { valor: string; onElegir: (id: string) => void }) {
   const quieto = movimientoReducido()
+  const temas = useTemasElegibles()
+  const [subiendo, setSubiendo] = useState(false)
+  const subir = async (archivo: File | undefined) => {
+    if (!archivo) return
+    setSubiendo(true)
+    try {
+      const id = await importarTema(await archivo.text())
+      onElegir(id)
+      avisar('Tema subido. Queda guardado solo en este celu.', { tipo: 'ok' })
+    } catch (e) {
+      avisar(e instanceof Error && e.message ? e.message : 'No se pudo leer ese archivo.')
+    } finally {
+      setSubiendo(false)
+    }
+  }
+  const borrar = async (t: DefinicionTema) => {
+    if (!confirm(`¿Borrar el tema «${t.nombre}» de este celu? Tus datos no se tocan.`)) return
+    await borrarTemaPropio(t.id)
+    if (valor === t.id) onElegir('shinobi')
+    avisar('Tema borrado', { tipo: 'ok' })
+  }
   return (
     <div className="pv-temas">
-      {TEMAS.map((t: DefinicionTema) => (
-        <button key={t.id} className={`pv-tema ${valor === t.id ? 'elegido' : ''}`} aria-pressed={valor === t.id} onClick={() => onElegir(t.id)} style={{ ['--tema-acento' as string]: t.acento }}>
-          <span className="pv-tema-vista">
-            {t.vistaPrevia.video && !quieto ? (
-              <video src={BASE + t.vistaPrevia.video} poster={BASE + t.vistaPrevia.imagen} autoPlay muted loop playsInline preload="metadata" />
-            ) : (
-              <img src={BASE + t.vistaPrevia.imagen} alt="" />
-            )}
-            <span className="pv-tema-sprite" style={{ backgroundImage: `url(${BASE + t.sprite})` }} aria-hidden />
-          </span>
-          <span className="pv-tema-texto">
-            <b>{t.nombre}</b>
-            <span className="chico texto-2">{t.descripcion}</span>
-          </span>
-          {valor === t.id && <span className="pv-tema-sello" aria-hidden>印</span>}
-        </button>
+      {temas.map((t: DefinicionTema) => (
+        <div key={t.id} className="pv-tema-lugar">
+          <button className={`pv-tema ${valor === t.id ? 'elegido' : ''}`} aria-pressed={valor === t.id} onClick={() => onElegir(t.id)} style={{ ['--tema-acento' as string]: t.acento }}>
+            <span className="pv-tema-vista">
+              {t.vistaPrevia.video && !quieto ? (
+                <video src={urlTema(t.vistaPrevia.video)} poster={urlTema(t.vistaPrevia.imagen)} autoPlay muted loop playsInline preload="metadata" />
+              ) : (
+                <img src={urlTema(t.vistaPrevia.imagen)} alt="" />
+              )}
+              {t.sprite && <span className="pv-tema-sprite" style={{ backgroundImage: `url(${urlTema(t.sprite)})` }} aria-hidden />}
+              {t.propio && t.adornos?.imagenAnimaciones && <img className="pv-tema-personaje" src={t.adornos.imagenAnimaciones} alt="" />}
+            </span>
+            <span className="pv-tema-texto">
+              <b>{t.nombre}</b>
+              <span className="chico texto-2">{t.descripcion}</span>
+            </span>
+            {valor === t.id && <span className="pv-tema-sello" aria-hidden>印</span>}
+          </button>
+          {t.propio && <button className="pv-tema-borrar" onClick={() => borrar(t)} aria-label={`Borrar el tema ${t.nombre}`}>✕</button>}
+        </div>
       ))}
+      <label className={`pv-tema pv-tema-importar ${subiendo ? 'subiendo' : ''}`}>
+        <input type="file" accept={`${EXTENSION_TEMA},.json,application/json`} hidden disabled={subiendo} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; void subir(f) }} />
+        <span className="pv-tema-vista"><span className="pv-tema-pronto">{subiendo ? '…' : '＋'}</span></span>
+        <span className="pv-tema-texto">
+          <b>Importar tema</b>
+          <span className="chico texto-2">¿Tenés un archivo de tema ({EXTENSION_TEMA})? Subilo y queda guardado solo en este celu.</span>
+        </span>
+      </label>
       {TEMAS_PROXIMOS.map((t) => (
         <div key={t.id} className="pv-tema apagado" aria-disabled>
           <span className="pv-tema-vista"><span className="pv-tema-pronto">?</span></span>
@@ -558,8 +592,10 @@ function Resumen({ c, deNuevo, tema }: { c: ConfigPrimeraVez; deNuevo: boolean; 
           {tema.id === 'shinobi' ? (
             <div className="pv-escena" aria-hidden>
               <FondoLluvia variante="hoy" enCaja />
-              <ShinobiRespira hoja={BASE + tema.sprite} quieto={movimientoReducido()} className="pv-escena-shinobi" />
+              <ShinobiRespira hoja={urlTema(tema.sprite)} quieto={movimientoReducido()} className="pv-escena-shinobi" />
             </div>
+          ) : tema.propio ? (
+            tema.adornos?.imagenAnimaciones ? <div className="pv-personaje"><img className="pv-personaje-propio" src={tema.adornos.imagenAnimaciones} alt="" /></div> : null
           ) : (
             <div className="sh-reposo-marco pv-personaje">
               <Suspense fallback={<div className="pv-personaje-vacio" />}>

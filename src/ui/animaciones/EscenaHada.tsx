@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { movimientoReducido } from '../componentes'
-import { temaActivo } from '../../temas/temas'
+import { temaActivo, urlTema } from '../../temas/temas'
 import { duracionDe, nombreDePilar, type EnCurso } from './motor'
 
 /**
@@ -9,7 +9,6 @@ import { duracionDe, nombreDePilar, type EnCurso } from './motor'
  * rosa → lila; un toque la salta. Con «reducir movimiento» se ve la imagen final, quieta.
  */
 
-const BASE = import.meta.env.BASE_URL
 
 /** Posiciones fijas (no al azar) para que cada vez se vea igual de prolijo. */
 const lluvia = (n: number) => Array.from({ length: n }, (_, i) => ({ x: (i * 37 + 11) % 100, d: (i * 53) % 600, t: 0.8 + ((i * 29) % 50) / 100 }))
@@ -17,7 +16,7 @@ const lluvia = (n: number) => Array.from({ length: n }, (_, i) => ({ x: (i * 37 
 function Personaje({ className = '' }: { className?: string }) {
   const img = temaActivo().adornos?.imagenAnimaciones
   if (!img) return <span className={`hd-kitty hd-kitty-emoji ${className}`}>🧚</span>
-  return <img className={`hd-kitty ${className}`} src={BASE + img} alt="" draggable={false} />
+  return <img className={`hd-kitty ${className}`} src={urlTema(img)} alt="" draggable={false} />
 }
 
 function Lluvia({ n, simbolos }: { n: number; simbolos: string[] }) {

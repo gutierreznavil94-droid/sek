@@ -50,6 +50,16 @@ export interface DefinicionTema {
   vidrio?: 'oscuro' | 'claro'
   /** Adornos del tema. Lo que falte queda como en Shinobi. */
   adornos?: AdornosTema
+  /** Tema subido por la persona (archivo .sektema, guardado solo en su celu). Ver propios.ts. */
+  propio?: boolean
+  /** Tema subido: fondo claro (pantalla clara, texto oscuro) u oscuro. */
+  claro?: boolean
+  /** Tema subido: una imagen de fondo (data:) que reemplaza a los videos de lluvia, rayos y pc. */
+  fondo?: string
+  /** Tema subido: imágenes del widget (4) y de la alarma, y el título del widget. Las usa el APK. */
+  widget?: { fondos?: string[]; alarma?: string; titulo?: string; estiloTitulo?: string }
+  /** Tema subido: cómo imaginó las escenas de Tensión y No cumplí (por ahora solo se guarda). */
+  ideasEscenas?: { tension?: string; noCumpli?: string }
 }
 
 export interface AdornosTema {
@@ -113,9 +123,57 @@ const base: DefinicionTema = BASE ?? TODOS_LOS_TEMAS[0]
 /** Acento de estilos.css: si el tema usa este, no se pisa nada. */
 const ACENTO_BASE = '#c8102e'
 
-export function temaPorId(id: string | undefined): DefinicionTema {
-  return TODOS_LOS_TEMAS.find((t) => t.id === id) ?? TODOS_LOS_TEMAS.find((t) => t.id === TEMA_POR_DEFECTO) ?? TODOS_LOS_TEMAS[0]
+/** Temas subidos por la persona (se cargan al abrir la app, ver propios.ts). */
+let propios: DefinicionTema[] = []
+let versionPropios = 0
+const oyentesPropios = new Set<() => void>()
+
+/** El tema base (Shinobi): de acá salen los valores que un tema subido no trae. */
+export function temaBase(): DefinicionTema {
+  return base
 }
+
+export function temasPropios(): DefinicionTema[] {
+  return propios
+}
+
+/** Reemplaza la lista de temas subidos (la llama propios.ts). */
+export function fijarTemasPropios(lista: DefinicionTema[]): void {
+  propios = lista
+  versionPropios++
+  for (const o of oyentesPropios) o()
+}
+
+/** Los temas para elegir: los que vienen con la app y, después, los subidos. */
+export function useTemasElegibles(): DefinicionTema[] {
+  useSyncExternalStore((o) => { oyentesPropios.add(o); return () => oyentesPropios.delete(o) }, () => versionPropios, () => versionPropios)
+  return [...TEMAS, ...propios]
+}
+
+export function temaPorId(id: string | undefined): DefinicionTema {
+  return TODOS_LOS_TEMAS.find((t) => t.id === id) ?? propios.find((t) => t.id === id) ?? TODOS_LOS_TEMAS.find((t) => t.id === TEMA_POR_DEFECTO) ?? TODOS_LOS_TEMAS[0]
+}
+
+/**
+ * Dirección de un archivo del tema: las imágenes de un tema subido ya vienen completas (data:),
+ * las de los temas de la app están en `public/` y llevan la base de la página delante.
+ */
+export function urlTema(ruta: string): string {
+  return /^(data:|blob:|https?:)/.test(ruta) ? ruta : `${import.meta.env.BASE_URL}${ruta}`
+}
+
+/** Colores de un tema subido → variables de estilos.css. */
+const VARIABLES_DE_COLOR: Record<string, string[]> = {
+  'color-fondo': ['--fondo'],
+  'color-tarjeta': ['--fondo-2', '--papel'],
+  'color-tarjeta-2': ['--fondo-3', '--papel-2'],
+  'color-borde': ['--borde', '--borde-papel'],
+  'color-texto': ['--texto', '--tinta'],
+  'color-texto-2': ['--texto-2'],
+  'color-texto-3': ['--texto-3'],
+  'color-hecho': ['--ok'],
+}
+const VARIABLES_PROPIAS = [...Object.values(VARIABLES_DE_COLOR).flat(), '--ok-suave', '--tp-cab-desde', '--tp-cab-hasta', '--tp-aviso', '--tp-con-alguien']
 
 let activo: DefinicionTema = temaPorId(TEMA_POR_DEFECTO)
 const oyentes = new Set<() => void>()
@@ -126,7 +184,7 @@ export function temaActivo(): DefinicionTema {
 
 /** Ruta completa de la carpeta de escenas del tema activo, o null si el tema no trae escenas (SEK usa su versión simple). */
 export function carpetaEscenas(): string | null {
-  return activo.escenas ? `${import.meta.env.BASE_URL}${activo.escenas}` : null
+  return activo.escenas && !activo.propio ? `${import.meta.env.BASE_URL}${activo.escenas}` : null
 }
 
 function rgb(hex: string): string | null {
@@ -148,6 +206,18 @@ export function aplicarTema(id: string | undefined, nombreApp?: string): Definic
     } else {
       for (const p of ['--acento', '--acento-rgb', '--acento-suave']) raiz.style.removeProperty(p)
     }
+    for (const p of VARIABLES_PROPIAS) raiz.style.removeProperty(p)
+    if (activo.propio) {
+      const col = activo.colores ?? {}
+      for (const [nombre, vars] of Object.entries(VARIABLES_DE_COLOR)) if (col[nombre]) for (const v of vars) raiz.style.setProperty(v, col[nombre])
+      const hecho = col['color-hecho'] && rgb(col['color-hecho'])
+      if (hecho) raiz.style.setProperty('--ok-suave', `rgba(${hecho}, 0.14)`)
+      raiz.style.setProperty('--tp-cab-desde', col['color-tarjeta'] ?? activo.acento)
+      raiz.style.setProperty('--tp-cab-hasta', col['color-tarjeta-2'] ?? col['color-tarjeta'] ?? activo.acento)
+      if (col['color-aviso']) raiz.style.setProperty('--tp-aviso', col['color-aviso'])
+      if (col['color-con-alguien']) raiz.style.setProperty('--tp-con-alguien', col['color-con-alguien'])
+      raiz.dataset.temaPropio = activo.claro ? 'claro' : 'oscuro'
+    } else delete raiz.dataset.temaPropio
     if (activo.kanjis) delete raiz.dataset.kanjis
     else raiz.dataset.kanjis = 'no'
     raiz.dataset.tema = activo.id
@@ -170,6 +240,7 @@ export function adorno<K extends 'aves' | 'cumplir' | 'animaciones'>(clave: K, t
 
 /** Ruta de un archivo de fondo según el tema activo («fondos/lluvia.mp4» → «<carpetaFondos>lluvia.mp4»). */
 export function rutaTema(archivo: string, tema: DefinicionTema = activo): string {
+  if (tema.fondo && archivo.startsWith('fondos/')) return tema.fondo
   return archivo.startsWith('fondos/') ? tema.carpetaFondos + archivo.slice('fondos/'.length) : archivo
 }
 

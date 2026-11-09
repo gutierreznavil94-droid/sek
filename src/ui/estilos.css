@@ -1665,6 +1665,14 @@ body:has(.progreso-tinta:not([data-vidrio="claro"])) .av-fondo::before { content
 .pv-tema-sello { position: absolute; top: 8px; right: 8px; font-family: 'Pincel', serif; font-size: 20px; color: #fff; background: var(--tema-acento, var(--acento)); width: 32px; height: 32px; border-radius: 6px 9px 7px 10px; display: grid; place-items: center; transform: rotate(-6deg); }
 .pv-tema.apagado { opacity: 0.45; cursor: default; filter: grayscale(1); }
 .pv-tema-pronto { position: absolute; inset: 0; display: grid; place-items: center; font-size: 46px; font-weight: 900; color: var(--texto-3); background: repeating-linear-gradient(135deg, #191716 0 10px, #1d1b19 10px 20px); }
+.pv-tema-lugar { position: relative; display: flex; }
+.pv-tema-lugar > .pv-tema { flex: 1; width: 100%; }
+.pv-tema-borrar { position: absolute; top: 8px; left: 8px; width: 30px; height: 30px; border-radius: 50%; border: 0; background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 14px; cursor: pointer; }
+.pv-tema-importar { border-style: dashed; }
+.pv-tema-importar .pv-tema-pronto { color: var(--acento); }
+.pv-tema-importar.subiendo { opacity: 0.6; cursor: wait; }
+.pv-tema-personaje { position: absolute; left: 50%; bottom: 6%; width: 46% !important; height: auto !important; transform: translateX(-50%); object-fit: contain !important; }
+.pv-personaje-propio { display: block; width: 140px; max-width: 45vw; margin: 0 auto; }
 
 /* Pilares */
 .pv-pilares { display: flex; flex-direction: column; gap: 8px; }

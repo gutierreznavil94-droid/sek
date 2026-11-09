@@ -14,7 +14,7 @@ import { prepararBatalla } from '../services/batalla'
 import { compromisosDelDia } from '../services/dia'
 import { TIEMPO_ADVERTENCIA_MS, TIEMPO_IGNORADO_MS, guardarRivalPendiente, limpiarRivalPendiente, peleaPendiente, robarXp, rivalPendiente, sortearEscapes } from '../services/rival'
 import { ahora } from '../services/reloj'
-import { carpetaEscenas, temaActivo } from '../temas/temas'
+import { carpetaEscenas, temaActivo, urlTema } from '../temas/temas'
 import { emitirEvento } from '../temas/eventos'
 import { HOJA_RIVAL, Pregunta, SpriteClip, useHoja } from '../temas/shinobi/Escenas'
 import { Enemigo } from './animaciones/Escena'
@@ -72,7 +72,7 @@ const MARGEN = 10
 const ANCHO_RIVAL = 40
 const ALTO_RIVAL = 42
 
-const hoja = () => `${import.meta.env.BASE_URL}${temaActivo().sprite}`
+const hoja = () => urlTema(temaActivo().sprite)
 
 /** Capa fija del rival. Vive en App; el muñeco solo se ve en Hoy, la advertencia y el robo en cualquier pantalla. */
 export function RivalCapa() {

@@ -11,7 +11,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { obtenerAjustes } from '../services/base'
 import { datosConsejo, elegirConsejo, estadoCompanero, fraseSuelta, frasesCompanero, guardarEstadoCompanero, registrarApertura, type Consejo } from '../services/companero'
 import { anotarVista, cambioVisibilidad } from '../services/ninjas'
-import { temaActivo } from '../temas/temas'
+import { temaActivo, urlTema } from '../temas/temas'
 import { useAnimacionActual } from './animaciones/motor'
 import { useRivalActivo } from './Rival'
 import { alEvento, type EventoTema } from '../temas/eventos'
@@ -19,7 +19,7 @@ import { HOJA_BASE, apoyoEn, arcoSalto, caida, clipPara, duracionDe, elegirMovim
 import { movimientoReducido } from './componentes'
 import { useDatos, useTic, useVersion } from './estado'
 
-const hoja = () => `${import.meta.env.BASE_URL}${temaActivo().sprite}`
+const hoja = () => urlTema(temaActivo().sprite)
 const hojaJson = () => hoja().replace(/\.webp$/, '.json')
 const MARGEN = 10
 /** Cuánto dura el globo si no lo tocan. */
@@ -368,6 +368,8 @@ export function Companero({ hoy }: { hoy: string }) {
 
   // Dormido: no flota encima de nada. En Hoy la cama va abajo de todo, dentro de la página (ver CamaDelCompanero).
   if (dormido) return null
+  // Tema subido sin hoja de sprites: no hay compañero que camine.
+  if (!temaActivo().sprite) return null
   if (!visible) return null
   const [cw, ch] = hojaDatos.celda
   const estilo = { backgroundImage: `url(${hoja()})`, backgroundSize: `${hojaDatos.columnas * cw}px ${hojaDatos.filas * ch}px`, width: cw, height: ch }

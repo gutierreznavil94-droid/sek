@@ -965,7 +965,7 @@ function SemanaMetas({ hoy }: { hoy: string }) {
   return (
     <section className="semana-metas simple" aria-label="Metas de la semana">
       <div className="fila entre">
-        <span className="seccion-titulo semana-titulo-simple"><span className="semana-kanji" aria-hidden>的</span>Metas{deHoy.length === 0 && !proxima && <span className="semana-sin">sin metas esta semana</span>}</span>
+        <span className="seccion-titulo semana-titulo-simple"><span className="semana-kanji" aria-hidden>{simbolo('的')}</span>Metas{deHoy.length === 0 && !proxima && <span className="semana-sin">sin metas esta semana</span>}</span>
         <button type="button" className="enlace semana-mas" onClick={() => abrir(hoy)} aria-label="Sumar meta">+ meta</button>
       </div>
       <div className="semana-fila">

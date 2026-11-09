@@ -48,6 +48,8 @@ import { Comida, MasComida } from './paginas/Comida'
 import { TemaYNombres } from './paginas/TemaYNombres'
 import { necesitaPrimeraVez } from '../services/primeraVez'
 import { aplicarTema } from '../temas/temas'
+import { cargarTemasPropios } from '../temas/propios'
+import '../temas/propio.css'
 import { Juego } from './paginas/Juego'
 import { Mas } from './paginas/Mas'
 import { Metas } from './paginas/Metas'
@@ -73,7 +75,7 @@ export function App() {
       try {
         await limpiarRestosDePrueba()
         await inicializarSiHaceFalta()
-        { const a = await obtenerAjustes(); aplicarTema(a.tema, a.nombreApp) }
+        { await cargarTemasPropios(); const a = await obtenerAjustes(); aplicarTema(a.tema, a.nombreApp) }
         if (enModoPrueba() && !(await cicloActivo())) {
           // Prueba: el Día 1 es hoy, con la configuración real copiada.
           const a = await obtenerAjustes()

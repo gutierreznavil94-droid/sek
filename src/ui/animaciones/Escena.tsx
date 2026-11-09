@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { temaActivo } from '../../temas/temas'
+import { rutaTema, temaActivo, urlTema } from '../../temas/temas'
 import { movimientoReducido } from '../componentes'
 import { KANJI, duracionDe, elegirCorte, nombreDePilar, useAnimacionActual, type EnCurso, type EstiloCorte } from './motor'
 import { Munieco, Sombrero, poseEn, puntoBoca, puntoMano, puntosKatana, useSecuenciaDOM, type Clave } from './munieco'
@@ -736,7 +736,7 @@ function Logro({ clase, dur, enemigo }: { clase: 'nivel' | 'racha' | 'fase' | 'r
 
 /** Fondo épico: carbón con el cielo de lluvia de Progreso desenfocado y oscurecido, y lluvia fina. Sin paso por blanco. */
 export function FondoEpico() {
-  const img = `${import.meta.env.BASE_URL}${temaActivo().carpetaFondos}lluvia.jpg`
+  const img = urlTema(rutaTema('fondos/lluvia.jpg'))
   return (
     <div className="sh-epico" aria-hidden>
       <div className="sh-epico-cielo" style={{ backgroundImage: `url(${img})` }} />

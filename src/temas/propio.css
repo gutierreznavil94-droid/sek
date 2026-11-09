@@ -1,0 +1,81 @@
+/*
+ * Temas subidos por la persona (archivo .sektema, ver propios.ts). No traen CSS propio: los colores
+ * llegan como variables (aplicarTema las pone en :root) y estas reglas acomodan lo que en Shinobi
+ * está pensado para fondo oscuro. Solo valen con un tema subido activo (data-tema-propio).
+ */
+:root[data-tema-propio] {
+  --tp-fuerte: color-mix(in srgb, var(--acento) 72%, #000);
+  --rojo-apagado: var(--texto-3);
+}
+
+/* Botón principal: letra del color del texto, así se lee aunque el principal sea clarito. */
+:root[data-tema-propio="claro"] .boton.primario,
+:root[data-tema-propio="claro"] button.boton.primario { color: var(--texto); }
+
+/* ===== Fondo claro ===== */
+:root[data-tema-propio="claro"] { color-scheme: light; --papel-rgb: 63, 35, 60; }
+
+/* Cabecera: degradé de los dos tonos de tarjeta, texto oscuro, sin pincelada negra. */
+:root[data-tema-propio="claro"] .app .cabecera {
+  background: linear-gradient(180deg, var(--tp-cab-desde) 0%, var(--tp-cab-hasta) 100%);
+  color: var(--texto);
+  border-bottom: 0;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  text-shadow: none;
+}
+:root[data-tema-propio="claro"] .app .cabecera .dia { color: var(--texto); }
+:root[data-tema-propio="claro"] .app .cabecera .fecha,
+:root[data-tema-propio="claro"] .app .cabecera .fecha .texto-3,
+:root[data-tema-propio="claro"] .app .cabecera .fecha a,
+:root[data-tema-propio="claro"] .app .cabecera .fase { color: var(--texto-2); }
+:root[data-tema-propio="claro"] .app .cabecera .divisor-cabecera { display: none; }
+:root[data-tema-propio="claro"] .app .barra-fases .tramo,
+:root[data-tema-propio="claro"] .app .barra-fases .tramo.final { background: rgba(255, 255, 255, 0.55); }
+:root[data-tema-propio="claro"] .app .barra-fases .tramo .lleno,
+:root[data-tema-propio="claro"] .app .barra-fases .tramo.final .lleno { background: var(--borde); }
+:root[data-tema-propio="claro"] .app .barra-fases .tramo.actual { background: rgba(255, 255, 255, 0.75); box-shadow: inset 0 0 0 1.5px var(--tp-fuerte); }
+:root[data-tema-propio="claro"] .app .barra-fases .tramo.actual .lleno { background: var(--acento); }
+:root[data-tema-propio="claro"] .app .barra-fases .etq,
+:root[data-tema-propio="claro"] .app .barra-fases .tramo.final .etq,
+:root[data-tema-propio="claro"] .app .barra-fases .tramo.actual .etq { color: var(--texto); }
+
+/* Barra de abajo clara, con el ícono activo en el color del tema. */
+:root[data-tema-propio="claro"] .app .nav,
+:root[data-tema-propio="claro"] .app:has(.progreso-tinta) .nav { background: var(--fondo-2); border-top: 1px solid var(--borde); -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root[data-tema-propio="claro"] .app .nav a,
+:root[data-tema-propio="claro"] .app:has(.progreso-tinta) .nav a { color: var(--texto-3); }
+:root[data-tema-propio="claro"] .app .nav a.activo,
+:root[data-tema-propio="claro"] .app:has(.progreso-tinta) .nav a.activo { color: var(--tp-fuerte); }
+
+/* Hojas que suben y la «nubecita» de no cumplido. */
+:root[data-tema-propio="claro"] .app:has(.progreso-tinta) .hoja { background: rgba(255, 255, 255, 0.92); }
+:root[data-tema-propio="claro"] .pilar-tarjeta.omitido .estado-ic { color: var(--texto-3); border-color: var(--borde); }
+
+/* Progreso: vidrio claro, texto oscuro, halo blanco. */
+:root[data-tema-propio="claro"] .progreso-tinta[data-vidrio="claro"] { --av-crema: var(--texto); color: var(--texto); --halo-texto: none; }
+:root[data-tema-propio="claro"] .progreso-tinta[data-vidrio="claro"] .av-tarjeta,
+:root[data-tema-propio="claro"] .progreso-tinta[data-vidrio="claro"] .codigo-cabeza,
+:root[data-tema-propio="claro"] .progreso-tinta[data-vidrio="claro"] .codigo-regla { background: rgba(255, 255, 255, 0.78); border-color: var(--borde); box-shadow: 0 2px 14px rgba(0, 0, 0, 0.08); text-shadow: none; }
+:root[data-tema-propio="claro"] .progreso-tinta .boton,
+:root[data-tema-propio="claro"] .progreso-tinta button.boton { background: rgba(255, 255, 255, 0.7); border-color: var(--borde); }
+:root[data-tema-propio="claro"] .progreso-tinta .meta-rapida { background: rgba(255, 255, 255, 0.6); border-color: var(--borde); }
+:root[data-tema-propio="claro"] .progreso-tinta { text-shadow: 0 0 2px rgba(255, 255, 255, 0.95), 0 0 8px rgba(255, 255, 255, 0.8); }
+:root[data-tema-propio="claro"] .dia-mini { background: linear-gradient(to bottom, var(--tp-cab-desde) 0, var(--tp-cab-hasta) 60%, transparent); color: var(--texto); }
+:root[data-tema-propio="claro"] .av-fondo::after { background: linear-gradient(to bottom, transparent, var(--fondo)); }
+:root[data-tema-propio="claro"] .av-tapa-arriba { background: linear-gradient(to bottom, var(--fondo) 0, var(--fondo) 105px, transparent); }
+
+/* Trazos rojos de Mi código y del juramento, en el color del tema. */
+:root[data-tema-propio] .codigo-grupo-trazo path,
+:root[data-tema-propio] .jur-trazo path,
+:root[data-tema-propio] .codigo-vistas-trazo path,
+:root[data-tema-propio] .codigo-cabeza-trazo path,
+:root[data-tema-propio] .av-codigo-trazo path { stroke: var(--tp-fuerte); }
+
+/* Entreno: texto oscuro con halo claro. */
+:root[data-tema-propio="claro"] .contenido.entreno { text-shadow: 0 0 3px rgba(255, 255, 255, 0.95), 0 0 8px rgba(255, 255, 255, 0.7); }
+:root[data-tema-propio="claro"] .codigo-nueva { border-color: var(--tp-fuerte) !important; background: var(--fondo-2) !important; color: var(--texto); }
+
+/* Tarjetas vacías de la lista de temas (Importar, Próximamente) en tonos claros. */
+:root[data-tema-propio="claro"] .pv-tema-vista { background: var(--fondo-3); }
+:root[data-tema-propio="claro"] .pv-tema-pronto { background: repeating-linear-gradient(135deg, var(--fondo-2) 0 10px, var(--fondo-3) 10px 20px); }
