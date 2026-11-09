@@ -135,3 +135,38 @@
 /* «El progreso no es lineal»: una sola vez, sin la sombra roja corrida de Shinobi. */
 :root[data-tema-propio] .camino-frase { color: var(--tp-fuerte); text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8); }
 :root[data-tema-propio] .camino-titulo-k { color: inherit; text-shadow: none; }
+
+/* ===== Contorno y costura: que las tarjetas rosas no queden «solas» ===== */
+:root[data-tema-propio="claro"] {
+  --tp-linea: color-mix(in srgb, var(--acento) 62%, var(--tp-texto, #5a3b48));
+  --tp-costura: color-mix(in srgb, var(--acento) 55%, transparent);
+  --tp-sombra-pegatina: 0 3px 0 color-mix(in srgb, var(--acento) 45%, transparent), 0 8px 18px rgba(120, 60, 90, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+:root[data-tema-propio="claro"] .tarjeta,
+:root[data-tema-propio="claro"] .pilar-tarjeta,
+:root[data-tema-propio="claro"] .pilar-bloque,
+:root[data-tema-propio="claro"] .contador-boton,
+:root[data-tema-propio="claro"] .mas-sis,
+:root[data-tema-propio="claro"] .mas-buscar {
+  border: 2px solid var(--tp-linea) !important;
+  box-shadow: var(--tp-sombra-pegatina) !important;
+  outline: 1.5px dashed var(--tp-costura);
+  outline-offset: -6px;
+}
+/* Tarjetas dentro de tarjetas: solo la costura, sin otra sombra. */
+:root[data-tema-propio="claro"] .tarjeta .tarjeta { box-shadow: none !important; border-width: 1.5px !important; }
+:root[data-tema-propio="claro"] .boton {
+  border: 2px solid var(--tp-linea);
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--acento) 40%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+:root[data-tema-propio="claro"] .boton.primario { outline: 1.5px dashed var(--tp-costura); outline-offset: -5px; }
+:root[data-tema-propio="claro"] .boton.chico { border-width: 1.5px; }
+:root[data-tema-propio="claro"] .cal-dia:not(.vacio) { border: 1.5px solid color-mix(in srgb, var(--tp-linea) 70%, transparent) !important; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 2px 0 color-mix(in srgb, var(--acento) 25%, transparent); }
+:root[data-tema-propio="claro"] .cal-dia.hoy { border-color: var(--tp-linea) !important; outline: 1.5px dashed var(--tp-costura); outline-offset: -4px; }
+/* Un corazoncito/brillo en la esquina de las tarjetas grandes. */
+:root[data-tema-propio="claro"] .contenido > .tarjeta { position: relative; }
+:root[data-tema-propio="claro"] .contenido > .tarjeta::after {
+  content: '♡'; position: absolute; top: 4px; right: 9px; font-size: 0.8rem; line-height: 1;
+  color: var(--tp-linea); opacity: 0.7; pointer-events: none;
+}
+:root[data-tema-propio="claro"] .nav { border-top: 2px solid var(--tp-linea); }
