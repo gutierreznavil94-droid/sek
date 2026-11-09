@@ -19,7 +19,7 @@ import { diaSemanaDe, fechaDe, instanteDe, minutosDe, nocheDeSuenio, retrasoAcos
 import { minutosPorDia } from '../domain/juego'
 import { claveXp, type OrigenXp } from '../domain/xp'
 import { obtenerAjustes, registrarEvento } from './base'
-import { cicloActivo } from './ciclo'
+import { cicloActivo, primerDia } from './ciclo'
 import { limiteJuegoDelDia } from './feriados'
 import { ahora } from './reloj'
 import { cuotaDelDia } from '../domain/cuotas'
@@ -38,7 +38,7 @@ export async function generarCompromisosDelDia(fecha: FechaDia): Promise<Comprom
   const d = db()
   // Antes del Día 1 del ciclo no se registra nada.
   const ciclo = await cicloActivo()
-  if (!ciclo || fecha < ciclo.inicio) return []
+  if (!ciclo || fecha < primerDia(ciclo)) return []
   const ds = diaSemanaDe(fecha)
   const acciones = await d.acciones.filter((a) => a.activa).toArray()
   const nuevos: Compromiso[] = []
@@ -303,7 +303,7 @@ export async function registrarDejoCelu(instante = ahora(), nota?: string): Prom
   const ajustes = await obtenerAjustes()
   const noche = nocheDeSuenio(instante, ajustes.zonaHoraria, ajustes.horaCorteNoche)
   const ciclo = await cicloActivo()
-  if (!ciclo || noche < ciclo.inicio) throw new Error('El ciclo todavía no empezó: no se registra nada antes del Día 1')
+  if (!ciclo || noche < primerDia(ciclo)) throw new Error('El ciclo todavía no empezó: no se registra nada antes del Día 1')
   const accion = await d.acciones.get('acostarse')
   const id = idCompromiso('acostarse', noche)
   let compromiso = await d.compromisos.get(id)
@@ -441,7 +441,7 @@ export async function cerrarDiasPendientes(): Promise<FechaDia[]> {
   await asegurarInicioResta(hoy)
   const cerradas: FechaDia[] = []
   const ultimoCerrado = (await d.diasCerrados.orderBy('fecha').last())?.fecha
-  let f = ultimoCerrado ? sumarDias(ultimoCerrado, 1) : ciclo.inicio
+  let f = ultimoCerrado ? sumarDias(ultimoCerrado, 1) : primerDia(ciclo)
   let guardia = 0
   while (f < hoy && guardia++ < 1000) {
     if (ahora() < (await instanteDeCierre(f))) break
@@ -450,10 +450,8 @@ export async function cerrarDiasPendientes(): Promise<FechaDia[]> {
     f = sumarDias(f, 1)
   }
   // Asegura los compromisos de hoy y aplica el cierre de las 21:00 si ya pasó.
-  if (hoy >= ciclo.inicio) {
-    await generarCompromisosDelDia(hoy)
-    await cerrarVentanaNoche(hoy)
-  }
+  if (hoy >= primerDia(ciclo)) await generarCompromisosDelDia(hoy)
+  if (hoy >= ciclo.inicio) await cerrarVentanaNoche(hoy)
   return cerradas
 }
 
@@ -461,6 +459,14 @@ async function cerrarDia(fecha: FechaDia): Promise<DiaCerrado> {
   const d = db()
   const ajustes = await obtenerAjustes()
   await generarCompromisosDelDia(fecha)
+  // Día 0 (calentamiento): lo hecho queda; lo que no se hizo simplemente no contaba. Nada resta.
+  const ciclo = await cicloActivo()
+  if (ciclo && fecha < ciclo.inicio) {
+    await d.compromisos.where('fecha').equals(fecha).filter((c) => c.estado === 'pendiente' || c.estado === 'iniciado').delete()
+    const cerrado0 = await recalcularDiaCerrado(fecha, undefined, false)
+    await d.transaction('rw', [d.eventos], async () => { await registrarEvento({ tipo: 'cerrar_dia', entidad: 'dia', entidadId: fecha, despues: cerrado0, motivo: 'Día 0' }) })
+    return cerrado0
+  }
   const excepcion = await d.excepciones.get(fecha)
   // 1. Lo que quedó sin marcar pasa a "omitido".
   const pendientes = await d.compromisos.where('fecha').equals(fecha).filter((c) => c.estado === 'pendiente' || c.estado === 'iniciado').toArray()
@@ -561,7 +567,7 @@ export async function resumenDeCompromisos(desde: FechaDia, hasta: FechaDia): Pr
       const totales = new Map<FechaDia, number>()
       for (const r of await d.registrosContador.where('[contadorId+fecha]').between([c.id, desde], [c.id, hasta], true, true).toArray()) totales.set(r.fecha, (totales.get(r.fecha) ?? 0) + r.cantidad)
       const creadoEl = fechaDe(c.creado, ajustes.zonaHoraria)
-      for (let f = desde < ciclo.inicio ? ciclo.inicio : desde; f <= hasta && f <= hoy; f = sumarDias(f, 1)) {
+      for (let f = desde < primerDia(ciclo) ? primerDia(ciclo) : desde; f <= hasta && f <= hoy; f = sumarDias(f, 1)) {
         if (f < creadoEl) continue
         const total = totales.get(f) ?? 0
         const estado: EstadoCompromiso = total >= cuotaDelDia(c, f).cuota ? 'completado' : f === hoy ? 'pendiente' : 'omitido'
@@ -726,7 +732,7 @@ export async function pilaresPorDia(desde: FechaDia, hasta: FechaDia, hoy: Fecha
     for (const accion of acciones) {
       const c = porClave.get(idCompromiso(accion.id, f))
       let estado: EstadoPilar
-      if (f > hoy || !ciclo || f < ciclo.inicio) {
+      if (f > hoy || !ciclo || f < primerDia(ciclo)) {
         estado = accion.dias.includes(diaSemanaDe(f)) ? 'pendiente' : 'descanso'
       } else if (!c || c.estado === 'reprogramado') {
         // Sin compromiso ese día: no aplicaba (descanso, acción creada después, o día anterior al ciclo).

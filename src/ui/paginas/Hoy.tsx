@@ -475,7 +475,7 @@ export function Hoy({ hoy }: { hoy: string }) {
       {d.buenosDias && (
         <div className="buenos-dias" role="status">
           <div className="col" style={{ gap: 2 }}>
-            <b>Buenos días · Día {d.estado?.dia} de {d.estado?.ciclo.duracionDias}</b>
+            <b>Buenos días · {d.estado?.diaCero ? 'Día 0, calentamiento' : `Día ${d.estado?.dia} de ${d.estado?.ciclo.duracionDias}`}</b>
             {d.anoche && <span className="chico"><Link to="/sueno" className="texto-2">Dormiste {duracionSuenio(d.anoche.minutos)}{d.anoche.estimado ? ' aprox.' : ''} · celu {horaDeMinutos(d.anoche.acostado)} · arriba {horaDeMinutos(d.anoche.levantado)} ›</Link></span>}
             {d.veredictoAnoche && <span className={`chico sueno-veredicto-linea ${d.veredictoAnoche.tono}`}>{d.veredictoAnoche.texto}</span>}
             <span className="chico texto-2">{d.ajusteDeAyer ? `Tu ajuste para hoy: ${d.ajusteDeAyer}` : `Hoy, de nuevo, los ${d.pilares.pilares.length || 4} pilares.`}</span>

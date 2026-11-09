@@ -1,9 +1,9 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import type { ConfigAviso } from '../../data/tipos'
-import { fechaLegible } from '../../domain/fechas'
+import { fechaLegible, sumarDias } from '../../domain/fechas'
 import {
-  configDeEntrada, configurarDeNuevo, configurarPrimeraVez, MAX_PILARES, NIVELES_SERIE, numerosDeNivel, PILARES_DEL_CREADOR, serieNueva, SUGERENCIAS_PILARES,
+  configDeEntrada, XP_DIA_CERO, configurarDeNuevo, configurarPrimeraVez, MAX_PILARES, NIVELES_SERIE, numerosDeNivel, PILARES_DEL_CREADOR, serieNueva, SUGERENCIAS_PILARES,
   TEXTO_CREADOR, validarPrimeraVez, xpDePilar, type ClavePilar, type ConfigPrimeraVez, type EleccionPilar, type NivelSerie, type SerieElegida,
 } from '../../services/primeraVez'
 import { AVISOS, configAviso } from '../../services/avisos'
@@ -92,7 +92,7 @@ export function PrimeraVez({ hoy, deNuevo = false }: { hoy: string; deNuevo?: bo
 
   useEffect(() => {
     let vivo = true
-    configDeEntrada(hoy, deNuevo).then((x) => { if (vivo) { setInicial(x); setC(x) } })
+    configDeEntrada(hoy, deNuevo).then((x) => { if (vivo) { const y = deNuevo ? x : { ...x, diaCero: new Date().getHours() >= 12 }; setInicial(y); setC(y) } })
     return () => { vivo = false }
   }, [hoy, deNuevo])
 
@@ -135,7 +135,7 @@ export function PrimeraVez({ hoy, deNuevo = false }: { hoy: string; deNuevo?: bo
       } else {
         await mutar(() => configurarPrimeraVez(c))
         aplicarTema(c.tema, c.nombreApp)
-        avisar(`Día 1: ${fechaLegible(hoy)}. ¡Vamos, ${c.nombrePersona.trim()}!`, { tipo: 'ok' })
+        avisar(c.diaCero ? `Día 0: calentamiento. +${XP_DIA_CERO} XP de regalo. El Día 1 es mañana. ¡Vamos, ${c.nombrePersona.trim()}!` : `Día 1: ${fechaLegible(hoy)}. ¡Vamos, ${c.nombrePersona.trim()}!`, { tipo: 'ok' })
         navegar('/')
       }
     } catch (e) {
@@ -236,7 +236,7 @@ export function PrimeraVez({ hoy, deNuevo = false }: { hoy: string; deNuevo?: bo
 
         {id === 'avisos' && <PasoAvisos c={c} onChange={cambiar} />}
 
-        {esResumen && <Resumen c={c} deNuevo={deNuevo} tema={temaPorId(c.tema)} />}
+        {esResumen && <Resumen c={c} deNuevo={deNuevo} tema={temaPorId(c.tema)} onDiaCero={(v) => setC({ ...c, diaCero: v })} />}
 
         {(error || (bloqueo && id !== 'nombre')) && <p className="error chico">{error || bloqueo}</p>}
       </main>
@@ -247,7 +247,7 @@ export function PrimeraVez({ hoy, deNuevo = false }: { hoy: string; deNuevo?: bo
         {!esResumen ? (
           <button className="boton primario" onClick={() => ir(paso + 1)} disabled={!!bloqueo}>Siguiente</button>
         ) : (
-          <button className="boton primario" onClick={terminar} disabled={guardando}>{guardando ? 'Guardando…' : deNuevo ? 'Guardar cambios' : 'Empezar Día 1'}</button>
+          <button className="boton primario" onClick={terminar} disabled={guardando}>{guardando ? 'Guardando…' : deNuevo ? 'Guardar cambios' : c.diaCero ? 'Empezar con el Día 0' : 'Empezar Día 1'}</button>
         )}
       </footer>
     </div>
@@ -570,7 +570,7 @@ export function TarjetaCreador({ usados, onUsar, etiquetaBoton = 'Usar estos 4',
   )
 }
 
-function Resumen({ c, deNuevo, tema }: { c: ConfigPrimeraVez; deNuevo: boolean; tema: DefinicionTema }) {
+function Resumen({ c, deNuevo, tema, onDiaCero }: { c: ConfigPrimeraVez; deNuevo: boolean; tema: DefinicionTema; onDiaCero: (v: boolean) => void }) {
   const usadas = (c.series ?? []).filter((s) => s.usar)
   const modos = AVISOS.map((d) => configAviso({ avisos: c.avisos?.avisos as Record<string, ConfigAviso> | undefined }, d.tipo).modo)
   const propios = c.avisos?.avisosPropios ?? []
@@ -605,8 +605,20 @@ function Resumen({ c, deNuevo, tema }: { c: ConfigPrimeraVez; deNuevo: boolean; 
           <p className={`pv-globo${tema.id === 'shinobi' ? ' al-lado' : ''}`}><b>¡Hola, {c.nombrePersona.trim()}!</b> {saludoDe(tema, c.nombrePersona.trim())}</p>
         </div>
       )}
+      {!deNuevo && (
+        <div className="pv-dia-cero" role="radiogroup" aria-label="Cómo empezar">
+          <button type="button" role="radio" aria-checked={!!c.diaCero} className={`pv-dc-opcion ${c.diaCero ? 'elegido' : ''}`} onClick={() => onDiaCero(true)}>
+            <b>✨ Día 0: calentamiento</b>
+            <span className="chico texto-2">Ideal si empezás a la tarde. Hoy te preparás: lo que hagas suma XP (+{XP_DIA_CERO} de regalo) y nada resta. El Día 1 es mañana.</span>
+          </button>
+          <button type="button" role="radio" aria-checked={!c.diaCero} className={`pv-dc-opcion ${!c.diaCero ? 'elegido' : ''}`} onClick={() => onDiaCero(false)}>
+            <b>Día 1 hoy</b>
+            <span className="chico texto-2">Hoy ya cuenta como el primero de los 90.</span>
+          </button>
+        </div>
+      )}
       <div className="pv-resumen">
-        {!deNuevo && <div><span className="texto-3 chico">Tu ciclo</span><b>90 días desde hoy</b><span className="chico texto-2">Día 1: {fechaLegible(c.hoy)}</span></div>}
+        {!deNuevo && <div><span className="texto-3 chico">Tu ciclo</span><b>{c.diaCero ? 'Hoy Día 0 · 90 días desde mañana' : '90 días desde hoy'}</b><span className="chico texto-2">Día 1: {fechaLegible(c.diaCero ? sumarDias(c.hoy, 1) : c.hoy)}</span></div>}
         {filas.map(([t, v]) => <div key={t}><span className="texto-3 chico">{t}</span><b>{v}</b></div>)}
       </div>
       <p className="ayuda">{deNuevo ? 'Se guardan solo estos ajustes: no se borra nada.' : 'Todo se puede cambiar después desde Más (o en Más → Configurar de nuevo). Los datos viven solo en este teléfono: hacé una copia cada semana.'}</p>

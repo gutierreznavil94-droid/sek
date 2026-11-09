@@ -14,7 +14,8 @@ import { configFruta, FRUTA_DEFECTO } from './fruta'
 import { nuevoId } from './reloj'
 import { planPorId, rutinasDeEleccion, type EleccionEntreno } from '../data/planes'
 import { funcionesElegidas } from './funciones'
-import { esHoraValida, type FechaDia } from '../domain/fechas'
+import { esHoraValida, sumarDias, type FechaDia } from '../domain/fechas'
+import { concederXp } from './xp'
 import { temaPorId } from '../temas/temas'
 import { guardarAccion } from './acciones'
 import { guardarAjustes, guardarIdentidad, obtenerAjustes, registrarEvento } from './base'
@@ -127,6 +128,8 @@ export function serieNueva(nombre = ''): SerieElegida {
 
 export type ConfigPrimeraVez = {
   hoy: FechaDia
+  /** Hoy es el Día 0 (calentamiento) y el Día 1 es mañana. */
+  diaCero?: boolean
   nombrePersona: string
   nombreApp: string
   tema: string
@@ -340,6 +343,9 @@ async function aplicarAjustes(c: ConfigPrimeraVez, deNuevo: boolean): Promise<vo
   await guardarAjustes(cambios, deNuevo ? 'Configurar de nuevo' : 'Primera vez')
 }
 
+/** XP de regalo al empezar con el Día 0. */
+export const XP_DIA_CERO = 20
+
 /** Guarda todo lo elegido y arranca el ciclo de 90 días desde hoy. */
 export async function configurarPrimeraVez(c: ConfigPrimeraVez): Promise<void> {
   const errores = validarPrimeraVez(c)
@@ -368,7 +374,9 @@ export async function configurarPrimeraVez(c: ConfigPrimeraVez): Promise<void> {
   await d.codigo.clear()
   await guardarAjustes({ codigoSembrado: true, primeraVezHecha: true }, 'Primera vez: lista')
 
-  await iniciarCiclo(c.hoy, { duracionDias: 90 })
+  await iniciarCiclo(c.diaCero ? sumarDias(c.hoy, 1) : c.hoy, { duracionDias: 90, diaCero: !!c.diaCero })
+  // Día 0: arranca ganando. Un regalo de bienvenida por animarse.
+  if (c.diaCero) await concederXp({ clave: `dia0:${c.hoy}`, cantidad: XP_DIA_CERO, origen: 'dia0', fecha: c.hoy, descripcion: 'Día 0: empezaste tu cambio' })
   await cerrarDiasPendientes()
 }
 

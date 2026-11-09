@@ -2796,3 +2796,23 @@ ul.cal-leyenda li:first-child { grid-column: 1 / -1; }
 .rutinas-acciones > * { flex: 1; }
 .rutinas-ideas { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
 .pv-tema-archivo { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2; font-size: 0; }
+
+/* ===== Día 0: calentamiento, remarcado y brillante en el calendario ===== */
+.calendario .cal-dia.dia-cero {
+  opacity: 1; color: #4a3200; font-weight: 800;
+  background: radial-gradient(circle at 50% 35%, #FFF6C9 0%, #FFD86B 55%, #F2B53A 100%) !important;
+  border: 2px solid #E8A21C !important;
+  box-shadow: 0 0 10px 2px rgba(255, 200, 60, 0.75), 0 0 22px 4px rgba(255, 215, 90, 0.4) !important;
+  animation: dia-cero-brilla 2.4s ease-in-out infinite;
+}
+.calendario .cal-dia.dia-cero .num { color: #4a3200; }
+.calendario .cal-dia.dia-cero::after { content: '✨'; position: absolute; top: -7px; left: -5px; font-size: 0.8rem; pointer-events: none; }
+.cal-dia .cal-cero { position: absolute; bottom: 3px; left: 0; right: 0; text-align: center; font-size: 0.5rem; font-weight: 800; letter-spacing: 0.02em; color: #7a4f00; line-height: 1; }
+.calendario .cal-dia.dia-cero .cal-barra { display: none; }
+@keyframes dia-cero-brilla { 50% { box-shadow: 0 0 16px 5px rgba(255, 205, 70, 0.95), 0 0 30px 8px rgba(255, 225, 120, 0.5); } }
+@media (prefers-reduced-motion: reduce) { .calendario .cal-dia.dia-cero { animation: none; } }
+
+/* Primera vez: elegir cómo empezar */
+.pv-dia-cero { display: grid; gap: 8px; margin: 4px 0 10px; }
+.pv-dc-opcion { appearance: none; text-align: left; display: flex; flex-direction: column; gap: 3px; padding: 11px 13px; border-radius: 12px; border: 1.5px solid var(--borde); background: var(--fondo-2); color: var(--texto); font: inherit; cursor: pointer; }
+.pv-dc-opcion.elegido { border-color: var(--acento); box-shadow: 0 0 0 1px var(--acento), 0 0 14px rgba(255, 205, 70, 0.35); }

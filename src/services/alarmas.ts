@@ -9,7 +9,7 @@ import { db } from '../data/db'
 import { diaSemanaDe, fechaDe, instanteDe, minutosDe, sumarDias, type FechaDia } from '../domain/fechas'
 import { fijarSonidoAlarmas, recordatorios, type Recordatorio } from '../reminders/recordatorios'
 import { obtenerAjustes } from './base'
-import { cicloActivo } from './ciclo'
+import { cicloActivo, primerDia } from './ciclo'
 import { horaFinMargen } from './dia'
 import { fraseDormir, minutosAvisoDormir } from './dormir'
 import { bloquesDelDia } from './horario'
@@ -26,7 +26,7 @@ export const TIPOS_ALARMA = AVISOS.filter((x) => !x.tipo.startsWith('juego'))
 /** Las alarmas de una fecha según la configuración actual. Solo dentro del ciclo. */
 export async function alarmasDelDia(fecha: FechaDia): Promise<Alarma[]> {
   const ciclo = await cicloActivo()
-  if (!ciclo || fecha < ciclo.inicio || fecha > sumarDias(ciclo.inicio, ciclo.duracionDias - 1)) return []
+  if (!ciclo || fecha < primerDia(ciclo) || fecha > sumarDias(ciclo.inicio, ciclo.duracionDias - 1)) return []
   const a = await obtenerAjustes()
   const d = db()
   const lista: Alarma[] = []

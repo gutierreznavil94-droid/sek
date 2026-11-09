@@ -34,6 +34,8 @@ export type Ciclo = {
   id: string
   numero: number
   inicio: FechaDia
+  /** Día 0 (calentamiento): el día anterior al Día 1. Se registra y suma XP, pero nunca resta. */
+  diaCero?: FechaDia
   duracionDias: number
   diasPorFase: number
   estado: 'activo' | 'cerrado'

@@ -57,9 +57,9 @@ export function Layout({ hoy }: { hoy: string }) {
         <div className="cabecera-int">
           <div>
             <div className="dia">
-              {e ? (e.noEmpezado ? `Empieza en ${diasFaltan} día${diasFaltan === 1 ? '' : 's'}` : e.terminado ? `Ciclo terminado (día ${e.dia})` : `Día ${e.dia} de ${e.ciclo.duracionDias}`) : '…'}
+              {e ? (e.diaCero ? 'Día 0 ✨' : e.noEmpezado ? `Empieza en ${diasFaltan} día${diasFaltan === 1 ? '' : 's'}` : e.terminado ? `Ciclo terminado (día ${e.dia})` : `Día ${e.dia} de ${e.ciclo.duracionDias}`) : '…'}
             </div>
-            <div className="fecha">{fechaLegible(hoy)}{e?.noEmpezado && <span className="texto-3"> · Día 1: {fechaLegible(e.ciclo.inicio)}</span>}<Link to="/mas" className="texto-3 mono" style={{ fontSize: '0.75rem', marginLeft: 8 }}>v{VERSION_APP}</Link></div>
+            <div className="fecha">{fechaLegible(hoy)}{(e?.noEmpezado || e?.diaCero) && <span className="texto-3"> · Día 1: {fechaLegible(e.ciclo.inicio)}</span>}<Link to="/mas" className="texto-3 mono" style={{ fontSize: '0.75rem', marginLeft: 8 }}>v{VERSION_APP}</Link></div>
           </div>
           <div className="fase" style={{ textAlign: 'right' }}>
             {e && e.ciclo.numero > 1 && <div>Ciclo {e.ciclo.numero}</div>}
@@ -88,7 +88,7 @@ export function Layout({ hoy }: { hoy: string }) {
         {/* Franja de pincel: separa la cabecera de papel del contenido en tinta */}
         <Divisor className="divisor-cabecera" />
       </header>
-      <Desintegracion cabecera={cabRef} conHorario={pathname === '/'} texto={e ? (e.noEmpezado ? `Día 1 en ${diasFaltan} día${diasFaltan === 1 ? '' : 's'}` : e.terminado ? 'Ciclo terminado' : `Día ${e.dia}`) : ''} />
+      <Desintegracion cabecera={cabRef} conHorario={pathname === '/'} texto={e ? (e.diaCero ? 'Día 0' : e.noEmpezado ? `Día 1 en ${diasFaltan} día${diasFaltan === 1 ? '' : 's'}` : e.terminado ? 'Ciclo terminado' : `Día ${e.dia}`) : ''} />
       {lluvia.datos && varianteLluvia && <FondoLluvia variante={varianteLluvia} />}
       <main className="contenido">
         <Outlet />

@@ -93,25 +93,27 @@ export function Calendario({ hoy }: { hoy: string }) {
           {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((x) => <div key={x} className="cab">{x}</div>)}
           {Array.from({ length: huecos }).map((_, i) => <div key={`h${i}`} className="cal-dia vacio" />)}
           {dias.map((f) => {
+            const esDiaCero = !!ciclo?.diaCero && f === ciclo.diaCero
             const enCiclo = ciclo && f >= ciclo.inicio && fin && f <= fin
             const dia = ciclo ? diaDelCiclo(ciclo.inicio, f) : 0
-            const puntos = enCiclo ? d?.pilares.get(f) ?? [] : []
+            const puntos = enCiclo || esDiaCero ? d?.pilares.get(f) ?? [] : []
             const inicioFase = enCiclo && ciclo && (dia - 1) % ciclo.diasPorFase === 0
             const claves = d?.claves.get(f) ?? []
             return (
               <div
                 key={f}
-                className={`cal-dia ${!enCiclo ? 'fuera' : ''} ${f === hoy ? 'hoy tema-remarque-hoy' : ''} ${sel === f ? 'seleccionado' : ''} ${d?.excepciones.has(f) ? 'excepcion' : ''} ${d?.feriados.has(f) ? 'feriado' : ''} ${inicioFase ? 'fase-inicio' : ''} ${f <= hoy && puntos.length > 0 && puntos.every((p) => p.estado === 'cumplido' || p.estado === 'descanso') && puntos.some((p) => p.estado === 'cumplido') ? 'completo' : ''}`}
+                className={`cal-dia ${esDiaCero ? 'dia-cero' : !enCiclo ? 'fuera' : ''} ${f === hoy ? 'hoy tema-remarque-hoy' : ''} ${sel === f ? 'seleccionado' : ''} ${d?.excepciones.has(f) ? 'excepcion' : ''} ${d?.feriados.has(f) ? 'feriado' : ''} ${inicioFase ? 'fase-inicio' : ''} ${f <= hoy && puntos.length > 0 && puntos.every((p) => p.estado === 'cumplido' || p.estado === 'descanso') && puntos.some((p) => p.estado === 'cumplido') ? 'completo' : ''}`}
                 onClick={() => { if (fueLargo.current) { fueLargo.current = false; return } setSel(sel === f ? null : f); setEnfocar(sel !== f) }}
                 onPointerDown={() => { fueLargo.current = false; soltar(); largo.current = window.setTimeout(() => { fueLargo.current = true; largo.current = null; setMarcar(f) }, 550) }}
                 onPointerUp={soltar}
                 onPointerLeave={soltar}
                 onContextMenu={(e) => e.preventDefault()}
                 role="button"
-                aria-label={`${fechaLegible(f, false)}${enCiclo ? `, día ${dia}` : ''}${(d?.caidas.get(f) ?? 0) > 0 ? ', caída superada' : ''}${claves.length ? `, fecha clave: ${claves.map((c) => c.titulo).join(', ')}` : ''}`}
+                aria-label={`${fechaLegible(f, false)}${esDiaCero ? ', Día 0: calentamiento' : enCiclo ? `, día ${dia}` : ''}${(d?.caidas.get(f) ?? 0) > 0 ? ', caída superada' : ''}${claves.length ? `, fecha clave: ${claves.map((c) => c.titulo).join(', ')}` : ''}`}
               >
                 {/* Lugares fijos: número arriba a la izquierda, un solo ícono arriba a la derecha, la barrita de pilares abajo y el río de la forja debajo. */}
                 <span className="num">{Number(f.slice(8))}</span>
+                {esDiaCero && <span className="cal-cero" aria-hidden>Día 0</span>}
                 {(() => {
                   // Hasta 2 íconos, por prioridad: hoy → marcado → fecha clave → caída → feriado. Si hay más, «·» (se ven al tocar el día).
                   const iconos: { k: string; c: string }[] = []
@@ -185,7 +187,7 @@ function textoPilar(estado: string, c: { finReal?: number; retrasoMinutos?: numb
 }
 
 /** Debajo del calendario: los 4 puntos del día elegido, en el orden fijo, con color, ícono, nombre y detalle. */
-function PilaresDelDiaSel({ fecha, hoy, ciclo, enfocar, onMas }: { fecha: string; hoy: string; ciclo: { inicio: string; duracionDias: number; diasPorFase: number } | null; enfocar: boolean; onMas: () => void }) {
+function PilaresDelDiaSel({ fecha, hoy, ciclo, enfocar, onMas }: { fecha: string; hoy: string; ciclo: { inicio: string; diaCero?: string; duracionDias: number; diasPorFase: number } | null; enfocar: boolean; onMas: () => void }) {
   const datos = useDatos(async () => {
     const [pilares, compromisos, suenio, xp, cerrado, zona] = await Promise.all([
       pilaresPorDia(fecha, fecha, hoy),
@@ -202,14 +204,15 @@ function PilaresDelDiaSel({ fecha, hoy, ciclo, enfocar, onMas }: { fecha: string
   }, [fecha, hoy])
   const d = datos.datos
   const dia = ciclo ? diaDelCiclo(ciclo.inicio, fecha) : 0
-  const enCiclo = ciclo && dia >= 1 && dia <= ciclo.duracionDias
+  const esDiaCero = !!ciclo?.diaCero && fecha === ciclo.diaCero
+  const enCiclo = ciclo && ((dia >= 1 && dia <= ciclo.duracionDias) || esDiaCero)
   const corregible = fecha < hoy && Date.parse(hoy) - Date.parse(fecha) <= 2 * 86_400_000
   if (!d) return null
   const totalXp = d.xp.reduce((s, r) => s + r.cantidad, 0)
   return (
     <Tarjeta compacta>
       <div className="fila entre">
-        <b>{fechaLegible(fecha, false)}{enCiclo && <span className="texto-3 chico"> · día {dia}</span>}</b>
+        <b>{fechaLegible(fecha, false)}{enCiclo && <span className="texto-3 chico"> · {esDiaCero ? 'Día 0, calentamiento ✨' : `día ${dia}`}</span>}</b>
         <span className="chico texto-3">{fecha > hoy ? '' : `+${totalXp} XP`}{d.cerrado?.porcentaje != null ? ` · ${d.cerrado.porcentaje} %` : ''}</span>
       </div>
       {/* Lo primero: escribir una meta (hoy y días futuros). En días pasados, solo marcar. */}
@@ -257,7 +260,7 @@ function PilaresDelDiaSel({ fecha, hoy, ciclo, enfocar, onMas }: { fecha: string
   )
 }
 
-function DetalleDia({ fecha, hoy, ciclo, onCerrar }: { fecha: string; hoy: string; ciclo: { inicio: string; duracionDias: number; diasPorFase: number } | null; onCerrar: () => void }) {
+function DetalleDia({ fecha, hoy, ciclo, onCerrar }: { fecha: string; hoy: string; ciclo: { inicio: string; diaCero?: string; duracionDias: number; diasPorFase: number } | null; onCerrar: () => void }) {
   const [motivoExc, setMotivoExc] = useState('')
   const datos = useDatos(async () => {
     const [compromisos, xp, metas, cerrado, excepcion, feriado] = await Promise.all([
@@ -272,13 +275,14 @@ function DetalleDia({ fecha, hoy, ciclo, onCerrar }: { fecha: string; hoy: strin
   }, [fecha])
   const d = datos.datos
   const dia = ciclo ? diaDelCiclo(ciclo.inicio, fecha) : 0
-  const enCiclo = ciclo && dia >= 1 && dia <= ciclo.duracionDias
+  const esDiaCero = !!ciclo?.diaCero && fecha === ciclo.diaCero
+  const enCiclo = ciclo && ((dia >= 1 && dia <= ciclo.duracionDias) || esDiaCero)
   const pasado = fecha < hoy
   const corregible = pasado && Date.parse(hoy) - Date.parse(fecha) <= 2 * 86_400_000
   const totalXp = d?.xp.reduce((s, r) => s + r.cantidad, 0) ?? 0
 
   return (
-    <Hoja abierta onCerrar={onCerrar} titulo={<span>{fechaLegible(fecha, false)} {enCiclo && <span className="texto-3 chico">· día {dia} · fase {faseDelDia(dia, ciclo!.diasPorFase)}</span>}</span>}>
+    <Hoja abierta onCerrar={onCerrar} titulo={<span>{fechaLegible(fecha, false)} {enCiclo && <span className="texto-3 chico">{esDiaCero ? '· Día 0, calentamiento ✨' : `· día ${dia} · fase ${faseDelDia(dia, ciclo!.diasPorFase)}`}</span>}</span>}>
       {d && (
         <>
           <div className="fila entre">

@@ -13,6 +13,11 @@ export async function cicloActivo(): Promise<Ciclo | undefined> {
   return db().ciclos.where('estado').equals('activo').first()
 }
 
+/** Primer día en que se registra: el Día 0 si lo hay, si no el Día 1. */
+export function primerDia(c: Pick<Ciclo, 'inicio' | 'diaCero'>): FechaDia {
+  return c.diaCero && c.diaCero < c.inicio ? c.diaCero : c.inicio
+}
+
 export async function todosLosCiclos(): Promise<Ciclo[]> {
   return db().ciclos.orderBy('numero').toArray()
 }
@@ -21,7 +26,7 @@ export async function todosLosCiclos(): Promise<Ciclo[]> {
  * Crea un ciclo nuevo. Si había uno activo, lo cierra (el historial se
  * conserva; nivel y XP no se tocan). Crea las fases y las metas con fecha.
  */
-export async function iniciarCiclo(inicio: FechaDia, opciones?: { duracionDias?: number; diasPorFase?: number }): Promise<Ciclo> {
+export async function iniciarCiclo(inicio: FechaDia, opciones?: { duracionDias?: number; diasPorFase?: number; diaCero?: boolean }): Promise<Ciclo> {
   const d = db()
   const duracionDias = opciones?.duracionDias ?? 90
   const diasPorFase = opciones?.diasPorFase ?? 30
@@ -36,6 +41,7 @@ export async function iniciarCiclo(inicio: FechaDia, opciones?: { duracionDias?:
       id: nuevoId('ciclo'),
       numero: anteriores + 1,
       inicio,
+      ...(opciones?.diaCero ? { diaCero: sumarDias(inicio, -1) } : {}),
       duracionDias,
       diasPorFase,
       estado: 'activo',
@@ -82,7 +88,9 @@ export async function cambiarInicioCiclo(nuevoInicio: FechaDia): Promise<Ciclo> 
     const ciclo = await cicloActivo()
     if (!ciclo) throw new Error('No hay un ciclo activo')
     if (ciclo.inicio === nuevoInicio) return ciclo
-    const despues = { ...ciclo, inicio: nuevoInicio }
+    const despues: Ciclo = { ...ciclo, inicio: nuevoInicio }
+    // El Día 0 queda pegado al nuevo Día 1 solo si ya pasó o es hoy; si no, se quita.
+    delete despues.diaCero
     await d.ciclos.put(despues)
     // Metas automáticas: se regeneran; las propias se conservan.
     const automaticas = (await d.metas.toArray()).filter((m) => m.tipo !== 'propia')
@@ -121,6 +129,8 @@ export type EstadoCiclo = {
   faseNumero: number
   terminado: boolean
   noEmpezado: boolean
+  /** Hoy es el Día 0: calentamiento (se registra y suma XP, no resta). */
+  diaCero: boolean
   fechaFin: FechaDia
 }
 
@@ -136,7 +146,8 @@ export async function estadoDelCiclo(hoy: FechaDia): Promise<EstadoCiclo | null>
     fase,
     faseNumero,
     terminado: dia > ciclo.duracionDias,
-    noEmpezado: dia < 1,
+    noEmpezado: dia < 1 && !(dia === 0 && ciclo.diaCero === hoy),
+    diaCero: dia === 0 && ciclo.diaCero === hoy,
     fechaFin: fechaDelDiaDelCiclo(ciclo.inicio, ciclo.duracionDias),
   }
 }

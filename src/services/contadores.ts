@@ -12,7 +12,7 @@ import { claveXp } from '../domain/xp'
 import { cuotaDelDia, cuotaDeSeries, extraPorDefecto, pasoDeSubida, repsDelDia, seriesDe, subidasDeCuota, subidasDeReps } from '../domain/cuotas'
 export { cuotaDelDia, cuotaDeSeries, extraPorDefecto, pasoDeSubida, repsDelDia, seriesDe, subidasDeCuota, subidasDeReps }
 import { fechaHoy, registrarEvento } from './base'
-import { cicloActivo } from './ciclo'
+import { cicloActivo, primerDia } from './ciclo'
 import { ahora, nuevoId } from './reloj'
 import { anularXp, concederXp } from './xp'
 import { devolverResta } from './restas'
@@ -174,7 +174,7 @@ export async function sumarToque(contadorId: string, cantidad?: number, nota?: s
   if (!c) throw new Error(`Contador ${contadorId} no existe`)
   const ciclo = await cicloActivo()
   const fecha = await fechaHoy()
-  if (!ciclo || fecha < ciclo.inicio) throw new Error('El ciclo todavía no empezó: no se registra nada antes del Día 1')
+  if (!ciclo || fecha < primerDia(ciclo)) throw new Error('El ciclo todavía no empezó: no se registra nada antes del Día 1')
   const n = cantidad ?? c.cantidadPorToque
   if (!(n > 0)) throw new Error('La cantidad tiene que ser mayor que 0')
   const registro: RegistroContador = { contadorId, fecha, instante: ahora(), cantidad: n, nota }
