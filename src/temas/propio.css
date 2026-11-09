@@ -123,3 +123,15 @@
 :root[data-tema-propio="claro"] .pagina-sueno .tarjeta .tarjeta,
 :root[data-tema-propio="claro"] .pagina-sueno [class*="globo"] { border-color: var(--borde); }
 :root[data-tema-propio="claro"] .sh-globo { border-color: var(--borde); background: var(--fondo-2); color: var(--texto); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08); }
+
+/* Calendario: las rayitas de los pilares tienen que verse sobre las tarjetas claras. */
+:root[data-tema-propio="claro"] .cal-barra { height: 4px; gap: 2px; }
+:root[data-tema-propio="claro"] .cal-barra i { background: rgba(var(--papel-rgb), 0.75); }
+:root[data-tema-propio="claro"] .cal-barra i.cumplido { background: var(--ok); box-shadow: none; }
+:root[data-tema-propio="claro"] .cal-barra i.tarde { background: color-mix(in srgb, var(--ok) 55%, transparent); }
+:root[data-tema-propio="claro"] .cal-barra i.omitido { background: var(--tp-alta, #C2456A); }
+:root[data-tema-propio="claro"] .cal-barra i.descanso { border-color: rgba(var(--papel-rgb), 0.9); }
+
+/* «El progreso no es lineal»: una sola vez, sin la sombra roja corrida de Shinobi. */
+:root[data-tema-propio] .camino-frase { color: var(--tp-fuerte); text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8); }
+:root[data-tema-propio] .camino-titulo-k { color: inherit; text-shadow: none; }

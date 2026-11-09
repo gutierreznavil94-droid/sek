@@ -177,7 +177,7 @@ const VARIABLES_DE_COLOR: Record<string, string[]> = {
   'color-texto-3': ['--texto-3'],
   'color-hecho': ['--ok'],
 }
-const VARIABLES_PROPIAS = [...Object.values(VARIABLES_DE_COLOR).flat(), '--ok-suave', '--papel-rgb', '--tp-texto', '--tp-texto-2', '--tp-texto-3', '--tp-cab-desde', '--tp-cab-hasta', '--tp-aviso', '--tp-con-alguien']
+const VARIABLES_PROPIAS = [...Object.values(VARIABLES_DE_COLOR).flat(), '--ok-suave', '--papel-rgb', '--tp-texto', '--tp-texto-2', '--tp-texto-3', '--tp-cab-desde', '--tp-cab-hasta', '--tp-aviso', '--tp-con-alguien', '--tp-alta']
 
 let activo: DefinicionTema = temaPorId(TEMA_POR_DEFECTO)
 const oyentes = new Set<() => void>()
@@ -239,6 +239,7 @@ export function aplicarTema(id: string | undefined, nombreApp?: string): Definic
       raiz.style.setProperty('--tp-cab-desde', col['color-tarjeta'] ?? activo.acento)
       raiz.style.setProperty('--tp-cab-hasta', col['color-tarjeta-2'] ?? col['color-tarjeta'] ?? activo.acento)
       if (col['color-aviso']) raiz.style.setProperty('--tp-aviso', col['color-aviso'])
+      if (col['color-importancia-alta']) raiz.style.setProperty('--tp-alta', col['color-importancia-alta'])
       if (col['color-con-alguien']) raiz.style.setProperty('--tp-con-alguien', col['color-con-alguien'])
       raiz.dataset.temaPropio = activo.claro ? 'claro' : 'oscuro'
     } else delete raiz.dataset.temaPropio
