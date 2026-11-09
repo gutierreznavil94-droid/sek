@@ -362,7 +362,7 @@ export function ListaTemas({ valor, onElegir }: { valor: string; onElegir: (id: 
         </div>
       ))}
       <label className={`pv-tema pv-tema-importar ${subiendo ? 'subiendo' : ''}`}>
-        <input type="file" accept={`${EXTENSION_TEMA},.json,application/json`} hidden disabled={subiendo} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; void subir(f) }} />
+        <input type="file" className="pv-tema-archivo" aria-label="Importar tema" disabled={subiendo} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; void subir(f) }} />
         <span className="pv-tema-vista"><span className="pv-tema-pronto">{subiendo ? '…' : '＋'}</span></span>
         <span className="pv-tema-texto">
           <b>Importar tema</b>
