@@ -13,6 +13,7 @@ export type AccionWidget = { tipo: 'pilar'; id: string; instante: number } | { t
 
 type PluginSek = {
   guardarWidget(o: { datos: string }): Promise<void>
+  guardarTema(o: { tema: string }): Promise<void>
   leerPendientes(): Promise<{ acciones: string }>
   rutaPendiente(): Promise<{ ruta: string | null }>
   version(): Promise<{ nombre: string; codigo: number }>
@@ -46,6 +47,15 @@ export function esAndroid(): boolean {
 export async function guardarDatosWidget(datos: unknown): Promise<void> {
   if (!esAndroid()) return
   await Sek.guardarWidget({ datos: JSON.stringify(datos) }).catch(() => {})
+}
+
+/** Imágenes del tema para los widgets y la alarma. Se mandan solo cuando cambia el tema (pesan). */
+export async function guardarTemaNativo(tema: { id: string; fondos: string[]; alarma?: string }): Promise<void> {
+  if (!esAndroid()) return
+  const marca = `${tema.id}:${tema.fondos.length}:${tema.fondos.reduce((n, f) => n + f.length, 0)}:${tema.alarma?.length ?? 0}`
+  try { if (localStorage.getItem('temaNativo') === marca) return } catch { /* sin memoria: se manda igual */ }
+  await Sek.guardarTema({ tema: JSON.stringify(tema) }).catch(() => {})
+  try { localStorage.setItem('temaNativo', marca) } catch { /* nada */ }
 }
 
 /** Lo marcado en el widget desde la última vez (se vacía al leerlo). */

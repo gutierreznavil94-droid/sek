@@ -128,6 +128,11 @@ final class Dibujo {
      * suave, como «.camino-frase». Los widgets no aceptan fuentes propias en un TextView, así que va como imagen.
      */
     static Bitmap titulo(Context c, String texto, float sp) {
+        return titulo(c, texto, sp, Color.rgb(200, 16, 46));
+    }
+
+    /** Igual, con la sombra y el brillo del color del tema. */
+    static Bitmap titulo(Context c, String texto, float sp, int acento) {
         float px = sp * c.getResources().getDisplayMetrics().scaledDensity;
         Typeface t = null;
         try {
@@ -149,12 +154,12 @@ final class Dibujo {
         float x = margen, y = margen - m.ascent;
         // Brillo rojo suave.
         Paint brillo = new Paint(p);
-        brillo.setColor(Color.argb(120, 200, 16, 46));
+        brillo.setColor(Color.argb(120, Color.red(acento), Color.green(acento), Color.blue(acento)));
         brillo.setMaskFilter(new android.graphics.BlurMaskFilter(px / 2.5f, android.graphics.BlurMaskFilter.Blur.NORMAL));
         k.drawText(texto, x, y, brillo);
         // Sombra roja corrida (3px 3px en la web).
         Paint sombra = new Paint(p);
-        sombra.setColor(Color.argb(217, 200, 16, 46));
+        sombra.setColor(Color.argb(217, Color.red(acento), Color.green(acento), Color.blue(acento)));
         k.drawText(texto, x + corrida, y + corrida, sombra);
         // Texto blanco papel, apenas engrosado.
         Paint blanco = new Paint(p);

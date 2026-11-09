@@ -20,7 +20,7 @@ public class WidgetMediano extends WidgetBase {
     protected RemoteViews dibujar(Context c, JSONObject d) {
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.widget_mediano);
         int rojo = Datos.color(d, "color-principal", ROJO);
-        v.setImageViewBitmap(R.id.wm_titulo, Dibujo.titulo(c, tituloDia(d), 24));
+        v.setImageViewBitmap(R.id.wm_titulo, Dibujo.titulo(c, tituloDia(d), 24, acentoTitulo(d)));
         v.setContentDescription(R.id.wm_titulo, tituloDia(d));
         v.setTextViewText(R.id.wm_racha, racha(d));
         v.setTextColor(R.id.wm_racha, aclarar(rojo));
@@ -62,6 +62,8 @@ public class WidgetMediano extends WidgetBase {
         String franja = franja(d);
         v.setViewVisibility(R.id.wm_franja, franja.isEmpty() ? View.GONE : View.VISIBLE);
         v.setTextViewText(R.id.wm_franja, franja);
+        fondosDelTema(c, v);
+        if (TemaVisual.tieneFondos(c)) v.setInt(R.id.wm_tareas, "setBackgroundResource", R.drawable.widget_boton_tareas_tema);
         return v;
     }
 }

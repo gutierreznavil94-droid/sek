@@ -10,12 +10,12 @@
     android:inAnimation="@android:anim/fade_in"
     android:outAnimation="@android:anim/fade_out">
 
-    <ImageView android:layout_width="match_parent" android:layout_height="match_parent"
+    <ImageView android:id="@+id/w_fondo_1" android:layout_width="match_parent" android:layout_height="match_parent"
         android:scaleType="centerCrop" android:src="@drawable/widget_tormenta_1" android:importantForAccessibility="no" />
-    <ImageView android:layout_width="match_parent" android:layout_height="match_parent"
+    <ImageView android:id="@+id/w_fondo_2" android:layout_width="match_parent" android:layout_height="match_parent"
         android:scaleType="centerCrop" android:src="@drawable/widget_tormenta_2" android:importantForAccessibility="no" />
-    <ImageView android:layout_width="match_parent" android:layout_height="match_parent"
+    <ImageView android:id="@+id/w_fondo_3" android:layout_width="match_parent" android:layout_height="match_parent"
         android:scaleType="centerCrop" android:src="@drawable/widget_tormenta_3" android:importantForAccessibility="no" />
-    <ImageView android:layout_width="match_parent" android:layout_height="match_parent"
+    <ImageView android:id="@+id/w_fondo_4" android:layout_width="match_parent" android:layout_height="match_parent"
         android:scaleType="centerCrop" android:src="@drawable/widget_tormenta_4" android:importantForAccessibility="no" />
 </ViewFlipper>

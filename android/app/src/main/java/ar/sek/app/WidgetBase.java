@@ -41,6 +41,22 @@ public abstract class WidgetBase extends AppWidgetProvider {
 
     protected abstract RemoteViews dibujar(Context c, JSONObject d);
 
+    private static final int[] FONDOS = { R.id.w_fondo_1, R.id.w_fondo_2, R.id.w_fondo_3, R.id.w_fondo_4 };
+
+    /** Fondos del tema elegido (si trae); si no, quedan los de la tormenta. */
+    static void fondosDelTema(Context c, RemoteViews v) {
+        for (int i = 0; i < FONDOS.length; i++) {
+            android.graphics.Bitmap b = TemaVisual.fondoWidget(c, i + 1);
+            if (b != null) v.setImageViewBitmap(FONDOS[i], b);
+        }
+    }
+
+    /** Color del título: el principal del tema, un poco más oscuro para que se vea la sombra. */
+    static int acentoTitulo(JSONObject d) {
+        int a = Datos.color(d, "color-principal", ROJO);
+        return Color.rgb(Color.red(a) * 4 / 5, Color.green(a) * 4 / 5, Color.blue(a) * 4 / 5);
+    }
+
     @Override
     public void onUpdate(Context c, AppWidgetManager m, int[] ids) {
         JSONObject d = Datos.leer(c);

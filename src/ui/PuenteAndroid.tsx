@@ -5,8 +5,9 @@
  */
 import { rivalArchivado } from '../temas/archivado'
 import { useEffect } from 'react'
+import { useTema } from '../temas/temas'
 import { fechaDe } from '../domain/fechas'
-import { esAndroid, guardarDatosWidget, leerAccionesWidget, rutaDeAtajo } from '../nativo/sek'
+import { esAndroid, guardarDatosWidget, guardarTemaNativo, leerAccionesWidget, rutaDeAtajo } from '../nativo/sek'
 import { buscarActualizacion, tocaRevisarHoy } from '../services/actualizacion'
 import { tomarAgua } from '../services/agua'
 import { obtenerAjustes } from '../services/base'
@@ -90,6 +91,13 @@ export function PuenteAndroid({ listo }: { listo: boolean }) {
     window.addEventListener('sek-atajo', alVolver)
     return () => { document.removeEventListener('visibilitychange', alVolver); window.removeEventListener('sek-atajo', alVolver) }
   }, [android, listo])
+
+  // Imágenes del tema para widgets y alarma (solo cuando cambia el tema).
+  const tema = useTema()
+  useEffect(() => {
+    if (!android || !listo) return
+    void guardarTemaNativo({ id: tema.id, fondos: tema.widget?.fondos ?? [], alarma: tema.widget?.alarma })
+  }, [android, listo, tema])
 
   // Los widgets se actualizan después de cada cambio (con una pausa chica para juntar varios).
   useEffect(() => {

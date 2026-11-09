@@ -60,6 +60,8 @@ public class AlarmaActivity extends Activity {
         }
         ((TextView) findViewById(R.id.alarma_hora)).setText(new SimpleDateFormat("HH:mm", Locale.US).format(new Date()));
         String titulo = a.optString("titulo", "SEK");
+        android.graphics.Bitmap fondoTema = TemaVisual.alarma(this);
+        if (fondoTema != null) ((ImageView) findViewById(R.id.alarma_fondo)).setImageBitmap(fondoTema);
         ImageView t = findViewById(R.id.alarma_titulo);
         t.setImageBitmap(Dibujo.titulo(this, titulo, 30));
         t.setContentDescription(titulo);

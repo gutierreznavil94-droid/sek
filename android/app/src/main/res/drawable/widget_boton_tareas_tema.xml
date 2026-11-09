@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Botón «Tareas» con un tema subido: vidrio claro con borde blanco (combina con cualquier fondo). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#59FFFFFF" />
+    <stroke android:width="2dp" android:color="#E6FFFFFF" />
+    <corners android:radius="14dp" />
+</shape>

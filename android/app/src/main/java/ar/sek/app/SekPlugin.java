@@ -42,6 +42,18 @@ public class SekPlugin extends Plugin {
         call.resolve();
     }
 
+    /** Imágenes del tema para widgets y alarma: { tema: JSON con id, fondos, alarma }. */
+    @PluginMethod
+    public void guardarTema(PluginCall call) {
+        try {
+            TemaVisual.guardar(getContext(), new org.json.JSONObject(call.getString("tema", "{}")));
+        } catch (Exception ignorado) {
+            // Tema mal armado: quedan las imágenes de Shinobi.
+        }
+        Datos.actualizarWidgets(getContext());
+        call.resolve();
+    }
+
     @PluginMethod
     public void leerPendientes(PluginCall call) {
         JSObject r = new JSObject();
