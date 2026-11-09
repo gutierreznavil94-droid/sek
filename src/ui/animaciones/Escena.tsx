@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { rutaTema, temaActivo, urlTema } from '../../temas/temas'
+import { rutaTema, urlTema } from '../../temas/temas'
 import { movimientoReducido } from '../componentes'
 import { KANJI, duracionDe, elegirCorte, nombreDePilar, useAnimacionActual, type EnCurso, type EstiloCorte } from './motor'
 import { Munieco, Sombrero, poseEn, puntoBoca, puntoMano, puntosKatana, useSecuenciaDOM, type Clave } from './munieco'

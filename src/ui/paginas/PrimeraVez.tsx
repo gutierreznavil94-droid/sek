@@ -24,7 +24,6 @@ import { FUNCIONES, usa } from '../../services/funciones'
 import type { Funcion } from '../../data/tipos'
 
 const MuniecoVivo = lazy(() => import('../animaciones/Escena').then((m) => ({ default: m.MuniecoVivo })))
-const BASE = import.meta.env.BASE_URL
 
 type IdPaso = 'nombre' | 'usar' | 'pilares' | 'series' | 'sueno' | 'juego' | 'comida' | 'avisos' | 'resumen'
 const PASOS: { id: IdPaso; kanji: string; titulo: string }[] = [
