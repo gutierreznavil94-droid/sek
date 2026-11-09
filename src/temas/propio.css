@@ -53,7 +53,9 @@
 :root[data-tema-propio="claro"] .pilar-tarjeta.omitido .estado-ic { color: var(--texto-3); border-color: var(--borde); }
 
 /* Progreso: vidrio claro, texto oscuro, halo blanco. */
-:root[data-tema-propio="claro"] .progreso-tinta[data-vidrio="claro"] { --av-crema: var(--texto); color: var(--texto); --halo-texto: none; }
+:root[data-tema-propio="claro"] .progreso-tinta[data-vidrio="claro"] { --texto: var(--tp-texto); --texto-3: var(--tp-texto-3); --av-crema: var(--tp-texto); color: var(--tp-texto); --halo-texto: none; }
+:root[data-tema-propio="claro"] .progreso-tinta[data-vidrio="claro"] .grafico-info,
+:root[data-tema-propio="claro"] .progreso-tinta[data-vidrio="claro"] .codigo-kanji { color: var(--tp-texto); }
 :root[data-tema-propio="claro"] .progreso-tinta[data-vidrio="claro"] .av-tarjeta,
 :root[data-tema-propio="claro"] .progreso-tinta[data-vidrio="claro"] .codigo-cabeza,
 :root[data-tema-propio="claro"] .progreso-tinta[data-vidrio="claro"] .codigo-regla { background: rgba(255, 255, 255, 0.78); border-color: var(--borde); box-shadow: 0 2px 14px rgba(0, 0, 0, 0.08); text-shadow: none; }
@@ -79,3 +81,60 @@
 /* Tarjetas vacías de la lista de temas (Importar, Próximamente) en tonos claros. */
 :root[data-tema-propio="claro"] .pv-tema-vista { background: var(--fondo-3); }
 :root[data-tema-propio="claro"] .pv-tema-pronto { background: repeating-linear-gradient(135deg, var(--fondo-2) 0 10px, var(--fondo-3) 10px 20px); }
+
+/* ===== Fondo de pétalos (en vez de la tormenta) ===== */
+.fondo-propio { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.fondo-propio.en-caja { position: absolute; }
+.fondo-propio span { position: absolute; top: -20px; width: 9px; height: 6px; border-radius: 60% 40% 60% 40%; background: var(--acento); opacity: 0.35; animation: tp-petalo 14s linear infinite; }
+.fondo-propio span:nth-child(1) { left: 6%; animation-delay: 0s; }
+.fondo-propio span:nth-child(2) { left: 18%; animation-delay: -5s; animation-duration: 17s; }
+.fondo-propio span:nth-child(3) { left: 31%; animation-delay: -9s; width: 7px; }
+.fondo-propio span:nth-child(4) { left: 44%; animation-delay: -2s; animation-duration: 19s; }
+.fondo-propio span:nth-child(5) { left: 57%; animation-delay: -12s; width: 11px; height: 7px; }
+.fondo-propio span:nth-child(6) { left: 68%; animation-delay: -7s; animation-duration: 16s; }
+.fondo-propio span:nth-child(7) { left: 79%; animation-delay: -3s; width: 7px; }
+.fondo-propio span:nth-child(8) { left: 89%; animation-delay: -10s; animation-duration: 18s; }
+.fondo-propio span:nth-child(9) { left: 95%; animation-delay: -6s; background: var(--tp-cab-hasta); opacity: 0.6; }
+@keyframes tp-petalo {
+  from { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(-30px, 55vh) rotate(180deg); }
+  to { transform: translate(10px, 110vh) rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) { .fondo-propio span { animation: none; top: auto; } }
+
+/* ===== Juego con el personaje del tema ===== */
+.jh-marco { display: flex; flex-direction: column; gap: 6px; }
+.jh-escena { position: relative; height: 170px; border-radius: 12px; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; gap: 18px; padding-bottom: 14px; background: radial-gradient(circle at 50% 35%, #fff 0, var(--tp-cab-desde, #FBD3E4) 55%, var(--tp-cab-hasta, #E6D3F5) 100%); }
+.jh-personaje { width: 110px; height: auto; filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.12)); }
+.jh-emoji { font-size: 74px; line-height: 1; width: auto; }
+.jh-objeto { font-size: 40px; line-height: 1; margin-bottom: 18px; }
+.jh-brillo { position: absolute; color: var(--acento); font-size: 15px; opacity: 0; }
+.jh-brillo.b0 { left: 18%; top: 22%; } .jh-brillo.b1 { left: 72%; top: 16%; } .jh-brillo.b2 { left: 84%; top: 52%; }
+.jh-brillo.b3 { left: 10%; top: 58%; } .jh-brillo.b4 { left: 46%; top: 10%; }
+.jh-espera .jh-objeto { animation: jh-flota 2.4s ease-in-out infinite; }
+.jh-espera .jh-personaje { animation: jh-mira 3.2s ease-in-out infinite; }
+.jh-jugando .jh-personaje { animation: jh-salta 0.9s ease-in-out infinite; }
+.jh-jugando .jh-objeto { animation: jh-tiembla 0.35s ease-in-out infinite; }
+.jh-jugando .jh-brillo { animation: jh-brilla 1.6s ease-in-out infinite; }
+.jh-jugando .jh-brillo.b1 { animation-delay: 0.3s; } .jh-jugando .jh-brillo.b2 { animation-delay: 0.6s; }
+.jh-jugando .jh-brillo.b3 { animation-delay: 0.9s; } .jh-jugando .jh-brillo.b4 { animation-delay: 1.2s; }
+.jh-pausa .jh-objeto { animation: jh-flota 3.5s ease-in-out infinite; }
+.jh-pausa .jh-personaje { animation: jh-respira 4s ease-in-out infinite; }
+.jh-marco.quieto * { animation: none !important; }
+.jh-marco.quieto .jh-brillo { opacity: 0.7; }
+@keyframes jh-flota { 50% { transform: translateY(-10px) rotate(-6deg); } }
+@keyframes jh-mira { 50% { transform: translateX(-6px) rotate(-3deg); } }
+@keyframes jh-salta { 50% { transform: translateY(-12px); } }
+@keyframes jh-tiembla { 50% { transform: rotate(6deg) scale(1.06); } }
+@keyframes jh-brilla { 0%, 100% { opacity: 0; transform: scale(0.6); } 50% { opacity: 1; transform: scale(1.2); } }
+@keyframes jh-respira { 50% { transform: scale(1.03); } }
+
+/* ===== Lo que en Shinobi está fijo en negro ===== */
+:root[data-tema-propio="claro"] .pagina-sueno .tarjeta { background: var(--fondo-2); }
+:root[data-tema-propio="claro"] .contenido.entreno { --texto-2: var(--tp-texto-2); --texto-3: var(--tp-texto-3); }
+:root[data-tema-propio] .juego-shoji:has(.jh-marco) { background: none; border: 0; box-shadow: none; padding: 0; }
+
+/* Globo de ayuda de Sueño y botón flotante de Organización, en los tonos del tema. */
+:root[data-tema-propio="claro"] .pagina-sueno .tarjeta .tarjeta,
+:root[data-tema-propio="claro"] .pagina-sueno [class*="globo"] { border-color: var(--borde); }
+:root[data-tema-propio="claro"] .sh-globo { border-color: var(--borde); background: var(--fondo-2); color: var(--texto); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08); }

@@ -20,6 +20,7 @@
  */
 import { useEffect, useRef } from 'react'
 import { movimientoReducido } from './componentes'
+import { useTema } from '../temas/temas'
 
 export type VarianteLluvia = 'hoy' | 'calendario' | 'juego' | 'sueno' | 'comida' | 'entreno' | 'mas'
 
@@ -56,6 +57,8 @@ export const CLASE_JUEGO_CORRIENDO = 'juego-corriendo'
 /** `enCaja`: dentro de un recuadro (position: absolute) en lugar de toda la pantalla; mide el recuadro. */
 export function FondoLluvia({ variante, calma = false, enCaja = false }: { variante: VarianteLluvia; calma?: boolean; enCaja?: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null)
+  // Tema subido: nada de tormenta ni tinta; pétalos suaves del color del tema.
+  const propio = !!useTema().propio
   const calmaRef = useRef(calma)
   calmaRef.current = calma
   useEffect(() => {
@@ -568,6 +571,7 @@ export function FondoLluvia({ variante, calma = false, enCaja = false }: { varia
     const alMedir = () => { medir(); dibujar(0, performance.now()) }
     window.addEventListener('resize', alMedir)
     return () => { cancelAnimationFrame(id); window.removeEventListener('resize', alMedir) }
-  }, [variante, enCaja])
+  }, [variante, enCaja, propio])
+  if (propio) return <div className={`fondo-propio ${variante}${enCaja ? ' en-caja' : ''}`} aria-hidden>{Array.from({ length: 9 }, (_, i) => <span key={i} />)}</div>
   return <canvas ref={ref} className={`fondo-lluvia ${variante}${enCaja ? ' en-caja' : ''}`} aria-hidden />
 }

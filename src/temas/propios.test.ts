@@ -41,7 +41,13 @@ describe('temas subidos', () => {
     expect(t.sprite).toBe('')
     expect(t.escenas).toBeUndefined()
     expect(t.frases?.length).toBeGreaterThan(0)
-    expect(rutaTema('fondos/lluvia.mp4', t)).toBe(PNG)
+    // Sin video: Progreso queda con la imagen quieta.
+    expect(rutaTema('fondos/lluvia.mp4', t)).toBe('')
+    expect(rutaTema('fondos/rayos.jpg', t)).toBe(PNG)
+    const MP4 = 'data:video/mp4;base64,AAAA'
+    const conVideo = aDefinicion(revisarTema(tema({ imagenes: { fondo: PNG, videos: { lluvia: MP4 } } })))
+    expect(rutaTema('fondos/rayos.mp4', conVideo)).toBe(MP4)
+    expect(() => revisarTema(tema({ imagenes: { videos: { lluvia: 'data:text/html;base64,AAAA' } } }))).toThrow('lluvia')
     expect(t.vistaPrevia).toEqual({ imagen: PNG, video: undefined })
   })
 

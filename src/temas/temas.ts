@@ -56,6 +56,9 @@ export interface DefinicionTema {
   claro?: boolean
   /** Tema subido: una imagen de fondo (data:) que reemplaza a los videos de lluvia, rayos y pc. */
   fondo?: string
+  /** Tema subido: videos de fondo de Progreso por nombre (lluvia, rayos, pc), y su cuadro quieto. */
+  videosFondo?: Partial<Record<string, string>>
+  cuadrosFondo?: Partial<Record<string, string>>
   /** Tema subido: imágenes del widget (4) y de la alarma, y el título del widget. Las usa el APK. */
   widget?: { fondos?: string[]; alarma?: string; titulo?: string; estiloTitulo?: string }
   /** Tema subido: cómo imaginó las escenas de Tensión y No cumplí (por ahora solo se guarda). */
@@ -173,7 +176,7 @@ const VARIABLES_DE_COLOR: Record<string, string[]> = {
   'color-texto-3': ['--texto-3'],
   'color-hecho': ['--ok'],
 }
-const VARIABLES_PROPIAS = [...Object.values(VARIABLES_DE_COLOR).flat(), '--ok-suave', '--tp-cab-desde', '--tp-cab-hasta', '--tp-aviso', '--tp-con-alguien']
+const VARIABLES_PROPIAS = [...Object.values(VARIABLES_DE_COLOR).flat(), '--ok-suave', '--papel-rgb', '--tp-texto', '--tp-texto-2', '--tp-texto-3', '--tp-cab-desde', '--tp-cab-hasta', '--tp-aviso', '--tp-con-alguien']
 
 let activo: DefinicionTema = temaPorId(TEMA_POR_DEFECTO)
 const oyentes = new Set<() => void>()
@@ -190,6 +193,14 @@ export function carpetaEscenas(): string | null {
 function rgb(hex: string): string | null {
   const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex.trim())
   return m ? `${parseInt(m[1], 16)}, ${parseInt(m[2], 16)}, ${parseInt(m[3], 16)}` : null
+}
+
+/** Mezcla dos colores hex: `cuanto` es cuánto del segundo (0 a 1). */
+export function mezclar(a: string, b: string, cuanto: number): string {
+  const x = rgb(a)?.split(', ').map(Number)
+  const y = rgb(b)?.split(', ').map(Number)
+  if (!x || !y) return a
+  return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * cuanto).toString(16).padStart(2, '0')).join('').toUpperCase()
 }
 
 /** Activa un tema: color de acento, kanjis y título de la pestaña. Con Shinobi no cambia nada de lo que ya se ve. */
@@ -212,6 +223,18 @@ export function aplicarTema(id: string | undefined, nombreApp?: string): Definic
       for (const [nombre, vars] of Object.entries(VARIABLES_DE_COLOR)) if (col[nombre]) for (const v of vars) raiz.style.setProperty(v, col[nombre])
       const hecho = col['color-hecho'] && rgb(col['color-hecho'])
       if (hecho) raiz.style.setProperty('--ok-suave', `rgba(${hecho}, 0.14)`)
+      // Bordes y velos suaves: en Shinobi son de papel claro sobre negro; acá, del color de los bordes del tema.
+      const borde = rgb(col['color-borde'] ?? col['color-texto-3'] ?? '')
+      if (borde) raiz.style.setProperty('--papel-rgb', borde)
+      if (col['color-texto']) raiz.style.setProperty('--tp-texto', col['color-texto'])
+      if (col['color-texto-2']) raiz.style.setProperty('--tp-texto-2', col['color-texto-2'])
+      // Fondo claro: tarjetas y bordes un poco más suaves que el color elegido, para que no quede todo tan marcado.
+      if (activo.claro) {
+        if (col['color-tarjeta']) raiz.style.setProperty('--fondo-2', mezclar(col['color-tarjeta'], '#FFFFFF', 0.35))
+        if (col['color-tarjeta-2']) raiz.style.setProperty('--fondo-3', mezclar(col['color-tarjeta-2'], '#FFFFFF', 0.3))
+        if (col['color-borde'] && col['color-tarjeta']) raiz.style.setProperty('--borde', mezclar(col['color-borde'], col['color-tarjeta'], 0.4))
+      }
+      if (col['color-texto-3']) raiz.style.setProperty('--tp-texto-3', col['color-texto-3'])
       raiz.style.setProperty('--tp-cab-desde', col['color-tarjeta'] ?? activo.acento)
       raiz.style.setProperty('--tp-cab-hasta', col['color-tarjeta-2'] ?? col['color-tarjeta'] ?? activo.acento)
       if (col['color-aviso']) raiz.style.setProperty('--tp-aviso', col['color-aviso'])
@@ -240,7 +263,11 @@ export function adorno<K extends 'aves' | 'cumplir' | 'animaciones'>(clave: K, t
 
 /** Ruta de un archivo de fondo según el tema activo («fondos/lluvia.mp4» → «<carpetaFondos>lluvia.mp4»). */
 export function rutaTema(archivo: string, tema: DefinicionTema = activo): string {
-  if (tema.fondo && archivo.startsWith('fondos/')) return tema.fondo
+  if (tema.propio && archivo.startsWith('fondos/')) {
+    const [nombre, ext] = archivo.slice('fondos/'.length).split('.')
+    if (ext === 'mp4' || ext === 'webm') return tema.videosFondo?.[nombre] ?? tema.videosFondo?.lluvia ?? ''
+    return tema.cuadrosFondo?.[nombre] ?? tema.fondo ?? tema.vistaPrevia.imagen
+  }
   return archivo.startsWith('fondos/') ? tema.carpetaFondos + archivo.slice('fondos/'.length) : archivo
 }
 

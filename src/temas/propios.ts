@@ -43,6 +43,10 @@ export interface ArchivoTema {
     widget?: string[]
     /** Fondo de la alarma (vertical). */
     alarma?: string
+    /** Videos de fondo de Progreso (en bucle, verticales, mp4 o webm). Si falta uno, se usa el de lluvia; sin ninguno, el fondo quieto. */
+    videos?: { lluvia?: string; rayos?: string; pc?: string }
+    /** Cuadro quieto de cada video (para «reducir movimiento» y mientras carga). Si falta, el fondo. */
+    cuadros?: { lluvia?: string; rayos?: string; pc?: string }
   }
   widget?: { titulo?: string; estiloTitulo?: string }
   escenas?: { tension?: string; noCumpli?: string }
@@ -70,6 +74,9 @@ const MAX_IMAGEN = 4 * 1024 * 1024
 const MAX_TOTAL = 16 * 1024 * 1024
 const HEX = /^#[0-9a-f]{6}$/i
 const IMAGEN = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/
+const VIDEO = /^data:video\/(mp4|webm);base64,[A-Za-z0-9+/=]+$/
+const MAX_VIDEO = 8 * 1024 * 1024
+const NOMBRES_VIDEO = ['lluvia', 'rayos', 'pc'] as const
 
 export class TemaInvalido extends Error {}
 
@@ -84,6 +91,18 @@ const imagen = (v: unknown, nombre: string): string | undefined => {
   if (v.length > MAX_IMAGEN * 1.37) throw new TemaInvalido(`La imagen «${nombre}» pesa más de 4 MB. Achicala y probá de nuevo.`)
   return v
 }
+const video = (v: unknown, nombre: string): string | undefined => {
+  if (v === undefined || v === null || v === '') return undefined
+  if (typeof v !== 'string' || !VIDEO.test(v)) throw new TemaInvalido(`El video «${nombre}» no es MP4 ni WebM.`)
+  if (v.length > MAX_VIDEO * 1.37) throw new TemaInvalido(`El video «${nombre}» pesa más de 8 MB. Achicalo y probá de nuevo.`)
+  return v
+}
+const porNombre = (o: unknown, leer: (v: unknown, n: string) => string | undefined) => {
+  const d = (o ?? {}) as Record<string, unknown>
+  const r: Partial<Record<(typeof NOMBRES_VIDEO)[number], string>> = {}
+  for (const n of NOMBRES_VIDEO) { const v = leer(d[n], n); if (v) r[n] = v }
+  return Object.keys(r).length ? r : undefined
+}
 const uno = <T extends string>(v: unknown, opciones: readonly T[]): T | undefined => (opciones.includes(v as T) ? (v as T) : undefined)
 
 /** Luminosidad de un color (0 oscuro, 1 claro). */
@@ -94,7 +113,7 @@ function luz(hex: string): number {
 
 /** Lee el texto de un archivo de tema y devuelve solo lo que sirve. Si no es un tema, avisa por qué. */
 export function revisarTema(textoArchivo: string): ArchivoTema {
-  if (textoArchivo.length > MAX_TOTAL * 1.4) throw new TemaInvalido('El archivo es demasiado grande (más de 16 MB).')
+  if (textoArchivo.length > MAX_TOTAL * 1.4 + 3 * MAX_VIDEO * 1.37) throw new TemaInvalido('El archivo es demasiado grande (más de 16 MB).')
   let d: Record<string, unknown>
   try { d = JSON.parse(textoArchivo) } catch { throw new TemaInvalido('Ese archivo no es un tema de SEK.') }
   if (!d || typeof d !== 'object' || d.formato !== FORMATO_TEMA) throw new TemaInvalido('Ese archivo no es un tema de SEK.')
@@ -128,6 +147,8 @@ export function revisarTema(textoArchivo: string): ArchivoTema {
     personaje: imagen(im.personaje, 'personaje'),
     widget: widget.length ? widget : undefined,
     alarma: imagen(im.alarma, 'alarma'),
+    videos: porNombre(im.videos, video),
+    cuadros: porNombre(im.cuadros, imagen),
   }
 
   const w = (d.widget ?? {}) as Record<string, unknown>
@@ -177,7 +198,9 @@ export function aDefinicion(archivo: ArchivoTema, id = idDeTema(archivo.nombre))
     escenas: undefined,
     // Sin hoja de sprites: el compañero que camina no aparece.
     sprite: '',
-    fondo: im.fondo,
+    fondo: im.fondo ?? im.cuadros?.lluvia,
+    videosFondo: im.videos,
+    cuadrosFondo: im.cuadros,
     vistaPrevia: { imagen: im.vistaPrevia ?? im.fondo ?? b.vistaPrevia.imagen, video: im.vistaPrevia || im.fondo ? undefined : b.vistaPrevia.video },
     frases: archivo.frases ?? b.frases,
     colores: { ...(archivo.colores ?? {}) },

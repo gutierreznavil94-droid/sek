@@ -10,7 +10,8 @@ import { cancelarAvisosJuego, programarAvisosJuego } from '../../services/alarma
 import { Barra, Confirmar, Explicacion, Hoja, Tarjeta, movimientoReducido } from '../componentes'
 import { avisar, mutar, useDatos, useTic } from '../estado'
 import { CasaDelJuego } from '../animaciones/Siluetas'
-import { carpetaEscenas } from '../../temas/temas'
+import { carpetaEscenas, temaActivo } from '../../temas/temas'
+import { JuegoHada } from '../animaciones/JuegoHada'
 import { emitirEvento } from '../../temas/eventos'
 import { JuegoShinobi } from '../../temas/shinobi/Escenas'
 import { CLASE_JUEGO_CORRIENDO } from '../FondoLluvia'
@@ -85,7 +86,7 @@ export function Juego({ hoy }: { hoy: string }) {
           </div>
         </div>
         {/* La casa, enmarcada como un shōji: pelean hasta que empezás a jugar; jugando, concentrados; en pausa, té. */}
-        <div className="juego-shoji">{carpetaEscenas() ? <JuegoShinobi activa={!!activa} pausada={!!r.pausada} reducido={movimientoReducido()} /> : <CasaDelJuego activa={!!activa} pausada={!!r.pausada} />}</div>
+        <div className="juego-shoji">{carpetaEscenas() ? <JuegoShinobi activa={!!activa} pausada={!!r.pausada} reducido={movimientoReducido()} /> : temaActivo().propio ? <JuegoHada activa={!!activa} pausada={!!r.pausada} reducido={movimientoReducido()} /> : <CasaDelJuego activa={!!activa} pausada={!!r.pausada} />}</div>
       </Tarjeta>
 
       <Tarjeta compacta>

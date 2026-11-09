@@ -695,7 +695,7 @@ function VideoDeFondo({ fondo, quieto, pausado }: { fondo: VideoFondo; quieto: b
   const archivo = urlTema(rutaTema(fondo.archivo))
   const cuadro = urlTema(rutaTema(fondo.cuadroFijo))
   // Tema subido: una imagen quieta en vez de video.
-  const soloImagen = !!temaActivo().fondo
+  const soloImagen = !!temaActivo().propio && !archivo.startsWith('data:video')
   const [conMovimiento, setConMovimiento] = useState(false)
   const fijo = (quieto && !conMovimiento) || soloImagen
   const [frenado, setFrenado] = useState(false)
@@ -706,6 +706,8 @@ function VideoDeFondo({ fondo, quieto, pausado }: { fondo: VideoFondo; quieto: b
     if (fijo) return
     let vivo = true
     let blobUrl: string | null = null
+    // Video de un tema subido: ya está entero en el celu.
+    if (archivo.startsWith('data:')) { setSrc(archivo); return }
     videoGuardado(archivo).then((u) => {
       if (!vivo) { if (u) URL.revokeObjectURL(u); return }
       if (u) { blobUrl = u; setSrc(u); return }
@@ -760,7 +762,7 @@ function VideoDeFondo({ fondo, quieto, pausado }: { fondo: VideoFondo; quieto: b
   }, [fondo, fijo])
   // Guardar los otros videos enteros para usarlos sin conexión (una sola vez, sin apuro).
   useEffect(() => {
-    const t = setTimeout(() => { if (temaActivo().fondo) return
+    const t = setTimeout(() => { if (temaActivo().propio) return
       for (const v of [...VIDEOS, VIDEO_PC]) guardarVideo(BASE + rutaTema(v.archivo)).catch(() => {}) }, 6000)
     return () => clearTimeout(t)
   }, [])
