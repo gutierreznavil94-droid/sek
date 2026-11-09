@@ -22,6 +22,7 @@ const ICONOS = {
 }
 
 import { obtenerAjustes } from '../services/base'
+import { useFunciones } from './funciones'
 import { NOMBRES_FASES_INICIALES } from '../data/semilla'
 
 export function Layout({ hoy }: { hoy: string }) {
@@ -38,6 +39,7 @@ export function Layout({ hoy }: { hoy: string }) {
   // Fondo con lluvia dibujada en Hoy y Calendario (Ajustes → Fondo con lluvia).
   const { pathname } = useLocation()
   const version = useVersion()
+  const usaF = useFunciones()
   const lluvia = useDatos(() => obtenerAjustes().then((a) => a.fondoLluvia ?? {}), [version])
   const varianteLluvia = varianteDeRuta(pathname, lluvia.datos ?? {})
   const d = estado.datos
@@ -95,8 +97,8 @@ export function Layout({ hoy }: { hoy: string }) {
       <nav className="nav" aria-label="Secciones">
         <NavLink to="/" end className={({ isActive }) => (isActive ? 'activo' : '')}>{ICONOS.hoy}Hoy</NavLink>
         <NavLink to="/calendario" className={({ isActive }) => (isActive ? 'activo' : '')}>{ICONOS.calendario}Calendario</NavLink>
-        <NavLink to="/juego" className={({ isActive }) => (isActive ? 'activo' : '')}>{ICONOS.juego}Juego</NavLink>
-        <NavLink to="/sueno" className={({ isActive }) => (isActive ? 'activo' : '')}>{ICONOS.sueno}Sueño</NavLink>
+        {usaF('juego') && <NavLink to="/juego" className={({ isActive }) => (isActive ? 'activo' : '')}>{ICONOS.juego}Juego</NavLink>}
+        {usaF('sueno') && <NavLink to="/sueno" className={({ isActive }) => (isActive ? 'activo' : '')}>{ICONOS.sueno}Sueño</NavLink>}
         <NavLink to="/progreso" className={({ isActive }) => (isActive ? 'activo' : '')}>{ICONOS.progreso}Progreso</NavLink>
         <NavLink to="/mas" className={({ isActive }) => (isActive ? 'activo' : '')}>{ICONOS.mas}Más</NavLink>
       </nav>

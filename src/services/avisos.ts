@@ -9,6 +9,7 @@
  * Alistarse para dormir alarma, Dejo celu nada, Entreno notificación. Todo editable.
  */
 import type { Ajustes, AvisoPropio, ConfigAviso, ModoAviso } from '../data/tipos'
+import { FUNCION_DEL_AVISO, usa } from './funciones'
 
 export type TipoAviso =
   | 'juego-mitad' | 'juego-limite'
@@ -45,12 +46,15 @@ export const PORCENTAJE_JUEGO = 50
 export type AvisoEfectivo = { modo: ModoAviso; hora?: string; porcentaje: number; vibrar: boolean }
 
 /** Cómo está configurado un aviso: lo guardado o, si falta, el de entrada (lo apagado antes de v0.88.3 queda en Nada). */
-export function configAviso(a: Pick<Ajustes, 'avisos' | 'alarmasApagadas'>, tipo: TipoAviso | string): AvisoEfectivo {
+export function configAviso(a: Pick<Ajustes, 'avisos' | 'alarmasApagadas' | 'funciones'>, tipo: TipoAviso | string): AvisoEfectivo {
   const def = AVISOS.find((x) => x.tipo === tipo)
   const c: ConfigAviso = a.avisos?.[tipo] ?? {}
   const apagadoViejo = (a.alarmasApagadas ?? []).includes(tipo)
+  // Si su parte de la app está apagada («¿Qué querés usar?»), el aviso no suena.
+  const funcion = FUNCION_DEL_AVISO[tipo]
+  const sinFuncion = !!funcion && !usa(a, funcion)
   return {
-    modo: c.modo ?? (apagadoViejo ? 'nada' : def?.modo ?? 'notificacion'),
+    modo: sinFuncion ? 'nada' : c.modo ?? (apagadoViejo ? 'nada' : def?.modo ?? 'notificacion'),
     hora: c.hora && /^\d\d:\d\d$/.test(c.hora) ? c.hora : undefined,
     porcentaje: Math.min(99, Math.max(5, Math.round(c.porcentaje ?? PORCENTAJE_JUEGO))),
     vibrar: c.vibrar ?? true,

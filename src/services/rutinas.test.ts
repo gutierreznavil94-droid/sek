@@ -3,7 +3,7 @@ import { db, usarBaseDePruebas } from '../data/db'
 import { PLANES, PLAN_NAY, rutinasDeEleccion } from '../data/planes'
 import { RUTINAS_INICIALES } from '../data/semilla'
 import { instanteDe } from '../domain/fechas'
-import { inicializarSiHaceFalta } from './base'
+import { inicializarSiHaceFalta, obtenerAjustes } from './base'
 import { iniciarCiclo } from './ciclo'
 import {
   aplicarEleccionEntreno,
@@ -208,6 +208,13 @@ describe('primera vez', () => {
     await configurarPrimeraVez(config({ entreno: { modo: 'plan', planId: 'plan-nay' } }))
     expect((await listarRutinas(true)).map((r) => r.id)).toEqual(['nay-martes', 'nay-miercoles', 'nay-jueves', 'nay-sabado'])
     expect((await db().acciones.get('entrenamiento'))?.dias).toEqual([2, 3, 4, 6])
+  })
+
+  it('«¿Qué querés usar?» se guarda; con Planes apagado se arranca de a poco aunque haya un plan elegido', async () => {
+    await configurarPrimeraVez(config({ entreno: { modo: 'plan', planId: 'plan-nay' }, funciones: { planes: false, juego: false } }))
+    expect((await listarRutinas(true)).map((r) => r.id)).toEqual(['rutina-ejemplo'])
+    const a = await obtenerAjustes()
+    expect(a.funciones).toMatchObject({ planes: false, juego: false })
   })
 
   it('desde cero arranca sin rutinas; sin elegir nada, la de ejemplo como siempre', async () => {

@@ -283,6 +283,9 @@ export type HabitoForja = {
   creado: number
 }
 
+/** Partes de la app que cada uno elige usar o no. */
+export type Funcion = 'series' | 'juego' | 'sueno' | 'comida' | 'metas' | 'organizacion' | 'revision' | 'tension' | 'forja' | 'horario' | 'planes' | 'ideasRutina'
+
 export type Ajustes = {
   id: 'unicos'
   /** Ya se cargaron las reglas de ejemplo de «Mi código» (para no volver a cargarlas si se borran). */
@@ -361,6 +364,8 @@ export type Ajustes = {
   alarmasApagadas?: string[]
   /** Avisos (Más → Alarmas): por tipo, si es Notificación, Alarma o Nada, y lo editado a mano. Si falta, los de entrada. */
   avisos?: Record<string, ConfigAviso>
+  /** Qué partes de la app se usan (primer arranque, «¿Qué querés usar?»). Lo que falte toma su valor por defecto (ver services/funciones). */
+  funciones?: Partial<Record<Funcion, boolean>>
   /** Avisos propios agregados con «+ Agregar aviso». */
   avisosPropios?: AvisoPropio[]
   /** Sonido de las alarmas: 'sek' (gong de la app), 'celu' (alarma del teléfono) o la dirección de un tono elegido. */

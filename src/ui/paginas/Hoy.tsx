@@ -78,6 +78,7 @@ function estadoBrilloPilar(p: Pilar): EstadoBrillo | null {
   return null
 }
 import { simbolo } from '../../temas/temas'
+import { usa } from '../../services/funciones'
 
 async function cargarPanel(hoy: string) {
   const ajustes = await obtenerAjustes()
@@ -350,7 +351,7 @@ export function Hoy({ hoy }: { hoy: string }) {
     if (faltan > 0 && faltan <= 45) avisos.push({ clave: p.accion.id, tono: 'ambar', texto: <>{p.accion.nombre} en <b>{faltan} min</b></> })
   }
   if (avisoDormir) avisos.push({ clave: 'celu', texto: <>Dejo celu en <b>{Math.max(0, minutosHastaCelu)} min</b></>, onCerrar: () => { cerrarAvisoDormir(d.nocheAbierta); setAvisoDormirAbierto(false) } })
-  if (enAviso2050) avisos.push({ clave: 'revision', tono: 'rojo', texto: <>Revisión diaria <b>ahora</b> · hasta las {d.ventana.horaCierre}</>, accion: <Link to="/revision" className="boton chico primario">Empezar</Link> })
+  if (enAviso2050 && usa(ajustes, 'revision')) avisos.push({ clave: 'revision', tono: 'rojo', texto: <>Revisión diaria <b>ahora</b> · hasta las {d.ventana.horaCierre}</>, accion: <Link to="/revision" className="boton chico primario">Empezar</Link> })
 
   const celebrarYFlash = (id: string, xp: number, nuevoNivel: number | null) => {
     setMarcado(id)
@@ -451,8 +452,8 @@ export function Hoy({ hoy }: { hoy: string }) {
       {huecoCabecera && createPortal(
         <span className="hoy-arriba">
           {!rivalArchivado() && <button type="button" className="boton-duda" onClick={batallar} aria-label="Estoy dudando: batalla contra la distracción">Dudo</button>}
-          {clipsTension && <button type="button" className="boton-duda" onClick={() => pedirTension()} aria-label="Tensión: cinemática"><span className="boton-duda-kanji" aria-hidden>進</span>Tensión</button>}
-          <BotonNoCumpli fecha={hoy} className="boton-duda rojo" texto="No cumplí" />
+          {clipsTension && usa(ajustes, 'tension') && <button type="button" className="boton-duda" onClick={() => pedirTension()} aria-label="Tensión: cinemática"><span className="boton-duda-kanji" aria-hidden>進</span>Tensión</button>}
+          {usa(ajustes, 'tension') && <BotonNoCumpli fecha={hoy} className="boton-duda rojo" texto="No cumplí" />}
         </span>,
         huecoCabecera,
       )}
@@ -485,7 +486,7 @@ export function Hoy({ hoy }: { hoy: string }) {
       {!d.buenosDias && d.ajusteDeAyer && <p className="ajuste-ayer">Ajuste de hoy: <b>{d.ajusteDeAyer}</b></p>}
 
       {/* Mi horario: dónde estás ahora y qué sigue (tocar abre la semana). Arriba, en la barra fija; sin ella, acá. */}
-      {huecoHorario ? createPortal(<LineaDelDia hoy={hoy} />, huecoHorario) : <LineaDelDia hoy={hoy} />}
+      {usa(ajustes, 'horario') && (huecoHorario ? createPortal(<LineaDelDia hoy={hoy} />, huecoHorario) : <LineaDelDia hoy={hoy} />)}
 
       {/* Pilares del día: una línea cada uno */}
       <section className="col pilares-hoy" style={{ gap: 6 }} aria-label="Pilares de hoy">
@@ -535,23 +536,23 @@ export function Hoy({ hoy }: { hoy: string }) {
       </section>
 
       {/* Agua como tarjeta aparte (lo normal es la chiquita dentro de Comida) */}
-      {ajustes.agua?.enHoy === 'tarjeta' && <TarjetaAgua hoy={hoy} />}
+      {usa(ajustes, 'comida') && ajustes.agua?.enHoy === 'tarjeta' && <TarjetaAgua hoy={hoy} />}
       {tajo && <Tajo onFin={cerrarTajo} />}
 
       {/* Comida: dos anillos (calorías y proteína) y «+ Comí» */}
-      <TarjetaComida hoy={hoy} />
+      {usa(ajustes, 'comida') && <TarjetaComida hoy={hoy} />}
 
       {/* Forja de hábitos: hasta 3 piedras chicas (si no hay, no aparece) */}
-      <FilaForjaHoy hoy={hoy} />
+      {usa(ajustes, 'forja') && <FilaForjaHoy hoy={hoy} />}
 
       {/* Metas de la semana: fila mini de 7 días, debajo de los pilares */}
-      <SemanaMetas hoy={hoy} />
+      {usa(ajustes, 'metas') && <SemanaMetas hoy={hoy} />}
 
       {/* Botones importantes: rojizos a pincel; al usarlos en el día pasan a verde */}
       <div className="col accesos" style={{ gap: 8 }}>
-        <Link to="/revision" className={`boton grande revision-baja ${d.revision ? 'hecha' : 'rojizo'}`} {...brillo(d.revision ? 'hecho' : 'pendiente', 4, conBrillo)}>
+        {usa(ajustes, 'revision') && <Link to="/revision" className={`boton grande revision-baja ${d.revision ? 'hecha' : 'rojizo'}`} {...brillo(d.revision ? 'hecho' : 'pendiente', 4, conBrillo)}>
           {d.revision ? ICONO_OK : ICONO_REV}{d.revision ? 'Revisión diaria hecha' : 'Revisión diaria'}<span className="chico" style={{ fontWeight: 500, opacity: 0.8 }}>{d.revision ? '· ver' : pasoElCierre ? `· sin hacer a las ${d.ventana.horaCierre}` : `· hasta ${d.ventana.horaAviso}`}</span>
-        </Link>
+        </Link>}
         <div className="rejilla-2">
           <Link to="/321" className={`boton grande acceso-medio ${usadoHoy('321', hoy) ? 'hecha' : 'rojizo'}`} {...brillo(usadoHoy('321', hoy) ? 'hecho' : 'pendiente', 5, conBrillo)}>{usadoHoy('321', hoy) ? ICONO_OK : ICONO_321}3 · 2 · 1</Link>
           <Link to="/siguiente" className={`boton grande acceso-medio ${usadoHoy('siguiente', hoy) ? 'hecha' : 'rojizo'}`} {...brillo(usadoHoy('siguiente', hoy) ? 'hecho' : 'pendiente', 6, conBrillo)}>{usadoHoy('siguiente', hoy) ? ICONO_OK : ICONO_SIG}Siguiente acción</Link>
@@ -559,7 +560,7 @@ export function Hoy({ hoy }: { hoy: string }) {
       </div>
 
       {/* Series rápidas: flexiones al salir del taller, dominadas en la escalera */}
-      {d.contadores.length > 0 && (
+      {usa(ajustes, 'series') && d.contadores.length > 0 && (
         <section className="col" style={{ gap: 8 }} aria-label="Series rápidas">
           <div className="fila entre">
             <span className="seccion-titulo">Series rápidas</span>
@@ -607,7 +608,7 @@ export function Hoy({ hoy }: { hoy: string }) {
       )}
 
       {/* Organización: lo que me toca hoy (tareas de los frentes). */}
-      <TiraOrganizacion hoy={hoy} />
+      {usa(ajustes, 'organizacion') && <TiraOrganizacion hoy={hoy} />}
 
       {/* Juego, Entrenamiento y Calendario ya están en la barra de abajo: no se repiten acá. */}
 

@@ -14,14 +14,17 @@ import { nuevoId } from '../../services/reloj'
 import { Atras, DiasSemana, Hoja, Tarjeta } from '../componentes'
 import { ComoEmpezar, diasCortos, nombreEleccion } from '../ComoEmpezar'
 import { avisar, mutar, useDatos } from '../estado'
+import { useFunciones } from '../funciones'
 
 function dias(d: number[]): string {
-  return [...d].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((x) => nombreDiaSemana(x, true)).join(' y ')
+  const n = [...d].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((x) => nombreDiaSemana(x, true))
+  return n.length > 1 ? `${n.slice(0, -1).join(', ')} y ${n[n.length - 1]}` : n.join('')
 }
 
 const IDEAS_OCULTAS = 'rutinas-ideas-ocultas'
 
 export function Rutinas() {
+  const usaF = useFunciones()
   const datos = useDatos(async () => {
     const rutinas = await listarRutinas(true)
     const entreno = await db().acciones.get('entrenamiento')
@@ -54,7 +57,7 @@ export function Rutinas() {
           <button className="boton chico" onClick={async () => { await mutar(() => igualarDiasEntrenar()); avisar(`Entrenar: ${diasCortos(d!.diasRutinas)}`, { tipo: 'ok' }) }}>Usar los días de mis rutinas</button>
         </Tarjeta>
       )}
-      {conEjemplo && !ideasOcultas && (
+      {usaF('ideasRutina') && conEjemplo && !ideasOcultas && (
         <Tarjeta compacta>
           <b>Ideas para ir agrandándola</b>
           <ul className="texto-2 chico rutinas-ideas">{IDEAS_DE_A_POCO.map((x) => <li key={x}>{x}</li>)}</ul>
@@ -78,7 +81,7 @@ export function Rutinas() {
       })}
       <div className="rutinas-acciones">
         <button className="boton" onClick={nueva}>+ Nueva rutina</button>
-        <button className="boton" onClick={() => setElegir(true)}>Elegir cómo empezar</button>
+        {usaF('planes') && <button className="boton" onClick={() => setElegir(true)}>Elegir cómo empezar</button>}
       </div>
       {rutinas.length > 0 && <Link to="/entreno" className="boton primario grande ancho">Empezar entreno</Link>}
       <Hoja abierta={elegir} onCerrar={() => setElegir(false)} titulo="Elegir cómo empezar">

@@ -10,12 +10,14 @@ import { Tarjeta } from '../componentes'
 import { avisar, useDatos } from '../estado'
 import { configRecomendaciones } from '../../services/recomendaciones'
 import { iconoTema } from '../../temas/temas'
+import { usa } from '../../services/funciones'
+import type { Funcion } from '../../data/tipos'
 
-type Seccion = { a: string; t: string; d: string; claves: string; icono?: string }
+type Seccion = { a: string; t: string; d: string; claves: string; icono?: string; funcion?: Funcion }
 
 /** Lo de la app en sí: primera fila, cada uno con su botón. */
 const SISTEMA: Seccion[] = [
-  { a: '/organizacion', t: 'Organización', d: 'Notas y tareas', icono: 'icono-organizacion', claves: 'organizacion tareas notas pendientes frentes bandeja anotar me toca hoy' },
+  { a: '/organizacion', funcion: 'organizacion', t: 'Organización', d: 'Notas y tareas', icono: 'icono-organizacion', claves: 'organizacion tareas notas pendientes frentes bandeja anotar me toca hoy' },
   { a: '/mas/copia', t: 'Copia', d: 'Exportar e importar', icono: 'icono-copia', claves: 'copia seguridad backup exportar importar json csv texto guardar datos' },
   { a: '/mas/animaciones', t: 'Animaciones', d: 'Ver y elegir', icono: 'icono-animaciones', claves: 'animaciones shinobi pajaro torpe rival batalla sonido video' },
   { a: '/mas/tema', t: 'Tema', d: 'Tema y nombres', icono: 'icono-tema', claves: 'tema nombres nombre app fases color' },
@@ -29,17 +31,17 @@ const SISTEMA: Seccion[] = [
 /** El resto, en tres grupos cortos (la explicación larga va adentro de cada pantalla). */
 const GRUPOS: { titulo: string; items: Seccion[] }[] = [
   { titulo: 'Yo', items: [
-    { a: '/configurar', t: 'Configurar de nuevo', d: 'Los 7 pasos del primer día, sin borrar nada', claves: 'configurar de nuevo asistente primer arranque bienvenida pilares series flexiones dominadas sueno juego agua fruta avisos' },
+    { a: '/configurar', t: 'Configurar de nuevo', d: 'Los pasos del primer día, sin borrar nada', claves: 'configurar de nuevo asistente primer arranque bienvenida funciones usar apagar prender pilares series flexiones dominadas sueno juego agua fruta avisos' },
     { a: '/mas/identidad', t: 'Identidad', d: 'Visión y obstáculos', claves: 'identidad vision obstaculos quien soy' },
     { a: '/mas/atributos', t: 'Atributos', d: 'Tus cinco áreas', claves: 'atributos areas stats fuerza' },
-    { a: '/mas/metas', t: 'Metas con fecha', d: 'Qué querés lograr y cuándo', claves: 'metas fecha objetivo lograr verde rojo' },
+    { a: '/mas/metas', funcion: 'metas', t: 'Metas con fecha', d: 'Qué querés lograr y cuándo', claves: 'metas fecha objetivo lograr verde rojo' },
     { a: '/mas/objetivos', t: 'Objetivos y fases', d: 'Qué buscás en cada etapa', claves: 'objetivos fases etapas 30 dias disciplina constancia' },
   ] },
   { titulo: 'Día a día', items: [
     { a: '/mas/acciones', t: 'Pilares y acciones', d: 'Hora límite, mínimo y XP', claves: 'pilares acciones compromisos hora limite xp minimo' },
     { a: '/mas/creador', t: 'Recomendaciones del creador', d: 'Los pilares del creador', claves: 'recomendaciones creador pilares sugeridos' },
-    { a: '/mas/comida', t: 'Comida', d: 'Calorías, proteína y agua', claves: 'comida calorias proteina peso agua botella dieta plan' },
-    { a: '/mas/contadores', t: 'Contadores', d: 'Flexiones y dominadas', claves: 'contadores flexiones dominadas series cuota extra' },
+    { a: '/mas/comida', funcion: 'comida', t: 'Comida', d: 'Calorías, proteína y agua', claves: 'comida calorias proteina peso agua botella dieta plan' },
+    { a: '/mas/contadores', funcion: 'series', t: 'Contadores', d: 'Flexiones y dominadas', claves: 'contadores flexiones dominadas series cuota extra' },
   ] },
   { titulo: 'Entreno y descanso', items: [
     { a: '/mas/rutinas', t: 'Mis rutinas', d: 'Rutinas, ejercicios y días', claves: 'rutinas ejercicios entreno gimnasio colgarse barra historial series' },
@@ -89,8 +91,9 @@ export function Mas() {
   const dias = ajustes.datos?.ultimaExportacion ? Math.floor((ahora() - ajustes.datos.ultimaExportacion) / 86_400_000) : null
   const avisoCopia = ajustes.datos && (dias === null || dias >= ajustes.datos.diasAvisoCopia)
   const [busqueda, setBusqueda] = useState('')
-  const sistema = SISTEMA.filter((s) => (SINCRONIZACION_CONFIGURADA || s.a !== '/mas/sincronizar') && coincide(s, busqueda))
-  const grupos = GRUPOS.map((g) => ({ ...g, items: g.items.filter((s) => coincide(s, busqueda)) })).filter((g) => g.items.length > 0)
+  const visible = (s: Seccion) => !s.funcion || usa(ajustes.datos, s.funcion)
+  const sistema = SISTEMA.filter((s) => (SINCRONIZACION_CONFIGURADA || s.a !== '/mas/sincronizar') && visible(s) && coincide(s, busqueda))
+  const grupos = GRUPOS.map((g) => ({ ...g, items: g.items.filter((s) => visible(s) && coincide(s, busqueda)) })).filter((g) => g.items.length > 0)
   const nada = sistema.length === 0 && grupos.length === 0
   return (
     <>

@@ -22,6 +22,7 @@ import { Confirmar } from '../componentes'
 import { bloquesEntre } from '../../services/horario'
 import { HorarioDelDia } from './MiHorario'
 import { simbolo } from '../../temas/temas'
+import { useFunciones } from '../funciones'
 
 function primerDiaMes(fecha: string): string {
   return fecha.slice(0, 8) + '01'
@@ -34,6 +35,7 @@ function diasDelMes(primero: string): string[] {
 }
 
 export function Calendario({ hoy }: { hoy: string }) {
+  const usaF = useFunciones()
   const [params, setParams] = useSearchParams()
   const pedido = params.get('dia')
   const [mes, setMes] = useState(primerDiaMes(pedido && esFechaValida(pedido) ? pedido : hoy))
@@ -80,7 +82,7 @@ export function Calendario({ hoy }: { hoy: string }) {
 
   return (
     <>
-      <Link to="/calendario/horario" className="boton ancho hor-boton"><span>Mi horario<span className="desc">bloques fijos de la semana: colegio, trabajo, entreno</span></span><span className="flecha">›</span></Link>
+      {usaF('horario') && <Link to="/calendario/horario" className="boton ancho hor-boton"><span>Mi horario<span className="desc">bloques fijos de la semana: colegio, trabajo, entreno</span></span><span className="flecha">›</span></Link>}
       <div className="fila entre">
         <button className="boton chico" onClick={() => setMes(sumarDias(mes, -1).slice(0, 8) + '01')} aria-label="Mes anterior">‹</button>
         <h1 style={{ textTransform: 'capitalize' }} className="cal-titulo"><span className="cal-kanji" aria-hidden>{simbolo('暦')}</span>{nombreMes(m)} {a}</h1>

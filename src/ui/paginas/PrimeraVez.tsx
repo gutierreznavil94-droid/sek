@@ -19,33 +19,49 @@ import { temaTieneFormulario } from '../../services/recomendaciones'
 import { ListaAvisos } from './AlarmasTelefono'
 import { diasDeEleccion, type EleccionEntreno } from '../../data/planes'
 import { ComoEmpezar, nombreEleccion } from '../ComoEmpezar'
+import { FUNCIONES, usa } from '../../services/funciones'
+import type { Funcion } from '../../data/tipos'
 
 const MuniecoVivo = lazy(() => import('../animaciones/Escena').then((m) => ({ default: m.MuniecoVivo })))
 const BASE = import.meta.env.BASE_URL
 
-const PASOS = [
-  { kanji: '始', titulo: 'Nombre y tema' },
-  { kanji: '柱', titulo: 'Tus pilares' },
-  { kanji: '力', titulo: 'Series rápidas' },
-  { kanji: '眠', titulo: 'Sueño' },
-  { kanji: '遊', titulo: 'Juego' },
-  { kanji: '水', titulo: 'Comida y agua' },
-  { kanji: '鈴', titulo: 'Avisos' },
-  { kanji: '誓', titulo: 'Resumen' },
+type IdPaso = 'nombre' | 'usar' | 'pilares' | 'series' | 'sueno' | 'juego' | 'comida' | 'avisos' | 'resumen'
+const PASOS: { id: IdPaso; kanji: string; titulo: string }[] = [
+  { id: 'nombre', kanji: '始', titulo: 'Nombre y tema' },
+  { id: 'usar', kanji: '選', titulo: '¿Qué querés usar?' },
+  { id: 'pilares', kanji: '柱', titulo: 'Tus pilares' },
+  { id: 'series', kanji: '力', titulo: 'Series rápidas' },
+  { id: 'sueno', kanji: '眠', titulo: 'Sueño' },
+  { id: 'juego', kanji: '遊', titulo: 'Juego' },
+  { id: 'comida', kanji: '水', titulo: 'Comida y agua' },
+  { id: 'avisos', kanji: '鈴', titulo: 'Avisos' },
+  { id: 'resumen', kanji: '誓', titulo: 'Resumen' },
 ]
-/** Pasos con número (el resumen no cuenta). */
-const TOTAL = PASOS.length - 1
+
+/** Los pasos que tocan según lo que se usa: lo apagado en «¿Qué querés usar?» no tiene paso. */
+function pasosVisibles(c: ConfigPrimeraVez): typeof PASOS {
+  const f = (x: Funcion) => usa(c, x)
+  return PASOS.filter((p) => {
+    if (p.id === 'series') return f('series')
+    if (p.id === 'juego') return f('juego')
+    if (p.id === 'comida') return f('comida')
+    // Los horarios de la noche sirven al Sueño y al pilar «Dormir a horario».
+    if (p.id === 'sueno') return f('sueno') || c.pilares.some((x) => x.clave === 'dormir')
+    return true
+  })
+}
 
 /** Qué vuelve a lo de entrada cada «Saltar». */
-const CAMPOS_DEL_PASO: (keyof ConfigPrimeraVez)[][] = [
-  ['nombreApp', 'tema'],
-  ['pilares'],
-  ['series', 'subidaSugerida', 'repsSinSerie'],
-  ['horarios'],
-  ['juego'],
-  ['agua', 'fruta'],
-  ['avisos'],
-]
+const CAMPOS_DEL_PASO: Partial<Record<IdPaso, (keyof ConfigPrimeraVez)[]>> = {
+  nombre: ['nombreApp', 'tema'],
+  usar: ['funciones'],
+  pilares: ['pilares'],
+  series: ['series', 'subidaSugerida', 'repsSinSerie'],
+  sueno: ['horarios'],
+  juego: ['juego'],
+  comida: ['agua', 'fruta'],
+  avisos: ['avisos'],
+}
 
 function restarMinutos(hora: string | undefined, min: number): string | undefined {
   if (!hora) return undefined
@@ -83,24 +99,27 @@ export function PrimeraVez({ hoy, deNuevo = false }: { hoy: string; deNuevo?: bo
   if (!c || !inicial) return <div className="contenido"><Cargando /></div>
   const cambiar = (x: Partial<ConfigPrimeraVez>) => setC({ ...c, ...x })
 
+  const pasos = pasosVisibles(c)
+  const TOTAL = pasos.length - 1
+  const id = pasos[Math.min(paso, pasos.length - 1)].id
   const errorDelPaso = (): string | null => {
-    if (paso === 0 && !c.nombrePersona.trim()) return 'Escribí tu nombre para seguir.'
+    if (id === 'nombre' && !c.nombrePersona.trim()) return 'Escribí tu nombre para seguir.'
     const errores = validarPrimeraVez({ ...c, nombrePersona: c.nombrePersona || 'x' })
-    if (paso === 1) {
+    if (id === 'pilares') {
       if (!c.pilares.length) return 'Prendé al menos un pilar.'
       return errores.find((x) => x.startsWith('«') && c.pilares.some((p) => x.startsWith(`«${p.nombre}»`)) || x.startsWith('Cada pilar') || x.startsWith('Máximo')) ?? null
     }
-    if (paso === 2) return errores.find((x) => x.startsWith('Cada serie') || x.includes('reps y series') || x.includes('Tensión')) ?? null
-    if (paso === 3) return errores.find((x) => x.startsWith('Revisá los horarios')) ?? null
-    if (paso === 4) return errores.find((x) => x.includes('Juego')) ?? null
-    if (paso === 5) return errores.find((x) => x.includes('agua') || x.includes('frutas')) ?? null
+    if (id === 'series') return errores.find((x) => x.startsWith('Cada serie') || x.includes('reps y series') || x.includes('Tensión')) ?? null
+    if (id === 'sueno') return errores.find((x) => x.startsWith('Revisá los horarios')) ?? null
+    if (id === 'juego') return errores.find((x) => x.includes('Juego')) ?? null
+    if (id === 'comida') return errores.find((x) => x.includes('agua') || x.includes('frutas')) ?? null
     return null
   }
   const bloqueo = errorDelPaso()
-  const ir = (n: number) => { setError(''); setPaso(Math.max(0, Math.min(PASOS.length - 1, n))); window.scrollTo(0, 0) }
+  const ir = (n: number) => { setError(''); setPaso(Math.max(0, Math.min(pasos.length - 1, n))); window.scrollTo(0, 0) }
   const saltar = () => {
     const vuelta: Partial<ConfigPrimeraVez> = {}
-    for (const k of CAMPOS_DEL_PASO[paso] ?? []) (vuelta as Record<string, unknown>)[k] = inicial[k]
+    for (const k of CAMPOS_DEL_PASO[id] ?? []) (vuelta as Record<string, unknown>)[k] = inicial[k]
     setC({ ...c, ...vuelta })
     ir(paso + 1)
   }
@@ -124,28 +143,28 @@ export function PrimeraVez({ hoy, deNuevo = false }: { hoy: string; deNuevo?: bo
       setGuardando(false)
     }
   }
-  const esResumen = paso === PASOS.length - 1
+  const esResumen = id === 'resumen'
 
   return (
-    <div className="pv" data-paso={paso + 1}>
+    <div className="pv" data-paso={id}>
       <header className="pv-cabeza">
         <div className="pv-trazos" aria-label={esResumen ? 'Resumen' : `Paso ${paso + 1} de ${TOTAL}`}>
-          {PASOS.slice(0, TOTAL).map((p, i) => <span key={p.titulo} className={i < paso ? 'hecho' : i === paso ? 'actual' : ''} />)}
+          {pasos.slice(0, TOTAL).map((p, i) => <span key={p.titulo} className={i < paso ? 'hecho' : i === paso ? 'actual' : ''} />)}
         </div>
         <div className="pv-titulo">
-          <span className="pv-kanji" aria-hidden>{PASOS[paso].kanji}</span>
+          <span className="pv-kanji" aria-hidden>{pasos[paso]?.kanji}</span>
           <div>
             <span className="pv-num">{esResumen ? (deNuevo ? 'Configurar de nuevo' : 'Listo') : `Paso ${paso + 1} de ${TOTAL}`}</span>
-            <h1>{PASOS[paso].titulo}</h1>
+            <h1>{pasos[paso]?.titulo}</h1>
           </div>
         </div>
         <Divisor className="divisor-cabecera" />
       </header>
 
-      <main className="pv-cuerpo" key={paso}>
-        {paso === 0 && (
+      <main className="pv-cuerpo" key={id}>
+        {id === 'nombre' && (
           <>
-            <p className="pv-lead">{deNuevo ? 'Revisá cada paso y cambiá lo que quieras. Tus datos, tu ciclo y tu XP quedan como están.' : 'Hola. En siete pasos cortos armamos tu app a tu gusto. Todo viene cargado: si algo te sirve así, tocá «Saltar».'}</p>
+            <p className="pv-lead">{deNuevo ? 'Revisá cada paso y cambiá lo que quieras. Tus datos, tu ciclo y tu XP quedan como están.' : `Hola. En ${TOTAL} pasos cortos armamos tu app a tu gusto. Todo viene cargado: si algo te sirve así, tocá «Saltar».`}</p>
             <div className="campo">
               <label htmlFor="pv-nombre">¿Cómo te llamás?</label>
               <input id="pv-nombre" value={c.nombrePersona} autoComplete="given-name" placeholder="Tu nombre" onChange={(e) => cambiar({ nombrePersona: e.target.value })} />
@@ -160,18 +179,20 @@ export function PrimeraVez({ hoy, deNuevo = false }: { hoy: string; deNuevo?: bo
           </>
         )}
 
-        {paso === 1 && (
+        {id === 'usar' && <ElegirFunciones valor={c.funciones ?? {}} onChange={(funciones) => cambiar({ funciones })} />}
+
+        {id === 'pilares' && (
           <ElegirPilares
             valor={c.pilares}
             onChange={(pilares) => cambiar({ pilares })}
             entreno={c.entreno ?? { modo: 'poco' }}
-            onEntreno={deNuevo ? undefined : (entreno, pilares) => cambiar(pilares ? { entreno, pilares } : { entreno })}
+            onEntreno={deNuevo || !usa(c, 'planes') ? undefined : (entreno, pilares) => cambiar(pilares ? { entreno, pilares } : { entreno })}
           />
         )}
 
-        {paso === 2 && <ElegirSeries c={c} onChange={cambiar} />}
+        {id === 'series' && <ElegirSeries c={c} onChange={cambiar} />}
 
-        {paso === 3 && (
+        {id === 'sueno' && (
           <>
             <p className="pv-lead">La noche en tres pasos. Con esto la app te avisa y arma tu modo sueño.</p>
             <FilaHora id="pv-h1" etiqueta="Me empiezo a alistar" ayuda="Ducha, dientes, ropa de mañana" valor={c.horarios.alistarse} onChange={(v) => cambiar({ horarios: { ...c.horarios, alistarse: v } })} />
@@ -181,7 +202,7 @@ export function PrimeraVez({ hoy, deNuevo = false }: { hoy: string; deNuevo?: bo
           </>
         )}
 
-        {paso === 4 && c.juego && (
+        {id === 'juego' && c.juego && (
           <>
             <p className="pv-lead">Cuánto tiempo de Juego te permitís por día. La pestaña Juego lo cuenta y te avisa al llegar.</p>
             <FilaMinutos id="pv-j1" etiqueta="Lunes a viernes" valor={c.juego.semana} onChange={(v) => cambiar({ juego: { ...c.juego!, semana: v } })} />
@@ -190,7 +211,7 @@ export function PrimeraVez({ hoy, deNuevo = false }: { hoy: string; deNuevo?: bo
           </>
         )}
 
-        {paso === 5 && c.agua && c.fruta && (
+        {id === 'comida' && c.agua && c.fruta && (
           <>
             <p className="pv-lead">La cantimplora y la manzana de Hoy. Si no las querés, «No usar» y no aparecen.</p>
             <div className={`pv-pilar ${c.agua.usar ? 'elegido' : ''}`}>
@@ -213,16 +234,16 @@ export function PrimeraVez({ hoy, deNuevo = false }: { hoy: string; deNuevo?: bo
           </>
         )}
 
-        {paso === 6 && <PasoAvisos c={c} onChange={cambiar} />}
+        {id === 'avisos' && <PasoAvisos c={c} onChange={cambiar} />}
 
         {esResumen && <Resumen c={c} deNuevo={deNuevo} tema={temaPorId(c.tema)} />}
 
-        {(error || (bloqueo && paso !== 0)) && <p className="error chico">{error || bloqueo}</p>}
+        {(error || (bloqueo && id !== 'nombre')) && <p className="error chico">{error || bloqueo}</p>}
       </main>
 
       <footer className="pv-pie">
         {paso > 0 ? <button className="boton" onClick={() => ir(paso - 1)} disabled={guardando}>‹ Atrás</button> : deNuevo ? <button className="boton" onClick={() => navegar('/mas')}>Cancelar</button> : <span />}
-        {!esResumen && <button className="boton suave pv-saltar" onClick={saltar} disabled={paso === 0 && !c.nombrePersona.trim()}>Saltar</button>}
+        {!esResumen && <button className="boton suave pv-saltar" onClick={saltar} disabled={id === 'nombre' && !c.nombrePersona.trim()}>Saltar</button>}
         {!esResumen ? (
           <button className="boton primario" onClick={() => ir(paso + 1)} disabled={!!bloqueo}>Siguiente</button>
         ) : (
@@ -230,6 +251,35 @@ export function PrimeraVez({ hoy, deNuevo = false }: { hoy: string; deNuevo?: bo
         )}
       </footer>
     </div>
+  )
+}
+
+/** «¿Qué querés usar?»: lo del creador prendido, lo de App Nay apagado; cada uno elige. */
+function ElegirFunciones({ valor, onChange }: { valor: Partial<Record<Funcion, boolean>>; onChange: (v: Partial<Record<Funcion, boolean>>) => void }) {
+  const grupo = (de: 'sek' | 'nay', titulo: string) => (
+    <>
+      <span className="seccion-titulo">{titulo}</span>
+      <div className="pv-pilares">
+        {FUNCIONES.filter((f) => f.de === de).map((f) => {
+          const prendida = usa({ funciones: valor }, f.id)
+          return (
+            <div key={f.id} className={`pv-pilar ${prendida ? 'elegido' : ''}`}>
+              <div className="pv-pilar-cabeza">
+                <span className="crece col" style={{ gap: 2 }}><b>{f.nombre}</b><span className="texto-3 chico">{f.detalle}</span></span>
+                <Interruptor etiqueta={f.nombre} valor={prendida} onChange={(v) => onChange({ ...valor, [f.id]: v })} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </>
+  )
+  return (
+    <>
+      <p className="pv-lead">Prendé solo lo que vas a usar. Lo apagado no aparece en Hoy ni en Más y sus avisos no suenan. Se cambia cuando quieras en Más → Configurar de nuevo.</p>
+      {grupo('sek', 'De SEK')}
+      {grupo('nay', 'Extras de entreno')}
+    </>
   )
 }
 

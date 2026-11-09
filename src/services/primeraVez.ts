@@ -6,13 +6,14 @@
 
 import { db } from '../data/db'
 import { ACCIONES_INICIALES } from '../data/semilla'
-import type { Accion, Ajustes, Contador } from '../data/tipos'
+import type { Accion, Ajustes, Contador, Funcion } from '../data/tipos'
 import { cuotaDeSeries, seriesDe } from '../domain/cuotas'
 import { configAgua } from './agua'
 import { guardarContador } from './contadores'
 import { configFruta, FRUTA_DEFECTO } from './fruta'
 import { nuevoId } from './reloj'
 import { planPorId, rutinasDeEleccion, type EleccionEntreno } from '../data/planes'
+import { funcionesElegidas } from './funciones'
 import { esHoraValida, type FechaDia } from '../domain/fechas'
 import { temaPorId } from '../temas/temas'
 import { guardarAccion } from './acciones'
@@ -148,6 +149,8 @@ export type ConfigPrimeraVez = {
   pilaresIniciales?: string[]
   /** Cómo arrancar a entrenar. Si falta: «de a poco» (la rutina de ejemplo). */
   entreno?: EleccionEntreno
+  /** «¿Qué querés usar?»: cada parte prendida o apagada. Si falta, quedan como estaban. */
+  funciones?: Partial<Record<Funcion, boolean>>
 }
 
 /** ¿Hay que mostrar la primera vez? Solo si nunca hubo un ciclo y no se completó antes. */
@@ -331,6 +334,7 @@ async function aplicarAjustes(c: ConfigPrimeraVez, deNuevo: boolean): Promise<vo
     cambios.fruta = { ...f, usar: c.fruta.usar, objetivo1: n, objetivo2: Math.max(f.objetivo2, n + 1) }
   }
   if (c.avisos) { cambios.avisos = c.avisos.avisos; cambios.avisosPropios = c.avisos.avisosPropios }
+  if (c.funciones) cambios.funciones = { ...a.funciones, ...c.funciones }
   if (c.repsSinSerie) cambios.batalla = { ...a.batalla, repsSinSerie: Math.round(c.repsSinSerie) }
   if (!deNuevo) cambios.aMedida = true
   await guardarAjustes(cambios, deNuevo ? 'Configurar de nuevo' : 'Primera vez')
@@ -349,7 +353,8 @@ export async function configurarPrimeraVez(c: ConfigPrimeraVez): Promise<void> {
   // Entreno: si no hay sesiones, las rutinas de Navil se cambian por lo elegido (de a poco: la de ejemplo).
   if ((await d.sesionesEntreno.count()) === 0) {
     const entrenar = c.pilares.find((p) => p.clave === 'entrenar')
-    const eleccion = c.entreno ?? { modo: 'poco' }
+    // Con «Planes de entreno» apagado se arranca como siempre: de a poco (la rutina de ejemplo).
+    const eleccion: EleccionEntreno = (c.funciones?.planes === false ? undefined : c.entreno) ?? { modo: 'poco' }
     const rutinas = rutinasDeEleccion(eleccion, entrenar?.dias ?? [1, 3, 5])
     const t = ahora()
     await d.transaction('rw', [d.rutinas, d.eventos], async () => {
@@ -387,6 +392,7 @@ export async function configDeEntrada(hoy: FechaDia, deNuevo: boolean): Promise<
     juego: { semana: a.limiteJuegoSemana, finde: a.limiteJuegoFinde },
     avisos: { avisos: a.avisos, avisosPropios: a.avisosPropios },
     repsSinSerie: a.batalla?.repsSinSerie ?? 10,
+    funciones: funcionesElegidas(deNuevo ? a : null),
   }
   if (!deNuevo) {
     return {
