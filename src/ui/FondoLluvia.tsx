@@ -21,6 +21,7 @@
 import { useEffect, useRef } from 'react'
 import { movimientoReducido } from './componentes'
 import { useTema } from '../temas/temas'
+import { LluviaPastel } from './LluviaPastel'
 
 export type VarianteLluvia = 'hoy' | 'calendario' | 'juego' | 'sueno' | 'comida' | 'entreno' | 'mas'
 
@@ -572,6 +573,6 @@ export function FondoLluvia({ variante, calma = false, enCaja = false }: { varia
     window.addEventListener('resize', alMedir)
     return () => { cancelAnimationFrame(id); window.removeEventListener('resize', alMedir) }
   }, [variante, enCaja, propio])
-  if (propio) return <div className={`fondo-propio ${variante}${enCaja ? ' en-caja' : ''}`} aria-hidden>{Array.from({ length: 9 }, (_, i) => <span key={i} />)}</div>
+  if (propio) return <LluviaPastel enCaja={enCaja} calma={calma} />
   return <canvas ref={ref} className={`fondo-lluvia ${variante}${enCaja ? ' en-caja' : ''}`} aria-hidden />
 }

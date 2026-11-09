@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import proximamente from './proximamente.json'
 import './shinobi/visual.css'
 import { activarTemaVisual } from './registro'
+import { EMOJI_POR_KANJI, sinKanjis } from './sinKanjis'
 
 /**
  * Temas: la cara de la app (personaje, fondos, sprite, color de acento, kanjis).
@@ -241,6 +242,7 @@ export function aplicarTema(id: string | undefined, nombreApp?: string): Definic
       if (col['color-con-alguien']) raiz.style.setProperty('--tp-con-alguien', col['color-con-alguien'])
       raiz.dataset.temaPropio = activo.claro ? 'claro' : 'oscuro'
     } else delete raiz.dataset.temaPropio
+    sinKanjis(!!activo.propio, activo.adornos?.simbolos)
     if (activo.kanjis) delete raiz.dataset.kanjis
     else raiz.dataset.kanjis = 'no'
     raiz.dataset.tema = activo.id
@@ -252,7 +254,7 @@ export function aplicarTema(id: string | undefined, nombreApp?: string): Definic
 
 /** Símbolo a mostrar con el tema activo: el reemplazo del tema o el mismo (Shinobi no reemplaza nada). */
 export function simbolo(s: string, tema: DefinicionTema = activo): string {
-  return tema.adornos?.simbolos?.[s] ?? s
+  return tema.adornos?.simbolos?.[s] ?? (tema.propio ? EMOJI_POR_KANJI[s] : undefined) ?? s
 }
 
 /** Adorno elegido por el tema activo, con el de Shinobi si no eligió. */
@@ -278,7 +280,8 @@ export function saludoDe(tema: DefinicionTema, nombre: string): string {
 
 /** Ícono del tema activo por nombre genérico (texto o kanji). Si el tema no lo tiene, el de Shinobi; si tampoco, vacío. */
 export function iconoTema(nombre: string, tema: DefinicionTema = activo): string {
-  return tema.iconos?.[nombre] ?? base.iconos?.[nombre] ?? ''
+  const i = tema.iconos?.[nombre] ?? base.iconos?.[nombre] ?? ''
+  return tema.propio ? simbolo(i, tema) : i
 }
 
 /** Color del tema activo por nombre genérico. Si el tema no lo tiene, el de Shinobi; «color-principal» cae en el acento. */
