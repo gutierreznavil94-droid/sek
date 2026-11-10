@@ -7,6 +7,7 @@
  * - Actualización: baja el APK nuevo y abre el instalador de Android.
  */
 import { registerPlugin } from '@capacitor/core'
+import { temaActivo } from '../temas/temas'
 
 /** Algo que se tocó en el widget con la app cerrada. */
 export type AccionWidget = { tipo: 'pilar'; id: string; instante: number } | { tipo: 'vaso'; instante: number } | { tipo: 'fruta'; instante: number }
@@ -150,11 +151,13 @@ export async function elegirTonoDelCelu(): Promise<{ uri: string; nombre: string
 
 /** Una app del celu que se eligió mirar, con los minutos por día antes de que SEK te llame. */
 export type AppVigilada = { paquete: string; nombre: string; minutos: number }
-export type ConfigVigia = { activo: boolean; repetir: number; apps: AppVigilada[] }
+export type ConfigVigia = { activo: boolean; repetir: number; apps: AppVigilada[]; /** Lo pone la app: tema Shinobi → el Tajo encima. */ tajo?: boolean }
 export type AppInstalada = { paquete: string; nombre: string; icono: string }
 
 export async function guardarVigiaNativo(c: ConfigVigia): Promise<void> {
-  if (esAndroid()) await Sek.vigiaGuardar({ config: JSON.stringify(c) }).catch(() => {})
+  if (!esAndroid()) return
+  const t = temaActivo()
+  await Sek.vigiaGuardar({ config: JSON.stringify({ ...c, tajo: !t.propio && !!t.escenas }) }).catch(() => {})
 }
 
 export async function estadoVigia(): Promise<{ uso: boolean; encima: boolean; activo: boolean } | null> {

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SEK · Tajo</title>
+<!-- «Apps que te atrapan» (APK, tema Shinobi): se abre transparente ENCIMA de la otra app.
+     El blanco del clip se vuelve transparente, así lo que se corta es la pantalla de la otra app.
+     Tocar: SekTajo.tocar() abre SEK con Tensión. ?app=TikTok&min=32 · ?prueba=1 pone un fondo de ejemplo. -->
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; -webkit-tap-highlight-color: transparent; }
+  body.prueba { background: linear-gradient(160deg, #ff5f8f, #6a5cff 55%, #19c3b1); }
+  .tajo-video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: url(#luma) brightness(0.72) contrast(1.1); }
+  .riel { position: fixed; left: 50%; top: 50%; height: 6px; pointer-events: none; }
+  .hoja { position: absolute; top: 0; left: 0; width: 180px; height: 6px; border-radius: 3px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.6) 35%, #fff 70%, #ff3b3b 88%, #ff8a8a 100%); box-shadow: 0 0 10px 2px rgba(255,255,255,.85), 0 0 26px 6px rgba(255,60,60,.55); animation: hoja .4s cubic-bezier(.2,.7,.3,1) both; }
+  @keyframes hoja { 0% { transform: translateX(-180px); opacity: 0; } 10%, 85% { opacity: 1; } 100% { transform: translateX(var(--largo)); opacity: 0; } }
+  .texto { position: fixed; left: 16px; right: 16px; top: max(7vh, 44px); text-align: center; color: #f3efe6; font: 800 1.35rem/1.25 system-ui, sans-serif; text-shadow: 0 2px 0 #000, 0 0 14px rgba(200,16,46,.9); opacity: 0; animation: aparece .5s ease-out 2.2s forwards; }
+  .texto small { display: block; margin-top: 8px; font-weight: 600; font-size: .95rem; color: rgba(243,239,230,.85); }
+  .texto b { color: #ff3b4f; }
+  @keyframes aparece { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" aria-hidden="true"><filter id="luma" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  -3 -5.9 -1.1 0 7.2"/></filter></svg>
+<video class="tajo-video" id="v" muted playsinline autoplay preload="auto">
+  <source src="shinobi/tajo.webm" type="video/webm">
+  <source src="shinobi/tajo.mp4" type="video/mp4">
+</video>
+<p class="texto" id="t"></p>
+<script>
+  var q = new URLSearchParams(location.search)
+  if (q.get('prueba')) document.body.className = 'prueba'
+  var app = q.get('app') || 'esa app', min = q.get('min') || ''
+  var t = document.getElementById('t')
+  t.innerHTML = ''
+  var linea = document.createElement('span')
+  linea.textContent = 'Llevás ' + (min ? min + ' min' : 'mucho') + ' en ' + app + '. '
+  var b = document.createElement('b'); b.textContent = 'Dudar es fracasar.'
+  var s = document.createElement('small'); s.textContent = 'Tocá la mano y volvé a lo tuyo.'
+  t.appendChild(linea); t.appendChild(b); t.appendChild(s)
+  var v = document.getElementById('v'), hecha = false
+  v.addEventListener('timeupdate', function () {
+    if (hecha || v.currentTime < 1.0) return
+    hecha = true
+    var w = innerWidth, h = innerHeight, largo = Math.hypot(w, h)
+    var r = document.createElement('div'); r.className = 'riel'
+    r.style.width = largo + 'px'; r.style.setProperty('--largo', largo + 'px')
+    r.style.transform = 'translate(-50%, -50%) rotate(' + (Math.atan2(h, -w) * 180 / Math.PI) + 'deg)'
+    r.appendChild(Object.assign(document.createElement('div'), { className: 'hoja' }))
+    document.body.appendChild(r)
+  })
+  var p = v.play(); if (p && p.catch) p.catch(function () {})
+  function tocar() { if (window.SekTajo) window.SekTajo.tocar() }
+  document.addEventListener('pointerdown', tocar)
+</script>
+</body>
+</html>

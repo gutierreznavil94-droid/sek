@@ -112,6 +112,8 @@ export function PuenteAndroid({ listo }: { listo: boolean }) {
   useEffect(() => {
     if (!android || !listo) return
     void guardarTemaNativo({ id: tema.id, fondos: tema.widget?.fondos ?? [], alarma: tema.widget?.alarma })
+    // El Tajo encima de otras apps solo con el tema Shinobi: se vuelve a mandar la config al cambiar de tema.
+    void obtenerAjustes().then((a) => { if (a.vigia) void guardarVigiaNativo(a.vigia) })
   }, [android, listo, tema])
 
   // Los widgets se actualizan después de cada cambio (con una pausa chica para juntar varios).

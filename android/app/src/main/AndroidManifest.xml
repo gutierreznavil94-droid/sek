@@ -51,6 +51,14 @@
             android:name=".AlarmaServicio"
             android:exported="false"
             android:foregroundServiceType="systemExempted|mediaPlayback" />
+        <!-- Tajo encima de la otra app (tema Shinobi): ventana transparente. -->
+        <activity
+            android:name=".TajoActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity="ar.sek.app.tajo"
+            android:launchMode="singleInstance"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen" />
         <!-- «Apps que te atrapan»: mira el tiempo en las apps elegidas y abre SEK encima al pasarse. -->
         <service
             android:name=".VigiaServicio"

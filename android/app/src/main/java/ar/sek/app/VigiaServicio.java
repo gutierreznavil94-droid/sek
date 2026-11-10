@@ -131,6 +131,13 @@ public class VigiaServicio extends Service {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         if (Vigia.puedeEncima(this)) {
             try {
+                // Shinobi: el Tajo corta la pantalla de la otra app y sale la mano; al tocarla, SEK con Tensión.
+                if (Vigia.config(this).optBoolean("tajo", false)) {
+                    startActivity(new Intent(this, TajoActivity.class)
+                            .putExtra(TajoActivity.EXTRA_APP, nombre).putExtra(TajoActivity.EXTRA_MIN, minutos)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION));
+                    return;
+                }
                 startActivity(abrir);
                 return;
             } catch (Exception ignorado) {
