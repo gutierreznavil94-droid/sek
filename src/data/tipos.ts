@@ -363,6 +363,8 @@ export type Ajustes = {
   /** Adaptación del sueño: desde cuándo, etapas editables y tolerancia de «a horario». */
   adaptacion?: ConfigAdaptacion
   /** Fondo con lluvia dibujada en Hoy, Calendario, Juego y Sueño (todos encendidos si falta). */
+  /** Cuánta lluvia: llovizna, lluvia (lo de siempre) o tormenta. */
+  lluviaIntensidad?: 'llovizna' | 'lluvia' | 'tormenta'
   fondoLluvia?: { hoy?: boolean; calendario?: boolean; juego?: boolean; sueno?: boolean; comida?: boolean; entreno?: boolean; mas?: boolean }
   /** Ya no se usa (v0.88.3): reemplazado por `avisos` (lo apagado acá pasa a «Nada»). */
   alarmasApagadas?: string[]

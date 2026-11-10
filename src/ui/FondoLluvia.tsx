@@ -18,7 +18,7 @@
  *
  * Autocontenido: solo usa React y `movimientoReducido` (se puede llevar a otro proyecto tal cual).
  */
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { movimientoReducido } from './componentes'
 import { useTema } from '../temas/temas'
 import { LluviaPastel } from './LluviaPastel'
@@ -52,6 +52,25 @@ const PERFIL: Record<VarianteLluvia, { vel: [number, number]; largo: [number, nu
 }
 
 const COLOR = '236, 234, 229'
+
+/** Intensidad elegida en Ajustes → Fondo con lluvia (la fija Layout al leer los ajustes). */
+export type IntensidadLluvia = 'llovizna' | 'lluvia' | 'tormenta'
+const INTENSIDAD: Record<IntensidadLluvia, { gotas: number; cerca: number; vidrio: number; rayo: [number, number] | null }> = {
+  llovizna: { gotas: 0.5, cerca: 0, vidrio: 0.5, rayo: null },
+  lluvia: { gotas: 1, cerca: 1, vidrio: 1, rayo: [45000, 90000] },
+  tormenta: { gotas: 1.45, cerca: 1.8, vidrio: 1.5, rayo: [25000, 50000] },
+}
+let intensidadActual: IntensidadLluvia = 'lluvia'
+export function fijarIntensidadLluvia(i: IntensidadLluvia | undefined): void {
+  const v = i && INTENSIDAD[i] ? i : 'lluvia'
+  if (v === intensidadActual) return
+  intensidadActual = v
+  try { window.dispatchEvent(new Event('sek-intensidad-lluvia')) } catch { /* nada */ }
+}
+/** Gota cercana: grande, rápida y desenfocada (profundidad). */
+type GotaCerca = { x: number; y: number; largo: number; vel: number; ancho: number; a: number }
+/** Salpicadura al tocar: anillo y gotitas que saltan del dedo. */
+type Toque = { x: number; y: number; t: number; gotas: { vx: number; vy: number }[] }
 /** El temporizador de Juego corriendo (lo marca la página): la lluvia va más lenta y tenue. */
 export const CLASE_JUEGO_CORRIENDO = 'juego-corriendo'
 
@@ -60,13 +79,25 @@ export function FondoLluvia({ variante, calma = false, enCaja = false }: { varia
   const ref = useRef<HTMLCanvasElement>(null)
   // Tema subido: nada de tormenta ni tinta; pétalos suaves del color del tema.
   const propio = !!useTema().propio
+  const frenteRef = useRef<HTMLCanvasElement>(null)
   const calmaRef = useRef(calma)
   calmaRef.current = calma
+  // Al cambiar la intensidad en Ajustes, la lluvia se arma de nuevo.
+  const [intensidad, setIntensidad] = useState(intensidadActual)
+  useEffect(() => {
+    const cambio = () => setIntensidad(intensidadActual)
+    window.addEventListener('sek-intensidad-lluvia', cambio)
+    return () => window.removeEventListener('sek-intensidad-lluvia', cambio)
+  }, [])
   useEffect(() => {
     const c = ref.current
     if (!c) return
-    const ctx = c.getContext('2d')
-    if (!ctx) return
+    const atras = c.getContext('2d')
+    if (!atras) return
+    let ctx: CanvasRenderingContext2D = atras
+    // Capa de adelante (encima de las tarjetas, sin tomar toques): gotas en el vidrio, salpicadura del dedo y el destello.
+    const cf = frenteRef.current
+    const frente = cf?.getContext('2d') ?? null
     const quieto = movimientoReducido()
     let w = 0
     let h = 0
@@ -99,6 +130,15 @@ export function FondoLluvia({ variante, calma = false, enCaja = false }: { varia
     let silueta: [number, number][] = []
     /** Ventana de Sueño (y zona de lluvia de afuera). */
     let ventana = { x: 0, y: 0, w: 0, h: 0 }
+    const int = INTENSIDAD[intensidadActual]
+    const cerca: GotaCerca[] = []
+    const toques: Toque[] = []
+    /** Relámpago cercano: un rayo que se ve y un destello suave (más suave de noche, para no encandilar). */
+    let rayo = 0
+    let rayoCamino: [number, number][][] = []
+    let proximoRayo = int.rayo ? performance.now() + 15000 + Math.random() * int.rayo[0] : Infinity
+    /** Gotas en el vidrio sobre la pantalla (todas las variantes con tormenta; Juego ya tiene las suyas). */
+    const vidrioPantalla = tormenta && !enCaja && variante !== 'juego'
 
     const nueva = (inicial: boolean): Gota => {
       const capa: 0 | 1 = Math.random() < 0.55 ? 0 : 1
@@ -117,6 +157,15 @@ export function FondoLluvia({ variante, calma = false, enCaja = false }: { varia
       return { x: zona.x + 6 + Math.random() * (zona.w - 12), y: inicial ? zona.y + Math.random() * zona.h * 0.9 : zona.y - 6, r: 2 + Math.random() * (variante === 'sueno' ? 1.6 : 2.6), vel: 0, quieta: Math.random() * 3, moviendo: 0, rastro: 0 }
     }
 
+    const nuevaCerca = (inicial: boolean): GotaCerca => ({
+      x: Math.random() * (w + h * Math.abs(diagonal)) - h * Math.max(0, diagonal),
+      y: inicial ? Math.random() * h : -120,
+      largo: 70 + Math.random() * 60,
+      vel: 520 + Math.random() * 260,
+      ancho: 3 + Math.random() * 3,
+      a: 0.05 + Math.random() * 0.05,
+    })
+
     const medir = () => {
       dpr = Math.min(2, window.devicePixelRatio || 1)
       const caja = enCaja ? c.getBoundingClientRect() : null
@@ -125,12 +174,16 @@ export function FondoLluvia({ variante, calma = false, enCaja = false }: { varia
       c.width = Math.round(w * dpr)
       c.height = Math.round(h * dpr)
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      if (cf && frente) { cf.width = c.width; cf.height = c.height; frente.setTransform(dpr, 0, 0, dpr, 0, 0) }
       ventana = { x: Math.round(w * 0.6), y: Math.round(h * 0.3), w: Math.round(w * 0.34), h: Math.round(h * 0.27) }
       gotas.length = 0
-      const n = Math.round(((variante === 'sueno' ? ventana.w * ventana.h : w * h) / perfil.area) * (enCaja ? 6 : 1) * (tormenta ? 1.7 * factorGotas : 1))
+      const n = Math.round(((variante === 'sueno' ? ventana.w * ventana.h : w * h) / perfil.area) * (enCaja ? 6 : 1) * (tormenta ? 1.7 * factorGotas * int.gotas : 1))
       for (let i = 0; i < n; i++) gotas.push(nueva(true))
+      cerca.length = 0
+      if (tormenta) for (let i = 0; i < Math.round((w / 95) * int.cerca * factorGotas); i++) cerca.push(nuevaCerca(true))
       vidrio.length = 0
       if (variante === 'juego') for (let i = 0; i < Math.max(9, Math.round(w / 34)); i++) vidrio.push(nuevaVidrio(true))
+      if (vidrioPantalla) for (let i = 0; i < Math.max(3, Math.round((w / 70) * int.vidrio)); i++) vidrio.push(nuevaVidrio(true))
       if (variante === 'sueno') for (let i = 0; i < 7; i++) vidrio.push(nuevaVidrio(true))
       nubes.length = 0
       if (variante === 'calendario') for (let i = 0; i < 4; i++) nubes.push({ x: (w * (i + 0.5)) / 4 + (Math.random() - 0.5) * 80, y: 150 + i * h * 0.17 + Math.random() * 40, r: 70 + Math.random() * 50, vel: 3 + Math.random() * 3, a: 0.16 + Math.random() * 0.07 })
@@ -501,11 +554,106 @@ export function FondoLluvia({ variante, calma = false, enCaja = false }: { varia
       ctx.globalAlpha = 1
       if (salpicas.length > 60) salpicas.splice(0, salpicas.length - 60)
     }
+    /** Gotas cerca de la cara: trazos anchos y transparentes con un centro más nítido (profundidad). */
+    const pintarCerca = (dt: number, lento: number) => {
+      ctx.lineCap = 'round'
+      const dg = diagonal * 1.15
+      for (const g of cerca) {
+        if (!quieto) {
+          g.y += g.vel * dt * lento
+          g.x += g.vel * dt * dg * lento
+          if (g.y - g.largo > h || g.x > w + 120 || g.x < -120) Object.assign(g, nuevaCerca(false))
+        }
+        ctx.strokeStyle = `rgba(${COLOR}, ${g.a})`
+        ctx.lineWidth = g.ancho
+        ctx.beginPath(); ctx.moveTo(g.x, g.y); ctx.lineTo(g.x - g.largo * dg, g.y - g.largo); ctx.stroke()
+        ctx.strokeStyle = `rgba(${COLOR}, ${g.a * 1.6})`
+        ctx.lineWidth = 1.1
+        ctx.beginPath(); ctx.moveTo(g.x, g.y); ctx.lineTo(g.x - g.largo * 0.7 * dg, g.y - g.largo * 0.7); ctx.stroke()
+      }
+    }
+
+    /** Camino quebrado de un rayo, con una o dos ramas. */
+    const armarRayo = (): [number, number][][] => {
+      const x0 = w * (0.15 + Math.random() * 0.7)
+      const fin = h * (0.28 + Math.random() * 0.18)
+      const tronco: [number, number][] = [[x0, -10]]
+      let x = x0
+      for (let y = -10; y < fin; ) { y += 14 + Math.random() * 22; x += (Math.random() - 0.5) * 34; tronco.push([x, y]) }
+      const ramas: [number, number][][] = [tronco]
+      for (let k = 0; k < 1 + Math.round(Math.random()); k++) {
+        const desde = tronco[2 + Math.floor(Math.random() * Math.max(1, tronco.length - 4))]
+        const rama: [number, number][] = [desde]
+        let [rx, ry] = desde
+        const lado = Math.random() < 0.5 ? -1 : 1
+        for (let i = 0; i < 4; i++) { ry += 10 + Math.random() * 16; rx += lado * (8 + Math.random() * 16); rama.push([rx, ry]) }
+        ramas.push(rama)
+      }
+      return ramas
+    }
+    /**
+     * Relámpago cercano (cada 45–90 s con «lluvia», más seguido con «tormenta», nunca con «llovizna»): se ve el rayo
+     * arriba y la pantalla se aclara apenas. De noche (19 a 7 h) el destello es la mitad, para no encandilar.
+     */
+    const pintarRayo = (dt: number, t: number) => {
+      if (quieto || !int.rayo || enCaja) return
+      if (t >= proximoRayo) {
+        rayo = 1
+        rayoCamino = armarRayo()
+        proximoRayo = t + int.rayo[0] + Math.random() * (int.rayo[1] - int.rayo[0])
+        try { window.dispatchEvent(new CustomEvent('sek-trueno', { detail: { fuerte: true } })) } catch { /* sin eventos */ }
+        try {
+          const ua = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation
+          if (!ua || ua.hasBeenActive) window.setTimeout(() => navigator.vibrate?.([22, 70, 34]), 350)
+        } catch { /* sin vibración */ }
+      }
+      if (rayo <= 0) return
+      const hora = new Date().getHours()
+      const noche = hora >= 19 || hora < 7
+      const parpadeo = rayo > 0.8 ? 1 : rayo > 0.68 ? 0.2 : rayo > 0.5 ? 0.85 : 0.45
+      const k = rayo * parpadeo
+      const destello = frente ?? ctx
+      destello.fillStyle = `rgba(${COLOR}, ${(noche ? 0.06 : 0.11) * k})`
+      destello.fillRect(0, 0, w, h)
+      if (rayo > 0.35) {
+        destello.lineCap = 'round'
+        destello.lineJoin = 'round'
+        rayoCamino.forEach((c, i) => {
+          for (const [ancho, a] of [[6, 0.1], [1.6, 0.55]] as const) {
+            destello.strokeStyle = `rgba(${COLOR}, ${a * k * (noche ? 0.55 : 1) * (i ? 0.6 : 1)})`
+            destello.lineWidth = i ? ancho * 0.6 : ancho
+            destello.beginPath(); c.forEach(([x, y], j) => (j ? destello.lineTo(x, y) : destello.moveTo(x, y))); destello.stroke()
+          }
+        })
+      }
+      rayo = Math.max(0, rayo - dt * 1.9)
+    }
+
+    /** Al tocar un pilar o un botón: un anillo de agua y gotitas que saltan del dedo. */
+    const pintarToques = (dt: number) => {
+      for (let i = toques.length - 1; i >= 0; i--) {
+        const q = toques[i]
+        q.t += dt
+        const k = q.t / 0.65
+        if (k >= 1) { toques.splice(i, 1); continue }
+        ctx.strokeStyle = `rgba(${COLOR}, ${0.5 * (1 - k)})`
+        ctx.lineWidth = 1.4
+        const r = 8 + 34 * (1 - (1 - k) ** 2)
+        ctx.beginPath(); ctx.ellipse(q.x, q.y, r, r * 0.55, 0, 0, Math.PI * 2); ctx.stroke()
+        ctx.fillStyle = `rgba(${COLOR}, ${0.7 * (1 - k)})`
+        for (const g of q.gotas) {
+          const x = q.x + g.vx * q.t
+          const y = q.y + g.vy * q.t + 520 * q.t * q.t
+          ctx.beginPath(); ctx.ellipse(x, y, 1.5, 2.2, 0, 0, Math.PI * 2); ctx.fill()
+        }
+      }
+    }
+
     /** Si el celu va lento (más de 3 s por debajo de ~35 cuadros), menos gotas. */
     const cuidarBateria = (dt: number) => {
       if (quieto) return
       lentoAcum = dt > 1 / 35 ? lentoAcum + dt : Math.max(0, lentoAcum - dt)
-      if (lentoAcum > 3 && factorGotas > 0.45) { factorGotas *= 0.65; lentoAcum = 0; gotas.splice(Math.round(gotas.length * 0.65)) }
+      if (lentoAcum > 3 && factorGotas > 0.45) { factorGotas *= 0.65; lentoAcum = 0; gotas.splice(Math.round(gotas.length * 0.65)); cerca.splice(Math.round(cerca.length * 0.5)) }
     }
 
     const dibujar = (dt: number, t: number) => {
@@ -520,6 +668,21 @@ export function FondoLluvia({ variante, calma = false, enCaja = false }: { varia
       if (tormenta) {
         if (variante !== 'mas') pintarHojasVuela(dt, t)
         pintarSalpicas(dt, t)
+        {
+          const calmo = (variante === 'entreno' && calmaRef.current) || (variante === 'juego' && document.documentElement.classList.contains(CLASE_JUEGO_CORRIENDO))
+          pintarCerca(dt, calmo ? 0.4 : 1)
+        }
+      }
+      if (frente) {
+        frente.clearRect(0, 0, w, h)
+        ctx = frente
+        if (vidrioPantalla) pintarVidrio(dt, 0.45, 1)
+        pintarToques(dt)
+        ctx = atras
+      } else pintarToques(dt)
+      if (tormenta) {
+        const calmo = (variante === 'entreno' && calmaRef.current) || (variante === 'juego' && document.documentElement.classList.contains(CLASE_JUEGO_CORRIENDO))
+        if (!calmo) pintarRayo(dt, t)
       }
     }
     const dibujarVariante = (dt: number, t: number) => {
@@ -571,8 +734,19 @@ export function FondoLluvia({ variante, calma = false, enCaja = false }: { varia
     else id = requestAnimationFrame(paso)
     const alMedir = () => { medir(); dibujar(0, performance.now()) }
     window.addEventListener('resize', alMedir)
-    return () => { cancelAnimationFrame(id); window.removeEventListener('resize', alMedir) }
-  }, [variante, enCaja, propio])
+    const alTocar = (e: PointerEvent) => {
+      if (quieto || enCaja || !(e.target instanceof Element) || !e.target.closest('.pilar-bloque, button, .boton, a.tarjeta')) return
+      toques.push({ x: e.clientX, y: e.clientY, t: 0, gotas: Array.from({ length: 7 }, () => { const a = -Math.PI * (0.1 + Math.random() * 0.8); const v = 90 + Math.random() * 120; return { vx: Math.cos(a) * v, vy: Math.sin(a) * v } }) })
+      if (toques.length > 6) toques.shift()
+    }
+    document.addEventListener('pointerdown', alTocar, { passive: true })
+    return () => { cancelAnimationFrame(id); window.removeEventListener('resize', alMedir); document.removeEventListener('pointerdown', alTocar) }
+  }, [variante, enCaja, propio, intensidad])
   if (propio) return <LluviaPastel enCaja={enCaja} calma={calma} />
-  return <canvas ref={ref} className={`fondo-lluvia ${variante}${enCaja ? ' en-caja' : ''}`} aria-hidden />
+  return (
+    <>
+      <canvas ref={ref} className={`fondo-lluvia ${variante}${enCaja ? ' en-caja' : ''}`} aria-hidden />
+      {!enCaja && <canvas ref={frenteRef} className="fondo-lluvia-frente" aria-hidden />}
+    </>
+  )
 }

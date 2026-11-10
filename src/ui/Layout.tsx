@@ -9,7 +9,7 @@ import { useDatos } from './estado'
 import { VERSION_APP } from '../version'
 import { enModoPrueba, salirModoPrueba } from '../data/modoPrueba'
 import { Companero } from './Companero'
-import { FondoLluvia, type VarianteLluvia } from './FondoLluvia'
+import { FondoLluvia, fijarIntensidadLluvia, type VarianteLluvia } from './FondoLluvia'
 import { useVersion } from './estado'
 
 const ICONOS = {
@@ -40,7 +40,7 @@ export function Layout({ hoy }: { hoy: string }) {
   const { pathname } = useLocation()
   const version = useVersion()
   const usaF = useFunciones()
-  const lluvia = useDatos(() => obtenerAjustes().then((a) => a.fondoLluvia ?? {}), [version])
+  const lluvia = useDatos(() => obtenerAjustes().then((a) => { fijarIntensidadLluvia(a.lluviaIntensidad); return a.fondoLluvia ?? {} }), [version])
   const varianteLluvia = varianteDeRuta(pathname, lluvia.datos ?? {})
   const d = estado.datos
   const e = d?.e

@@ -130,6 +130,15 @@ export function Ajustes() {
       <ElegirVideoFondo />
       <Tarjeta titulo="Fondo con lluvia">
         <p className="chico texto-2">Lluvia dibujada detrás de la pantalla (sin video, casi no gasta), distinta en cada lugar. Con «reducir movimiento» queda quieta.</p>
+        <div className="campo"><label>Intensidad</label>
+          <div className="fila" style={{ gap: 6 }}>
+            {([['llovizna', 'Llovizna'], ['lluvia', 'Lluvia'], ['tormenta', 'Tormenta']] as const).map(([k, t]) => {
+              const si = (a.lluviaIntensidad ?? 'lluvia') === k
+              return <button key={k} className={`boton chico crece ${si ? 'ok' : ''}`} aria-pressed={si} onClick={async () => { set('lluviaIntensidad', k); await mutar(() => guardarAjustes({ lluviaIntensidad: k })); avisar(`Lluvia: ${t.toLowerCase()}`) }}>{t}</button>
+            })}
+          </div>
+        </div>
+        <p className="ayuda">Llovizna: menos gotas, sin gotas cerca ni relámpagos. Lluvia: gotas en el vidrio, gotas cerca y un relámpago cada tanto (suave de noche). Tormenta: más de todo.</p>
         {([
           ['hoy', 'En Hoy: lluvia en diagonal con un relámpago tenue cada tanto'],
           ['calendario', 'En Calendario: llovizna con nubes a tinta que pasan'],
