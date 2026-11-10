@@ -2912,3 +2912,23 @@ html, body { overflow-x: hidden; }
 :root:not([data-tema-propio]) .pilar-bloque { background: rgba(22, 21, 20, 0.5); }
 :root:not([data-tema-propio]) .tarjeta .tarjeta { background: rgba(22, 21, 20, 0.25); }
 :root:not([data-tema-propio]) .tarjeta, :root:not([data-tema-propio]) .pilar-bloque { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55); }
+
+/* Navil, 10 nov: series que no se corten, encabezado más chico y barra del horario fija más finita. */
+.rejilla-2 > * { min-width: 0; }
+.contador-boton .nombre { overflow-wrap: anywhere; }
+.contador-boton .detalle { overflow-wrap: anywhere; line-height: 1.25; }
+.app .cabecera { padding-top: calc(6px + env(safe-area-inset-top)); padding-bottom: 4px; }
+.app .cabecera .dia { font-size: 1.28rem; }
+.app .cabecera .fecha { font-size: 0.8rem; }
+.app .cabecera .barra-fases { margin-top: 6px; }
+.app .cabecera .barra-fases .tramo { height: 15px; }
+.app .cabecera .barra-fases .etq { line-height: 15px; font-size: 0.58rem; }
+.hueco-horario.con { height: 42px; }
+.cabecera .hor-linea { padding-top: 4px; padding-bottom: 4px; }
+.cabecera .hor-linea .hor-texto { font-size: 0.78rem; }
+.cabecera .hor-linea .boton { padding: 3px 9px; font-size: 0.75rem; min-height: 0; }
+.barra-horario-fija.fija .hor-linea { padding: 2px 0 1px; }
+.barra-horario-fija.fija .hor-texto, .barra-horario-fija.fija .barra-dia { font-size: 0.72rem; }
+.barra-horario-fija.fija .hor-barra { height: 6px; }
+.barra-horario-fija.fija .boton { padding: 2px 8px; font-size: 0.7rem; min-height: 0; }
+.barra-horario-fija.fija .barra-horario-int { padding-top: 1px; padding-bottom: 0; }
