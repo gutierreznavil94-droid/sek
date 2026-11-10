@@ -353,7 +353,11 @@ export async function configurarPrimeraVez(c: ConfigPrimeraVez): Promise<void> {
   await aplicarSeries(c, true)
 
   // Entreno: si no hay sesiones, las rutinas de Navil se cambian por lo elegido (de a poco: la de ejemplo).
-  if ((await d.sesionesEntreno.count()) === 0) {
+  // Nunca se pisan rutinas armadas o editadas a mano (le pasó a Navil al empezar de cero, 10 nov).
+  const semilla = new Set(['rutina-a', 'rutina-b', 'rutina-c', 'rutina-ejemplo'])
+  const editadas = new Set((await d.eventos.where('entidad').equals('rutina').toArray()).filter((e) => e.tipo === 'editar' || (e.tipo === 'crear' && !String(e.motivo ?? '').startsWith('Primera vez'))).map((e) => e.entidadId))
+  const propias = (await d.rutinas.toArray()).some((r) => !r.borrada && (!semilla.has(r.id) || editadas.has(r.id)))
+  if ((await d.sesionesEntreno.count()) === 0 && !propias) {
     const entrenar = c.pilares.find((p) => p.clave === 'entrenar')
     // Con «Planes de entreno» apagado se arranca como siempre: de a poco (la rutina de ejemplo).
     const eleccion: EleccionEntreno = (c.funciones?.planes === false ? undefined : c.entreno) ?? { modo: 'poco' }

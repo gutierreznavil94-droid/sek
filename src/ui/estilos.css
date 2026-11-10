@@ -2890,3 +2890,8 @@ ul.cal-leyenda li:first-child { grid-column: 1 / -1; }
 @keyframes l321-halo { 50% { opacity: 0.55; } }
 @keyframes l321-flota { 0%, 100% { transform: translateY(0) scale(1); opacity: 0.85; } 50% { transform: translateY(-5px) scale(1.15); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .llamado-321, .llamado-321::before, .l321-icono { animation: none; } }
+
+/* Mis rutinas: guardado automático */
+.guardado-auto { margin: 4px 0 0; font-size: .85rem; text-align: center; color: var(--texto-3); }
+.guardado-auto.listo { color: var(--ok, #6fbf8a); }
+.guardado-auto.error { color: var(--bajo, #e07070); }

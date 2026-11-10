@@ -2,7 +2,7 @@
  * Rutinas de entrenamiento: la lista (A, B, C), el editor de bloques y el
  * mini gráfico de cada ejercicio (peso × repeticiones a lo largo del ciclo).
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { IDEAS_DE_A_POCO, diasDeEleccion, planPorId, type EleccionEntreno } from '../../data/planes'
 import type { BloqueEjercicio, BloqueRutina, Rutina, SerieHecha, SesionEntreno } from '../../data/tipos'
@@ -81,7 +81,7 @@ export function Rutinas() {
       })}
       <div className="rutinas-acciones">
         <button className="boton" onClick={nueva}>+ Nueva rutina</button>
-        {usaF('planes') && <button className="boton" onClick={() => setElegir(true)}>Elegir cómo empezar</button>}
+        <button className="boton" onClick={() => setElegir(true)}>Elegir cómo empezar</button>
       </div>
       {rutinas.length > 0 && <Link to="/entreno" className="boton primario grande ancho">Empezar entreno</Link>}
       <Hoja abierta={elegir} onCerrar={() => setElegir(false)} titulo="Elegir cómo empezar">
@@ -140,7 +140,46 @@ export function EditarRutina() {
   const [grafico, setGrafico] = useState<BloqueEjercicio | null>(null)
   const [borrar, setBorrar] = useState(false)
   const navegar = useNavigate()
-  useEffect(() => { if (datos.datos) setR(datos.datos) }, [datos.datos])
+  // Se carga una sola vez por rutina (si no, cada guardado automático pisaría lo que estás escribiendo).
+  // Si quedó un borrador sin guardar (se apagó el celu, se cerró la app), se retoma ese.
+  const cargada = useRef<string | null>(null)
+  const ultimo = useRef<string>('')
+  const pendiente = useRef<{ x: Rutina; json: string } | null>(null)
+  useEffect(() => {
+    if (!datos.datos || cargada.current === datos.datos.id) return
+    cargada.current = datos.datos.id
+    ultimo.current = JSON.stringify(datos.datos)
+    setR(leerBorrador(datos.datos.id) ?? datos.datos)
+  }, [datos.datos])
+  const [guardado, setGuardado] = useState<{ estado: 'listo' | 'guardando' | 'error'; texto?: string }>({ estado: 'listo' })
+  // Guardado automático: el borrador va al instante al teléfono y la rutina se guarda 1 s después del último cambio.
+  useEffect(() => {
+    if (!r) return
+    const json = JSON.stringify(r)
+    if (json === ultimo.current) return
+    guardarBorrador(r)
+    pendiente.current = { x: r, json }
+    setGuardado({ estado: 'guardando' })
+    const t = window.setTimeout(() => void guardarYa(r, json), 1000)
+    const alSalir = () => { if (document.visibilityState === 'hidden') { window.clearTimeout(t); void guardarYa(r, json) } }
+    document.addEventListener('visibilitychange', alSalir)
+    return () => { window.clearTimeout(t); document.removeEventListener('visibilitychange', alSalir) }
+  }, [r])
+  // Al salir de la pantalla antes del segundo, se guarda igual.
+  useEffect(() => () => { const p = pendiente.current; if (p) void guardarRutina(p.x).then(() => borrarBorrador(p.x.id)).catch(() => {}) }, [])
+  const guardarYa = async (x: Rutina, json: string) => {
+    if (json === ultimo.current) return
+    try {
+      await mutar(() => guardarRutina(x))
+      ultimo.current = json
+      if (pendiente.current?.json === json) pendiente.current = null
+      borrarBorrador(x.id)
+      setGuardado({ estado: 'listo' })
+    } catch (e) {
+      // Queda el borrador en el teléfono; se guarda solo apenas se corrija.
+      setGuardado({ estado: 'error', texto: e instanceof Error ? e.message : String(e) })
+    }
+  }
   const [enCurso, setEnCurso] = useState(false)
   useEffect(() => { void sesionEnCurso().then((s) => setEnCurso(!!s && s.rutinaId === id)) }, [id])
   if (!r && datos.datos === undefined && !datos.cargando) return <><Atras a="/mas/rutinas" texto="Rutinas" /><p className="vacio">Esta rutina ya no está.</p></>
@@ -177,14 +216,6 @@ export function EditarRutina() {
     setR({ ...r, bloques: b })
     setAbierto(nuevo.id)
   }
-  const guardar = async () => {
-    try {
-      await mutar(() => guardarRutina(r))
-      avisar('Rutina guardada', { tipo: 'ok' })
-    } catch (e) {
-      avisar(e instanceof Error ? e.message : String(e), { tipo: 'bajo' })
-    }
-  }
   return (
     <>
       <Atras a="/mas/rutinas" texto="Rutinas" />
@@ -192,7 +223,7 @@ export function EditarRutina() {
         <div className="campo"><label>Nombre</label><input value={r.nombre} onChange={(e) => setR({ ...r, nombre: e.target.value })} /></div>
         <div className="campo"><label>Días</label><DiasSemana valor={r.dias} onChange={(v) => setR({ ...r, dias: v })} /></div>
         <div className="rejilla-2">
-          <div className="campo"><label>Duración (min)</label><input type="number" inputMode="numeric" value={r.minutos} onChange={(e) => setR({ ...r, minutos: Number(e.target.value) })} /></div>
+          <div className="campo"><label>Duración (min)</label><input type="number" inputMode="numeric" value={r.minutos} onFocus={(e) => e.currentTarget.select()} onChange={(e) => setR({ ...r, minutos: Number(e.target.value) })} /></div>
           <div className="campo"><label>Activa</label><button className={`boton ${r.activa ? 'ok' : ''}`} onClick={() => setR({ ...r, activa: !r.activa })}>{r.activa ? 'Sí' : 'Pausada'}</button></div>
         </div>
       </Tarjeta>
@@ -219,7 +250,9 @@ export function EditarRutina() {
         <button className="boton" onClick={() => agregar('casilla')}>+ Casilla</button>
       </div>
       <p className="ayuda">Los cambios valen desde el próximo entreno.{enCurso ? ' Tenés esta rutina en curso: si la cambiás ahora, el entreno de hoy ya toma los cambios.' : ''}</p>
-      <button className="boton primario grande ancho" onClick={guardar}>Guardar rutina</button>
+      <p className={`guardado-auto ${guardado.estado}`} role="status">
+        {guardado.estado === 'listo' ? '✓ Se guarda solo' : guardado.estado === 'guardando' ? 'Guardando…' : `Sin guardar: ${guardado.texto}. Lo que escribiste queda en el teléfono hasta que lo corrijas.`}
+      </p>
       <button className="boton suave ancho" onClick={() => setBorrar(true)}>Borrar rutina</button>
       <Hoja abierta={borrar} onCerrar={() => setBorrar(false)} titulo="¿Borrar esta rutina?">
         <div className="col" style={{ gap: 10 }}>
@@ -246,7 +279,7 @@ function descripcion(b: BloqueRutina): string {
 }
 
 function Num({ etiqueta, valor, onCambio, paso = 1 }: { etiqueta: string; valor: number | undefined; onCambio: (v: number) => void; paso?: number }) {
-  return <div className="campo"><label>{etiqueta}</label><input type="number" inputMode="decimal" step={paso} value={valor ?? 0} onChange={(e) => onCambio(Number(e.target.value))} /></div>
+  return <div className="campo"><label>{etiqueta}</label><input type="number" inputMode="decimal" step={paso} value={valor ?? 0} onFocus={(e) => e.currentTarget.select()} onChange={(e) => onCambio(Number(e.target.value))} /></div>
 }
 
 function EditorBloque({ b, onCambio, onQuitar, onGrafico }: { b: BloqueRutina; onCambio: (c: Partial<BloqueRutina>) => void; onQuitar: () => void; onGrafico?: () => void }) {
@@ -425,4 +458,15 @@ function CorregirHistorial({ s, x, b, onListo }: { s: SesionEntreno; x: SerieHec
       <button className="boton primario ancho" onClick={() => void guardar()}>Guardar corrección</button>
     </div>
   )
+}
+
+const CLAVE_BORRADOR = 'rutina-borrador:'
+function leerBorrador(id: string): Rutina | null {
+  try { const t = localStorage.getItem(CLAVE_BORRADOR + id); return t ? (JSON.parse(t) as Rutina) : null } catch { return null }
+}
+function guardarBorrador(r: Rutina): void {
+  try { localStorage.setItem(CLAVE_BORRADOR + r.id, JSON.stringify(r)) } catch { /* sin espacio: queda el guardado normal */ }
+}
+function borrarBorrador(id: string): void {
+  try { localStorage.removeItem(CLAVE_BORRADOR + id) } catch { /* nada */ }
 }
