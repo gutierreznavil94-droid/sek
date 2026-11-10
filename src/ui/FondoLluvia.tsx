@@ -629,7 +629,7 @@ export function FondoLluvia({ variante, calma = false, enCaja = false }: { varia
       rayo = Math.max(0, rayo - dt * 1.9)
     }
 
-    /** Al tocar un pilar o un botón: un anillo de agua y gotitas que saltan del dedo. */
+    /** Cada toque: un anillo de agua y gotitas que saltan del dedo. */
     const pintarToques = (dt: number) => {
       for (let i = toques.length - 1; i >= 0; i--) {
         const q = toques[i]
@@ -735,7 +735,8 @@ export function FondoLluvia({ variante, calma = false, enCaja = false }: { varia
     const alMedir = () => { medir(); dibujar(0, performance.now()) }
     window.addEventListener('resize', alMedir)
     const alTocar = (e: PointerEvent) => {
-      if (quieto || enCaja || !(e.target instanceof Element) || !e.target.closest('.pilar-bloque, button, .boton, a.tarjeta')) return
+      // Cada toque en cualquier lugar hace su charquito (Navil, 10 nov).
+      if (quieto || enCaja) return
       toques.push({ x: e.clientX, y: e.clientY, t: 0, gotas: Array.from({ length: 7 }, () => { const a = -Math.PI * (0.1 + Math.random() * 0.8); const v = 90 + Math.random() * 120; return { vx: Math.cos(a) * v, vy: Math.sin(a) * v } }) })
       if (toques.length > 6) toques.shift()
     }

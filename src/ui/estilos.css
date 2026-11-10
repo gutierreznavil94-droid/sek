@@ -2904,3 +2904,11 @@ html, body { overflow-x: hidden; }
 @supports (overflow: clip) { html, body { overflow-x: clip; } }
 /* Lluvia de adelante: encima de las tarjetas y debajo de la barra, hojas y avisos; no toma toques. */
 .fondo-lluvia-frente { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 15; pointer-events: none; }
+
+/* Tarjetas de vidrio (Navil, 10 nov: «más transparente así se ve mejor el fondo»): con la tinta, el fondo de las
+   tarjetas deja pasar la lluvia; el borde y el texto quedan igual de marcados. Los temas subidos no cambian. */
+:root:not([data-tema-propio]) .tarjeta,
+:root:not([data-tema-propio]) .av-tarjeta,
+:root:not([data-tema-propio]) .pilar-bloque { background: rgba(22, 21, 20, 0.5); }
+:root:not([data-tema-propio]) .tarjeta .tarjeta { background: rgba(22, 21, 20, 0.25); }
+:root:not([data-tema-propio]) .tarjeta, :root:not([data-tema-propio]) .pilar-bloque { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55); }
