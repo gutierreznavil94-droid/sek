@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
+import { abrirAjusteAlarmas, estadoAlarmasNativas } from '../../nativo/sek'
 import { Link, useNavigate } from 'react-router-dom'
 import type { ConfigAviso } from '../../data/tipos'
 import { fechaLegible, sumarDias } from '../../domain/fechas'
@@ -520,6 +521,23 @@ function ElegirSeries({ c, onChange }: { c: ConfigPrimeraVez; onChange: (x: Part
 function PasoAvisos({ c, onChange }: { c: ConfigPrimeraVez; onChange: (x: Partial<ConfigPrimeraVez>) => void }) {
   const cap = recordatorios.capacidades()
   const [permiso, setPermiso] = useState<string | null>(null)
+  const [pidiendo, setPidiendo] = useState(false)
+  const [listo, setListo] = useState<{ notis: boolean; exactas: boolean; pantalla: boolean } | null>(null)
+  const revisar = async () => {
+    const n = await recordatorios.estadoPermiso().catch(() => 'no disponible')
+    const nat = await estadoAlarmasNativas()
+    const x = { notis: n === 'granted', exactas: nat?.exactas ?? true, pantalla: nat?.pantallaCompleta ?? true }
+    setListo(x)
+    return x
+  }
+  useEffect(() => {
+    void revisar()
+    // Al volver de un ajuste de Android se revisa de nuevo.
+    const volver = () => { if (document.visibilityState === 'visible') void revisar() }
+    document.addEventListener('visibilitychange', volver)
+    return () => document.removeEventListener('visibilitychange', volver)
+  }, [])
+  const todoListo = !!listo && listo.notis && listo.exactas && listo.pantalla
   const avisos = c.avisos ?? {}
   const entreno = c.pilares.find((p) => p.clave === 'entrenar')?.horaLimite
   const horas: Record<string, string | undefined> = {
@@ -530,17 +548,42 @@ function PasoAvisos({ c, onChange }: { c: ConfigPrimeraVez; onChange: (x: Partia
     celu: c.horarios.dejarCelu,
     dormido: c.horarios.dormir,
   }
+  // Un paso por toque: notificaciones → alarmas exactas → pantalla completa. Si Android no muestra la ventana, abre el ajuste.
   const activar = async () => {
-    const ok = await recordatorios.pedirPermiso()
-    setPermiso(ok ? 'Listo: los avisos van a sonar.' : 'Sin permiso: después lo activás en Más → Alarmas.')
+    if (pidiendo) return
+    setPidiendo(true)
+    setPermiso('Pidiendo permiso…')
+    try {
+      let x = await revisar()
+      if (!x.notis) {
+        const ok = await Promise.race([recordatorios.pedirPermiso(), new Promise<boolean>((r) => setTimeout(() => r(false), 6000))])
+        x = await revisar()
+        if (!ok && !x.notis) {
+          if (cap.conAppCerrada) { setPermiso('Android no mostró la ventana: activá «Permitir notificaciones» para SEK y volvé.'); await abrirAjusteAlarmas('notificaciones') }
+          else setPermiso('Sin permiso: después lo activás en Más → Alarmas.')
+          return
+        }
+      }
+      if (!x.exactas) { setPermiso('Ahora activá «Alarmas y recordatorios» para SEK y volvé.'); await abrirAjusteAlarmas('exactas'); return }
+      if (!x.pantalla) { setPermiso('Último: activá «Pantalla completa» para SEK y volvé.'); await abrirAjusteAlarmas('pantalla'); return }
+      setPermiso('Listo: los avisos van a sonar.')
+    } finally {
+      setPidiendo(false)
+    }
   }
   return (
     <>
       <p className="pv-lead">Cómo te avisa cada cosa: <b>Notificación</b>, <b>Alarma</b> (suena a pantalla completa hasta que la apagás) o <b>Nada</b>. Tocá un nombre para cambiar la hora.</p>
       <div className="pv-pilar elegido">
         <div className="pv-pilar-detalle" style={{ paddingTop: 12 }}>
-          <span className="chico">{cap.conAppCerrada ? 'Para que suenen con el celu bloqueado, SEK necesita tu permiso.' : 'En la web los avisos suenan con la app abierta. Para alarmas de verdad, usá el APK.'}</span>
-          <button type="button" className="boton primario" onClick={activar}>{cap.conAppCerrada ? 'Activar alarmas' : 'Permitir notificaciones'}</button>
+          {todoListo ? (
+            <span className="chico"><b>✓ Alarmas activadas.</b> Van a sonar aunque el celu esté bloqueado.</span>
+          ) : (
+            <>
+              <span className="chico">{cap.conAppCerrada ? 'Para que suenen con el celu bloqueado, SEK necesita tu permiso.' : 'En la web los avisos suenan con la app abierta. Para alarmas de verdad, usá el APK.'}</span>
+              <button type="button" className="boton primario" onClick={() => void activar()} disabled={pidiendo}>{pidiendo ? 'Pidiendo…' : !cap.conAppCerrada ? 'Permitir notificaciones' : listo && listo.notis && !listo.exactas ? 'Activar alarmas exactas' : listo && listo.notis && listo.exactas && !listo.pantalla ? 'Activar pantalla completa' : 'Activar alarmas'}</button>
+            </>
+          )}
           {permiso && <span className="chico texto-2">{permiso}</span>}
         </div>
       </div>

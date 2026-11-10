@@ -26,7 +26,7 @@ type PluginSek = {
   listarAlarmas(): Promise<{ alarmas: string }>
   probarAlarma(o: { segundos: number; sonido: string; vibrar: boolean }): Promise<void>
   estadoAlarmas(): Promise<{ exactas: boolean; pantallaCompleta: boolean }>
-  abrirAjusteAlarmas(o: { cual: 'exactas' | 'pantalla' }): Promise<void>
+  abrirAjusteAlarmas(o: { cual: 'exactas' | 'pantalla' | 'notificaciones' }): Promise<void>
   elegirTono(): Promise<{ uri: string | null; nombre: string }>
   vigiaGuardar(o: { config: string }): Promise<void>
   vigiaEstado(): Promise<{ uso: boolean; encima: boolean; activo: boolean }>
@@ -131,7 +131,7 @@ export async function estadoAlarmasNativas(): Promise<{ exactas: boolean; pantal
   try { return await Sek.estadoAlarmas() } catch { return null }
 }
 
-export async function abrirAjusteAlarmas(cual: 'exactas' | 'pantalla'): Promise<void> {
+export async function abrirAjusteAlarmas(cual: 'exactas' | 'pantalla' | 'notificaciones'): Promise<void> {
   if (esAndroid()) await Sek.abrirAjusteAlarmas({ cual }).catch(() => {})
 }
 

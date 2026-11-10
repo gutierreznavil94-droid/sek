@@ -284,7 +284,8 @@ public class SekPlugin extends Plugin {
         String cual = call.getString("cual", "exactas");
         Uri paquete = Uri.parse("package:" + getContext().getPackageName());
         Intent i;
-        if ("pantalla".equals(cual) && Build.VERSION.SDK_INT >= 34) i = new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, paquete);
+        if ("notificaciones".equals(cual) && Build.VERSION.SDK_INT >= 26) i = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, getContext().getPackageName());
+        else if ("pantalla".equals(cual) && Build.VERSION.SDK_INT >= 34) i = new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, paquete);
         else if (Build.VERSION.SDK_INT >= 31) i = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, paquete);
         else i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, paquete);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

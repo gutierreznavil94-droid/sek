@@ -18,6 +18,7 @@ type Seccion = { a: string; t: string; d: string; claves: string; icono?: string
 /** Lo de la app en sí: primera fila, cada uno con su botón. */
 const SISTEMA: Seccion[] = [
   { a: '/organizacion', funcion: 'organizacion', t: 'Organización', d: 'Notas y tareas', icono: 'icono-organizacion', claves: 'organizacion tareas notas pendientes frentes bandeja anotar me toca hoy' },
+  { a: '/mas/apps-que-atrapan', t: 'Apps que te atrapan', d: 'Te pasás y te llama', icono: 'icono-vigia', claves: 'apps tiktok instagram youtube redes tiempo uso minutos limite tension mano bloquear distraccion atrapan' },
   { a: '/mas/copia', t: 'Copia', d: 'Exportar e importar', icono: 'icono-copia', claves: 'copia seguridad backup exportar importar json csv texto guardar datos' },
   { a: '/mas/animaciones', t: 'Animaciones', d: 'Ver y elegir', icono: 'icono-animaciones', claves: 'animaciones shinobi pajaro torpe rival batalla sonido video' },
   { a: '/mas/tema', t: 'Tema', d: 'Tema y nombres', icono: 'icono-tema', claves: 'tema nombres nombre app fases color' },
@@ -47,7 +48,6 @@ const GRUPOS: { titulo: string; items: Seccion[] }[] = [
     { a: '/mas/rutinas', t: 'Mis rutinas', d: 'Rutinas, ejercicios y días', claves: 'rutinas ejercicios entreno gimnasio colgarse barra historial series' },
     { a: '/mas/entrenamiento', t: 'Entrenamiento y descanso', d: 'Días, horas y sueño', claves: 'entrenamiento descanso dormir sueno acostarse hora dias' },
     { a: '/mas/alarmas', t: 'Alarmas', d: 'Cada aviso: Notificación, Alarma o Nada', claves: 'alarmas avisos notificaciones telefono reloj android despertador juego' },
-    { a: '/mas/apps-que-atrapan', t: 'Apps que te atrapan', d: 'Te pasás de minutos en una app y SEK te llama', claves: 'apps tiktok instagram youtube redes tiempo uso minutos limite tension mano bloquear distraccion' },
   ] },
 ]
 
