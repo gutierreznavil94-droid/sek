@@ -2897,3 +2897,8 @@ ul.cal-leyenda li:first-child { grid-column: 1 / -1; }
 .guardado-auto.error { color: var(--bajo, #e07070); }
 .enlace-chip { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: .72rem; background: color-mix(in srgb, var(--acento, #c0392b) 18%, transparent); color: var(--texto-2); white-space: nowrap; }
 .enlace-aviso { margin: 0; padding: 8px 10px; border-radius: 10px; font-size: .82rem; background: color-mix(in srgb, var(--acento, #c0392b) 12%, transparent); color: var(--texto-2); }
+
+/* Nada puede ensanchar la pantalla: si algo queda más ancho, se recorta en vez de correr todo de costado
+   (Navil, 10 nov: «se desacomoda el Hoy»). clip no rompe los position: sticky. */
+html, body { overflow-x: hidden; }
+@supports (overflow: clip) { html, body { overflow-x: clip; } }
