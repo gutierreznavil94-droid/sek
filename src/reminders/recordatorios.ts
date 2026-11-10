@@ -237,7 +237,10 @@ class RecordatoriosNativo implements Recordatorios {
         for (const o of this.oyentes) o(r)
       }).catch(() => {})
     }
-    return LocalNotifications
+    // Envuelto: un plugin de Capacitor es un Proxy que responde a cualquier nombre, también a `then`.
+    // Devuelto suelto desde una función async, la promesa lo toma por «promesa» y no termina nunca
+    // (por eso «Activar alarmas» se quedaba en «Pidiendo…»).
+    return { ln: LocalNotifications }
   }
 
   capacidades(): Capacidades {
@@ -250,7 +253,7 @@ class RecordatoriosNativo implements Recordatorios {
 
   async estadoPermiso(): Promise<string> {
     try {
-      const p = await (await this.plugin()).checkPermissions()
+      const p = await (await this.plugin()).ln.checkPermissions()
       return p.display
     } catch {
       return 'no disponible'
@@ -259,7 +262,7 @@ class RecordatoriosNativo implements Recordatorios {
 
   async pedirPermiso(): Promise<boolean> {
     try {
-      const ln = await this.plugin()
+      const { ln } = await this.plugin()
       const p = await ln.requestPermissions()
       if (p.display !== 'granted') return false
       // Android 12+: alarmas exactas. Si no está concedido, abre el ajuste del sistema.
@@ -276,7 +279,7 @@ class RecordatoriosNativo implements Recordatorios {
   }
 
   async programar(r: Recordatorio): Promise<void> {
-    const ln = await this.plugin()
+    const { ln } = await this.plugin()
     await this.cancelar(r.id)
     if (r.instante <= Date.now() || r.modo === 'nada') return
     if (r.modo === 'alarma') {
@@ -299,14 +302,14 @@ class RecordatoriosNativo implements Recordatorios {
   }
 
   async cancelar(id: string): Promise<void> {
-    const ln = await this.plugin()
+    const { ln } = await this.plugin()
     await ln.cancel({ notifications: [{ id: idNumerico(id) }] }).catch(() => {})
     await cancelarAlarmaNativa(id)
     this.lista.delete(id)
   }
 
   async cancelarTodos(): Promise<void> {
-    const ln = await this.plugin()
+    const { ln } = await this.plugin()
     const p = await ln.getPending()
     if (p.notifications.length) await ln.cancel({ notifications: p.notifications.map((n) => ({ id: n.id })) })
     await cancelarAlarmasNativas('')
@@ -314,7 +317,7 @@ class RecordatoriosNativo implements Recordatorios {
   }
 
   async programados(): Promise<Recordatorio[]> {
-    const ln = await this.plugin()
+    const { ln } = await this.plugin()
     const p = await ln.getPending()
     const notis: Recordatorio[] = p.notifications
       .map((n) => this.lista.get(String(n.extra?.id ?? '')) ?? { id: String(n.id), titulo: n.title ?? '', cuerpo: n.body ?? '', instante: n.schedule?.at ? new Date(n.schedule.at).getTime() : 0 })
