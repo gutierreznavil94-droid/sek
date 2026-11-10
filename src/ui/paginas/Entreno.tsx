@@ -592,7 +592,7 @@ function Cronometro({ s, b, t, hist }: { s: SesionEntreno; b: BloqueTemporizador
       {!corriendo ? (
         <>
           <Stepper etiqueta="Peso" valor={peso} paso={0.5} escribible formato={(v) => (v === 0 ? 'corporal' : `${String(v).replace('.', ',')} kg`)} onCambio={(v) => { setPeso(v); void mutar(() => fijarPeso(s.id!, b.id, v)) }} marca={hist?.ultimo ? (peso > hist.ultimo.peso ? 'mejor' : peso === hist.ultimo.peso ? 'igual' : null) : null} />
-          <Stepper etiqueta="Objetivo" valor={objetivo} paso={1} escribible formato={(v) => `${v} s`} onCambio={(v) => { void mutar(() => fijarObjetivoCronometro(b.nombre, v)) }} />
+          <Stepper etiqueta="Objetivo" valor={objetivo} paso={1} escribible formato={(v) => `${v} s`} onCambio={(v) => { void mutar(() => fijarObjetivoCronometro(b.nombre, v, b.id)) }} />
           <div className="entreno-reloj mono">0:00</div>
           <button className="boton primario grande ancho entreno-hecha" onClick={() => mutar(() => iniciarReloj(s.id!, b.id))}>Empezar</button>
           <p className="ayuda centro">Si superás {objetivo} s, la próxima vez el objetivo sube a {objetivo + 1} s (solo 1 s, aunque lo pases por mucho). Tenés {PREPARACION_S} s para colgarte; al tocar «Listo» se descuentan {DESCUENTO_S} s.</p>

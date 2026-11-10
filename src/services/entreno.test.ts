@@ -588,3 +588,32 @@ describe('tiempo por serie (4 nov)', () => {
     expect((await progresionEjercicio('a-press-banca')).puntos[0].segundos).toBeUndefined()
   })
 })
+
+describe('ejercicios enlazados (el mismo en varias rutinas, pedido de Navil 10 nov)', () => {
+  it('«Sumar a otra rutina» lo pone en el mismo lugar y lo que mejora en una se actualiza en la otra', async () => {
+    const { sumarBloqueARutinas, guardarRutina, rutinasConBloque } = await import('./entreno')
+    const a = (await obtenerRutina('rutina-a'))!
+    const press = a.bloques.find((b) => b.tipo === 'ejercicio')!
+    expect(await sumarBloqueARutinas('rutina-a', press.id, ['rutina-b'])).toBe(1)
+    const b = (await obtenerRutina('rutina-b'))!
+    const i = b.bloques.findIndex((x) => x.id === press.id)
+    expect(i).toBeGreaterThan(-1)
+    expect(i).toBeLessThan(b.bloques.findIndex((x) => x.tipo === 'rondas'))
+    expect((await rutinasConBloque(press.id)).map((r) => r.id).sort()).toEqual(['rutina-a', 'rutina-b'])
+    // Cambiar el peso en B se ve en A.
+    await guardarRutina({ ...b, bloques: b.bloques.map((x) => (x.id === press.id ? { ...x, peso: 42.5 } : x)) })
+    expect((await obtenerRutina('rutina-a'))!.bloques.find((x) => x.id === press.id)).toMatchObject({ peso: 42.5 })
+    // Quitarlo de B no lo quita de A.
+    const b2 = (await obtenerRutina('rutina-b'))!
+    await guardarRutina({ ...b2, bloques: b2.bloques.filter((x) => x.id !== press.id) })
+    expect((await obtenerRutina('rutina-a'))!.bloques.some((x) => x.id === press.id)).toBe(true)
+  })
+
+  it('reconoce el mismo nombre sin importar mayúsculas, salvo «No, es otro»', async () => {
+    const { mismoNombreEnOtraRutina, nombreComparable } = await import('./entreno')
+    expect(nombreComparable('  Colgarse en  Barra ')).toBe('colgarse en barra')
+    const nuevo = { id: 'x-colg', tipo: 'temporizador' as const, nombre: 'colgarse EN barra', segundos: 30, modo: 'cronometro' as const }
+    expect((await mismoNombreEnOtraRutina('rutina-c', nuevo))?.rutina.id).toBeDefined()
+    expect(await mismoNombreEnOtraRutina('rutina-c', { ...nuevo, separado: true })).toBeNull()
+  })
+})

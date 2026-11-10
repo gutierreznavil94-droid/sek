@@ -637,6 +637,8 @@ export type BloqueEjercicio = {
   /** Admite reps con ayuda (p. ej. tríceps en polea: las últimas 3 con una mano). Entonces `repsExtra` es la ayuda planeada. */
   admiteAyuda?: boolean
   nota?: string
+  /** «No, es otro»: tiene el mismo nombre que uno de otra rutina pero no se enlaza. */
+  separado?: boolean
 }
 
 /** Temporizador simple (calentamiento, colgarse en barra). */
@@ -644,7 +646,7 @@ export type BloqueEjercicio = {
  * Temporizador (calentamiento) o cronómetro (colgarse en barra: cuenta para
  * arriba, con peso; `segundos` es el objetivo).
  */
-export type BloqueTemporizador = { id: string; tipo: 'calentamiento' | 'temporizador'; nombre: string; segundos: number; veces?: number; peso?: number; nota?: string; modo?: 'cuenta' | 'cronometro'; /** Cronómetro: descanso después, sin sombra (segundos; si falta, 60). */ descansoDespues?: number }
+export type BloqueTemporizador = { id: string; tipo: 'calentamiento' | 'temporizador'; nombre: string; segundos: number; veces?: number; peso?: number; nota?: string; modo?: 'cuenta' | 'cronometro'; /** Cronómetro: descanso después, sin sombra (segundos; si falta, 60). */ descansoDespues?: number; /** «No, es otro» (ver BloqueEjercicio). */ separado?: boolean }
 /** Tiempo registrado con el cronómetro (colgarse en barra). */
 export type TiempoHecho = { bloqueId: string; nombre: string; segundos: number; peso: number; instante: number }
 /** Rondas con cuenta regresiva (kick boxing). */

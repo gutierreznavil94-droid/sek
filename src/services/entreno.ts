@@ -120,8 +120,90 @@ export async function guardarRutina(r: Rutina): Promise<void> {
     return !a || a.tipo !== 'ejercicio' || a.peso === b.peso ? b : { ...b, tramoDesde: hoy }
   })
   r = { ...r, bloques }
-  await db().rutinas.put({ ...r, nombre: r.nombre.trim() })
+  await ponerRutina({ ...r, nombre: r.nombre.trim() })
   await registrarEvento({ tipo: antes ? 'editar' : 'crear', entidad: 'rutina', entidadId: r.id, antes, despues: r })
+}
+
+// ---------- Ejercicios enlazados (el mismo en varias rutinas) ----------
+// Un ejercicio enlazado es el MISMO bloque (mismo id) en varias rutinas: el historial, los récords y la
+// progresión se buscan por id, así que salen juntos solos. Lo que cambia en una (objetivo, peso, reps,
+// descanso…) se copia a las otras; solo el lugar en el orden es de cada rutina.
+
+/** Guarda una rutina y copia sus bloques enlazados a las otras rutinas que los tienen. */
+async function ponerRutina(r: Rutina): Promise<void> {
+  const d = db()
+  await d.rutinas.put(r)
+  const mios = new Map(r.bloques.filter((b) => b.tipo === 'ejercicio' || b.tipo === 'temporizador').map((b) => [b.id, b]))
+  if (!mios.size) return
+  for (const otra of await d.rutinas.toArray()) {
+    if (otra.id === r.id || otra.borrada) continue
+    let cambio = false
+    const bloques = otra.bloques.map((b) => {
+      const m = mios.get(b.id)
+      if (!m || m.tipo !== b.tipo || JSON.stringify(m) === JSON.stringify(b)) return b
+      cambio = true
+      return m
+    })
+    if (cambio) await d.rutinas.put({ ...otra, bloques })
+  }
+}
+
+/** Nombre para comparar: sin mayúsculas, tildes ni espacios de más. */
+export function nombreComparable(n: string): string {
+  return n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
+}
+
+/** En cuántas rutinas (activas o pausadas, no borradas) está un bloque enlazado. */
+export async function rutinasConBloque(bloqueId: string): Promise<Rutina[]> {
+  return (await listarRutinas(true)).filter((r) => r.bloques.some((b) => b.id === bloqueId))
+}
+
+/** Un ejercicio de OTRA rutina con el mismo nombre y tipo, todavía sin enlazar (para preguntar «¿Es el mismo?»). */
+export async function mismoNombreEnOtraRutina(rutinaId: string, b: BloqueRutina): Promise<{ rutina: Rutina; bloque: BloqueRutina } | null> {
+  if ((b.tipo !== 'ejercicio' && b.tipo !== 'temporizador') || b.separado) return null
+  const n = nombreComparable(b.nombre)
+  if (!n) return null
+  for (const r of await listarRutinas(true)) {
+    if (r.id === rutinaId) continue
+    const otro = r.bloques.find((x) => x.tipo === b.tipo && x.id !== b.id && !x.separado && nombreComparable(x.nombre) === n)
+    if (otro) return { rutina: r, bloque: otro }
+  }
+  return null
+}
+
+/**
+ * Lugar para un bloque copiado en otra rutina: el mismo que tiene en la de origen. Si en el origen va antes
+ * del kick boxing (rondas) o de estirar (casilla), en el destino también; si no, al final.
+ */
+export function lugarEnRutina(origen: Rutina, bloqueId: string, destino: Rutina): number {
+  const i = origen.bloques.findIndex((b) => b.id === bloqueId)
+  const despues = origen.bloques.slice(i + 1)
+  for (const tipo of ['rondas', 'casilla'] as const) {
+    if (!despues.some((b) => b.tipo === tipo)) continue
+    const j = destino.bloques.findIndex((b) => b.tipo === tipo)
+    if (j >= 0) return j
+  }
+  return destino.bloques.length
+}
+
+/** «Sumar a otra rutina»: copia el bloque (mismo id, queda enlazado) a las rutinas elegidas. */
+export async function sumarBloqueARutinas(origenId: string, bloqueId: string, destinos: string[]): Promise<number> {
+  const d = db()
+  const origen = await d.rutinas.get(origenId)
+  const b = origen?.bloques.find((x) => x.id === bloqueId)
+  if (!origen || !b) throw new Error('Guardá la rutina antes de sumar el ejercicio')
+  let n = 0
+  for (const id of destinos) {
+    const r = await d.rutinas.get(id)
+    if (!r || r.bloques.some((x) => x.id === bloqueId)) continue
+    const bloques = [...r.bloques]
+    bloques.splice(lugarEnRutina(origen, bloqueId, r), 0, b)
+    const despues = { ...r, bloques }
+    await d.rutinas.put(despues)
+    await registrarEvento({ tipo: 'editar', entidad: 'rutina', entidadId: r.id, antes: r, despues, motivo: `Sumar ${b.nombre} (enlazado con ${origen.nombre})` })
+    n++
+  }
+  return n
 }
 
 /** Suma una rutina vacía al final de la lista (se arma en el editor). */
@@ -760,7 +842,7 @@ async function actualizarActuales(s: SesionEntreno, rutina: Rutina | undefined):
     if (s1.reps > b.reps) { cambio = true; return { ...b, reps: s1.reps } }
     return b
   })
-  if (cambio) await db().rutinas.put({ ...rutina, bloques })
+  if (cambio) await ponerRutina({ ...rutina, bloques })
 }
 
 /** Al reabrir o reiniciar, la rutina vuelve a las reps actuales y el peso que tenía antes de esa sesión (si es la más reciente). */
@@ -770,7 +852,7 @@ async function restaurarActuales(s: SesionEntreno): Promise<void> {
   const masNueva = (await terminadasDe(rutina.id)).find((x) => x.id !== s.id && x.fecha > s.fecha)
   if (masNueva) return
   const bloques = rutina.bloques.map((b) => (b.tipo === 'ejercicio' && s.base![b.id] ? { ...b, reps: s.base![b.id].reps, peso: s.base![b.id].peso, tramoDesde: s.base![b.id].tramoDesde } : b))
-  await db().rutinas.put({ ...rutina, bloques })
+  await ponerRutina({ ...rutina, bloques })
 }
 
 /** Vuelve a abrir un entreno terminado (por ejemplo para corregir una serie): quita el XP extra y el del pilar. */
@@ -929,13 +1011,18 @@ export function siguienteObjetivo(objetivo: number, segundos: number): number {
   return segundos > objetivo ? objetivo + 1 : objetivo
 }
 
-/** Cambia el objetivo de un cronómetro en todas las rutinas que lo tienen (mismo nombre: es el mismo ejercicio). */
-export async function fijarObjetivoCronometro(nombre: string, segundos: number): Promise<number> {
+/**
+ * Cambia el objetivo de un cronómetro en todas las rutinas que lo tienen: el enlazado (mismo id) y, como
+ * antes, los que se llaman igual (sin contar mayúsculas), salvo los marcados «No, es otro».
+ */
+export async function fijarObjetivoCronometro(nombre: string, segundos: number, bloqueId?: string): Promise<number> {
   const v = Math.max(1, Math.round(segundos))
   const d = db()
+  const n = nombreComparable(nombre)
+  const es = (b: BloqueRutina) => b.tipo === 'temporizador' && b.modo === 'cronometro' && (b.id === bloqueId || (!b.separado && nombreComparable(b.nombre) === n))
   for (const r of await d.rutinas.toArray()) {
-    if (!r.bloques.some((b) => b.tipo === 'temporizador' && b.modo === 'cronometro' && b.nombre === nombre)) continue
-    await d.rutinas.put({ ...r, bloques: r.bloques.map((b) => (b.tipo === 'temporizador' && b.modo === 'cronometro' && b.nombre === nombre ? { ...b, segundos: v } : b)) })
+    if (!r.bloques.some(es)) continue
+    await d.rutinas.put({ ...r, bloques: r.bloques.map((b) => (es(b) ? { ...b, segundos: v } : b)) })
   }
   return v
 }
@@ -957,7 +1044,7 @@ export async function terminarCronometro(id: number, bloqueId: string, peso: num
   const esCrono = b.tipo === 'temporizador' && b.modo === 'cronometro'
   const antes = esCrono ? b.segundos : 0
   const objetivo = esCrono ? siguienteObjetivo(antes, segundos) : antes
-  if (objetivo !== antes) await fijarObjetivoCronometro(b.nombre, objetivo)
+  if (objetivo !== antes) await fijarObjetivoCronometro(b.nombre, objetivo, b.id)
   return { sesion: await guardarSesion(nueva), tiempo, objetivo, subio: objetivo > antes }
 }
 

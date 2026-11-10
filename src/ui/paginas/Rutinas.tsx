@@ -7,7 +7,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { IDEAS_DE_A_POCO, diasDeEleccion, planPorId, type EleccionEntreno } from '../../data/planes'
 import type { BloqueEjercicio, BloqueRutina, Rutina, SerieHecha, SesionEntreno } from '../../data/tipos'
 import { nombreDiaSemana } from '../../domain/fechas'
-import { aplicarEleccionEntreno, borrarRutina, corregirSerie, crearRutina, diasDeRutinas, guardarRutina, historialEjercicio, igualarDiasEntrenar, kg, listarRutinas, obtenerRutina, sesionEnCurso, type PuntoEjercicio } from '../../services/entreno'
+import { aplicarEleccionEntreno, mismoNombreEnOtraRutina, sumarBloqueARutinas, borrarRutina, corregirSerie, crearRutina, diasDeRutinas, guardarRutina, historialEjercicio, igualarDiasEntrenar, kg, listarRutinas, obtenerRutina, sesionEnCurso, type PuntoEjercicio } from '../../services/entreno'
 import { db } from '../../data/db'
 import { fechaLegible } from '../../domain/fechas'
 import { nuevoId } from '../../services/reloj'
@@ -181,6 +181,10 @@ export function EditarRutina() {
     }
   }
   const [enCurso, setEnCurso] = useState(false)
+  // Ejercicios enlazados: las otras rutinas (para «🔗 En N rutinas», «Sumar a otra rutina» y «¿Es el mismo?»).
+  const otras = useDatos(async () => (await listarRutinas(true)).filter((x) => x.id !== id), [id])
+  const [sumar, setSumar] = useState<{ bloqueId: string; elegidas: string[] } | null>(null)
+  const [mismo, setMismo] = useState<{ bloqueId: string; rutina: Rutina; bloque: BloqueRutina } | null>(null)
   useEffect(() => { void sesionEnCurso().then((s) => setEnCurso(!!s && s.rutinaId === id)) }, [id])
   if (!r && datos.datos === undefined && !datos.cargando) return <><Atras a="/mas/rutinas" texto="Rutinas" /><p className="vacio">Esta rutina ya no está.</p></>
   if (!r) return <p className="vacio">Cargando…</p>
@@ -200,6 +204,30 @@ export function EditarRutina() {
     const b = [...r.bloques]
     ;[b[i], b[j]] = [b[j], b[i]]
     setR({ ...r, bloques: b })
+  }
+  const enlazadaEn = (bid: string) => (otras.datos ?? []).filter((x) => x.bloques.some((b) => b.id === bid))
+  const revisarNombre = async (b: BloqueRutina) => {
+    if (enlazadaEn(b.id).length) return
+    const m = await mismoNombreEnOtraRutina(r.id, b)
+    if (m) setMismo({ bloqueId: b.id, ...m })
+  }
+  const enlazar = () => {
+    if (!mismo) return
+    setR({ ...r, bloques: r.bloques.map((b) => (b.id === mismo.bloqueId ? mismo.bloque : b)) })
+    setAbierto(mismo.bloque.id)
+    avisar(`Enlazado con ${mismo.rutina.nombre}: se actualizan juntos.`, { tipo: 'ok' })
+    setMismo(null)
+  }
+  const confirmarSumar = async () => {
+    if (!sumar) return
+    try {
+      await mutar(() => guardarRutina(r))
+      const n = await mutar(() => sumarBloqueARutinas(r.id, sumar.bloqueId, sumar.elegidas))
+      avisar(n === 1 ? 'Sumado a 1 rutina: quedan enlazados.' : `Sumado a ${n} rutinas: quedan enlazados.`, { tipo: 'ok' })
+      setSumar(null)
+    } catch (e) {
+      avisar(e instanceof Error ? e.message : String(e), { tipo: 'bajo' })
+    }
   }
   const quitar = (bid: string) => setR({ ...r, bloques: r.bloques.filter((b) => b.id !== bid) })
   const agregar = (tipo: BloqueRutina['tipo'] = 'ejercicio') => {
@@ -235,11 +263,14 @@ export function EditarRutina() {
               <button className="crece bloque-ed-cab" onClick={() => setAbierto(abierto === b.id ? null : b.id)}>
                 <span className="texto-3 mono chico">{i + 1}</span> <b>{b.nombre}</b>
                 <span className="texto-3 chico"> · {descripcion(b)}</span>
+                {enlazadaEn(b.id).length > 0 && <span className="enlace-chip">🔗 En {enlazadaEn(b.id).length + 1} rutinas</span>}
               </button>
               <button className="boton chico suave" aria-label="Subir" onClick={() => mover(i, -1)} disabled={i === 0}>↑</button>
               <button className="boton chico suave" aria-label="Bajar" onClick={() => mover(i, 1)} disabled={i === r.bloques.length - 1}>↓</button>
             </div>
-            {abierto === b.id && <EditorBloque b={b} onCambio={(c) => cambiarBloque(b.id, c)} onQuitar={() => quitar(b.id)} onGrafico={b.tipo === 'ejercicio' ? () => setGrafico(b) : undefined} />}
+            {abierto === b.id && <EditorBloque b={b} onCambio={(c) => cambiarBloque(b.id, c)} onQuitar={() => quitar(b.id)} onGrafico={b.tipo === 'ejercicio' ? () => setGrafico(b) : undefined}
+              enlazadas={enlazadaEn(b.id).map((x) => x.nombre)} onNombreListo={() => void revisarNombre(b)}
+              onSumar={(b.tipo === 'ejercicio' || b.tipo === 'temporizador') && (otras.datos ?? []).some((x) => !x.bloques.some((y) => y.id === b.id)) ? () => setSumar({ bloqueId: b.id, elegidas: [] }) : undefined} />}
           </div>
         ))}
       </div>
@@ -262,6 +293,33 @@ export function EditarRutina() {
           <button className="boton suave" onClick={() => setBorrar(false)}>No, dejarla</button>
         </div>
       </Hoja>
+      <Hoja abierta={!!sumar} onCerrar={() => setSumar(null)} titulo="Sumar a otra rutina">
+        {sumar && (
+          <div className="col" style={{ gap: 10 }}>
+            <p className="texto-2 chico">Elegí a cuáles. Queda el mismo ejercicio en todas: lo que mejores en una (objetivo, peso, reps) se actualiza en las otras, y el historial es uno solo.</p>
+            {(otras.datos ?? []).filter((x) => !x.bloques.some((y) => y.id === sumar.bloqueId)).map((x) => {
+              const si = sumar.elegidas.includes(x.id)
+              return (
+                <button key={x.id} className={`boton ancho enlace-opcion ${si ? 'ok' : ''}`} aria-pressed={si} onClick={() => setSumar({ ...sumar, elegidas: si ? sumar.elegidas.filter((y) => y !== x.id) : [...sumar.elegidas, x.id] })}>
+                  {si ? '✓ ' : ''}{x.nombre}
+                </button>
+              )
+            })}
+            <p className="ayuda">Se pone en el mismo lugar que acá (por ejemplo, antes del kick boxing); después lo podés mover.</p>
+            <button className="boton primario" disabled={!sumar.elegidas.length} onClick={() => void confirmarSumar()}>Sumar</button>
+          </div>
+        )}
+      </Hoja>
+      <Hoja abierta={!!mismo} onCerrar={() => setMismo(null)} titulo="¿Es el mismo ejercicio?">
+        {mismo && (
+          <div className="col" style={{ gap: 10 }}>
+            <p>«{mismo.bloque.nombre}» ya está en <b>{mismo.rutina.nombre}</b> ({descripcion(mismo.bloque)}).</p>
+            <p className="texto-2 chico">Si es el mismo, se enlazan: toma lo de esa rutina y desde ahora se actualizan juntos, con un solo historial.</p>
+            <button className="boton primario" onClick={enlazar}>Sí, el mismo: se actualiza en las dos</button>
+            <button className="boton" onClick={() => { cambiarBloque(mismo.bloqueId, { separado: true }); setMismo(null) }}>No, es otro</button>
+          </div>
+        )}
+      </Hoja>
       <Hoja abierta={!!grafico} onCerrar={() => setGrafico(null)} titulo={grafico?.nombre}>
         {grafico && <HistorialEjercicio b={grafico} />}
       </Hoja>
@@ -282,10 +340,11 @@ function Num({ etiqueta, valor, onCambio, paso = 1 }: { etiqueta: string; valor:
   return <div className="campo"><label>{etiqueta}</label><input type="number" inputMode="decimal" step={paso} value={valor ?? 0} onFocus={(e) => e.currentTarget.select()} onChange={(e) => onCambio(Number(e.target.value))} /></div>
 }
 
-function EditorBloque({ b, onCambio, onQuitar, onGrafico }: { b: BloqueRutina; onCambio: (c: Partial<BloqueRutina>) => void; onQuitar: () => void; onGrafico?: () => void }) {
+function EditorBloque({ b, onCambio, onQuitar, onGrafico, enlazadas = [], onSumar, onNombreListo }: { b: BloqueRutina; onCambio: (c: Partial<BloqueRutina>) => void; onQuitar: () => void; onGrafico?: () => void; enlazadas?: string[]; onSumar?: () => void; onNombreListo?: () => void }) {
   return (
     <div className="col" style={{ gap: 8, marginTop: 6 }}>
-      <div className="campo"><label>Nombre</label><input value={b.nombre} onChange={(e) => onCambio({ nombre: e.target.value })} /></div>
+      <div className="campo"><label>Nombre</label><input value={b.nombre} onChange={(e) => onCambio({ nombre: e.target.value })} onBlur={onNombreListo} /></div>
+      {enlazadas.length > 0 && <p className="enlace-aviso">🔗 Es el mismo ejercicio que en {enlazadas.join(', ')}: lo que cambies o mejores acá se actualiza allá también.</p>}
       {b.tipo === 'ejercicio' && (
         <>
           <div className="rejilla-2">
@@ -333,7 +392,8 @@ function EditorBloque({ b, onCambio, onQuitar, onGrafico }: { b: BloqueRutina; o
       )}
       <div className="botonera">
         {onGrafico && <button className="boton" onClick={onGrafico}>Ver progreso</button>}
-        <button className="boton peligro" onClick={onQuitar}>Quitar</button>
+        {onSumar && <button className="boton" onClick={onSumar}>🔗 Sumar a otra rutina</button>}
+        <button className="boton peligro" onClick={onQuitar}>{enlazadas.length ? 'Quitar de esta rutina' : 'Quitar'}</button>
       </div>
     </div>
   )
