@@ -28,6 +28,7 @@ import { RecomendacionesCreador } from './paginas/RecomendacionesCreador'
 import { reintentarPendientes } from '../services/recomendaciones'
 import { Sueno } from './paginas/Sueno'
 import { AlarmasTelefono } from './paginas/AlarmasTelefono'
+import { AppsQueAtrapan } from './paginas/AppsQueAtrapan'
 import { Actualizar } from './paginas/Actualizar'
 import { PuenteAndroid } from './PuenteAndroid'
 import { Atributos } from './paginas/Atributos'
@@ -245,6 +246,7 @@ function Rutas() {
         <Route path="/mas/rutinas/historial" element={<HistorialEntrenos />} />
         <Route path="/mas/rutinas/:id" element={<EditarRutina />} />
         <Route path="/mas/alarmas" element={<AlarmasTelefono />} />
+        <Route path="/mas/apps-que-atrapan" element={<AppsQueAtrapan />} />
         <Route path="/mas/actualizar" element={<Actualizar />} />
         <Route path="/mas/copia" element={<Copia />} />
         <Route path="/mas/sincronizar" element={<Sincronizar />} />

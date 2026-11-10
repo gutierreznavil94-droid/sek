@@ -7,7 +7,7 @@ import { rivalArchivado } from '../temas/archivado'
 import { useEffect } from 'react'
 import { useTema } from '../temas/temas'
 import { fechaDe } from '../domain/fechas'
-import { esAndroid, guardarDatosWidget, guardarTemaNativo, leerAccionesWidget, rutaDeAtajo } from '../nativo/sek'
+import { guardarVigiaNativo, esAndroid, guardarDatosWidget, guardarTemaNativo, leerAccionesWidget, rutaDeAtajo } from '../nativo/sek'
 import { buscarActualizacion, tocaRevisarHoy } from '../services/actualizacion'
 import { tomarAgua } from '../services/agua'
 import { obtenerAjustes } from '../services/base'
@@ -20,6 +20,9 @@ import { animar } from './animaciones/motor'
 import { pedirBatalla } from './Batalla'
 import { avisar, mutar, useVersion } from './estado'
 import { instalarActualizacion } from './actualizar'
+import { hayClipsTension, pedirTension } from './Tension'
+import { pedirFraseDuda } from './FraseDuda'
+import { temaActivo } from '../temas/temas'
 
 async function hoyYZona() {
   const a = await obtenerAjustes()
@@ -55,6 +58,16 @@ async function atenderAtajo(ruta: string) {
     pedirBatalla(r.batalla)
     return
   }
+  // «Apps que te atrapan»: te pasaste en otra app. Shinobi: la mano de Tensión; otros temas: la frase.
+  if (ruta.startsWith('tension|')) {
+    const [, nombre, min] = ruta.split('|')
+    window.location.hash = '#/'
+    if (!temaActivo().propio && (await hayClipsTension())) pedirTension()
+    else pedirFraseDuda()
+    avisar(`Llevás ${min} min en ${nombre}. Volvé a lo tuyo.`, { tipo: 'bajo', duracionMs: 12_000 })
+    return
+  }
+  if (ruta === 'vigia') { window.location.hash = '#/mas/apps-que-atrapan'; return }
   if (ruta === 'revision') { window.location.hash = '#/revision'; return }
   // Widget y acceso directo «Tareas»: abre el módulo de Tareas (Organización).
   if (ruta === 'tareas') { window.location.hash = '#/organizacion'; return }
@@ -86,6 +99,8 @@ export function PuenteAndroid({ listo }: { listo: boolean }) {
     if (!android || !listo) return
     void alAbrir().catch(() => {})
     void revisarVersion()
+    // «Apps que te atrapan»: la config vive en los ajustes (y en la copia); se le pasa a Android al abrir.
+    void obtenerAjustes().then((a) => { if (a.vigia) void guardarVigiaNativo(a.vigia) })
     const alVolver = () => { if (document.visibilityState === 'visible') void alAbrir().catch(() => {}) }
     document.addEventListener('visibilitychange', alVolver)
     window.addEventListener('sek-atajo', alVolver)

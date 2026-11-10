@@ -28,6 +28,10 @@ type PluginSek = {
   estadoAlarmas(): Promise<{ exactas: boolean; pantallaCompleta: boolean }>
   abrirAjusteAlarmas(o: { cual: 'exactas' | 'pantalla' }): Promise<void>
   elegirTono(): Promise<{ uri: string | null; nombre: string }>
+  vigiaGuardar(o: { config: string }): Promise<void>
+  vigiaEstado(): Promise<{ uso: boolean; encima: boolean; activo: boolean }>
+  vigiaApps(): Promise<{ apps: string; minutos: Record<string, number> }>
+  vigiaPermiso(o: { cual: 'uso' | 'encima' }): Promise<void>
 }
 
 /** Alarma real de Android: suena y vibra con pantalla completa hasta «Apagar» o «Posponer 5 min». */
@@ -140,4 +144,34 @@ export async function elegirTonoDelCelu(): Promise<{ uri: string; nombre: string
   } catch {
     return null
   }
+}
+
+// ---------- Apps que te atrapan ----------
+
+/** Una app del celu que se eligió mirar, con los minutos por día antes de que SEK te llame. */
+export type AppVigilada = { paquete: string; nombre: string; minutos: number }
+export type ConfigVigia = { activo: boolean; repetir: number; apps: AppVigilada[] }
+export type AppInstalada = { paquete: string; nombre: string; icono: string }
+
+export async function guardarVigiaNativo(c: ConfigVigia): Promise<void> {
+  if (esAndroid()) await Sek.vigiaGuardar({ config: JSON.stringify(c) }).catch(() => {})
+}
+
+export async function estadoVigia(): Promise<{ uso: boolean; encima: boolean; activo: boolean } | null> {
+  if (!esAndroid()) return null
+  try { return await Sek.vigiaEstado() } catch { return null }
+}
+
+/** Apps del cajón (con ícono) y los minutos de hoy en cada una (si hay permiso de uso). */
+export async function appsDelCelu(): Promise<{ apps: AppInstalada[]; minutos: Record<string, number> }> {
+  if (!esAndroid()) return { apps: [], minutos: {} }
+  try {
+    const r = await Sek.vigiaApps()
+    const apps = (JSON.parse(r.apps || '[]') as AppInstalada[]).sort((a, b) => a.nombre.localeCompare(b.nombre))
+    return { apps, minutos: r.minutos ?? {} }
+  } catch { return { apps: [], minutos: {} } }
+}
+
+export async function pedirPermisoVigia(cual: 'uso' | 'encima'): Promise<void> {
+  if (esAndroid()) await Sek.vigiaPermiso({ cual }).catch(() => {})
 }

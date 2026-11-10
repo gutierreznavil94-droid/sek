@@ -51,6 +51,13 @@
             android:name=".AlarmaServicio"
             android:exported="false"
             android:foregroundServiceType="systemExempted|mediaPlayback" />
+        <!-- «Apps que te atrapan»: mira el tiempo en las apps elegidas y abre SEK encima al pasarse. -->
+        <service
+            android:name=".VigiaServicio"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="Bienestar digital: avisa cuando el usuario pasa el tiempo que eligió en una app" />
+        </service>
         <receiver android:name=".AlarmaReceptor" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
@@ -91,4 +98,15 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <!-- «Buscar actualización»: instalar la versión nueva encima (Android lo pregunta la primera vez). -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- «Apps que te atrapan»: tiempo de uso por app (el usuario lo activa en Ajustes) y abrir SEK encima. -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" xmlns:tools="http://schemas.android.com/tools" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- Para listar las apps del cajón y elegir cuáles mirar. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
 </manifest>

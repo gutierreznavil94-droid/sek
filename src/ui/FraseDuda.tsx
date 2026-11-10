@@ -54,6 +54,11 @@ export function FraseImponente({ onFin, dia = false }: { onFin: () => void; dia?
   )
 }
 
+// Pedido desde afuera (p. ej. «Apps que te atrapan» en un tema sin la escena de la mano).
+let pedidoFrase = 0
+const oyentesFrase = new Set<() => void>()
+export function pedirFraseDuda(): void { pedidoFrase++; for (const o of oyentesFrase) o() }
+
 /** Una vez por día, al abrir la app (no en la primera configuración ni en modo sueño). */
 export function FraseDelDiaCapa() {
   const [ver, setVer] = useState(false)
@@ -72,6 +77,12 @@ export function FraseDelDiaCapa() {
     })()
     return () => { vivo = false }
   }, [])
+  useEffect(() => {
+    const o = () => setVer(true)
+    oyentesFrase.add(o)
+    if (pedidoFrase) o()
+    return () => { oyentesFrase.delete(o) }
+  }, [])
   if (!ver) return null
-  return <FraseImponente dia onFin={() => setVer(false)} />
+  return <FraseImponente dia onFin={() => { pedidoFrase = 0; setVer(false) }} />
 }

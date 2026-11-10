@@ -15,6 +15,7 @@ public class AlarmaReceptor extends BroadcastReceiver {
         if (Intent.ACTION_BOOT_COMPLETED.equals(accion) || "android.intent.action.LOCKED_BOOT_COMPLETED".equals(accion)
                 || Intent.ACTION_MY_PACKAGE_REPLACED.equals(accion)) {
             Alarmas.reprogramarTodas(c);
+            Vigia.arrancarOParar(c);
             return;
         }
         if (!Alarmas.ACCION_SONAR.equals(accion)) return;

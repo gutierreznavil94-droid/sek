@@ -351,6 +351,8 @@ export type Ajustes = {
   batalla?: ConfigBatalla
   /** Cinemática «Tensión»: kanji y frase del final. */
   tension?: ConfigTension
+  /** «Apps que te atrapan» (solo app Android): al pasarse de minutos, la escena de Tensión. */
+  vigia?: { activo: boolean; repetir: number; apps: { paquete: string; nombre: string; minutos: number }[] }
   caida?: ConfigCaida
   /** Lo no cumplido resta (v0.83): prendido, % de la XP que da y desde qué día vale (nunca hacia atrás). */
   xpResta?: { activa?: boolean; porcentaje?: number; desde?: FechaDia }

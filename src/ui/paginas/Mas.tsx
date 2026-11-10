@@ -47,6 +47,7 @@ const GRUPOS: { titulo: string; items: Seccion[] }[] = [
     { a: '/mas/rutinas', t: 'Mis rutinas', d: 'Rutinas, ejercicios y días', claves: 'rutinas ejercicios entreno gimnasio colgarse barra historial series' },
     { a: '/mas/entrenamiento', t: 'Entrenamiento y descanso', d: 'Días, horas y sueño', claves: 'entrenamiento descanso dormir sueno acostarse hora dias' },
     { a: '/mas/alarmas', t: 'Alarmas', d: 'Cada aviso: Notificación, Alarma o Nada', claves: 'alarmas avisos notificaciones telefono reloj android despertador juego' },
+    { a: '/mas/apps-que-atrapan', t: 'Apps que te atrapan', d: 'Te pasás de minutos en una app y SEK te llama', claves: 'apps tiktok instagram youtube redes tiempo uso minutos limite tension mano bloquear distraccion' },
   ] },
 ]
 

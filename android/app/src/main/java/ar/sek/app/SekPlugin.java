@@ -54,6 +54,57 @@ public class SekPlugin extends Plugin {
         call.resolve();
     }
 
+    // ---------- Apps que te atrapan ----------
+
+    @PluginMethod
+    public void vigiaGuardar(PluginCall call) {
+        Vigia.guardar(getContext(), call.getString("config", "{}"));
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void vigiaEstado(PluginCall call) {
+        JSObject r = new JSObject();
+        r.put("uso", Vigia.tienePermisoUso(getContext()));
+        r.put("encima", Vigia.puedeEncima(getContext()));
+        r.put("activo", Vigia.activo(getContext()));
+        if (Vigia.activo(getContext())) Vigia.arrancarOParar(getContext());
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void vigiaApps(PluginCall call) {
+        new Thread(() -> {
+            JSObject r = new JSObject();
+            r.put("apps", Vigia.appsInstaladas(getContext()).toString());
+            JSObject min = new JSObject();
+            if (Vigia.tienePermisoUso(getContext())) {
+                for (java.util.Map.Entry<String, Long> x : Vigia.usoDeHoy(getContext()).ms.entrySet()) min.put(x.getKey(), x.getValue() / 60_000L);
+            }
+            r.put("minutos", min);
+            call.resolve(r);
+        }).start();
+    }
+
+    @PluginMethod
+    public void vigiaPermiso(PluginCall call) {
+        String cual = call.getString("cual", "uso");
+        Intent i;
+        if ("encima".equals(cual) && Build.VERSION.SDK_INT >= 23) {
+            i = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getContext().getPackageName()));
+        } else {
+            i = new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS);
+            if (Build.VERSION.SDK_INT >= 29) i.setData(Uri.parse("package:" + getContext().getPackageName()));
+        }
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            getContext().startActivity(i);
+        } catch (Exception e) {
+            getContext().startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        }
+        call.resolve();
+    }
+
     @PluginMethod
     public void leerPendientes(PluginCall call) {
         JSObject r = new JSObject();
