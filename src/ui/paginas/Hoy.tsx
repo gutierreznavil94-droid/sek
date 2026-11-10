@@ -78,6 +78,7 @@ function estadoBrilloPilar(p: Pilar): EstadoBrillo | null {
   return null
 }
 import { simbolo } from '../../temas/temas'
+import { apagarLlamado321, useLlamado321 } from '../llamado321'
 import { usa } from '../../services/funciones'
 
 async function cargarPanel(hoy: string) {
@@ -131,6 +132,7 @@ const ICONO_SIG = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 export function Hoy({ hoy }: { hoy: string }) {
   const panel = useDatos(() => cargarPanel(hoy), [hoy])
   const navegar = useNavigate()
+  const llamado321 = useLlamado321()
   const tic = useTic(30_000)
   const [seleccion, setSeleccion] = useState<CompromisoConAccion | null>(null)
   const [pilarSel, setPilarSel] = useState<Pilar | null>(null)
@@ -554,7 +556,15 @@ export function Hoy({ hoy }: { hoy: string }) {
           {d.revision ? ICONO_OK : ICONO_REV}{d.revision ? 'Revisión diaria hecha' : 'Revisión diaria'}<span className="chico" style={{ fontWeight: 500, opacity: 0.8 }}>{d.revision ? '· ver' : pasoElCierre ? `· sin hacer a las ${d.ventana.horaCierre}` : `· hasta ${d.ventana.horaAviso}`}</span>
         </Link>}
         <div className="rejilla-2">
+          {llamado321 ? (
+            <Link to="/321" ref={(el) => { if (el && !el.dataset.visto) { el.dataset.visto = '1'; el.scrollIntoView({ block: 'center', behavior: 'smooth' }) } }} className="boton grande acceso-medio rojizo llamado-321" onClick={apagarLlamado321}>
+              {['弾', '進', '斬', '忍', '鍛', '志'].map((k, i) => <span key={k} className={`l321-icono l321-i${i + 1}`} aria-hidden>{simbolo(k)}</span>)}
+              <span className="l321-texto">{ICONO_321}3 · 2 · 1</span>
+              <span className="l321-sub">Tocá y arrancá</span>
+            </Link>
+          ) : (
           <Link to="/321" className={`boton grande acceso-medio ${usadoHoy('321', hoy) ? 'hecha' : 'rojizo'}`} {...brillo(usadoHoy('321', hoy) ? 'hecho' : 'pendiente', 5, conBrillo)}>{usadoHoy('321', hoy) ? ICONO_OK : ICONO_321}3 · 2 · 1</Link>
+          )}
           <Link to="/siguiente" className={`boton grande acceso-medio ${usadoHoy('siguiente', hoy) ? 'hecha' : 'rojizo'}`} {...brillo(usadoHoy('siguiente', hoy) ? 'hecho' : 'pendiente', 6, conBrillo)}>{usadoHoy('siguiente', hoy) ? ICONO_OK : ICONO_SIG}Siguiente acción</Link>
         </div>
       </div>

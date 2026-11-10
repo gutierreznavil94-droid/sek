@@ -20,7 +20,7 @@ import { animar } from './animaciones/motor'
 import { pedirBatalla } from './Batalla'
 import { avisar, mutar, useVersion } from './estado'
 import { instalarActualizacion } from './actualizar'
-import { hayClipsTension, pedirTension } from './Tension'
+import { pedirLlamado321 } from './llamado321'
 import { pedirFraseDuda } from './FraseDuda'
 import { temaActivo } from '../temas/temas'
 
@@ -62,9 +62,10 @@ async function atenderAtajo(ruta: string) {
   if (ruta.startsWith('tension|')) {
     const [, nombre, min] = ruta.split('|')
     window.location.hash = '#/'
-    if (!temaActivo().propio && (await hayClipsTension())) pedirTension()
-    else pedirFraseDuda()
-    avisar(`Llevás ${min} min en ${nombre}. Volvé a lo tuyo.`, { tipo: 'bajo', duracionMs: 12_000 })
+    // Vuelve a Hoy con el 3·2·1 brillando en el centro (Navil: no a Tensión). En temas subidos, antes la frase.
+    if (temaActivo().propio) pedirFraseDuda()
+    pedirLlamado321()
+    avisar(`Llevás ${min} min en ${nombre}. Tocá el 3 · 2 · 1 y arrancá.`, { tipo: 'bajo', duracionMs: 12_000 })
     return
   }
   if (ruta === 'vigia') { window.location.hash = '#/mas/apps-que-atrapan'; return }

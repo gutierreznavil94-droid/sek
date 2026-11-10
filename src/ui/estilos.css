@@ -2875,3 +2875,18 @@ ul.cal-leyenda li:first-child { grid-column: 1 / -1; }
 .vigia-elegible:active { background: var(--fondo-3); }
 .aviso-chico { font-size: 0.85rem; padding: 8px 10px; border-radius: 10px; background: var(--fondo-3); color: var(--texto-2); border: 1px dashed var(--borde); }
 .vigia-buscar { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--borde); background: var(--fondo); color: var(--texto); }
+
+/* ===== «Apps que te atrapan»: el 3·2·1 te llama (centro, grande, brillando con íconos del tema) ===== */
+.rejilla-2 > .llamado-321 { grid-column: 1 / -1; position: relative; min-height: 112px; flex-direction: column; gap: 2px; overflow: visible; isolation: isolate;
+  border: 2px solid var(--acento) !important; animation: l321-late 1.4s ease-in-out infinite; }
+.llamado-321::before { content: ''; position: absolute; inset: -6px; border-radius: 20px; z-index: -1; background: radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--acento) 45%, transparent), transparent 70%); filter: blur(6px); animation: l321-halo 1.4s ease-in-out infinite; }
+.l321-texto { display: inline-flex; align-items: center; gap: 8px; font-size: 1.7rem; font-weight: 800; letter-spacing: 0.04em; text-shadow: 0 0 12px color-mix(in srgb, var(--acento) 80%, transparent); }
+.l321-sub { font-size: 0.8rem; font-weight: 600; opacity: 0.85; letter-spacing: 0.08em; text-transform: uppercase; }
+.l321-icono { position: absolute; font-family: 'Pincel', 'Noto Serif JP', serif; font-size: 1.35rem; line-height: 1; color: var(--acento); text-shadow: 0 0 8px var(--acento); pointer-events: none; animation: l321-flota 2.2s ease-in-out infinite; }
+.l321-i1 { left: 8%; top: 12%; } .l321-i2 { right: 8%; top: 12%; animation-delay: .3s; }
+.l321-i3 { left: 4%; bottom: 14%; animation-delay: .6s; } .l321-i4 { right: 4%; bottom: 14%; animation-delay: .9s; }
+.l321-i5 { left: 22%; top: -14px; animation-delay: 1.2s; } .l321-i6 { right: 22%; bottom: -14px; animation-delay: 1.5s; }
+@keyframes l321-late { 50% { transform: scale(1.025); box-shadow: 0 0 22px color-mix(in srgb, var(--acento) 70%, transparent); } }
+@keyframes l321-halo { 50% { opacity: 0.55; } }
+@keyframes l321-flota { 0%, 100% { transform: translateY(0) scale(1); opacity: 0.85; } 50% { transform: translateY(-5px) scale(1.15); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .llamado-321, .llamado-321::before, .l321-icono { animation: none; } }
