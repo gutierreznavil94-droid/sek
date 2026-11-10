@@ -96,9 +96,11 @@ public class VigiaServicio extends Service {
         if (pm != null && !pm.isInteractive()) return;
         JSONObject k = Vigia.config(this);
         JSONArray apps = k.optJSONArray("apps");
-        if (apps == null) return;
+        if (apps == null) apps = new JSONArray();
         Vigia.Uso uso = Vigia.usoDeHoy(this);
         if (uso.adelante == null) return;
+        if (revisarJuego(k, uso)) return;
+        if (!k.optBoolean("activo", false)) return;
         for (int i = 0; i < apps.length(); i++) {
             JSONObject a = apps.optJSONObject(i);
             if (a == null || !uso.adelante.equals(a.optString("paquete"))) continue;
@@ -116,6 +118,61 @@ public class VigiaServicio extends Service {
             llamar(nombre, min);
             return;
         }
+    }
+
+    /**
+     * Juego que cuenta solo: si lo que está adelante es un juego del celu, suma sus minutos de hoy con lo
+     * manual (que manda SEK) y avisa al 50 % y, al 100 %, el Tajo (o SEK). Devuelve true si era un juego.
+     */
+    private boolean revisarJuego(JSONObject k, Vigia.Uso uso) {
+        java.util.Set<String> juegos = Vigia.paquetesDeJuego(k);
+        if (!juegos.contains(uso.adelante)) return false;
+        String fecha = hoy();
+        JSONObject limites = k.optJSONObject("limitesJuego");
+        int limite = limites == null ? 0 : limites.optInt(fecha, 0);
+        if (limite <= 0) return true;
+        long msCelu = 0;
+        JSONArray t = Vigia.tramos(this, juegos, Vigia.inicioDelDia(), System.currentTimeMillis());
+        for (int i = 0; i < t.length(); i++) { JSONArray x = t.optJSONArray(i); if (x != null) msCelu += x.optLong(1) - x.optLong(0); }
+        JSONObject manual = k.optJSONObject("manualJuego");
+        long min = msCelu / 60_000L + (manual == null ? 0 : manual.optLong(fecha, 0));
+        SharedPreferences p = Vigia.prefs(this);
+        int porcentaje = Math.max(1, Math.min(99, k.optInt("avisoJuego", 50)));
+        String claveMitad = "juego-mitad:" + fecha;
+        if (min * 100 >= (long) limite * porcentaje && min < limite && !p.getBoolean(claveMitad, false)) {
+            p.edit().putBoolean(claveMitad, true).apply();
+            avisoSuave("Juego: vas por el " + porcentaje + " %", "Llevás " + min + " de " + limite + " min de juego hoy.");
+            return true;
+        }
+        if (min < limite) return true;
+        int repetir = Math.max(1, k.optInt("repetir", 10));
+        String clave = "juego-limite:" + fecha;
+        long ultimo = p.getLong(clave, -1);
+        if (ultimo >= 0 && min < ultimo + repetir) return true;
+        p.edit().putLong(clave, min).apply();
+        String nombre = "juego";
+        JSONArray j = k.optJSONArray("juegos");
+        if (j != null) for (int i = 0; i < j.length(); i++) {
+            JSONObject o = j.optJSONObject(i);
+            if (o != null && uso.adelante.equals(o.optString("paquete"))) nombre = o.optString("nombre", nombre);
+        }
+        llamar(nombre, min);
+        return true;
+    }
+
+    private void avisoSuave(String titulo, String texto) {
+        Intent abrir = new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent pi = PendingIntent.getActivity(this, 9, abrir, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        Notification n = new NotificationCompat.Builder(this, CANAL_LLAMADO)
+                .setSmallIcon(R.drawable.ic_stat_alarma)
+                .setContentTitle(titulo)
+                .setContentText(texto)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                .setContentIntent(pi)
+                .build();
+        NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm != null) nm.notify(NOTI_LLAMADO + 1, n);
     }
 
     private static String hoy() {

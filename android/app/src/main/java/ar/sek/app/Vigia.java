@@ -56,7 +56,64 @@ final class Vigia {
     static boolean activo(Context c) {
         JSONObject k = config(c);
         JSONArray apps = k.optJSONArray("apps");
-        return k.optBoolean("activo", false) && apps != null && apps.length() > 0 && tienePermisoUso(c);
+        JSONArray juegos = k.optJSONArray("juegos");
+        boolean atrapan = k.optBoolean("activo", false) && apps != null && apps.length() > 0;
+        boolean conJuegos = juegos != null && juegos.length() > 0;
+        return (atrapan || conJuegos) && tienePermisoUso(c);
+    }
+
+    /** Paquetes marcados como juego (Juego → «Mis juegos del celu»). */
+    static java.util.Set<String> paquetesDeJuego(JSONObject k) {
+        java.util.HashSet<String> r = new java.util.HashSet<>();
+        JSONArray j = k.optJSONArray("juegos");
+        if (j != null) for (int i = 0; i < j.length(); i++) {
+            JSONObject o = j.optJSONObject(i);
+            if (o != null && !o.optString("paquete").isEmpty()) r.add(o.optString("paquete"));
+        }
+        return r;
+    }
+
+    /**
+     * Tramos [desde, hasta] en que alguna de las apps dadas estuvo adelante, entre desde y hasta (unidos, sin
+     * solaparse). Se usan para que el tiempo en juegos del celu cuente solo en Juego.
+     */
+    static JSONArray tramos(Context c, java.util.Set<String> paquetes, long desde, long hasta) {
+        JSONArray r = new JSONArray();
+        UsageStatsManager u = (UsageStatsManager) c.getSystemService(Context.USAGE_STATS_SERVICE);
+        if (u == null || paquetes.isEmpty() || !tienePermisoUso(c)) return r;
+        long ahora = Math.min(hasta, System.currentTimeMillis());
+        UsageEvents ev = u.queryEvents(desde, ahora);
+        Map<String, Long> abiertos = new HashMap<>();
+        java.util.ArrayList<long[]> lista = new java.util.ArrayList<>();
+        UsageEvents.Event e = new UsageEvents.Event();
+        while (ev.hasNextEvent()) {
+            ev.getNextEvent(e);
+            String p = e.getPackageName();
+            int t = e.getEventType();
+            if (t == UsageEvents.Event.SCREEN_NON_INTERACTIVE) {
+                for (Long d : abiertos.values()) lista.add(new long[]{d, e.getTimeStamp()});
+                abiertos.clear();
+                continue;
+            }
+            if (!paquetes.contains(p)) continue;
+            if (t == UsageEvents.Event.MOVE_TO_FOREGROUND) {
+                if (!abiertos.containsKey(p)) abiertos.put(p, e.getTimeStamp());
+            } else if (t == UsageEvents.Event.MOVE_TO_BACKGROUND) {
+                Long d = abiertos.remove(p);
+                if (d != null) lista.add(new long[]{d, e.getTimeStamp()});
+            }
+        }
+        for (Long d : abiertos.values()) lista.add(new long[]{d, ahora});
+        java.util.Collections.sort(lista, (a, b) -> Long.compare(a[0], b[0]));
+        long[] actual = null;
+        for (long[] x : lista) {
+            if (x[1] <= x[0]) continue;
+            if (actual == null) { actual = x.clone(); continue; }
+            if (x[0] <= actual[1]) actual[1] = Math.max(actual[1], x[1]);
+            else { r.put(new JSONArray().put(actual[0]).put(actual[1])); actual = x.clone(); }
+        }
+        if (actual != null) r.put(new JSONArray().put(actual[0]).put(actual[1]));
+        return r;
     }
 
     static void arrancarOParar(Context c) {

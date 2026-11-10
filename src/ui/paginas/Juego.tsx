@@ -15,10 +15,11 @@ import { JuegoHada } from '../animaciones/JuegoHada'
 import { emitirEvento } from '../../temas/eventos'
 import { JuegoShinobi } from '../../temas/shinobi/Escenas'
 import { CLASE_JUEGO_CORRIENDO } from '../FondoLluvia'
+import { JuegosCelu } from './JuegosCelu'
 
 export function Juego({ hoy }: { hoy: string }) {
   const tic = useTic(1000)
-  const datos = useDatos(async () => ({ resumen: await resumenJuego(hoy), historial: await historialJuego(3000), ajustes: await obtenerAjustes() }), [hoy])
+  const datos = useDatos(async () => ({ resumen: await resumenJuego(hoy), historial: await historialJuego(3000), ajustes: await obtenerAjustes() }), [hoy, Math.floor(tic / 30_000)])
   const [editar, setEditar] = useState<SesionJuego | null | 'nueva'>(null)
   const [borrar, setBorrar] = useState<SesionJuego | null>(null)
   const d = datos.datos
@@ -65,7 +66,7 @@ export function Juego({ hoy }: { hoy: string }) {
         <div className="fila entre">
           <span className="seccion-titulo">Temporizador de juego</span>
           <Explicacion titulo="Cómo funciona">
-            <p>Es manual: iniciás, pausás y finalizás. La sesión activa queda guardada en el teléfono, así que cerrar la app no la pierde.</p>
+            <p>Iniciás, pausás y finalizás. Si marcás tus juegos del celu (más abajo), su tiempo se suma solo. La sesión activa queda guardada en el teléfono, así que cerrar la app no la pierde.</p>
             <p className="texto-2 chico">Registrar el juego no da XP. Respetar el límite del día ({r.limiteMinutos} min hoy: {ajustes.limiteJuegoSemana} de lunes a viernes, {ajustes.limiteJuegoFinde} sábados, domingos y feriados) sí, y se resuelve al cerrar el día. Los avisos del límite se eligen en Más → Alarmas (Notificación, Alarma o Nada).</p>
           </Explicacion>
         </div>
@@ -97,11 +98,16 @@ export function Juego({ hoy }: { hoy: string }) {
         <Barra valor={(100 * minutosHoy) / Math.max(1, r.limiteMinutos)} clase={estado === 'superado' ? 'bajo' : estado === 'cerca' ? 'medio' : 'ok'} />
         {estado === 'superado' && <span className="chico bajo">Superaste el límite de hoy por {minutosHoy - r.limiteMinutos} min.</span>}
         {estado === 'cerca' && <span className="chico medio">Te quedan {r.limiteMinutos - minutosHoy} min.</span>}
+        {(r.minutosCeluHoy > 0 || !!ajustes.vigia?.juegos?.length) && (
+          <div className="fila entre chico"><span className="texto-3">📱 Juegos del celu {r.minutosCeluHoy} min</span><span className="texto-3">🎮 Temporizador {minutosHoy - r.minutosCeluHoy} min</span></div>
+        )}
         <div className="fila entre chico">
           <span className="texto-2">Esta semana</span>
           <span className="mono">{duracionLegible(r.minutosSemana)} <span className="texto-3">(límite {duracionLegible(r.limiteSemana)})</span></span>
         </div>
       </Tarjeta>
+
+      <JuegosCelu />
 
       <Tarjeta titulo="Últimos 7 días">
         <div className="barras">

@@ -6,7 +6,8 @@
 import { db } from '../data/db'
 import type { SesionJuego } from '../data/tipos'
 import { lunesDe, sumarDias, type FechaDia } from '../domain/fechas'
-import { duracionMs, estaPausada, estadoLimite, minutosPorDia, type EstadoLimite } from '../domain/juego'
+import { duracionMs, estaPausada, estadoLimite, minutosPorDia, minutosPorDiaConCelu, type EstadoLimite } from '../domain/juego'
+import { tramosCelu } from './juegoCelu'
 import { obtenerAjustes, registrarEvento } from './base'
 import { limiteJuegoDelDia } from './feriados'
 import { ahora } from './reloj'
@@ -119,6 +120,9 @@ export type ResumenJuego = {
   limitesPorDia: Map<FechaDia, number>
   estado: EstadoLimite
   porDia: Map<FechaDia, number>
+  /** Hoy, por separado: lo del temporizador y lo que contaron solos los juegos del celu (sin lo que se pisa). */
+  minutosManualHoy: number
+  minutosCeluHoy: number
 }
 
 export async function resumenJuego(hoy: FechaDia): Promise<ResumenJuego> {
@@ -128,8 +132,11 @@ export async function resumenJuego(hoy: FechaDia): Promise<ResumenJuego> {
   const t = ahora()
   const desde = sumarDias(hoy, -60)
   const sesiones = await d.sesionesJuego.filter((s) => (s.fin ?? t) >= Date.parse(desde)).toArray()
-  const porDia = minutosPorDia(sesiones, t, ajustes.zonaHoraria)
+  const manual = minutosPorDia(sesiones, t, ajustes.zonaHoraria)
+  const celu = await tramosCelu(Date.parse(desde), t).catch(() => [])
+  const porDia = celu.length ? minutosPorDiaConCelu(sesiones, celu, t, ajustes.zonaHoraria) : manual
   const minutosHoy = Math.round(porDia.get(hoy) ?? 0)
+  const minutosManualHoy = Math.round(manual.get(hoy) ?? 0)
   const lunes = lunesDe(hoy)
   let minutosSemana = 0
   let limiteSemana = 0
@@ -155,6 +162,8 @@ export async function resumenJuego(hoy: FechaDia): Promise<ResumenJuego> {
     limitesPorDia,
     estado: estadoLimite(minutosHoy, limiteMinutos, ajustes.avisoJuegoPorcentaje),
     porDia,
+    minutosManualHoy,
+    minutosCeluHoy: Math.max(0, minutosHoy - minutosManualHoy),
   }
 }
 

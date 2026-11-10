@@ -33,6 +33,7 @@ type PluginSek = {
   vigiaEstado(): Promise<{ uso: boolean; encima: boolean; activo: boolean }>
   vigiaApps(): Promise<{ apps: string; minutos: Record<string, number> }>
   vigiaPermiso(o: { cual: 'uso' | 'encima' }): Promise<void>
+  vigiaTramos(o: { paquetes: string; desde: number; hasta: number }): Promise<{ tramos: string }>
 }
 
 /** Alarma real de Android: suena y vibra con pantalla completa hasta «Apagar» o «Posponer 5 min». */
@@ -151,13 +152,28 @@ export async function elegirTonoDelCelu(): Promise<{ uri: string; nombre: string
 
 /** Una app del celu que se eligió mirar, con los minutos por día antes de que SEK te llame. */
 export type AppVigilada = { paquete: string; nombre: string; minutos: number }
-export type ConfigVigia = { activo: boolean; repetir: number; apps: AppVigilada[]; /** Lo pone la app: tema Shinobi → el Tajo encima. */ tajo?: boolean }
+export type ConfigVigia = {
+  activo: boolean; repetir: number; apps: AppVigilada[]
+  /** Juegos del celu: su tiempo cuenta solo en Juego. */
+  juegos?: { paquete: string; nombre: string }[]
+}
+/** Lo que se le manda a Android además de la config: tema, límites de juego por día y lo manual de hoy. */
+export type ExtrasVigia = { tajo: boolean; limitesJuego: Record<string, number>; manualJuego: Record<string, number>; avisoJuego: number }
 export type AppInstalada = { paquete: string; nombre: string; icono: string }
 
-export async function guardarVigiaNativo(c: ConfigVigia): Promise<void> {
+export async function guardarVigiaNativo(c: ConfigVigia, extras?: Omit<ExtrasVigia, 'tajo'>): Promise<void> {
   if (!esAndroid()) return
   const t = temaActivo()
-  await Sek.vigiaGuardar({ config: JSON.stringify({ ...c, tajo: !t.propio && !!t.escenas }) }).catch(() => {})
+  await Sek.vigiaGuardar({ config: JSON.stringify({ ...c, ...extras, tajo: !t.propio && !!t.escenas }) }).catch(() => {})
+}
+
+/** Tramos [desde, hasta] en que algún juego del celu estuvo adelante (unidos). En la web, ninguno. */
+export async function tramosDeJuegosCelu(paquetes: string[], desde: number, hasta: number): Promise<{ desde: number; hasta: number }[]> {
+  if (!esAndroid() || !paquetes.length) return []
+  try {
+    const r = JSON.parse((await Sek.vigiaTramos({ paquetes: paquetes.join(','), desde, hasta })).tramos || '[]') as [number, number][]
+    return r.map(([a, b]) => ({ desde: a, hasta: b }))
+  } catch { return [] }
 }
 
 export async function estadoVigia(): Promise<{ uso: boolean; encima: boolean; activo: boolean } | null> {

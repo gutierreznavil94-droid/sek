@@ -86,6 +86,20 @@ public class SekPlugin extends Plugin {
         }).start();
     }
 
+    /** Tramos en juegos del celu: { paquetes: "a,b", desde, hasta } → { tramos: "[[d,h],...]" }. */
+    @PluginMethod
+    public void vigiaTramos(PluginCall call) {
+        java.util.HashSet<String> p = new java.util.HashSet<>();
+        for (String x : call.getString("paquetes", "").split(",")) if (!x.trim().isEmpty()) p.add(x.trim());
+        long desde = call.getLong("desde", 0L);
+        long hasta = call.getLong("hasta", System.currentTimeMillis());
+        new Thread(() -> {
+            JSObject r = new JSObject();
+            r.put("tramos", Vigia.tramos(getContext(), p, desde, hasta).toString());
+            call.resolve(r);
+        }).start();
+    }
+
     @PluginMethod
     public void vigiaPermiso(PluginCall call) {
         String cual = call.getString("cual", "uso");

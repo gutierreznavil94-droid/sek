@@ -79,3 +79,39 @@ export function estadoLimite(minutos: number, limiteMinutos: number, avisoPorcen
   if (minutos >= (limiteMinutos * avisoPorcentaje) / 100) return 'cerca'
   return 'ok'
 }
+
+export type Tramo = { desde: number; hasta: number }
+
+/** Une tramos que se pisan: si jugabas con el temporizador manual y a la vez en un juego del celu, cuenta una vez. */
+export function unirTramos(tramos: Tramo[]): Tramo[] {
+  const orden = tramos.filter((t) => t.hasta > t.desde).sort((a, b) => a.desde - b.desde)
+  const r: Tramo[] = []
+  for (const t of orden) {
+    const u = r[r.length - 1]
+    if (u && t.desde <= u.hasta) u.hasta = Math.max(u.hasta, t.hasta)
+    else r.push({ ...t })
+  }
+  return r
+}
+
+/** Minutos por fecha de tramos sueltos (se reparten en la medianoche). */
+export function minutosPorDiaDeTramos(tramos: Tramo[], zona = ZONA_POR_DEFECTO): Map<FechaDia, number> {
+  const mapa = new Map<FechaDia, number>()
+  for (const t of tramos) {
+    let cursor = t.desde
+    let guardia = 0
+    while (cursor < t.hasta && guardia++ < 100) {
+      const fecha = fechaDe(cursor, zona)
+      const hasta = Math.min(inicioDelDia(sumarDias(fecha, 1), zona), t.hasta)
+      mapa.set(fecha, (mapa.get(fecha) ?? 0) + (hasta - cursor) / 60_000)
+      cursor = hasta
+    }
+  }
+  return mapa
+}
+
+/** Minutos por día de lo manual + lo del celu, sin contar dos veces lo que se pisa. */
+export function minutosPorDiaConCelu(sesiones: SesionJuego[], celu: Tramo[], ahora: number, zona = ZONA_POR_DEFECTO): Map<FechaDia, number> {
+  if (!celu.length) return minutosPorDia(sesiones, ahora, zona)
+  return minutosPorDiaDeTramos(unirTramos([...sesiones.flatMap((s) => tramosActivos(s, ahora)), ...celu]), zona)
+}

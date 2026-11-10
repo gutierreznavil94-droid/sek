@@ -7,7 +7,7 @@ import { rivalArchivado } from '../temas/archivado'
 import { useEffect } from 'react'
 import { useTema } from '../temas/temas'
 import { fechaDe } from '../domain/fechas'
-import { guardarVigiaNativo, esAndroid, guardarDatosWidget, guardarTemaNativo, leerAccionesWidget, rutaDeAtajo } from '../nativo/sek'
+import { esAndroid, guardarDatosWidget, guardarTemaNativo, leerAccionesWidget, rutaDeAtajo } from '../nativo/sek'
 import { buscarActualizacion, tocaRevisarHoy } from '../services/actualizacion'
 import { tomarAgua } from '../services/agua'
 import { obtenerAjustes } from '../services/base'
@@ -19,6 +19,7 @@ import { aplicarAccionesWidget, datosWidget } from '../services/widgets'
 import { animar } from './animaciones/motor'
 import { pedirBatalla } from './Batalla'
 import { avisar, mutar, useVersion } from './estado'
+import { sincronizarVigia } from '../services/juegoCelu'
 import { instalarActualizacion } from './actualizar'
 import { pedirLlamado321 } from './llamado321'
 import { pedirFraseDuda } from './FraseDuda'
@@ -101,7 +102,7 @@ export function PuenteAndroid({ listo }: { listo: boolean }) {
     void alAbrir().catch(() => {})
     void revisarVersion()
     // «Apps que te atrapan»: la config vive en los ajustes (y en la copia); se le pasa a Android al abrir.
-    void obtenerAjustes().then((a) => { if (a.vigia) void guardarVigiaNativo(a.vigia) })
+    void sincronizarVigia().catch(() => {})
     const alVolver = () => { if (document.visibilityState === 'visible') void alAbrir().catch(() => {}) }
     document.addEventListener('visibilitychange', alVolver)
     window.addEventListener('sek-atajo', alVolver)
@@ -114,13 +115,14 @@ export function PuenteAndroid({ listo }: { listo: boolean }) {
     if (!android || !listo) return
     void guardarTemaNativo({ id: tema.id, fondos: tema.widget?.fondos ?? [], alarma: tema.widget?.alarma })
     // El Tajo encima de otras apps solo con el tema Shinobi: se vuelve a mandar la config al cambiar de tema.
-    void obtenerAjustes().then((a) => { if (a.vigia) void guardarVigiaNativo(a.vigia) })
+    void sincronizarVigia().catch(() => {})
   }, [android, listo, tema])
 
   // Los widgets se actualizan después de cada cambio (con una pausa chica para juntar varios).
   useEffect(() => {
     if (!android || !listo) return
-    const id = window.setTimeout(() => { void hoyYZona().then(({ hoy }) => datosWidget(hoy)).then(guardarDatosWidget).catch(() => {}) }, 800)
+    // Y Android se entera de lo manual de juego y los límites (para el Tajo dentro del juego).
+    const id = window.setTimeout(() => { void hoyYZona().then(({ hoy }) => datosWidget(hoy)).then(guardarDatosWidget).catch(() => {}); void sincronizarVigia().catch(() => {}) }, 800)
     return () => window.clearTimeout(id)
   }, [android, listo, version])
 

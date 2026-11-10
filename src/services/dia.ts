@@ -16,7 +16,7 @@ import {
   type EstadoCompromiso,
 } from '../domain/cumplimiento'
 import { diaSemanaDe, fechaDe, instanteDe, minutosDe, nocheDeSuenio, retrasoAcostarse, sumarDias, type FechaDia } from '../domain/fechas'
-import { minutosPorDia } from '../domain/juego'
+import { minutosJuegoDelDia } from './juegoCelu'
 import { claveXp, type OrigenXp } from '../domain/xp'
 import { obtenerAjustes, registrarEvento } from './base'
 import { cicloActivo, primerDia } from './ciclo'
@@ -476,8 +476,7 @@ async function cerrarDia(fecha: FechaDia): Promise<DiaCerrado> {
   }
   // 2. Límite de juego: se decide una sola vez al cerrar.
   const limite = await d.compromisos.get(idCompromiso('limite_juego', fecha))
-  const sesiones = await d.sesionesJuego.toArray()
-  const minutosJuego = Math.round(minutosPorDia(sesiones, ahora(), ajustes.zonaHoraria).get(fecha) ?? 0)
+  const minutosJuego = await minutosJuegoDelDia(fecha)
   const limiteMin = await limiteJuegoDelDia(fecha)
   if (limite && (limite.estado === 'pendiente' || limite.estado === 'iniciado')) {
     if (minutosJuego <= limiteMin) await completarCompromiso(limite.id, { instante: instanteDe(fecha, '23:59', ajustes.zonaHoraria) })
@@ -512,8 +511,7 @@ export async function recalcularDiaCerrado(fecha: FechaDia, minutosJuego?: numbe
   const ajustes = await obtenerAjustes()
   const previo = await d.diasCerrados.get(fecha)
   if (minutosJuego === undefined) {
-    const sesiones = await d.sesionesJuego.toArray()
-    minutosJuego = Math.round(minutosPorDia(sesiones, ahora(), ajustes.zonaHoraria).get(fecha) ?? 0)
+    minutosJuego = await minutosJuegoDelDia(fecha)
   }
   if (excepcion === undefined) excepcion = !!(await d.excepciones.get(fecha))
   const resumen = await resumenDeCompromisos(fecha, fecha)

@@ -43,3 +43,16 @@ describe('temporizador de juego', () => {
     expect(estadoLimite(500, 0)).toBe('ok')
   })
 })
+
+describe('juegos del celu', () => {
+  it('une tramos que se pisan y no cuenta doble', async () => {
+    const { unirTramos, minutosPorDiaConCelu } = await import('./juego')
+    const m = 60_000
+    const base = Date.parse('2026-11-10T15:00:00Z')
+    expect(unirTramos([{ desde: base, hasta: base + 30 * m }, { desde: base + 20 * m, hasta: base + 40 * m }, { desde: base + 60 * m, hasta: base + 70 * m }]))
+      .toEqual([{ desde: base, hasta: base + 40 * m }, { desde: base + 60 * m, hasta: base + 70 * m }])
+    const sesion = { inicio: base, fin: base + 30 * m, pausas: [] } as never
+    const r = minutosPorDiaConCelu([sesion], [{ desde: base + 10 * m, hasta: base + 50 * m }], base + 100 * m, 'America/Argentina/Buenos_Aires')
+    expect(Math.round(r.get('2026-11-10') ?? 0)).toBe(50)
+  })
+})

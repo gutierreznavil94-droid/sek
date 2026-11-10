@@ -3,8 +3,9 @@
  * SEK se abre encima con la escena de Tensión (la mano) y te dice cuánto llevás. Solo en la app de Android.
  */
 import { useEffect, useMemo, useState } from 'react'
-import { appsDelCelu, esAndroid, estadoVigia, guardarVigiaNativo, pedirPermisoVigia, type AppInstalada, type ConfigVigia } from '../../nativo/sek'
+import { appsDelCelu, esAndroid, estadoVigia, pedirPermisoVigia, type AppInstalada, type ConfigVigia } from '../../nativo/sek'
 import { guardarAjustes, obtenerAjustes } from '../../services/base'
+import { sincronizarVigia } from '../../services/juegoCelu'
 import { Atras, Tarjeta } from '../componentes'
 import { avisar } from '../estado'
 
@@ -40,8 +41,10 @@ export function AppsQueAtrapan() {
 
   const guardar = async (nueva: ConfigVigia, texto?: string) => {
     setC(nueva)
-    await guardarAjustes({ vigia: nueva }, 'Apps que te atrapan')
-    await guardarVigiaNativo(nueva)
+    // Se conservan los juegos marcados en Juego → «Mis juegos del celu».
+    const juegos = (await obtenerAjustes()).vigia?.juegos
+    await guardarAjustes({ vigia: { ...nueva, juegos } }, 'Apps que te atrapan')
+    await sincronizarVigia()
     setEstado(await estadoVigia())
     if (texto) avisar(texto, { tipo: 'ok' })
   }
