@@ -10,6 +10,7 @@ import { movimientoReducido } from './componentes'
 import { pedirDuelo } from './Duelo'
 import { CLIP_PRUEBA_TENSION, EscenaTension } from '../temas/shinobi/EscenaTension'
 import { pedirCaida } from './Caida'
+import { FraseImponente } from './FraseDuda'
 
 export const KANJI_TENSION = '進'
 export const FRASE_TENSION = 'Avanzá igual.'
@@ -61,7 +62,10 @@ export function TensionCapa() {
 function Tension({ pedido: p }: { pedido: Pedido }) {
   const [texto, setTexto] = useState({ kanji: KANJI_TENSION, frase: FRASE_TENSION })
   const [reducido] = useState(() => movimientoReducido())
+  // Primero la frase, después la escena (en «Ver animaciones» automáticas no).
+  const [intro, setIntro] = useState(!p.auto)
   useEffect(() => { void obtenerAjustes().then((a) => setTexto({ kanji: a.tension?.kanji?.trim() || KANJI_TENSION, frase: a.tension?.frase ?? FRASE_TENSION })) }, [])
+  if (intro) return <FraseImponente onFin={() => setIntro(false)} />
   return (
     <EscenaTension
       kanji={texto.kanji}

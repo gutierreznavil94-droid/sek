@@ -2816,3 +2816,52 @@ ul.cal-leyenda li:first-child { grid-column: 1 / -1; }
 .pv-dia-cero { display: grid; gap: 8px; margin: 4px 0 10px; }
 .pv-dc-opcion { appearance: none; text-align: left; display: flex; flex-direction: column; gap: 3px; padding: 11px 13px; border-radius: 12px; border: 1.5px solid var(--borde); background: var(--fondo-2); color: var(--texto); font: inherit; cursor: pointer; }
 .pv-dc-opcion.elegido { border-color: var(--acento); box-shadow: 0 0 0 1px var(--acento), 0 0 14px rgba(255, 205, 70, 0.35); }
+
+/* ===== «Dudar es fracasar» ===== */
+.frase-duda {
+  --fd-fondo: color-mix(in srgb, var(--acento) 14%, #08080a);
+  --fd-letra: #f3efe6; --fd-rojo: #C8102E;
+  position: fixed; inset: 0; z-index: 9000; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at 50% 45%, color-mix(in srgb, var(--fd-fondo) 70%, #2a0a10) 0%, var(--fd-fondo) 70%);
+  overflow: hidden; cursor: pointer; animation: fd-entra 0.25s ease-out both;
+}
+:root[data-tema-propio] .frase-duda { --fd-rojo: var(--acento); }
+.frase-duda.saliendo { animation: fd-sale 0.45s ease-in forwards; }
+.fd-tinta { position: absolute; width: 140vmin; height: 46vmin; background: radial-gradient(ellipse, rgba(0, 0, 0, 0.55), transparent 70%); filter: blur(6px); }
+.fd-texto { position: relative; margin: 0; padding: 0 12px; max-width: 100%; display: flex; flex-direction: column; align-items: center; line-height: 0.92; text-align: center; font-family: 'Brocha', 'Pincel', serif; color: var(--fd-letra); text-transform: uppercase; letter-spacing: 0.02em; text-shadow: 0 0 2px currentColor, 4px 4px 0 rgba(0, 0, 0, 0.6); }
+.fd-palabra { display: block; clip-path: inset(0 100% 0 0); animation: fd-trazo 0.42s cubic-bezier(0.6, 0, 0.3, 1) forwards; }
+.fd-p1 { font-size: clamp(3.2rem, 20vw, 8.5rem); animation-delay: 0.15s; }
+.fd-p2 { font-size: clamp(1.6rem, 9vw, 3.6rem); color: color-mix(in srgb, var(--fd-letra) 70%, transparent); margin: 0.1em 0; animation-delay: 0.55s; }
+.fd-p3 { font-size: clamp(2.6rem, 15vw, 7rem); color: var(--fd-rojo); text-shadow: 0 0 18px color-mix(in srgb, var(--fd-rojo) 55%, transparent), 4px 4px 0 rgba(0, 0, 0, 0.6); animation: fd-trazo 0.42s cubic-bezier(0.6, 0, 0.3, 1) 0.8s forwards, fd-golpe 0.35s ease-out 1.22s; }
+.fd-tajo { position: absolute; left: -10%; right: -10%; top: 50%; height: 5px; background: linear-gradient(90deg, transparent, var(--fd-rojo) 20%, var(--fd-rojo) 80%, transparent); transform: rotate(-9deg) scaleX(0); transform-origin: left; opacity: 0.9; animation: fd-corte 0.28s ease-out 1.25s forwards; }
+.frase-duda:not(.quieto) .fd-texto { animation: fd-tiembla 0.3s ease-out 1.25s; }
+.frase-duda.quieto .fd-palabra { clip-path: none; animation: none; }
+.frase-duda.quieto .fd-tajo { transform: rotate(-9deg) scaleX(1); animation: none; }
+@keyframes fd-entra { from { opacity: 0; } }
+@keyframes fd-sale { to { opacity: 0; transform: scale(1.06); } }
+@keyframes fd-trazo { to { clip-path: inset(0 0 0 0); } }
+@keyframes fd-golpe { 40% { transform: scale(1.12); } }
+@keyframes fd-corte { to { transform: rotate(-9deg) scaleX(1); } }
+@keyframes fd-tiembla { 20% { transform: translate(-4px, 2px); } 40% { transform: translate(4px, -2px); } 60% { transform: translate(-2px, 1px); } 80% { transform: translate(2px, 0); } }
+/* Versión del día: video de Progreso, ícono grande con destellos y letras con borde rojizo. */
+.fd-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.fd-velo { position: absolute; inset: 0; pointer-events: none; }
+.fd-dia .fd-velo { background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.72) 75%); }
+:root[data-tema-propio="claro"] .fd-dia .fd-velo { background: radial-gradient(ellipse at 50% 50%, rgba(40, 10, 30, 0.35), rgba(40, 10, 30, 0.72) 80%); }
+:root[data-tema-propio] .fd-p3 { color: #fff; -webkit-text-stroke: 2px var(--fd-rojo); }
+.fd-dia { flex-direction: column; gap: 2vh; }
+.fd-dia .fd-texto, .fd-dia .fd-tajo { position: relative; }
+.fd-dia .fd-palabra { -webkit-text-stroke: 1.5px var(--fd-rojo); paint-order: stroke fill; }
+.fd-dia .fd-p1 { animation-delay: 1.05s; } .fd-dia .fd-p2 { animation-delay: 1.45s; }
+.fd-dia .fd-p3 { animation: fd-trazo 0.42s cubic-bezier(0.6, 0, 0.3, 1) 1.7s forwards, fd-golpe 0.35s ease-out 2.12s; }
+.fd-dia .fd-tajo { position: absolute; top: auto; bottom: 30%; animation-delay: 2.15s; }
+.fd-dia:not(.quieto) .fd-texto { animation: fd-tiembla 0.3s ease-out 2.15s; }
+.fd-icono { position: relative; width: 38vmin; height: 38vmin; max-width: 210px; max-height: 210px; display: flex; align-items: center; justify-content: center; }
+.fd-icono::before { content: ''; position: absolute; inset: -20%; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--fd-rojo) 55%, transparent) 0%, transparent 65%); animation: fd-late 1.6s ease-in-out infinite; }
+.fd-kanji { position: relative; font-family: 'Pincel', 'Noto Serif JP', serif; font-size: min(34vmin, 190px); line-height: 1; color: var(--fd-letra); -webkit-text-stroke: 2px var(--fd-rojo); text-shadow: 0 0 14px var(--fd-rojo), 0 0 34px color-mix(in srgb, var(--fd-rojo) 60%, transparent), 5px 5px 0 rgba(0, 0, 0, 0.55); animation: fd-kanji-entra 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) 0.15s both; }
+.fd-chispa { position: absolute; left: 50%; top: 50%; width: 4px; height: 14px; margin: -7px -2px; border-radius: 2px; background: linear-gradient(#fff3d6, var(--fd-rojo)); box-shadow: 0 0 8px var(--fd-rojo); opacity: 0; transform: rotate(var(--a)) translateY(0); animation: fd-chispa 1.3s ease-out calc(0.5s + var(--d)) infinite; }
+.frase-duda.quieto .fd-chispa, .frase-duda.quieto .fd-icono::before { animation: none; }
+.frase-duda.quieto .fd-kanji { animation: none; }
+@keyframes fd-kanji-entra { from { opacity: 0; transform: scale(2.2); filter: blur(8px); } 60% { opacity: 1; filter: blur(0); } }
+@keyframes fd-late { 50% { transform: scale(1.15); opacity: 0.7; } }
+@keyframes fd-chispa { 0% { opacity: 0; transform: rotate(var(--a)) translateY(-30%); } 15% { opacity: 1; } 100% { opacity: 0; transform: rotate(var(--a)) translateY(-150%); } }

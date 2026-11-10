@@ -62,6 +62,7 @@ import { RevisionSemanal } from './paginas/RevisionSemanal'
 import { SiguienteAccion } from './paginas/SiguienteAccion'
 import { Organizacion } from './paginas/Organizacion'
 import { recordatorios } from '../reminders/recordatorios'
+import { FraseDelDiaCapa } from './FraseDuda'
 
 const VerAnimaciones = lazy(() => import('./paginas/VerAnimaciones').then((m) => ({ default: m.VerAnimaciones })))
 
@@ -165,6 +166,7 @@ export function App() {
       <BatallaCapa />
       <DueloCapa />
       <TensionCapa />
+      <FraseDelDiaCapa />
       <CaidaCapa />
       <CapaXpPerdida />
       <RivalCapa />
