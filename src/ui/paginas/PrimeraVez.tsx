@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import type { ConfigAviso } from '../../data/tipos'
 import { fechaLegible, sumarDias } from '../../domain/fechas'
 import {
-  configDeEntrada, XP_DIA_CERO, configurarDeNuevo, configurarPrimeraVez, MAX_PILARES, NIVELES_SERIE, numerosDeNivel, PILARES_DEL_CREADOR, serieNueva, SUGERENCIAS_PILARES,
+  configDeEntrada, configurarDeNuevo, configurarPrimeraVez, MAX_PILARES, NIVELES_SERIE, numerosDeNivel, PILARES_DEL_CREADOR, serieNueva, SUGERENCIAS_PILARES,
   TEXTO_CREADOR, validarPrimeraVez, xpDePilar, type ClavePilar, type ConfigPrimeraVez, type EleccionPilar, type NivelSerie, type SerieElegida,
 } from '../../services/primeraVez'
 import { AVISOS, configAviso } from '../../services/avisos'
@@ -135,7 +135,7 @@ export function PrimeraVez({ hoy, deNuevo = false }: { hoy: string; deNuevo?: bo
       } else {
         await mutar(() => configurarPrimeraVez(c))
         aplicarTema(c.tema, c.nombreApp)
-        avisar(c.diaCero ? `Día 0: calentamiento. +${XP_DIA_CERO} XP de regalo. El Día 1 es mañana. ¡Vamos, ${c.nombrePersona.trim()}!` : `Día 1: ${fechaLegible(hoy)}. ¡Vamos, ${c.nombrePersona.trim()}!`, { tipo: 'ok' })
+        avisar(c.diaCero ? `Día 0: calentamiento. Hoy nada resta; el Día 1 es mañana. ¡Vamos, ${c.nombrePersona.trim()}!` : `Día 1: ${fechaLegible(hoy)}. ¡Vamos, ${c.nombrePersona.trim()}!`, { tipo: 'ok' })
         navegar('/')
       }
     } catch (e) {
@@ -609,7 +609,7 @@ function Resumen({ c, deNuevo, tema, onDiaCero }: { c: ConfigPrimeraVez; deNuevo
         <div className="pv-dia-cero" role="radiogroup" aria-label="Cómo empezar">
           <button type="button" role="radio" aria-checked={!!c.diaCero} className={`pv-dc-opcion ${c.diaCero ? 'elegido' : ''}`} onClick={() => onDiaCero(true)}>
             <b>✨ Día 0: calentamiento</b>
-            <span className="chico texto-2">Ideal si empezás a la tarde. Hoy te preparás: lo que hagas suma XP (+{XP_DIA_CERO} de regalo) y nada resta. El Día 1 es mañana.</span>
+            <span className="chico texto-2">Ideal si empezás a la tarde. Hoy te preparás: lo que hagas suma XP y nada te descuenta. El Día 1 es mañana.</span>
           </button>
           <button type="button" role="radio" aria-checked={!c.diaCero} className={`pv-dc-opcion ${!c.diaCero ? 'elegido' : ''}`} onClick={() => onDiaCero(false)}>
             <b>Día 1 hoy</b>

@@ -13,7 +13,6 @@ import type { FechaDia } from './fechas'
 
 export type OrigenXp =
   | 'compromiso'
-  | 'dia0'
   | 'entrenamiento'
   | 'suenio'
   | 'juego'
