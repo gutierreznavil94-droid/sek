@@ -45,6 +45,8 @@ export interface DefinicionTema {
   iconos?: Record<string, string>
   /** Colores por nombre genérico («color-principal», «color-papel», «color-tinta»), para lo que no es CSS (widgets de Android). */
   colores?: Record<string, string>
+  /** Letras por nombre genérico («fuente-decorativa»), como en CSS font-family. Lo que falte lo toma de Shinobi. */
+  fuentes?: Record<string, string>
   /** `true`: el tema existe pero no aparece en la lista (se está armando). Se ve igual con VITE_TEMAS_OCULTOS=1. */
   oculto?: boolean
   /** Tarjetas de Progreso: vidrio oscuro (Shinobi) o claro, para temas de fondo claro. */
@@ -288,6 +290,11 @@ export function iconoTema(nombre: string, tema: DefinicionTema = activo): string
 /** Color del tema activo por nombre genérico. Si el tema no lo tiene, el de Shinobi; «color-principal» cae en el acento. */
 export function colorTema(nombre: string, tema: DefinicionTema = activo): string {
   return tema.colores?.[nombre] ?? (nombre === 'color-principal' ? tema.acento : undefined) ?? base.colores?.[nombre] ?? ''
+}
+
+/** Letra del tema activo por nombre genérico («fuente-decorativa»). Si el tema no la tiene, la de Shinobi; si tampoco, vacío. */
+export function fuenteTema(nombre: string, tema: DefinicionTema = activo): string {
+  return tema.fuentes?.[nombre] ?? base.fuentes?.[nombre] ?? ''
 }
 
 export function useTema(): DefinicionTema {

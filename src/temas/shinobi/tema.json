@@ -32,7 +32,11 @@
     "color-fondo": "#121110", "color-tarjeta": "#1b1918", "color-tarjeta-2": "#262321", "color-borde": "#3A3836",
     "color-texto": "#EEECE7", "color-texto-2": "#b9b4ac", "color-texto-3": "#8E8A84",
     "color-hecho": "#78BD97", "color-aviso": "#e0a23a", "color-con-alguien": "#9b7bd4",
-    "color-importancia-alta": "#d2384f", "color-importancia-media": "#e0b23a", "color-importancia-baja": "#8E8A84"
+    "color-importancia-alta": "#d2384f", "color-importancia-media": "#e0b23a", "color-importancia-baja": "#8E8A84",
+    "color-peligro": "#ff8c96", "color-papel-2": "#e2d6bd"
+  },
+  "fuentes": {
+    "fuente-decorativa": "'Pincel', 'Yuji Syuku', 'Hiragino Mincho ProN', 'Noto Serif JP', serif"
   },
   "iconos": {
     "icono-hoy": "今",

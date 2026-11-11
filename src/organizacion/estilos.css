@@ -1,7 +1,8 @@
 /*
  * Organización: estilos propios. Todo empieza con «fr-» para no chocar con la app madre.
  * Los colores llegan del tema como variables --fr-* (ver tema.ts); acá solo hay forma y espacio.
- * Basado en el prototipo «Frentes» v14 (look de la pantalla Progreso de SEK: vidrio, brillo, rojo en líneas finas).
+ * Colores (--fr-*) y letra decorativa (--fr-pincel) llegan del tema: acá no va nada propio de un tema (ni Shinobi ni otro).
+ * Basado en el prototipo «Frentes» v14.
  */
 .fr {
   --fr-radio: 18px; --fr-radio-boton: 12px;
@@ -9,7 +10,6 @@
   --fr-vidrio-borde: rgba(255, 255, 255, .13);
   --fr-brillo: color-mix(in srgb, var(--fr-linea) 55%, transparent);
   --fr-brillo-verde: color-mix(in srgb, var(--fr-hecho) 45%, transparent);
-  --fr-pincel: 'Pincel', 'Yuji Syuku', 'Hiragino Mincho ProN', 'Noto Serif JP', serif;
   color: var(--fr-texto); font-size: 16px; line-height: 1.4; -webkit-tap-highlight-color: transparent;
 }
 .fr *, .fr *::before, .fr *::after { box-sizing: border-box; }
@@ -120,20 +120,21 @@
 .fr-fin-fila > span:first-child { flex: 1; min-width: 0; }
 
 /* Sueltas: papel washi */
-.fr-sueltas { --fr-texto: #1c1916; --fr-texto-2: #3d3730; --fr-texto-3: #6b6157; --fr-borde: rgba(28, 25, 22, .3); --fr-vidrio-borde: rgba(28, 25, 22, .22); --ico-hueco: #ece3cf;
+.fr-sueltas { --fr-texto: color-mix(in srgb, var(--fr-tinta) 95%, var(--fr-papel)); --fr-texto-2: color-mix(in srgb, var(--fr-tinta) 80%, var(--fr-papel)); --fr-texto-3: color-mix(in srgb, var(--fr-tinta) 60%, var(--fr-papel));
+  --fr-borde: color-mix(in srgb, var(--fr-tinta) 30%, transparent); --fr-vidrio-borde: color-mix(in srgb, var(--fr-tinta) 22%, transparent); --ico-hueco: color-mix(in srgb, var(--fr-papel) 70%, var(--fr-papel-2));
   position: relative; overflow: hidden; cursor: pointer; color: var(--fr-texto); margin-bottom: 14px; padding: 14px 14px 12px; border-radius: 16px;
-  background: radial-gradient(ellipse at 90% 0%, rgba(200, 16, 46, .12), transparent 45%), radial-gradient(ellipse at 10% 110%, rgba(60, 45, 30, .18), transparent 55%), linear-gradient(160deg, #f1e9d8, #e2d6bd);
-  border: 1px solid rgba(255, 255, 255, .45); box-shadow: 0 12px 32px rgba(0, 0, 0, .5), inset 0 0 40px rgba(120, 95, 60, .2); }
+  background: radial-gradient(ellipse at 90% 0%, color-mix(in srgb, var(--fr-linea) 12%, transparent), transparent 45%), radial-gradient(ellipse at 10% 110%, color-mix(in srgb, var(--fr-tinta) 18%, transparent), transparent 55%), linear-gradient(160deg, var(--fr-papel), var(--fr-papel-2));
+  border: 1px solid rgba(255, 255, 255, .45); box-shadow: 0 12px 32px rgba(0, 0, 0, .5), inset 0 0 40px color-mix(in srgb, color-mix(in srgb, var(--fr-papel-2) 50%, var(--fr-tinta)) 20%, transparent); }
 .fr-sueltas::before { content: ''; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 3px; background: var(--fr-linea); }
-.fr-s-kj { position: absolute; right: 8px; bottom: -22px; font-size: 110px; line-height: 1; color: rgba(28, 25, 22, .09); pointer-events: none; }
+.fr-s-kj { position: absolute; right: 8px; bottom: -22px; font-size: 110px; line-height: 1; color: color-mix(in srgb, var(--fr-tinta) 9%, transparent); pointer-events: none; }
 .fr-s-cab { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.fr-s-ic { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; background: rgba(28, 25, 22, .08); }
+.fr-s-ic { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; background: color-mix(in srgb, var(--fr-tinta) 8%, transparent); }
 .fr-s-ic .ico { width: 26px; height: 26px; }
 .fr-s-nom { display: flex; flex-direction: column; font-weight: 800; font-size: 18px; position: relative; padding-bottom: 5px; }
 .fr-s-nom::after { content: ''; position: absolute; left: 0; bottom: 0; width: 24px; height: 2.5px; border-radius: 3px; background: var(--fr-linea); }
 .fr-s-nom small { font-weight: 650; font-size: 12px; color: var(--fr-texto-3); }
 .fr-s-lista { display: flex; flex-direction: column; gap: 6px; position: relative; }
-.fr-sueltas .fr-tarea { background: rgba(255, 255, 255, .38); border-color: rgba(28, 25, 22, .22); }
+.fr-sueltas .fr-tarea { background: rgba(255, 255, 255, .38); border-color: color-mix(in srgb, var(--fr-tinta) 22%, transparent); }
 .fr-s-vacio { margin: 4px 0; color: var(--fr-texto-3); font-style: italic; }
 .fr-s-mas { margin-top: 6px; font-size: 13px; font-weight: 700; color: var(--fr-texto-3); }
 
@@ -170,7 +171,7 @@
 /* Botones */
 .fr-primario { min-height: 48px; border-radius: var(--fr-radio-boton); background: var(--fr-hecho) !important; color: var(--fr-fondo) !important; font-weight: 750; font-size: 16px; padding: 0 18px !important; box-shadow: 0 0 16px var(--fr-brillo-verde); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .fr-secundario { min-height: 44px; border-radius: var(--fr-radio-boton); border: 1px solid var(--fr-borde) !important; background: var(--fr-tarjeta-2) !important; font-weight: 700; font-size: 14px; padding: 0 14px !important; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-.fr-peligro { min-height: 44px; padding: 0 14px !important; border-radius: var(--fr-radio-boton); border: 1px solid color-mix(in srgb, var(--fr-linea) 60%, transparent) !important; color: #ff8c96 !important; background: color-mix(in srgb, var(--fr-linea) 10%, transparent) !important; font-weight: 700; }
+.fr-peligro { min-height: 44px; padding: 0 14px !important; border-radius: var(--fr-radio-boton); border: 1px solid color-mix(in srgb, var(--fr-linea) 60%, transparent) !important; color: var(--fr-peligro) !important; background: color-mix(in srgb, var(--fr-linea) 10%, transparent) !important; font-weight: 700; }
 .fr-peligro.fr-mini { min-height: 36px; padding: 0 10px !important; }
 .fr-confirmar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px; border-radius: 12px; border: 1px solid var(--fr-linea); box-shadow: 0 0 16px color-mix(in srgb, var(--fr-linea) 35%, transparent); }
 .fr-confirmar > span { flex-basis: 100%; font-weight: 700; }

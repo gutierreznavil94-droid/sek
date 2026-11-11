@@ -4,7 +4,7 @@
  */
 import { db } from '../data/db'
 import type { Almacen, DatosOrganizacion, TemaOrganizacion } from '../organizacion'
-import { colorTema, iconoTema, temaActivo } from '../temas/temas'
+import { colorTema, fuenteTema, iconoTema, temaActivo } from '../temas/temas'
 import { iconoSvg } from '../temas/iconos'
 import { disparar } from '../temas/eventos'
 
@@ -31,5 +31,6 @@ export const temaSek: TemaOrganizacion = {
     return iconoSvg(nombre, t.id) || iconoTema(nombre)
   },
   evento: (nombre, detalle) => disparar(nombre, detalle),
+  fuente: (nombre) => fuenteTema(nombre),
 }
 

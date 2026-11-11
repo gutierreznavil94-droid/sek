@@ -18,7 +18,7 @@ import { montarOrganizacion, montarTiraHoy } from './organizacion'
 
 const pantalla = montarOrganizacion(lugar, {
   almacen,            // { leer(): Promise<unknown>, guardar(datos): Promise<void> }
-  tema,               // { color(nombre), icono(nombre), evento(nombre, detalle) }
+  tema,               // { color(nombre), icono(nombre), evento(nombre, detalle), fuente?(nombre) }
   nombre: 'Navil',    // se ve en «Navil → Facu»
   hoy: () => '2026-11-05',
   alAvisar: (aviso, { frente, tarea }) => {},
@@ -45,7 +45,11 @@ En Vite el CSS entra solo (`vista.ts` importa `estilos.css`). En una página HTM
 
 **Eventos visuales** (los mismos de Temas): `completar` (al marcar hecha), `aparecer` (al abrir una hoja), `logro` (cuando no queda nada de hoy), `alerta` (falta clasificar algo).
 
-**Colores** (quedan como variables `--fr-*`): `color-fondo`, `color-tarjeta`, `color-tarjeta-2`, `color-borde`, `color-texto`, `color-texto-2`, `color-texto-3`, `color-principal`, `color-hecho`, `color-aviso`, `color-con-alguien`, `color-papel`, `color-tinta`, `color-importancia-alta`, `color-importancia-media`, `color-importancia-baja`.
+**Colores** (quedan como variables `--fr-*`): `color-fondo`, `color-tarjeta`, `color-tarjeta-2`, `color-borde`, `color-texto`, `color-texto-2`, `color-texto-3`, `color-principal`, `color-hecho`, `color-aviso`, `color-con-alguien`, `color-peligro`, `color-papel`, `color-papel-2` (sombra del papel), `color-tinta`, `color-importancia-alta`, `color-importancia-media`, `color-importancia-baja`.
+
+**Letras** (opcional, `fuente(nombre)`, como CSS font-family): `fuente-decorativa` (kanjis y sello de hecho; queda en `--fr-pincel`).
+
+Si el tema no da un color o una letra, se usa un respaldo **neutro** (grises y azul), nunca el look de un tema. En esta carpeta no va nada propio de Shinobi ni de otro tema.
 
 **Íconos** (un `<svg>` o un texto corto): `icono-importancia-alta|media|baja`, `icono-rapida`, `icono-lenta`, `icono-celu`, `icono-compu`, `icono-calle`, `icono-sin-donde`, `icono-yo`, `icono-delegar`, `icono-con-alguien`, `icono-flecha`, `icono-hecho`, `icono-por-hacer`, `icono-libre`, `icono-punto`, `icono-sueltas`.
 

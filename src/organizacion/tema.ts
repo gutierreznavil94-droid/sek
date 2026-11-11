@@ -12,26 +12,35 @@ export interface TemaOrganizacion {
   icono(nombre: string): string
   /** Evento visual genérico: el tema decide cómo se ve. */
   evento(nombre: NombreEventoTema, detalle: DetalleEventoTema): void
+  /** Letra por nombre genérico («fuente-decorativa», la de kanjis y sellos), como en CSS font-family. '' = usar la de respaldo. */
+  fuente?(nombre: string): string
 }
 
-/** Colores que usa Organización y la variable CSS donde quedan. */
+/** Colores que usa Organización, la variable CSS donde quedan y un respaldo neutro (sin look de ningún tema). */
 const COLORES: [string, string, string][] = [
-  ['color-fondo', '--fr-fondo', '#121110'],
-  ['color-tarjeta', '--fr-tarjeta', '#1b1918'],
-  ['color-tarjeta-2', '--fr-tarjeta-2', '#262321'],
-  ['color-borde', '--fr-borde', '#3A3836'],
-  ['color-texto', '--fr-texto', '#EEECE7'],
-  ['color-texto-2', '--fr-texto-2', '#b9b4ac'],
-  ['color-texto-3', '--fr-texto-3', '#8E8A84'],
-  ['color-principal', '--fr-linea', '#C8102E'],
-  ['color-hecho', '--fr-hecho', '#78BD97'],
+  ['color-fondo', '--fr-fondo', '#141414'],
+  ['color-tarjeta', '--fr-tarjeta', '#1c1c1c'],
+  ['color-tarjeta-2', '--fr-tarjeta-2', '#262626'],
+  ['color-borde', '--fr-borde', '#3a3a3a'],
+  ['color-texto', '--fr-texto', '#eeeeee'],
+  ['color-texto-2', '--fr-texto-2', '#b5b5b5'],
+  ['color-texto-3', '--fr-texto-3', '#8a8a8a'],
+  ['color-principal', '--fr-linea', '#5b8def'],
+  ['color-hecho', '--fr-hecho', '#5fb37f'],
   ['color-aviso', '--fr-aviso', '#e0a23a'],
   ['color-con-alguien', '--fr-alguien', '#9b7bd4'],
-  ['color-papel', '--fr-papel', '#F1EBDF'],
-  ['color-tinta', '--fr-tinta', '#121110'],
-  ['color-importancia-alta', '--fr-imp-alta', '#d2384f'],
+  ['color-peligro', '--fr-peligro', '#ff8c8c'],
+  ['color-papel', '--fr-papel', '#f2f2f2'],
+  ['color-papel-2', '--fr-papel-2', '#dcdcdc'],
+  ['color-tinta', '--fr-tinta', '#151515'],
+  ['color-importancia-alta', '--fr-imp-alta', '#d9534f'],
   ['color-importancia-media', '--fr-imp-media', '#e0b23a'],
-  ['color-importancia-baja', '--fr-imp-baja', '#8E8A84'],
+  ['color-importancia-baja', '--fr-imp-baja', '#8a8a8a'],
+]
+
+/** Letras que usa Organización, su variable CSS y el respaldo. */
+const FUENTES: [string, string, string][] = [
+  ['fuente-decorativa', '--fr-pincel', 'serif'],
 ]
 
 /** Respaldo de íconos si el tema no tiene uno (texto simple). */
@@ -72,6 +81,11 @@ export function prepararTema(t: Partial<TemaOrganizacion> = {}): TemaListo {
       for (const [nombre, variable, respaldo] of COLORES) {
         let v = ''
         try { v = t.color?.(nombre) ?? '' } catch { v = '' }
+        el.style.setProperty(variable, v || respaldo)
+      }
+      for (const [nombre, variable, respaldo] of FUENTES) {
+        let v = ''
+        try { v = t.fuente?.(nombre) ?? '' } catch { v = '' }
         el.style.setProperty(variable, v || respaldo)
       }
       el.style.setProperty('--ico-hueco', 'var(--fr-fondo)')
