@@ -19,11 +19,13 @@ public class TajoActivity extends Activity {
     static final String EXTRA_APP = "app";
     static final String EXTRA_MIN = "min";
     private boolean tocado = false;
+    private long abierto = 0;
 
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
+        abierto = System.currentTimeMillis();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
         String app = getIntent().getStringExtra(EXTRA_APP);
         long min = getIntent().getLongExtra(EXTRA_MIN, 0);
@@ -36,8 +38,16 @@ public class TajoActivity extends Activity {
         w.addJavascriptInterface(new Puente(app == null ? "esa app" : app, min), "SekTajo");
         setContentView(w);
         w.loadUrl("file:///android_asset/public/tajo-encima.html?app=" + Uri.encode(app == null ? "" : app) + "&min=" + min);
-        // Si nadie toca, a los 20 s se cierra y deja la otra app como estaba.
-        w.postDelayed(this::finish, 20_000);
+        // Si nadie toca, a los 30 s se cierra y deja la otra app como estaba.
+        w.postDelayed(this::finish, 30_000);
+    }
+
+    /** «Atrás» no corta la escena mientras la pantalla se está rompiendo (los primeros 4 s). */
+    @SuppressWarnings("deprecation")
+    @Override
+    public void onBackPressed() {
+        if (System.currentTimeMillis() - abierto < 4_000) return;
+        super.onBackPressed();
     }
 
     private final class Puente {

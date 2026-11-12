@@ -30,7 +30,7 @@ type PluginSek = {
   abrirAjusteAlarmas(o: { cual: 'exactas' | 'pantalla' | 'notificaciones' }): Promise<void>
   elegirTono(): Promise<{ uri: string | null; nombre: string }>
   vigiaGuardar(o: { config: string }): Promise<void>
-  vigiaEstado(): Promise<{ uso: boolean; encima: boolean; activo: boolean }>
+  vigiaEstado(): Promise<{ uso: boolean; encima: boolean; activo: boolean; ultimo?: string }>
   vigiaApps(): Promise<{ apps: string; minutos: Record<string, number> }>
   vigiaPermiso(o: { cual: 'uso' | 'encima' }): Promise<void>
   vigiaTramos(o: { paquetes: string; desde: number; hasta: number }): Promise<{ tramos: string }>
@@ -176,7 +176,7 @@ export async function tramosDeJuegosCelu(paquetes: string[], desde: number, hast
   } catch { return [] }
 }
 
-export async function estadoVigia(): Promise<{ uso: boolean; encima: boolean; activo: boolean } | null> {
+export async function estadoVigia(): Promise<{ uso: boolean; encima: boolean; activo: boolean; ultimo?: string } | null> {
   if (!esAndroid()) return null
   try { return await Sek.vigiaEstado() } catch { return null }
 }

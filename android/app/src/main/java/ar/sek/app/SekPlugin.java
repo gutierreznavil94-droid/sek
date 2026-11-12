@@ -68,6 +68,7 @@ public class SekPlugin extends Plugin {
         r.put("uso", Vigia.tienePermisoUso(getContext()));
         r.put("encima", Vigia.puedeEncima(getContext()));
         r.put("activo", Vigia.activo(getContext()));
+        r.put("ultimo", Vigia.prefs(getContext()).getString("ultimoLlamado", ""));
         if (Vigia.activo(getContext())) Vigia.arrancarOParar(getContext());
         call.resolve(r);
     }

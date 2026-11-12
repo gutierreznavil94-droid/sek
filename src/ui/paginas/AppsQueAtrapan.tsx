@@ -20,7 +20,7 @@ const EJEMPLO: AppInstalada[] = [
 export function AppsQueAtrapan() {
   const android = esAndroid()
   const [c, setC] = useState<ConfigVigia | null>(null)
-  const [estado, setEstado] = useState<{ uso: boolean; encima: boolean; activo: boolean } | null>(null)
+  const [estado, setEstado] = useState<{ uso: boolean; encima: boolean; activo: boolean; ultimo?: string } | null>(null)
   const [apps, setApps] = useState<AppInstalada[]>([])
   const [minutos, setMinutos] = useState<Record<string, number>>({})
   const [buscar, setBuscar] = useState('')
@@ -125,6 +125,7 @@ export function AppsQueAtrapan() {
           </select>
         </label>
         <p className="ayuda">Los minutos se cuentan por día, desde la medianoche. Solo te llama con la app abierta adelante.</p>
+        {android && <p className="ayuda">Última vez que te llamó: <b>{estado?.ultimo || 'todavía nunca'}</b></p>}
       </Tarjeta>
     </>
   )

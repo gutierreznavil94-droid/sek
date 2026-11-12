@@ -6,7 +6,7 @@
 <title>SEK · Tajo</title>
 <!-- «Apps que te atrapan» (APK, tema Shinobi): se abre transparente ENCIMA de la otra app.
      El blanco del clip se vuelve transparente, así lo que se corta es la pantalla de la otra app.
-     Tocar: SekTajo.tocar() abre SEK con Tensión. ?app=TikTok&min=32 · ?prueba=1 pone un fondo de ejemplo. -->
+     Tocar (recién cuando aparece «Tocá»): SekTajo.tocar() abre SEK con Tensión. ?app=TikTok&min=32 · ?prueba=1 pone un fondo de ejemplo. -->
 <style>
   @font-face { font-family: 'Pincel'; src: url('shinobi/pincel.woff2') format('woff2'); font-display: block; }
   html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; -webkit-tap-highlight-color: transparent; }
@@ -19,7 +19,8 @@
   .texto small { display: block; margin-top: 8px; font-weight: 600; font-size: .95rem; color: rgba(243,239,230,.85); }
   .texto b { color: #ff3b4f; }
   /* Dónde tocar: un enso rojo a tinta sobre la palma, con 進, que late. */
-  .toque { position: fixed; left: 68%; top: 79%; width: 112px; height: 112px; margin: -56px 0 0 -56px; opacity: 0; animation: aparece .5s ease-out 2.5s forwards; pointer-events: none; }
+  .toque { position: fixed; left: 68%; top: 79%; width: 112px; height: 112px; margin: -56px 0 0 -56px; opacity: 0; pointer-events: none; }
+  body.listo .toque { animation: aparece .5s ease-out forwards; }
   .toque svg { position: absolute; inset: 0; width: 100%; height: 100%; animation: gira 6s linear infinite; filter: drop-shadow(0 0 6px rgba(255,40,60,.9)) drop-shadow(0 0 16px rgba(200,16,46,.6)); }
   .toque .k { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 52px/1 'Pincel', serif; color: #f3efe6; -webkit-text-stroke: 1.5px #c8102e; text-shadow: 0 0 10px #c8102e, 0 0 22px rgba(200,16,46,.7); animation: late 1.3s ease-in-out infinite; }
   .toque .onda { position: absolute; inset: 8px; border-radius: 50%; border: 2px solid rgba(255,59,79,.75); animation: onda 1.6s ease-out infinite; }
@@ -66,8 +67,19 @@
     document.body.appendChild(r)
   })
   var p = v.play(); if (p && p.catch) p.catch(function () {})
-  function tocar() { if (window.SekTajo) window.SekTajo.tocar() }
-  document.addEventListener('pointerdown', tocar)
+  // Mientras corre el corte se ignoran los toques: si estabas jugando y seguís tocando, la pantalla igual
+  // se rompe entera. Recién cuando aparece «Tocá» (fin del clip, o 3,2 s después de arrancar) cuenta un toque,
+  // y tiene que ser un toque nuevo: apoyar el dedo y levantarlo después de ese momento.
+  var listo = false, apoyado = false
+  function ponerListo() { if (listo) return; listo = true; document.body.classList.add('listo') }
+  v.addEventListener('playing', function () { setTimeout(ponerListo, 3200) })
+  v.addEventListener('ended', ponerListo)
+  setTimeout(ponerListo, 6000) // por si el clip no arranca
+  document.addEventListener('pointerdown', function () { apoyado = listo })
+  document.addEventListener('pointerup', function () {
+    if (listo && apoyado && window.SekTajo) window.SekTajo.tocar()
+    apoyado = false
+  })
 </script>
 </body>
 </html>

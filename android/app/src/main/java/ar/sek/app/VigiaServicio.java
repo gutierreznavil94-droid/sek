@@ -181,6 +181,9 @@ public class VigiaServicio extends Service {
 
     /** Abre SEK encima (permiso «Mostrar sobre otras apps»); si no lo hay, aviso a pantalla completa. */
     private void llamar(String nombre, long minutos) {
+        // Para poder ver en «Apps que te atrapan» si SEK te llamó de verdad.
+        Vigia.prefs(this).edit().putString("ultimoLlamado",
+                new SimpleDateFormat("dd/MM HH:mm", Locale.US).format(new Date()) + " · " + nombre + " · " + minutos + " min").apply();
         String ruta = "tension|" + nombre.replace('|', ' ') + "|" + minutos;
         Datos.prefs(this).edit().putString(Datos.CLAVE_RUTA, ruta).apply();
         Intent abrir = new Intent(this, MainActivity.class)
