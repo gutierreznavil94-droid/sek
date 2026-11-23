@@ -51,9 +51,7 @@ No tiene tablas. Lee estas vistas (todas con `usuario_id`), creadas en `015-prog
 - `calculo.js`: cuentas puras (camino, pilares en rango, días cumplidos, series diarias, números de un período). Traído de `Progreso.tsx` y `CierreFase.tsx`.
 - `pantallas/progreso.html` + `progreso.js`: la pantalla principal, en `/progreso`.
 - `pantallas/seccion.html` + `seccion.js`: una sección a pantalla completa, en `/progreso/seccion?cual=xp|pilares|sueno|fuerza|comida|series`.
-- `pantallas/fase.html` + `fase.js`: cierre de fase con números, en `/progreso/fase?numero=N`.
-- `pantallas/graficos.js`: barras, línea, miniatura, anillo y la montaña, en SVG a mano (sin librerías).
-- `pantallas/estilo.css`: solo diseños propios, con los colores generales.
+- `pantallas/fase.html` + `fase.js`: cierre de fase igual que la v0.88.27, en `/progreso/fase?numero=N`: números (base, fase anterior, esta), atributos, objetivos con su resultado real y «Cerrar fase» (lo cierra el módulo ciclo). Hoy muestra «Terminó la fase N · Revisar» (`faseSinCerrar` de `/api/dia/hoy`) y «Ciclo terminado».
 
 ## Qué módulos usa
 

@@ -748,9 +748,15 @@ async function resumenHoy(usuarioId, tx = null) {
   await cerrarDiasPendientes(usuarioId, tx)
   const hoy = await hoyDe(usuarioId, tx)
   const p = await pilaresDelDia(usuarioId, hoy, tx)
+  const donde = await ciclo.diaDelCiclo(usuarioId, hoy, tx)
+  // La primera fase que ya terminó y no se cerró (para «Terminó la fase N · Revisar» en Hoy).
+  const sinCerrar = donde && !donde.noEmpezado && !donde.terminado
+    ? (await ciclo.fases(usuarioId, donde.ciclo.id, tx)).find((f) => f.diaFin < donde.dia && !f.cerradaEn) || null
+    : null
   return {
     hoy,
-    ciclo: await ciclo.diaDelCiclo(usuarioId, hoy, tx),
+    ciclo: donde,
+    faseSinCerrar: sinCerrar ? sinCerrar.numero : null,
     pilares: p.pilares, cumplidos: p.cumplidos, aplican: p.aplican,
     racha: await racha(usuarioId, hoy, tx),
     avisoResta: await avisoResta(usuarioId, hoy, tx),

@@ -226,7 +226,7 @@ test('web: las pantallas y la API de sueño piden sesión y funcionan', async ()
   assert.equal((await app.inject({ url: '/api/sueno' })).statusCode, 401)
   const r = await app.inject({ method: 'POST', url: '/api/sesion/crear-cuenta', payload: { nombre: 'Web', email: 'websueno@prueba.com', clave: 'clave-segura' } })
   const cookie = r.headers['set-cookie'].split(';')[0]
-  for (const url of ['/sueno', '/sueno/modo', '/m/sueno/sueno.js', '/m/sueno/modo.js', '/m/sueno/estilo.css']) {
+  for (const url of ['/sueno', '/sueno/modo', '/m/sueno/sueno.js', '/m/sueno/modo.js']) {
     assert.equal((await app.inject({ url, headers: { cookie } })).statusCode, 200, url)
   }
   const d = await app.inject({ method: 'POST', url: '/api/sueno/dejo-celu', headers: { cookie }, payload: {} })

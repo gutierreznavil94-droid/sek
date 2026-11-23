@@ -47,7 +47,7 @@ Ajustes que usa (de `comun/ajustes.js`, sumados por este módulo): `horaAlistars
 - `calculo.js`: las cuentas puras: estimación, fuentes (reloj > corregido > estimado), resumen de noches, adaptación y veredicto, frases para alistarse. Traído de `src/sueno/estimar.ts`, `src/sueno/fuentes/`, `src/services/adaptacion.ts`, `dormir.ts` y la parte de cuentas de `suenio.ts`.
 - `pantallas/sueno.html` + `sueno.js`: botón «Dejo celu», anoche (tocar corrige), gráfico de noches (semana · mes · todo), tu adaptación con el shinobi, cómo vas mejorando y ajustes.
 - `pantallas/modo.html` + `modo.js`: el modo sueño: «Buenas noches», el reloj, hasta cuándo dura, salir (con confirmación) y «Buenos días».
-- `pantallas/estilo.css`: lo propio de estas pantallas (usa los colores generales).
+- Las pantallas usan `comun/v88.css` (estilo de la v0.88.27). El modo sueño usa `.modo-suenio` de ahí.
 
 ## Cómo sumar un reloj inteligente
 

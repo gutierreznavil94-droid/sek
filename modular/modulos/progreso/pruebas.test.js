@@ -156,7 +156,7 @@ test('progreso solo lee: ninguna ruta suya escribe y todas piden sesión', async
   assert.equal((await app.inject({ url: '/api/progreso' })).statusCode, 401)
   const r = await app.inject({ method: 'POST', url: '/api/sesion/crear-cuenta', payload: { nombre: 'Web', email: 'progreso@prueba.com', clave: 'clave-segura' } })
   const cookie = r.headers['set-cookie'].split(';')[0]
-  for (const url of ['/progreso', '/progreso/seccion?cual=xp', '/progreso/fase?numero=1', '/m/progreso/progreso.js', '/m/progreso/graficos.js', '/api/progreso', '/api/progreso/xp?rango=mes', '/api/progreso/pilares', '/api/progreso/sueno', '/api/progreso/fuerza', '/api/progreso/comida', '/api/progreso/series']) {
+  for (const url of ['/progreso', '/progreso/seccion?cual=xp', '/progreso/fase?numero=1', '/m/progreso/progreso.js', '/api/progreso', '/api/progreso/xp?rango=mes', '/api/progreso/pilares', '/api/progreso/sueno', '/api/progreso/fuerza', '/api/progreso/comida', '/api/progreso/series']) {
     assert.equal((await app.inject({ url, headers: { cookie } })).statusCode, 200, url)
   }
   assert.equal((await app.inject({ url: '/api/progreso/xp?rango=año', headers: { cookie } })).statusCode, 400)

@@ -1,4 +1,4 @@
-// Modo sueño: pantalla casi negra con la hora, hasta cuándo dura y a qué hora hay que estar dormido.
+// Modo sueño, igual que la v0.88.27 (ModoSuenio.tsx): pantalla negra con la hora, hasta cuándo dura y a qué hora hay que estar dormido.
 // Primero «Buenas noches» (12 s o un toque), después el reloj. Cada vez que se abre de noche, se anota la apertura.
 (function () {
   'use strict'
@@ -58,13 +58,14 @@
   let escenaReloj = false
   const mostrarSeccion = mostrar
   mostrar = (id) => { mostrarSeccion(id); if (id === 'reloj' && !escenaReloj && window.SEK_ESCENA_NOCHE) { escenaReloj = true; SEK_ESCENA_NOCHE($('#escena-reloj'), { directo: true }) } }
-  $('#saludo').addEventListener('click', () => { mostrar('reloj'); pintarReloj() })
-  $('#salir').addEventListener('click', () => $('#dlg-salir').showModal())
-  $('#dlg-salir').addEventListener('close', seguro(async () => {
-    if ($('#dlg-salir').returnValue !== 'salir') return
-    await api('/api/sueno/modo/salir', {})
-    location.href = '/sueno'
-  }))
+  $('#modo').addEventListener('click', (e) => { if (!$('#saludo').hidden && !e.target.closest('#salir')) { mostrar('reloj'); pintarReloj() } })
+  $('#salir').addEventListener('click', (e) => {
+    e.stopPropagation()
+    SEK.v88.confirmar('¿Salir del modo sueño?', 'Es para emergencias o correcciones. Queda registrado en el historial. No cambia el XP de la noche.', 'Salir', async () => {
+      await api('/api/sueno/modo/salir', {})
+      location.href = '/sueno'
+    })
+  })
 
   seguro(empezar)()
 })()

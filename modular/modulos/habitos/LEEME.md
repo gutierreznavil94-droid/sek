@@ -53,7 +53,7 @@ Ajustes que usa (de `comun/ajustes.js`): `forja` (`{ dias: 30, validos: 28, xpDi
 
 - `calculo.js`: las cuentas puras (estado de la forja, pedazos, kanji sugeridos, grupos y orden de Mi código, XP de la caída). Traído de `src/domain/forja.ts`, `src/services/codigo.ts` y `caidas.ts`.
 - `pantallas/habitos.html` + `habitos.js`: forja (piedras), Mi código (dos vistas), «No cumplí mi palabra» con Deshacer y los ajustes.
-- `pantallas/fotos.html` + `fotos.js`: fotos (subir achicada, ver, comparar dos, borrar) y días marcados.
+- Fotos de progreso: sin pantalla propia, se ven y se suben en Progreso (como en la v0.88.27); los días marcados, en Calendario. Este módulo da la API (`/api/habitos/fotos`, `/api/habitos/marcas`).
 - `pantallas/estilo.css`: la piedra, el camino de días y las reglas.
 
 ## Qué módulos usa

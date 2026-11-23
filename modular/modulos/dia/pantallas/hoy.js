@@ -465,6 +465,20 @@
       <div class="lista-nav compacta"><a href="/ciclo"><span>Fecha de inicio<span class="desc">${fechaLegible(e.ciclo.inicio)}</span></span><span class="flecha">›</span></a><a href="/mas/ajustes"><span>Ajustes<span class="desc">horarios, límite de juego, avisos</span></span><span class="flecha">›</span></a></div>`
   }
 
+  // ---------- Fin de fase y de ciclo (como Hoy.tsx de la vieja) ----------
+  function finFase() {
+    const e = d.ciclo
+    const caja = $('#fin-fase')
+    if (e && e.terminado) {
+      caja.innerHTML = `<section class="tarjeta"><h2>Ciclo terminado</h2>
+        <p class="texto-2">Llegaste al día ${e.ciclo.duracionDias}. Revisá los resultados y empezá el siguiente ciclo: tu nivel y tu historial se conservan.</p>
+        <div class="botonera"><a class="boton" href="/progreso/fase?numero=${e.faseNumero}">Ver resultados</a><a class="boton primario" href="/ciclo">Nuevo ciclo</a></div></section>`
+    } else if (d.faseSinCerrar) {
+      caja.innerHTML = `<div class="fila entre tarjeta compacta"><span>Terminó la fase ${d.faseSinCerrar}.</span><a class="boton chico primario" href="/progreso/fase?numero=${d.faseSinCerrar}">Revisar</a></div>`
+    } else caja.innerHTML = ''
+    caja.hidden = !caja.innerHTML
+  }
+
   function pintar() {
     botonesArriba()
     const sinCiclo = d.sinCiclo
@@ -475,6 +489,7 @@
     if (noEmpezado) antes()
     $('#tablero').hidden = sinCiclo || noEmpezado
     if (sinCiclo || noEmpezado) return
+    finFase()
     avisos()
     pilares()
     comida()

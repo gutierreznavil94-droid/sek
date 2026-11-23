@@ -286,7 +286,6 @@ test('rutas: sin sesión no entra; crear cuenta siembra Mi código; la pantalla 
   const pantalla = await pedir('GET', '/habitos')
   assert.equal(pantalla.statusCode, 200)
   assert.match(pantalla.body, /habitos\.js/)
-  assert.equal((await pedir('GET', '/habitos/fotos')).statusCode, 200)
 
   let r = (await pedir('GET', '/api/habitos')).json()
   assert.equal(r.codigo.length, 6, 'la cuenta nueva arranca con los ejemplos')

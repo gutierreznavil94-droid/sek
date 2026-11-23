@@ -5,36 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SEK · Cierre de fase</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
-  <link rel="stylesheet" href="/m/progreso/estilo.css">
+  <!-- Igual que la v0.88.27 (CierreFase.tsx): su estilo y el del tema Shinobi -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
 </head>
 <body>
-  <main>
-    <a class="volver" href="/progreso">‹ Progreso</a>
+  <main class="contenido">
+    <a class="atras" href="/progreso">← Progreso</a>
     <h1 id="titulo">Cierre de fase</h1>
-    <p class="chico" id="sub"></p>
-    <p class="chico apagado" id="cargando">Cargando…</p>
-
-    <section class="tarjeta" id="resultados" hidden>
-      <h3>Resultados</h3>
-      <p class="chico apagado">Línea de base = primeros 7 días del ciclo. Nada se inventa: si no hay registros, aparece «—».</p>
-      <table class="tabla" id="tabla"></table>
-    </section>
-
-    <section class="tarjeta" id="atributos" hidden>
-      <h3>Atributos: inicio y fin de la fase</h3>
-      <div id="a-lista"></div>
-    </section>
-
-    <section class="tarjeta" id="objetivos" hidden>
-      <h3>Objetivos de la fase</h3>
-      <div id="o-lista"></div>
-    </section>
-
-    <a class="boton principal" href="/ciclo/objetivos" id="ir-ciclo">Cerrar la fase en Objetivos y fases</a>
+    <p class="texto-2 chico" id="sub"></p>
+    <p class="vacio" id="cargando">Cargando…</p>
+    <div class="col" id="cuerpo" style="gap: 14px;" hidden></div>
   </main>
   <script src="/comun/marco.js"></script>
-  <script src="/m/progreso/graficos.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
   <script src="/m/progreso/fase.js"></script>
 </body>
 </html>

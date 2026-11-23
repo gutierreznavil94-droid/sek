@@ -14,7 +14,6 @@ module.exports = async function rutasHabitos(app) {
 
   // Pantallas
   app.get('/habitos', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'habitos', 'habitos.html'))
-  app.get('/habitos/fotos', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'habitos', 'fotos.html'))
 
   // Resúmenes
   app.get('/api/habitos', conUsuario, async (pedido) => v.resumen(yo(pedido)))
