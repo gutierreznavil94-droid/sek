@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SEK · Desafíos</title>
+  <link rel="icon" href="/comun/favicon-32.png">
+  <link rel="stylesheet" href="/comun/estilo.css">
+  <link rel="stylesheet" href="/m/desafios/estilo.css">
+</head>
+<body>
+  <main>
+    <h1>進 Desafíos</h1>
+    <p class="chico">Cuando aparece la duda no se negocia: se avanza igual, o se cae y se vuelve a empezar.</p>
+
+    <section class="dz-grandes">
+      <button class="principal" id="ir-tension"><span class="kanji" id="kanji-tension">進</span>Tensión</button>
+      <button id="ir-321"><span class="kanji">始</span>3 · 2 · 1</button>
+      <button class="dz-rojo" id="ir-no-cumpli"><span class="kanji">墓</span>No cumplí</button>
+    </section>
+
+    <section class="tarjeta">
+      <div class="fila entre"><h3>Hoy</h3><span class="chico" id="hoy"></span></div>
+      <p class="chico" id="duelo-texto"></p>
+      <ul class="dz-lista" id="inicios"></ul>
+    </section>
+
+    <form class="tarjeta" id="form-config">
+      <h3>Tensión</h3>
+      <label class="dz-casilla"><input type="checkbox" id="tension-activa"> Mostrar el botón Tensión en Hoy</label>
+      <div class="fila dz-dos">
+        <label>Kanji del final <input id="tension-kanji" maxlength="4" required></label>
+        <label>Frase del final <input id="tension-frase" maxlength="60"></label>
+      </div>
+
+      <h3>Duelo de flexiones</h3>
+      <label>Serie rápida que se usa <select id="duelo-serie"></select></label>
+      <label>Si no hay serie rápida, cuántas <input id="duelo-sin-serie" type="number" min="1" max="200" required></label>
+
+      <h3>Al abrir la app</h3>
+      <label class="dz-casilla"><input type="checkbox" id="frase-dia"> «Dudar es fracasar» una vez por día</label>
+      <label class="dz-casilla"><input type="checkbox" id="tajo-activo"> El Tajo: si volvés después de un rato con un pilar pendiente</label>
+      <label>Horas sin abrir para el Tajo <input id="tajo-horas" type="number" min="1" max="24" required></label>
+
+      <h3>3 · 2 · 1</h3>
+      <div class="fila dz-dos">
+        <label>XP por empezar <input id="inicio-xp" type="number" min="0" max="50" required></label>
+        <label>Tope por día <input id="inicio-max" type="number" min="0" max="20" required></label>
+      </div>
+      <button class="principal" type="submit">Guardar</button>
+    </form>
+
+    <details class="tarjeta">
+      <summary>Probar (no guarda nada)</summary>
+      <div class="fila">
+        <button id="probar-frase">La frase</button>
+        <button id="probar-tajo">El Tajo</button>
+        <button id="probar-tension">Tensión</button>
+        <button id="probar-caida">La caída</button>
+        <button id="probar-duelo">El duelo</button>
+      </div>
+    </details>
+
+    <p class="chico">Guardados y apagados (hasta pulirlos): el rival, los ninjas, el duelo con personajes y la batalla.</p>
+  </main>
+  <script src="/comun/marco.js"></script>
+  <script src="/m/desafios/capa.js"></script>
+  <script src="/m/desafios/desafios.js"></script>
+</body>
+</html>

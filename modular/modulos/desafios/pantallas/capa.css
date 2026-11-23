@@ -1,0 +1,96 @@
+/*
+ * Desafíos · lo que se ve encima de cualquier pantalla: la frase «Dudar es fracasar», el Tajo, Tensión, la caída y el duelo.
+ * Usa los colores generales (estilo.css). Traído de src/ui/estilos.css y src/temas/shinobi/visual.css.
+ */
+.dz-capa { position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; background: color-mix(in srgb, var(--tinta) 97%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: var(--texto); user-select: none; -webkit-tap-highlight-color: transparent; animation: dz-entra .22s ease-out both; }
+.dz-capa .dz-kanji { font-family: var(--pincel); font-size: min(34vmin, 180px); line-height: 1; color: var(--texto); -webkit-text-stroke: 2px var(--acento); text-shadow: 0 0 14px var(--acento), 4px 4px 0 rgba(0, 0, 0, .55); }
+.dz-capa .dz-titulo { font-family: var(--pincel); font-size: 1.8rem; }
+.dz-capa .dz-texto { color: var(--texto-2); max-width: 26rem; margin: 0; }
+.dz-capa .dz-botones { display: flex; flex-direction: column; gap: 10px; width: min(100%, 22rem); }
+.dz-capa .dz-botones button { width: 100%; }
+.dz-capa .dz-enlace { background: none; border: 0; min-height: 36px; color: var(--texto-3); text-decoration: underline; text-underline-offset: 3px; font-size: .85rem; }
+.dz-saliendo { animation: dz-sale .4s ease-in forwards; }
+@keyframes dz-entra { from { opacity: 0; } }
+@keyframes dz-sale { to { opacity: 0; transform: scale(1.04); } }
+
+/* ===== «Dudar es fracasar» ===== */
+.frase-duda { --fd-letra: #f3efe6; --fd-rojo: var(--acento); overflow: hidden; cursor: pointer; background: radial-gradient(ellipse at 50% 45%, color-mix(in srgb, var(--acento) 18%, #08080a) 0%, #08080a 72%); }
+.fd-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.fd-velo { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, .25), rgba(0, 0, 0, .72) 75%); }
+.fd-texto { position: relative; margin: 0; padding: 0 12px; display: flex; flex-direction: column; align-items: center; line-height: .92; font-family: var(--brocha); color: var(--fd-letra); text-transform: uppercase; letter-spacing: .02em; text-shadow: 0 0 2px currentColor, 4px 4px 0 rgba(0, 0, 0, .6); }
+.fd-palabra { display: block; clip-path: inset(0 100% 0 0); animation: fd-trazo .42s cubic-bezier(.6, 0, .3, 1) forwards; }
+.fd-p1 { font-size: clamp(3.2rem, 20vw, 8.5rem); animation-delay: .15s; }
+.fd-p2 { font-size: clamp(1.6rem, 9vw, 3.6rem); color: color-mix(in srgb, var(--fd-letra) 70%, transparent); margin: .1em 0; animation-delay: .55s; }
+.fd-p3 { font-size: clamp(2.6rem, 15vw, 7rem); color: var(--fd-rojo); text-shadow: 0 0 18px color-mix(in srgb, var(--fd-rojo) 55%, transparent), 4px 4px 0 rgba(0, 0, 0, .6); animation: fd-trazo .42s cubic-bezier(.6, 0, .3, 1) .8s forwards, fd-golpe .35s ease-out 1.22s; }
+.fd-tajo { position: absolute; left: -10%; right: -10%; top: 50%; height: 5px; background: linear-gradient(90deg, transparent, var(--fd-rojo) 20%, var(--fd-rojo) 80%, transparent); transform: rotate(-9deg) scaleX(0); transform-origin: left; opacity: .9; animation: fd-corte .28s ease-out 1.25s forwards; }
+.frase-duda:not(.quieto) .fd-texto { animation: fd-tiembla .3s ease-out 1.25s; }
+.fd-icono { position: relative; display: flex; align-items: center; justify-content: center; }
+.fd-icono::before { content: ''; position: absolute; inset: -20%; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--fd-rojo) 55%, transparent) 0%, transparent 65%); animation: fd-late 1.6s ease-in-out infinite; }
+.fd-icono .dz-kanji { position: relative; animation: fd-kanji-entra .9s cubic-bezier(.2, 1.4, .4, 1) .15s both; }
+.fd-dia .fd-palabra { -webkit-text-stroke: 1.5px var(--fd-rojo); paint-order: stroke fill; }
+.fd-dia .fd-p1 { animation-delay: 1.05s; } .fd-dia .fd-p2 { animation-delay: 1.45s; }
+.fd-dia .fd-p3 { animation: fd-trazo .42s cubic-bezier(.6, 0, .3, 1) 1.7s forwards, fd-golpe .35s ease-out 2.12s; }
+.fd-dia .fd-tajo { top: auto; bottom: 30%; animation-delay: 2.15s; }
+.frase-duda.quieto .fd-palabra { clip-path: none; animation: none; }
+.frase-duda.quieto .fd-tajo { transform: rotate(-9deg) scaleX(1); animation: none; }
+.frase-duda.quieto .fd-icono::before, .frase-duda.quieto .dz-kanji { animation: none; }
+@keyframes fd-trazo { to { clip-path: inset(0 0 0 0); } }
+@keyframes fd-golpe { 40% { transform: scale(1.12); } }
+@keyframes fd-corte { to { transform: rotate(-9deg) scaleX(1); } }
+@keyframes fd-tiembla { 20% { transform: translate(-4px, 2px); } 40% { transform: translate(4px, -2px); } 60% { transform: translate(-2px, 1px); } 80% { transform: translate(2px, 0); } }
+@keyframes fd-late { 50% { transform: scale(1.15); opacity: .7; } }
+@keyframes fd-kanji-entra { from { opacity: 0; transform: scale(2.2); filter: blur(8px); } 60% { opacity: 1; filter: blur(0); } }
+
+/* ===== El Tajo: la pantalla se corta como papel ===== */
+.dz-tajo { background: transparent; padding: 0; overflow: hidden; }
+.dz-tajo-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: url(#dz-tajo-luma) brightness(.72) contrast(1.1); }
+.dz-tajo-simple { position: absolute; inset: 0; background: color-mix(in srgb, var(--tinta) 82%, transparent); clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+.dz-tajo-riel { position: absolute; left: 50%; top: 50%; height: 6px; pointer-events: none; }
+.dz-tajo-hoja { position: absolute; top: 0; left: 0; width: 180px; height: 6px; border-radius: 3px; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .6) 35%, #fff 70%, var(--acento) 88%, #ff8a8a 100%); box-shadow: 0 0 10px 2px rgba(255, 255, 255, .85), 0 0 26px 6px color-mix(in srgb, var(--acento) 55%, transparent); animation: dz-hoja .4s cubic-bezier(.2, .7, .3, 1) both; }
+.dz-tajo-linea { position: absolute; left: 50%; top: 50%; height: 3px; background: var(--acento); box-shadow: 0 0 12px var(--acento); transform-origin: left center; animation: dz-linea .35s ease-out both; }
+.dz-tajo-toca { position: absolute; bottom: calc(40px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); font-family: var(--pincel); font-size: 1.3rem; color: var(--papel); opacity: 0; transition: opacity .4s; text-shadow: 0 0 8px #000; }
+.dz-tajo.listo .dz-tajo-toca { opacity: 1; animation: fd-late 1.6s ease-in-out infinite; }
+@keyframes dz-hoja { 0% { transform: translateX(-180px); opacity: 0; } 10%, 85% { opacity: 1; } 100% { transform: translateX(var(--largo, 150vmax)); opacity: 0; } }
+@keyframes dz-linea { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+
+/* ===== Tensión ===== */
+.dz-tn { background: #000; padding: 0; overflow: hidden; }
+.dz-tn-clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.dz-tn-clip.oculto { opacity: 0; pointer-events: none; }
+.dz-tn-vineta { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0, 0, 0, .55) 100%); }
+.dz-tn-mano { position: absolute; z-index: 4; left: 25%; top: 37.5%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 8px; background: none; border: 0; padding: 0; min-height: 0; color: var(--papel); }
+.dz-tn-aro { width: 96px; height: 96px; border-radius: 50%; border: 3px solid var(--papel); box-shadow: 0 0 18px var(--acento), inset 0 0 12px var(--acento); animation: fd-late 1.4s ease-in-out infinite; }
+.dz-tn-tocalo { font-family: var(--pincel); font-size: 1.2rem; text-shadow: 0 0 8px #000; }
+.dz-tn-soltar { position: absolute; z-index: 5; left: 50%; bottom: calc(26px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: none; border: 0; padding: 8px 12px; min-height: 0; font-size: .8rem; color: rgba(243, 239, 230, .6); text-decoration: underline; text-underline-offset: 3px; animation: dz-entra .8s ease-out .6s both; }
+.dz-tn-salir { position: absolute; z-index: 5; top: calc(12px + env(safe-area-inset-top)); right: 12px; background: rgba(0, 0, 0, .35); border: 0; min-height: 36px; padding: 6px 12px; font-size: .8rem; color: rgba(243, 239, 230, .7); }
+.dz-tn-corte { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+.dz-tn-corte.negro { background: #000; animation: dz-negro .9s ease both; }
+.dz-tn-corte.tinta::before { content: ''; position: absolute; left: 50%; top: 50%; width: 60vmax; height: 60vmax; margin: -30vmax 0 0 -30vmax; border-radius: 47% 53% 44% 56% / 52% 45% 55% 48%; background: radial-gradient(circle, #050505 0 58%, rgba(5, 5, 5, 0) 72%); animation: dz-tinta .75s cubic-bezier(.5, 0, .5, 1) both; }
+.dz-tn-final { position: absolute; inset: 0; z-index: 7; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: #000; cursor: pointer; }
+.dz-tn-final .dz-kanji { animation: fd-kanji-entra .9s cubic-bezier(.2, 1.4, .4, 1) both; }
+.dz-tn-final .dz-frase { font-family: var(--brocha); font-size: clamp(1.6rem, 8vw, 2.6rem); color: var(--acento); animation: dz-entra .6s ease-out .6s both; }
+@keyframes dz-negro { 0% { opacity: 0; } 40%, 60% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes dz-tinta { 0% { transform: scale(.1); opacity: 1; } 40% { transform: scale(3.2); opacity: 1; } 100% { transform: scale(3.6); opacity: 0; } }
+
+/* ===== Caída y duelo ===== */
+.dz-caida-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .55; }
+.dz-caida > :not(video) { position: relative; }
+.dz-xp-menos { font-family: var(--pincel); font-size: 2rem; color: var(--peligro); }
+.dz-duelo .dz-cuenta { font-size: clamp(4rem, 26vw, 8rem); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+.dz-duelo .dz-cuenta small { font-size: .35em; color: var(--texto-3); font-weight: 400; }
+.dz-duelo .dz-golpe { width: min(60vw, 220px); height: min(60vw, 220px); border-radius: 50%; font-family: var(--pincel); font-size: 4rem; background: radial-gradient(circle, color-mix(in srgb, var(--acento) 45%, var(--fondo-3)), var(--fondo-3) 70%); border: 2px solid var(--acento); }
+.dz-duelo .dz-golpe:active { transform: scale(.96); }
+.dz-duelo.tajo .dz-golpe { animation: fd-golpe .35s ease-out; }
+.dz-duelo.tajo::after { content: ''; position: absolute; left: -10%; right: -10%; top: 50%; height: 5px; background: var(--acento); box-shadow: 0 0 16px var(--acento); transform: rotate(-12deg) scaleX(0); transform-origin: left; animation: fd-corte .3s ease-out forwards; }
+
+/* Aviso con «Deshacer» */
+.dz-aviso { position: fixed; left: 50%; bottom: calc(var(--barra) + 16px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 210; display: flex; gap: 12px; align-items: center; background: var(--fondo-3); border: 1px solid var(--borde); border-radius: var(--radio); padding: 6px 6px 6px 14px; max-width: calc(100% - 32px); }
+.dz-aviso button { min-height: 36px; padding: 6px 12px; }
+
+/* Botones para la cabecera de Hoy */
+.dz-botones-hoy { display: flex; gap: 8px; flex-wrap: wrap; }
+.dz-botones-hoy button { background: transparent; min-height: 36px; padding: 6px 12px; font-size: .9rem; }
+.dz-botones-hoy .rojo { border-color: var(--acento); color: var(--peligro); }
+.dz-botones-hoy .kanji { color: var(--acento); }
+
+@media (prefers-reduced-motion: reduce) { .dz-capa, .dz-capa * { animation: none !important; transition: none !important; } .dz-tajo.listo .dz-tajo-toca { opacity: 1; } }

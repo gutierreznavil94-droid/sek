@@ -32,6 +32,7 @@ const comida = require('./modulos/comida/rutas')
 const comidaVentanilla = require('./modulos/comida/ventanilla')
 const temas = require('./modulos/temas/rutas')
 const entreno = require('./modulos/entreno/rutas')
+const desafios = require('./modulos/desafios/rutas')
 const entrenoVentanilla = require('./modulos/entreno/ventanilla')
 
 // Datos iniciales al crear una cuenta.
@@ -66,6 +67,7 @@ function crearApp(opciones = {}) {
   app.register(temas)
   app.register(entreno)
   app.register(dia)
+  app.register(desafios)
 
   return app
 }
