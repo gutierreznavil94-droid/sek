@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SEK</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #121110; color: #e8e2d6; overflow: hidden; }
+  #pantalla { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: #121110; }
+  #cargando { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; font-family: serif; }
+  #cargando b { font-size: 64px; color: #C8102E; font-weight: normal; }
+  #cargando small { opacity: .6; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div id="cargando"><b>静</b><small id="estado">Abriendo…</small></div>
+<iframe id="pantalla" hidden title="SEK"></iframe>
+<script>
+/*
+ * La página madre. Abre la base UNA vez y muestra cada pantalla adentro (iframe).
+ * Si esta misma página se abre ADENTRO del iframe (una pantalla fue a /hoy, /juego...),
+ * no arranca nada: le pide a la madre que abra esa dirección.
+ */
+(function () {
+  var madre = window.parent
+  if (madre !== window && madre.SEK_IR) { madre.SEK_IR(location.pathname + location.search, true); return }
+
+  var marco = document.getElementById('pantalla')
+  var estado = document.getElementById('estado')
+
+  /** Abre una dirección (/juego, /hoy?x=1): sigue redirecciones y muestra el archivo del paquete. */
+  async function ir(camino, reemplazar) {
+    for (var vueltas = 0; vueltas < 8; vueltas++) {
+      var r = await window.SEK_LOCAL({ method: 'GET', url: camino })
+      if (r.statusCode >= 300 && r.statusCode < 400 && r.headers.location) { camino = r.headers.location; continue }
+      var archivo = r.headers['x-sek-archivo']
+      if (r.statusCode === 200 && archivo) {
+        var destino = '/' + archivo + '?__ruta=' + encodeURIComponent(camino)
+        if (reemplazar && marco.contentWindow) marco.contentWindow.location.replace(destino)
+        else marco.src = destino
+        marco.hidden = false
+        document.getElementById('cargando').hidden = true
+        return
+      }
+      estado.textContent = 'No se pudo abrir ' + camino + ' (' + r.statusCode + ')'
+      return
+    }
+  }
+  window.SEK_IR = function (camino, reemplazar) { ir(camino, reemplazar).catch(mostrarError) }
+
+  function mostrarError(e) { estado.textContent = 'Algo falló: ' + (e && e.message || e) }
+
+  var s = document.createElement('script')
+  s.src = '/sek.js'
+  s.onload = function () {
+    window.SEK_ARRANCAR().then(function () {
+      var inicio = location.pathname === '/' || location.pathname === '/index.html' ? '/' : location.pathname + location.search
+      return ir(inicio)
+    }).catch(mostrarError)
+  }
+  s.onerror = function () { mostrarError('no está sek.js') }
+  document.head.appendChild(s)
+})()
+</script>
+</body>
+</html>

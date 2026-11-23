@@ -1,4 +1,5 @@
 'use strict'
+const { deBase64 } = require('../../comun/bytes')
 /**
  * Temas · cuentas puras (sin base): revisar el archivo de un tema subido y armar la definición que ve la pantalla.
  * Traído de src/temas/propios.ts y temas.ts de la app vieja. Lo usa solo ventanilla.js.
@@ -178,7 +179,7 @@ function mediosDe(archivo) {
 /** Un `data:` → { tipo, bytes }. */
 function decodificar(dataUrl) {
   const m = /^data:([a-z]+\/[a-z0-9.+-]+);base64,(.*)$/i.exec(dataUrl || '')
-  return m ? { tipo: m[1], bytes: Buffer.from(m[2], 'base64') } : null
+  return m ? { tipo: m[1], bytes: deBase64(m[2]) } : null
 }
 
 /**

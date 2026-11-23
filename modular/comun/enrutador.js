@@ -269,7 +269,6 @@ function armarSalida(respuesta) {
     headers: respuesta.headers,
     body,
     cuerpo: c,
-    /** Ruta de una página (en el celu, `pagina()` devuelve { pagina: 'm/<modulo>/<archivo>' }). */
     json() { return typeof body === 'string' ? JSON.parse(body) : c },
   }
 }

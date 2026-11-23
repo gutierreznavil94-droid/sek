@@ -17,7 +17,8 @@ let db = null
 let lugar = (typeof SEK_LUGAR_BASE !== 'undefined' && SEK_LUGAR_BASE) || undefined // undefined = en memoria
 
 function conexion() {
-  if (!db) db = new PGlite(lugar, { parsers: PARSERS })
+  // En el celu la página madre deja listos el wasm y los datos de PGlite (SEK_PGLITE_OPCIONES).
+  if (!db) db = new PGlite(lugar, { ...(globalThis.SEK_PGLITE_OPCIONES || {}), parsers: PARSERS })
   return db
 }
 

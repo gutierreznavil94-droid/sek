@@ -1,5 +1,6 @@
 'use strict'
 /** Direcciones web del módulo habitos. Reciben el pedido, llaman a la ventanilla y responden. */
+const { deBase64 } = require('../../comun/bytes')
 const v = require('./ventanilla')
 const { requiereUsuario } = require('../../comun/sesion')
 const { pagina } = require('../../comun/pantalla/servir')
@@ -91,7 +92,7 @@ module.exports = async function rutasHabitos(app) {
     const url = await v.imagenFoto(yo(pedido), pedido.params.id)
     const [cabeza, base64] = url.split(',')
     respuesta.header('Cache-Control', 'private, max-age=31536000, immutable')
-    return respuesta.type(cabeza.slice(5, cabeza.indexOf(';'))).send(Buffer.from(base64, 'base64'))
+    return respuesta.type(cabeza.slice(5, cabeza.indexOf(';'))).send(deBase64(base64))
   })
   app.post('/api/habitos/fotos', {
     ...conUsuario,

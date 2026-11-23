@@ -13,6 +13,7 @@ Lo que usan todos los módulos. **No depende de ningún módulo** (lo revisa `gu
 | `historial.js` | `anotar(usuarioId, modulo, tipo, detalle)`: qué cambió y cuándo. |
 | `eventos.js` | `avisar(nombre, datos, tx)` / `escuchar(nombre, fn)`: para avisar «al revés» sin dependencias en círculo. |
 | `fechas.js` | Un día = fecha `AAAA-MM-DD` en la zona de la persona. Traído de la app vieja. |
+| `bytes.js` | `deBase64(texto)`: bytes de un base64 (Buffer en la compu, Uint8Array en el celu). |
 | `reloj.js` | `ahora()`. Nunca `Date.now()` directo: las pruebas fijan la hora. |
 | `migrar.js` | Aplica `migraciones/NNN-*.sql` en orden, una sola vez cada una. En el celu vienen adentro del paquete (`SEK_MIGRACIONES`). |
 | `prueba.js` | Para las pruebas: base nueva en memoria, hora fija, persona de prueba. |
