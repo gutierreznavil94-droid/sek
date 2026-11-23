@@ -34,7 +34,7 @@ const CLAVES = MODULOS.map((m) => m.clave)
 /** Qué tablas de la copia vieja van a cada módulo. */
 const TABLAS_VIEJAS = {
   ciclo: ['ciclos', 'fases', 'objetivos', 'atributos', 'identidad', 'metas', 'revisiones'],
-  dia: ['acciones', 'reglasXp', 'compromisos', 'diasCerrados', 'excepciones', 'atributosDiarios'],
+  dia: ['acciones', 'reglasXp', 'compromisos', 'diasCerrados', 'excepciones', 'atributosDiarios', 'feriados', 'fechasClave'],
   xp: ['xp'],
   juego: ['sesionesJuego'],
   organizacion: ['organizacion'],
@@ -52,8 +52,6 @@ const SIN_LUGAR = {
   niveles: 'los niveles se calculan solos',
   temporizador: 'el temporizador en curso no se trae',
   recomendaciones: 'van al formulario, no a la app',
-  feriados: 'llega con Hoy y Calendario (dia parte 2)',
-  fechasClave: 'llega con Hoy y Calendario (dia parte 2)',
 }
 
 /** Ajustes de la app vieja que no son de comun/ajustes (los trae cada módulo o no se usan más). */
@@ -106,7 +104,7 @@ function desdeVieja(o) {
   const tomar = (claves) => Object.fromEntries(claves.map((k) => [k, L(k)]))
   const partes = {
     ciclo: tomar(TABLAS_VIEJAS.ciclo),
-    dia: tomar(TABLAS_VIEJAS.dia),
+    dia: { ...tomar(TABLAS_VIEJAS.dia), horario: esObjeto(aj.horario) ? aj.horario : undefined },
     xp: L('xp'),
     juego: L('sesionesJuego'),
     organizacion: L('organizacion'),

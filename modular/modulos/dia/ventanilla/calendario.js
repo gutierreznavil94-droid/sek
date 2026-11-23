@@ -359,7 +359,17 @@ async function importarAgenda(usuarioId, vieja = {}, tx = null) {
   }, tx)
 }
 
+/** Lo de la parte 2 para la copia nueva, con la forma que recibe `importarAgenda`. */
+async function exportarAgenda(usuarioId, tx = null) {
+  return {
+    feriados: await datos.feriadosEntre(usuarioId, '0001-01-01', '9999-12-31', tx),
+    fechasClave: await datos.fechasClave(usuarioId, tx),
+    horario: await datos.horario(usuarioId, tx),
+  }
+}
+
 module.exports = {
+  exportarAgenda,
   esFeriado, feriadosEntre, marcarFeriado, quitarFeriado, esDiaDeFinde,
   agregarFechaClave, editarFechaClave, borrarFechaClave, fechasClaveEntre,
   configHorario, guardarBloque, borrarBloque, copiarADias, nuevoHorario, activarHorario, renombrarHorario, borrarHorario,

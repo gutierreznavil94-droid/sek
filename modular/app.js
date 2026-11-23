@@ -46,7 +46,8 @@ diaVentanilla.conectar({ planComida: comidaVentanilla.planDelDia, faltantesSerie
 diaVentanilla.escucharAvisos()
 // Los feriados (dia) usan el límite de juego de finde. juego no requiere dia: se lo conecta acá.
 require('./modulos/juego/ventanilla').conectar({ esFeriado: diaVentanilla.esFeriado })
-// Cuando llegue desafios: diaVentanilla.conectar({ desafiosHoy: desafiosVentanilla.pendientes }) (botones Tensión y No cumplí de Hoy).
+// Botones Tensión y No cumplí de Hoy (los da desafios; dia no lo requiere).
+diaVentanilla.conectar({ desafiosHoy: require('./modulos/desafios/ventanilla').pendientes })
 
 /** Modo sueño: ninguna pantalla se ve (salvo la del modo); manda a /sueno/modo. La regla está en dia (tablero.js). */
 async function bloqueoSueno(pedido, respuesta) {

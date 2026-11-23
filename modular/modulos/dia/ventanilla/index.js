@@ -28,9 +28,14 @@ async function importar(usuarioId, vieja = {}, tx = null) {
   return transaccion(async (t) => ({ ...(await pilares.importar(usuarioId, vieja, t)), ...(await calendario.importarAgenda(usuarioId, vieja, t)) }), tx)
 }
 
+/** Todo el módulo para la copia (lo usa copia): lo de la parte 1 más feriados, fechas clave y horario. */
+async function exportar(usuarioId, tx = null) {
+  return { ...(await pilares.exportar(usuarioId, tx)), ...(await calendario.exportarAgenda(usuarioId, tx)) }
+}
+
 module.exports = {
   ...pilares,
   ...calendario,
   ...tablero,
-  conectar, sembrar, importar,
+  conectar, sembrar, importar, exportar,
 }

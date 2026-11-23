@@ -1,6 +1,6 @@
 # Módulo dia
 
-**Qué hace (parte 1, pilares y cierre):** los pilares y compromisos de cada día (cumplir, tarde, omitir, extra, reprogramar, deshacer, corregir), el cierre de los días pendientes (lo sin marcar queda omitido, el límite de juego se decide, «Comer según el plan» se evalúa, lo no cumplido resta, bonus de racha cada 7 días), cumplimiento, racha, valor de los atributos, excepciones (enfermedad, viaje) y el Tajo. Por ahora es solo API: la pantalla **Hoy** como tablero, Calendario, Mi horario, feriados y fechas clave son la **parte 2**.
+**Qué hace:** la pantalla **Hoy** como tablero (pilares + la tarjeta chica de cada módulo), el **Calendario**, **Mi horario**, feriados, fechas clave y el bloqueo de la app en modo sueño (parte 2). Y además (parte 1, pilares y cierre): los pilares y compromisos de cada día (cumplir, tarde, omitir, extra, reprogramar, deshacer, corregir), el cierre de los días pendientes (lo sin marcar queda omitido, el límite de juego se decide, «Comer según el plan» se evalúa, lo no cumplido resta, bonus de racha cada 7 días), cumplimiento, racha, valor de los atributos, excepciones (enfermedad, viaje) y el Tajo.
 
 ## Lo que ofrece su ventanilla
 
@@ -29,6 +29,22 @@
 | `exportar(u)` | Lo mismo que recibe `importar`. Lo usa **copia**. Al importar, la regla sembrada con el mismo id (`r_<acción>`) se reemplaza por la de la copia. |
 | `escucharAvisos()` / `conectar({ planComida, faltantesSeries, seriesParaAtributos })` | Ver abajo. Los llama `app.js`. |
 
+### Parte 2 (Hoy, Calendario, Mi horario)
+
+| Función | Para qué |
+|---|---|
+| `tableroHoy(u)` | Todo lo de la pantalla Hoy: lo de `resumenHoy` + `sinCiclo`, `modoSueno`, `feriado`, `fechasClave` de hoy, `horario` (dónde estás ahora), `horas` de la noche, `pasoDejoCelu`, `deAlistarse`, `nivel` (xp) y `tarjetas: { juego, sueno, comida, entreno, habitos, organizacion, desafios }` (el `resumenHoy` de cada módulo). Una tarjeta que falla queda `null`: no rompe Hoy. |
+| `empezarCiclo(u, { inicio?, duracionDias?, diaCero? })` | «Empezar mi ciclo» de una cuenta nueva (llama a `ciclo.iniciarCiclo`). Si ya hay ciclo, no lo pisa. |
+| `dejoCeluDesdeHoy(u)` | «Dejo celu» desde Hoy: antes del Día 1 no registra; le pasa a sueno la línea «3 de 5 pilares · racha 4». |
+| `tareaHecha(u, frente, tarea)` | ✓ de la tira «Hoy me toca a mí» (organizacion.marcarHecha). |
+| `enModoSueno(u)` / `esPaginaBloqueable(ruta)` | El bloqueo: en modo sueño, toda pantalla (salvo `/sueno/modo`, `/entrar`, la API y los archivos) manda a `/sueno/modo`. Lo usa el `preHandler` de `app.js`. |
+| `esFeriado` / `esDiaDeFinde` / `feriadosEntre` / `marcarFeriado(u, fecha, nombre)` / `quitarFeriado` | Feriados: límite de juego de finde (juego lo recibe con `juego.conectar({ esFeriado })`) y apagan los bloques obligatorios. Vienen cargados los de fecha fija de Argentina hasta 2027 (se pueden quitar). |
+| `agregarFechaClave` / `editarFechaClave` / `borrarFechaClave` / `fechasClaveEntre` | Fechas clave (印): título, nota, anual, hora y hasta. No dan XP. Con hora, son un bloque obligatorio ese día. |
+| `configHorario` / `guardarBloque` / `borrarBloque` / `copiarADias` / `nuevoHorario` / `activarHorario` / `renombrarHorario` / `borrarHorario` / `apagarBloqueEnFecha` / `correrEntreno` | Mi horario. El bloque `entreno` escribe en la acción «entrenamiento» (días, hora, «Empezar hasta»); el sueño sale de los ajustes de sueno. |
+| `horarioDelDia(u, fecha?)` / `horarioSemana(u, fecha?)` | Bloques del día (con los apagados marcados), huecos libres y «Ahora: Facultad hasta 12:00 · después: …»; la semana para la pantalla. |
+| `calendarioMes(u, 'AAAA-MM')` | Cada día: porcentaje, pilares, feriado, excepción, fechas clave y bloques; y dónde cae el ciclo. |
+| `sembrar` / `importar` / `exportar` | Suman feriados de fábrica; `feriados`, `fechasClave` y `horario` (de los ajustes viejos) para **copia**. |
+
 Todas aceptan `tx` opcional al final (transacción compartida).
 
 ## Avisos que escucha (`escucharAvisos`)
@@ -39,6 +55,7 @@ Todas aceptan `tx` opcional al final (transacción compartida).
 | `ciclo.inicio_cambiado` | Borra días cerrados y compromisos sin resolver de antes del nuevo Día 1. |
 | `ciclo.nuevo` | Crea los compromisos de hoy. |
 | `sueno.dejo_celu` / `sueno.dejo_celu.deshecho` | «Dormir a horario» cumplido o tarde (con minutos); vuelve a pendiente. **Sin XP**: la da sueno (`suenio:acostarse:<noche>`). |
+| `desafios.inicio` | «Empecé» en el 3·2·1 con `compromisoId`: ese compromiso pasa a «iniciado». |
 | `entreno.empezado` / `entreno.terminado` / `entreno.deshecho` | Entrenamiento iniciado; cumplido con 30 XP (tarde y sin XP si `inicioQueCuenta` pasó la hora límite de inicio, 19:35; sin XP con menos minutos que el mínimo); vuelve atrás. |
 
 No emite avisos.
@@ -50,6 +67,7 @@ Para no depender de módulos que se suman después, dia recibe estas funciones (
 - `planComida` ← `comida.planDelDia(u, fecha)`: decide «Comer según el plan» al cerrar el día (sin comidas cargadas no cuenta).
 - `faltantesSeries` ← `entreno.faltantesDelDia(u, fecha)`: las series rápidas debajo de la cuota suman a lo que resta.
 - `seriesParaAtributos` ← (cuando entreno lo ofrezca) series por día para el valor de los atributos, como hacía la app vieja con los contadores.
+- `desafiosHoy` ← `desafios.pendientes(u)`: los botones **Tensión** y **No cumplí** de Hoy (van a las pantallas de desafios, que guardan la caída por habitos y vuelven a Hoy).
 
 ## Datos (migración `012-dia.sql`)
 
@@ -71,22 +89,31 @@ Ajustes propios (en `comun/ajustes.js`): `margenNocheMinutos` (10), `umbralRacha
 
 ## Direcciones (`rutas.js`)
 
-`GET /api/dia` (Hoy) · `GET /api/dia/pilares?fecha` · `GET /api/dia/compromisos?fecha` · `POST /api/dia/compromisos/:id/{iniciar,completar,omitir,deshacer,extra,deshacer-extra,reprogramar,corregir}` · `GET /api/dia/{cumplimiento,pilares-por-dia,excepciones}?desde&hasta` · `GET /api/dia/{racha,atributos,aviso-resta}` · `PUT|DELETE /api/dia/excepciones/:fecha` · `GET /api/dia/acciones` · `PUT /api/dia/acciones/:id` · `POST /api/dia/acciones/:id/activa` · `POST /api/dia/comida` · `POST /api/dia/vista` · `POST /api/dia/tajo`.
+Pantallas: `GET /hoy` · `GET /calendario` · `GET /horario`.
+
+Parte 2: `GET /api/dia/hoy` · `POST /api/dia/empezar-ciclo` · `POST /api/dia/dejo-celu` · `POST /api/dia/organizacion/:frente/:tarea/hecha` · `GET /api/dia/calendario?mes` · `GET /api/dia/feriados?desde&hasta` · `PUT|DELETE /api/dia/feriados/:fecha` · `POST /api/dia/fechas-clave` · `PUT|DELETE /api/dia/fechas-clave/:id` · `GET /api/dia/horario?fecha` · `GET /api/dia/horario/dia?fecha` · `POST /api/dia/horario/bloques` · `PUT|DELETE /api/dia/horario/bloques/:id` · `POST /api/dia/horario/bloques/:id/copiar` · `POST /api/dia/horario/apagar` · `POST /api/dia/horario/correr-entreno` · `POST /api/dia/horarios` · `POST /api/dia/horarios/:id/activar` · `PUT|DELETE /api/dia/horarios/:id`.
+
+Parte 1: `GET /api/dia` (Hoy) · `GET /api/dia/pilares?fecha` · `GET /api/dia/compromisos?fecha` · `POST /api/dia/compromisos/:id/{iniciar,completar,omitir,deshacer,extra,deshacer-extra,reprogramar,corregir}` · `GET /api/dia/{cumplimiento,pilares-por-dia,excepciones}?desde&hasta` · `GET /api/dia/{racha,atributos,aviso-resta}` · `PUT|DELETE /api/dia/excepciones/:fecha` · `GET /api/dia/acciones` · `PUT /api/dia/acciones/:id` · `POST /api/dia/acciones/:id/activa` · `POST /api/dia/comida` · `POST /api/dia/vista` · `POST /api/dia/tajo`.
 
 ## Archivos
 
+- `ventanilla/index.js`: la puerta. Junta `pilares.js` (parte 1), `calendario.js` (feriados, fechas clave, Mi horario, Calendario) y `tablero.js` (Hoy, Empezar mi ciclo, Dejo celu, bloqueo de sueño).
+- `agenda.js`: cuentas puras de la parte 2 (bloques del día, dónde estás, huecos, fechas clave anuales, feriados de fábrica). De `src/services/horario.ts`, `fechasClave.ts`, `feriados.ts`.
+- `pantallas/`: `hoy.html`+`hoy.js` (tablero), `calendario.html`+`calendario.js`, `horario.html`+`horario.js`, `ayuda.js` (hoja de formulario, fechas) y `estilo.css`. Hoy carga `/m/desafios/capa.js` (frase del día y Tajo con `SEK.desafios.llegada`).
+- `pruebas.test.js` (parte 1) y `parte2.test.js`.
 - `calculo.js`: cuentas puras (cumplimiento, racha, atributos, estado de pilar, regla vigente, Tajo) y los datos de fábrica. De `src/domain/cumplimiento.ts`, `src/services/dia.ts`, `acciones.ts`, `restas.ts`, `ninjas.ts` (Tajo) y `src/data/semilla.ts`.
-- Sin `pantallas/` todavía (parte 2).
 
 ## Qué módulos usa
 
-- **xp**: `sumar`, `anular`, `delDia`, `claveXp`, `asegurarInicioResta`, `aplicarRestas`, `devolverResta`, `avisoResta`.
+- **sueno**, **comida**, **entreno**, **habitos**, **organizacion** (parte 2): su `resumenHoy` para las tarjetas de Hoy; sueno `dejoCelu` y `modoActivo`; organizacion `marcarHecha`. Ninguno de ellos usa dia (dependencia en un solo sentido).
+- **xp**: `estado` (nivel en Hoy), `sumar`, `anular`, `delDia`, `claveXp`, `asegurarInicioResta`, `aplicarRestas`, `devolverResta`, `avisoResta`.
 - **ciclo**: `cicloActivo`, `diaDelCiclo`, `atributos`.
 - **juego**: `limiteRespetado`, `minutosDelDia`.
 - sueno, entreno, comida: solo por avisos y por `conectar` (no los requiere).
 
 ## Pendiente
 
-- **Parte 2:** pantalla Hoy (tablero con la tarjeta de cada módulo), Calendario, Mi horario, feriados (límite de juego de finde en feriados), fechas clave, inicios, la barra de abajo y el bloqueo del modo sueño.
-- **Tensión y «No cumplí»:** no tenían lógica de día en la app vieja. «No cumplí» (la caída, −20 XP y la marca) ya está en **habitos** (`registrarCaida`); Tensión, el duelo de flexiones y el 3·2·1 van con **desafios**. En la parte 2, Hoy pone los botones y llama a esas ventanillas; lo visual con `SEK.tema.escena` / `SEK.tema.medio('tajo')` de **temas**.
-- El Tajo de Android (encima de otra app, «Apps que te atrapan») va con **celular**; acá queda la regla.
+- La barra de abajo quedó con 5 fijos (Hoy, Calendario, Juego, Sueño, Más), como la app vieja sin Progreso. Progreso está en Más; si Navil lo quiere fijo, serían 6.
+- Siguiente acción (tarea ambigua → acción concreta) va con **desafios** (3·2·1).
+- De la Hoy vieja quedan afuera por ahora: «Buenos días» con el ajuste de ayer (lo muestra la pantalla del modo sueño), metas de la semana (ciclo), series rápidas con toque directo (están en Entreno) y la cama del compañero (temas).
+- El Tajo de Android (encima de otra app) va con **celular**; acá queda la regla.

@@ -43,7 +43,7 @@ Avisos «al revés» (el que emite no conoce a quien escucha):
 | 2 | xp | — | chico |
 | 3 | organizacion | — | medio (ya está sin React) |
 | 4 | ciclo | xp | medio |
-| 5 | dia | xp, ciclo, juego | grande (parte 1 ✅ pilares y cierre; parte 2: Hoy, Calendario, Mi horario) |
+| 5 | dia | xp, ciclo, juego | grande (parte 1 ✅ pilares y cierre; parte 2 ✅ Hoy, Calendario, Mi horario) |
 | 6 | entreno | xp | grande |
 | 7 | sueno | xp | medio |
 | 8 | comida | xp | medio |
@@ -146,7 +146,7 @@ Los módulos 1, 2 y 3 se pueden hacer a la vez. Después 4 y 5 en orden. Del 6 a
 **Qué hace:** pegar el texto de «Copiar todo como texto» de la app vieja y repartirlo a cada módulo (`ventanilla.importar`), todo en una transacción. Exportar todo de la nueva.
 **Del código viejo:** `src/services/exportar.ts`, `src/ui/paginas/Copia.tsx`.
 **Usa:** la ventanilla de todos.
-**Hecho (migración 016):** ver `modulos/copia/LEEME.md`. Pantalla en Más → Copia de seguridad. Cada módulo sumó `exportar` (misma forma que su `importar`). Falta sumar desafios (`ninjas`) y dia parte 2 (`feriados`, `fechasClave`, `horario`) cuando lleguen.
+**Hecho (migración 016):** ver `modulos/copia/LEEME.md`. Pantalla en Más → Copia de seguridad. Cada módulo sumó `exportar` (misma forma que su `importar`). Ya trae también desafios y dia parte 2 (`feriados`, `fechasClave`, `horario`).
 
 ## 14. celular (APK)
 **Qué hace:** el APK con Capacitor abre el servidor en vez de llevar la app adentro. Lo nativo sigue en Java: alarmas, widgets, notificaciones, Tajo encima, «Apps que te atrapan» y «Mis juegos del celu», buscar actualización.
