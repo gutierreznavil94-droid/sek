@@ -29,6 +29,7 @@ const habitosVentanilla = require('./modulos/habitos/ventanilla')
 // Datos iniciales al crear una cuenta
 sesion.alCrearCuenta.push((id) => habitosVentanilla.sembrar(id))
 const comida = require('./modulos/comida/rutas')
+const comidaVentanilla = require('./modulos/comida/ventanilla')
 const temas = require('./modulos/temas/rutas')
 const entreno = require('./modulos/entreno/rutas')
 const entrenoVentanilla = require('./modulos/entreno/ventanilla')
@@ -38,7 +39,7 @@ sesion.alCrearCuenta.push((id) => entrenoVentanilla.sembrar(id))
 sesion.alCrearCuenta.push((usuarioId) => diaVentanilla.sembrar(usuarioId))
 
 // dia escucha los avisos de ciclo, sueno y entreno (pilares) y usa lo que le conectan los módulos que llegan después.
-// Al integrar comida y entreno: diaVentanilla.conectar({ planComida: comidaVentanilla.planDelDia, faltantesSeries: entrenoVentanilla.faltantesDelDia })
+diaVentanilla.conectar({ planComida: comidaVentanilla.planDelDia, faltantesSeries: entrenoVentanilla.faltantesDelDia })
 diaVentanilla.escucharAvisos()
 
 function crearApp(opciones = {}) {
