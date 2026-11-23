@@ -148,13 +148,13 @@ test('Hoy: sin ciclo pide «Empezar mi ciclo»; después junta pilares y la tarj
   assert.equal(t.modoSueno, false)
   assert.equal(t.nivel.nivel, 1)
   for (const k of ['juego', 'sueno', 'comida', 'entreno', 'habitos', 'organizacion']) assert.ok(t.tarjetas[k], `falta la tarjeta ${k}`)
-  assert.equal(t.tarjetas.desafios, null)
-  // desafios se conecta desde app.js cuando llega.
+  // desafios: app.js le conecta su `pendientes` (Tensión y No cumplí).
+  assert.match(t.tarjetas.desafios.noCumpli.ruta, /^\/desafios\/no-cumpli/)
   dia.conectar({ desafiosHoy: async () => ({ tension: { ruta: '/desafios/tension', activa: true }, noCumpli: { ruta: '/desafios/no-cumpli' }, pendientes: [] }) })
   assert.equal((await dia.tableroHoy(id)).tarjetas.desafios.noCumpli.ruta, '/desafios/no-cumpli')
   dia.conectar({ desafiosHoy: async () => { throw new Error('roto') } })
   assert.equal((await dia.tableroHoy(id)).tarjetas.desafios, null) // una tarjeta rota no rompe Hoy
-  dia.conectar({ desafiosHoy: null })
+  dia.conectar({ desafiosHoy: require('../desafios/ventanilla').pendientes })
 })
 
 test('Hoy: la tira «Hoy me toca a mí» marca la tarea en organizacion', async () => {

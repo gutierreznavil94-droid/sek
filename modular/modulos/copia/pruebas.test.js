@@ -48,7 +48,7 @@ test('formato: reconoce la copia vieja y la reparte por módulo', () => {
   assert.equal(c.partes.habitos.ajustes.id, 'unicos', 'habitos recibe el objeto de ajustes')
   assert.ok(Array.isArray(c.partes.comida.ajustes), 'comida recibe la tabla de ajustes')
   assert.equal(c.partes.temas.tema, 'shinobi')
-  assert.deepEqual(c.sinUsar.map((x) => x.tabla).sort(), ['eventos', 'feriados'], 'tablas vacías no se listan')
+  assert.deepEqual(c.sinUsar.map((x) => x.tabla).sort(), ['eventos'], 'tablas vacías no se listan')
   assert.equal(c.partes.desafios.ninjas.length, 1)
   assert.equal(c.partes.desafios.ajustes.id, 'unicos', 'desafios recibe el objeto de ajustes')
   assert.equal(formato.cuantas(c.partes.organizacion), 2, 'una tarea y una en la bandeja')
@@ -79,7 +79,7 @@ test('revisar muestra qué trae sin guardar nada', async () => {
   assert.equal(r.origen, 'vieja')
   assert.equal(r.yaImportada, null)
   const filas = Object.fromEntries(r.partes.map((p) => [p.clave, p.filas]))
-  assert.deepEqual(filas, { ciclo: 10, dia: 6, xp: 3, juego: 1, organizacion: 2, sueno: 1, habitos: 5, comida: 7, entreno: 4, desafios: 2, temas: 1 })
+  assert.deepEqual(filas, { ciclo: 10, dia: 7, xp: 3, juego: 1, organizacion: 2, sueno: 1, habitos: 5, comida: 7, entreno: 4, desafios: 2, temas: 1 })
   assert.ok(r.ajustes > 5)
   assert.equal((await juego.historial(id)).length, 0, 'revisar no guarda')
 })
@@ -90,7 +90,7 @@ test('importar la copia de ejemplo: cada módulo recibe lo suyo', async () => {
   assert.equal(r.origen, 'vieja')
   for (const m of formato.CLAVES.filter((k) => k !== 'temas')) assert.ok(r.resultado[m] > 0, `entró algo de ${m}`)
   assert.equal(r.total, formato.total(r.resultado))
-  assert.deepEqual(r.sinUsar.map((x) => x.tabla).sort(), ['eventos', 'feriados'])
+  assert.deepEqual(r.sinUsar.map((x) => x.tabla).sort(), ['eventos'])
 
   // ciclo: Día 22 del ciclo viejo, con su identidad y su atributo propio
   const d = await ciclo.diaDelCiclo(id)

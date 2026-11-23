@@ -32,7 +32,7 @@
       if (enCiclo(x.fecha)) clases.push('en-ciclo')
       if (x.nivel) clases.push(x.porcentaje >= 75 ? 'nivel-alto' : x.porcentaje >= 50 ? 'nivel-medio' : 'nivel-bajo')
       if (x.fecha === elegida) clases.push('elegida')
-      const puntos = x.futuro ? '' : x.pilares.filter((p) => p.estado !== 'descanso').map((p) => `<i class="${p.estado}"></i>`).join('')
+      const puntos = x.futuro || !enCiclo(x.fecha) ? '' : x.pilares.filter((p) => p.estado !== 'descanso').map((p) => `<i class="${p.estado}"></i>`).join('')
       const etiqueta = `${fechaLarga(x.fecha)}${x.porcentaje !== null ? `, ${x.porcentaje}%` : ''}${x.feriado ? `, feriado` : ''}`
       celdas.push(`<button class="${clases.join(' ')}" data-f="${x.fecha}" aria-label="${esc(etiqueta)}">
         <span class="num">${Number(x.fecha.slice(8))}</span>${x.fechasClave.length ? '<span class="sello" aria-hidden="true">印</span>' : ''}

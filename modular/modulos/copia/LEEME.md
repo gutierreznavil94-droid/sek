@@ -38,7 +38,7 @@ Las dos que reciben texto aceptan hasta 80 MB (las fotos de progreso y los temas
 | Módulo | Tablas de la copia vieja |
 |---|---|
 | ciclo | `ciclos`, `fases`, `objetivos`, `atributos`, `identidad`, `metas`, `revisiones` |
-| dia | `acciones`, `reglasXp`, `compromisos`, `diasCerrados`, `excepciones`, `atributosDiarios` |
+| dia | `acciones`, `reglasXp`, `compromisos`, `diasCerrados`, `excepciones`, `atributosDiarios`, `feriados`, `fechasClave` + de `ajustes`: `horario` (Mi horario) |
 | xp | `xp` |
 | juego | `sesionesJuego` |
 | organizacion | `organizacion` |
@@ -52,7 +52,7 @@ Las dos que reciben texto aceptan hasta 80 MB (las fotos de progreso y los temas
 
 Se cargan en ese orden (ciclo antes que dia: las acciones nombran atributos).
 
-**Lo que no se trae** (se muestra con el motivo antes de importar): `eventos` (historial viejo), `niveles`, `temporizador`, `recomendaciones`, y lo que todavía no tiene módulo: `feriados` y `fechasClave` (dia parte 2), `horario` de los ajustes (Mi horario, dia parte 2). Las fotos solo vienen si en la app vieja se tildó «Incluir fotos de progreso».
+**Lo que no se trae** (se muestra con el motivo antes de importar): `eventos` (historial viejo), `niveles`, `temporizador`, `recomendaciones`. Las fotos solo vienen si en la app vieja se tildó «Incluir fotos de progreso».
 
 ## Lo que ofrece su ventanilla
 
@@ -92,4 +92,3 @@ Para esto, cada uno de esos módulos sumó a su ventanilla `exportar(usuarioId)`
 - ciclo: un atributo con el mismo id que uno sembrado (p. ej. `disciplina`) no se pisa: queda el nombre de la cuenta nueva.
 - CSV de registros (la vieja lo tenía): no se pidió todavía.
 - Aviso «hace X días que no guardás una copia» (ajuste viejo `diasAvisoCopia`): con Hoy (dia parte 2).
-- Cuando llegue **dia parte 2**: sumar `feriados`, `fechasClave` y `ajustes.horario`.
