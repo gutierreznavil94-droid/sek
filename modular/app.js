@@ -14,6 +14,11 @@ const servir = require('./comun/pantalla/servir')
 const juego = require('./modulos/juego/rutas')
 const cuentas = require('./modulos/cuentas/rutas')
 const xp = require('./modulos/xp/rutas')
+const ciclo = require('./modulos/ciclo/rutas')
+const cicloVentanilla = require('./modulos/ciclo/ventanilla')
+
+// Datos iniciales de cada cuenta nueva (una sola vez, al cargar app.js).
+sesion.alCrearCuenta.push((usuarioId) => cicloVentanilla.sembrar(usuarioId))
 
 function crearApp(opciones = {}) {
   const app = Fastify({ logger: opciones.logger ?? { level: 'info' } })
@@ -31,6 +36,7 @@ function crearApp(opciones = {}) {
   app.register(juego)
   app.register(cuentas)
   app.register(xp)
+  app.register(ciclo)
 
   return app
 }
