@@ -1,107 +1,90 @@
-// Pantalla de inicio de Entreno: lo de hoy, series rápidas, mis rutinas, planes y últimos entrenos. Pide todo a /api/entreno.
+// Mis rutinas, igual que la v0.88.27 (Rutinas.tsx): el historial, cada rutina con sus días y ejercicios, sumar
+// una rutina, elegir cómo empezar (un plan, de a poco o desde cero) y empezar el entreno. Pide a /api/entreno.
 (function () {
   'use strict'
-  const { api, $, seguro, barra, mensaje } = SEK
-  const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
-  const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
-  const diasTexto = (d) => (d.length ? [...d].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((x) => DIAS[x]).join(' · ') : 'Sin días')
-
-  async function empezar(rutinaId) {
-    await api('/api/entreno/empezar', { rutinaId })
-    location.href = '/entreno/sesion'
-  }
+  const { api, $, seguro } = SEK
+  const { esc, avisar, hoja } = SEK.v88
+  SEK.v88.montar({ activo: 'mas', companero: 'esquina' })
+  const NOMBRES = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
+  const ordenar = (d) => [...d].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7))
+  const dias = (d) => { const n = ordenar(d).map((x) => NOMBRES[x]); return n.length > 1 ? `${n.slice(0, -1).join(', ')} y ${n[n.length - 1]}` : n.join('') }
+  const IDEAS_OCULTAS = 'sek-ideas-rutina-ocultas'
+  let datos = null
 
   function pintar(d) {
-    const h = d.hoy
-    $('#hoy-fecha').textContent = h.fecha
-    const botones = $('#hoy-botones')
-    botones.innerHTML = ''
-    if (h.enCurso) {
-      $('#hoy-texto').textContent = 'Tenés un entreno sin terminar.'
-      botones.innerHTML = '<a class="boton principal" href="/entreno/sesion">Seguir el entreno</a>'
-    } else if (h.hecho) {
-      $('#hoy-texto').innerHTML = '<span class="ok">Entreno de hoy hecho.</span>'
-    } else if (h.rutina) {
-      $('#hoy-texto').textContent = `Toca: ${h.rutina.nombre} (unos ${h.rutina.minutos} min).`
-      const b = document.createElement('button')
-      b.className = 'principal'
-      b.textContent = 'Empezar entreno'
-      b.onclick = seguro(() => empezar(h.rutina.id))
-      botones.appendChild(b)
-    } else {
-      $('#hoy-texto').textContent = d.rutinas.length ? 'Hoy no toca entrenar. Si querés, empezá cualquier rutina de abajo.' : 'Todavía no tenés rutinas: elegí cómo empezar.'
-    }
+    datos = d
+    const r = d.rutinas
+    $('#intro').textContent = r.length
+      ? `${r.length === 1 ? 'Tu rutina' : `Tus ${r.length} rutinas`}, cada una con sus días. Tocá una para ver y editar sus bloques, ejercicios y días. Los cambios valen desde el próximo entreno.`
+      : 'Todavía no tenés rutinas. Sumá una y armala a tu manera, o elegí un plan listo.'
+    let ocultas = false
+    try { ocultas = localStorage.getItem(IDEAS_OCULTAS) === '1' } catch (e) { /* sin almacenamiento */ }
+    const ideas = $('#ideas')
+    ideas.hidden = ocultas || !r.some((x) => x.id === 'rutina-ejemplo' && x.activa)
+    ideas.innerHTML = `<b>Ideas para ir agrandándola</b><ul class="texto-2 chico rutinas-ideas">${d.ideas.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
+      <span class="texto-3 chico">Son solo ideas: vos decidís cuándo.</span><button type="button" class="boton chico suave" id="ocultar-ideas">Ocultar ideas</button>`
+    $('#ocultar-ideas').onclick = () => { ideas.hidden = true; try { localStorage.setItem(IDEAS_OCULTAS, '1') } catch (e) { /* nada */ } }
+    $('#rutinas').innerHTML = r.map((x) => {
+      const [nombre, sub] = x.nombre.split(' · ')
+      const ej = x.bloques.filter((b) => b.tipo === 'ejercicio')
+      return `<a href="/entreno/rutina?id=${encodeURIComponent(x.id)}" class="tarjeta rutina-item">
+        <div class="fila entre"><h2>${esc(nombre)}</h2><span class="texto-3 chico">${x.dias.length ? dias(x.dias) : 'Sin días'} · ~${x.minutos} min</span></div>
+        <span class="texto-2">${esc(sub || '')}</span>
+        <div class="chips-mini">${ej.map((e) => `<span>${esc(e.nombre)}</span>`).join('')}</div>
+        ${x.activa ? '' : '<span class="texto-3 chico">Pausada</span>'}</a>`
+    }).join('')
+    $('#empezar').hidden = !r.length
+    $('#empezar').textContent = d.hoy.enCurso ? 'Seguir el entreno' : 'Empezar entreno'
+  }
 
-    $('#series').innerHTML = h.series.length ? '' : '<p class="chico apagado">Sin series rápidas.</p>'
-    for (const s of h.series) {
-      const div = document.createElement('div')
-      div.className = 'item'
-      const pct = Math.min(100, (100 * s.hoy) / Math.max(1, s.cuota))
-      div.innerHTML = `<div class="texto" style="flex:1"><b>${esc(s.nombre)}</b>
-        <span class="chico ${s.extraLogrado ? 'record' : s.metaLograda ? 'ok' : ''}">${s.hoy} de ${s.cuota}${s.extraLogrado ? ' · extra ✓' : s.metaLograda ? ' · cuota ✓' : ''}</span>
-        <div class="barra-progreso"><span style="width:${pct}%"></span></div></div>`
-      const b = document.createElement('button')
-      b.className = 'principal mini'
-      b.textContent = `+${s.porToque}`
-      b.setAttribute('aria-label', `Sumar ${s.porToque} ${s.nombre}`)
-      b.onclick = seguro(async () => {
-        const r = await api(`/api/series/${encodeURIComponent(s.id)}/toque`, {})
-        if (r.toque.xp && r.toque.metaLograda) { mensaje(r.toque.extraLogrado ? '¡Extra!' : '¡Cuota del día!'); SEK.evento('logro', { modulo: 'entreno' }) }
-        cargar()
-      })
-      div.appendChild(b)
-      $('#series').appendChild(div)
-    }
-
-    $('#rutinas').innerHTML = d.rutinas.length ? '' : '<p class="chico apagado">Sin rutinas todavía.</p>'
-    for (const r of d.rutinas) {
-      const div = document.createElement('div')
-      div.className = 'item' + (r.activa ? '' : ' pausada')
-      div.innerHTML = `<div class="texto"><b>${esc(r.nombre)}</b><span class="chico">${diasTexto(r.dias)} · ${r.bloques.length} bloques${r.activa ? '' : ' · pausada'}</span></div>
-        <div class="botones"><a class="boton mini" href="/entreno/rutina?id=${encodeURIComponent(r.id)}">Editar</a></div>`
-      if (!h.enCurso) {
-        const b = document.createElement('button')
-        b.className = 'mini'
-        b.textContent = 'Empezar'
-        b.onclick = seguro(() => empezar(r.id))
-        div.querySelector('.botones').appendChild(b)
-      }
-      $('#rutinas').appendChild(div)
-    }
-
-    $('#elegir').open = !d.rutinas.length
-    $('#planes').innerHTML = ''
-    const opciones = [
-      ...d.planes.map((p) => ({ titulo: p.nombre, texto: p.descripcion, eleccion: { modo: 'plan', planId: p.id } })),
-      { titulo: 'De a poco', texto: 'Una rutina cortita de cuerpo completo. ' + d.ideas[0], eleccion: { modo: 'poco' } },
-      { titulo: 'Desde cero', texto: 'Sin rutinas: las armás vos con «+ Rutina».', eleccion: { modo: 'cero' } },
+  // ---------- Elegir cómo empezar ----------
+  function elegir() {
+    const OPCIONES = [
+      { modo: 'plan', titulo: 'Mi plan completo', texto: 'Un plan listo desde el día 1, con todos sus días y ejercicios.' },
+      { modo: 'poco', titulo: 'De a poco', texto: 'Una rutina cortita para arrancar, con ideas para agrandarla cuando quieras.' },
+      { modo: 'cero', titulo: 'Desde cero', texto: 'Sin rutinas: armás tus días y ejercicios a tu manera.' },
     ]
-    for (const o of opciones) {
-      const div = document.createElement('div')
-      div.className = 'item'
-      div.innerHTML = `<div class="texto"><b>${esc(o.titulo)}</b><span class="chico">${esc(o.texto)}</span></div>`
-      const b = document.createElement('button')
-      b.className = 'mini'
-      b.textContent = 'Elegir'
-      b.onclick = seguro(async () => {
-        const r = await api('/api/entreno/eleccion', { eleccion: o.eleccion, reemplazar: $('#reemplazar').checked })
-        mensaje(`Listo: ${r.cargadas} rutina${r.cargadas === 1 ? '' : 's'} nueva${r.cargadas === 1 ? '' : 's'}${r.borradas ? `, ${r.borradas} borrada${r.borradas === 1 ? '' : 's'}` : ''}.`)
-        cargar()
-      })
-      div.appendChild(b)
-      $('#planes').appendChild(div)
+    let e = { modo: 'plan', planId: datos.planes[0] && datos.planes[0].id }
+    const hay = datos.rutinas.length
+    const h = hoja('Elegir cómo empezar', '<div class="col" style="gap: 10px;" data-caja></div>')
+    const caja = h.el.querySelector('[data-caja]')
+    const nombreEleccion = () => (e.modo === 'plan' ? (datos.planes.find((p) => p.id === e.planId) || {}).nombre || 'Plan' : e.modo === 'poco' ? 'De a poco' : 'Desde cero')
+    const aplicar = seguro(async (reemplazar) => {
+      const r = await api('/api/entreno/eleccion', { eleccion: e, reemplazar })
+      h.cerrar()
+      avisar(e.modo === 'cero' ? 'Listo: sin rutinas. Sumá la primera con «+ Nueva rutina».' : `${nombreEleccion()}: ${r.cargadas === 1 ? '1 rutina cargada' : `${r.cargadas} rutinas cargadas`}`, { tipo: 'ok' })
+      cargar()
+    })
+    function opciones() {
+      caja.innerHTML = `<div class="ce" role="radiogroup" aria-label="Cómo empezar a entrenar">${OPCIONES.map((o) => `<div class="ce-opcion ${e.modo === o.modo ? 'elegida' : ''}">
+          <button type="button" role="radio" aria-checked="${e.modo === o.modo}" class="ce-opcion-cab" data-modo="${o.modo}"><span class="ce-punto" aria-hidden="true"></span><span class="ce-opcion-texto"><b>${o.titulo}</b><span class="chico texto-2">${o.texto}</span></span></button>
+          ${o.modo === 'plan' && e.modo === 'plan' ? `<div class="ce-planes">${datos.planes.map((p) => `<button type="button" class="ce-plan ${e.planId === p.id ? 'elegido' : ''}" aria-pressed="${e.planId === p.id}" data-plan="${esc(p.id)}"><b>${esc(p.nombre)}</b><span class="chico texto-2">${esc(p.descripcion)}</span><span class="chico texto-3">${esc(p.rutinas.map((x) => x.split(' · ')[0]).join(' · '))}</span></button>`).join('')}</div>` : ''}
+        </div>`).join('')}</div>
+        <p class="ayuda">Después podés editar todo: días, ejercicios, series y pesos.</p>
+        <button type="button" class="boton primario" data-seguir>${e.modo === 'cero' ? 'Seguir' : 'Cargar'}</button>`
+      caja.querySelectorAll('[data-modo]').forEach((b) => { b.onclick = () => { e = b.dataset.modo === 'plan' ? { modo: 'plan', planId: datos.planes[0].id } : { modo: b.dataset.modo }; opciones() } })
+      caja.querySelectorAll('[data-plan]').forEach((b) => { b.onclick = () => { e = { modo: 'plan', planId: b.dataset.plan }; opciones() } })
+      caja.querySelector('[data-seguir]').onclick = () => (hay > 0 ? confirmar() : aplicar(true))
     }
-
-    $('#historial').innerHTML = d.historial.length
-      ? d.historial.map((e) => `<div class="item"><div class="texto"><b>${esc(e.rutina)}</b><span class="chico">${e.fecha} · ${e.minutos} min · ${e.series} series${e.xpExtra ? ` · <span class="record">+${e.xpExtra} XP</span>` : ''}</span></div></div>`).join('')
-      : '<p class="chico apagado">Todavía no terminaste ningún entreno.</p>'
+    function confirmar() {
+      caja.innerHTML = `<p>${e.modo === 'cero' ? `¿Borrar tus ${hay === 1 ? 'rutina' : `${hay} rutinas`} y empezar desde cero?` : `Ya tenés ${hay === 1 ? '1 rutina' : `${hay} rutinas`}. ¿Qué hacemos con ${hay === 1 ? 'ella' : 'ellas'}?`}</p>
+        <p class="texto-2 chico">Tus entrenos, récords e historial quedan guardados igual.</p>
+        ${e.modo !== 'cero' ? `<button type="button" class="boton primario" data-sumar>Sumar ${e.modo === 'plan' ? 'el plan' : 'la rutina'} a las mías</button>` : ''}
+        <button type="button" class="boton ${e.modo === 'cero' ? 'primario' : ''}" data-reemplazar>${e.modo === 'cero' ? 'Sí, empezar desde cero' : 'Reemplazar mis rutinas'}</button>
+        <button type="button" class="boton suave" data-volver>‹ Volver</button>`
+      const s = caja.querySelector('[data-sumar]')
+      if (s) s.onclick = () => aplicar(false)
+      caja.querySelector('[data-reemplazar]').onclick = () => aplicar(true)
+      caja.querySelector('[data-volver]').onclick = opciones
+    }
+    opciones()
   }
 
   const cargar = seguro(async () => pintar(await api('/api/entreno')))
-  $('#nueva-rutina').onclick = seguro(async () => {
+  $('#nueva').onclick = seguro(async () => {
     const r = await api('/api/entreno/rutinas', {})
     location.href = '/entreno/rutina?id=' + encodeURIComponent(r.id)
   })
-  barra('entreno')
+  $('#elegir').onclick = () => { if (datos) elegir() }
   cargar()
 })()

@@ -3,44 +3,34 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>SEK · Entreno</title>
+  <title>SEK · Mis rutinas</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
-  <link rel="stylesheet" href="/m/entreno/estilo.css">
+  <!-- Igual que la v0.88.27: su estilo y el del tema Shinobi -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
 </head>
 <body>
-  <main>
-    <h1>鍛 Entreno</h1>
-
-    <section class="tarjeta" aria-live="polite">
-      <div class="fila entre"><h3>Hoy</h3><span class="chico" id="hoy-fecha"></span></div>
-      <p id="hoy-texto" class="chico"></p>
-      <div class="fila" id="hoy-botones"></div>
-    </section>
-
-    <section class="tarjeta">
-      <div class="fila entre"><h3>Series rápidas</h3><a class="chico" href="/entreno/series">Ver y editar</a></div>
-      <div class="lista" id="series"></div>
-    </section>
-
-    <section class="tarjeta">
-      <div class="fila entre"><h3>Mis rutinas</h3><button class="mini" id="nueva-rutina">+ Rutina</button></div>
-      <div class="lista" id="rutinas"></div>
-    </section>
-
-    <details class="tarjeta" id="elegir">
-      <summary>Elegí cómo empezar</summary>
-      <p class="chico">Un plan completo, una rutina cortita para ir de a poco o desde cero. Después todo se edita.</p>
-      <div class="lista" id="planes"></div>
-      <label class="fila" style="flex-direction:row;align-items:center"><input type="checkbox" id="reemplazar" style="width:auto;min-height:0"> Reemplazar mis rutinas (las que tienen entrenos quedan en el historial)</label>
-    </details>
-
-    <section class="tarjeta">
-      <h3>Últimos entrenos</h3>
-      <div class="lista" id="historial"></div>
-    </section>
+  <main class="contenido">
+    <a class="atras" href="/mas">← Más</a>
+    <h1>Mis rutinas</h1>
+    <p class="texto-2 chico" id="intro">Cargando…</p>
+    <a href="/entreno/historial" class="tarjeta rutina-item">
+      <div class="fila entre"><h2>Historial de entrenos</h2><span aria-hidden="true">›</span></div>
+      <span class="texto-2 chico">Todos los entrenos quedan guardados, aunque ese día bajes reps o peso.</span>
+    </a>
+    <section class="tarjeta compacta" id="ideas" hidden></section>
+    <div class="col" id="rutinas" style="gap: 12px;"></div>
+    <div class="rutinas-acciones">
+      <button type="button" class="boton" id="nueva">+ Nueva rutina</button>
+      <button type="button" class="boton" id="elegir">Elegir cómo empezar</button>
+    </div>
+    <a href="/entreno/sesion" class="boton primario grande ancho" id="empezar" hidden>Empezar entreno</a>
   </main>
   <script src="/comun/marco.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
   <script src="/m/entreno/entreno.js"></script>
 </body>
 </html>

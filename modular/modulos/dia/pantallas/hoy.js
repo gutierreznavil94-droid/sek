@@ -156,7 +156,7 @@
     if (p.estado === 'descanso' || !c) return
     if ((p.estado === 'cumplido' || p.estado === 'tarde') && tieneExtra(a) && !c.extra) return marcarExtra(p, el)
     if (p.estado !== 'pendiente') return detallePilar(p)
-    if (a.tipo === 'entrenamiento') { location.href = '/entreno'; return }
+    if (a.tipo === 'entrenamiento') { location.href = '/entreno/sesion'; return }
     if (a.tipo === 'comida_plan') { location.href = '/comida'; return }
     if (a.tipo === 'acostarse') {
       if (p.ventanaCerrada) return avisar(`Pasaron las ${d.horas.limiteCelu}: la noche queda sin cumplir.`, { tipo: 'bajo' })

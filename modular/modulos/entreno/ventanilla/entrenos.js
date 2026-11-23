@@ -451,6 +451,11 @@ async function vistaEntreno(usuarioId, id, tx = null) {
     }
     if (b.tipo === 'rondas') x.tramos = calculo.tramosRondas(b)
     if (b.tipo === 'temporizador' && b.modo === 'cronometro') x.tiempo = (s.tiempos || []).find((y) => y.bloqueId === b.id) || null
+    // Solo del bloque actual (la pantalla lo muestra): récord del ejercicio o la vez pasada del cronómetro.
+    if (bid === s.orden[s.paso] && s.estado !== 'terminada') {
+      if (b.tipo === 'ejercicio') x.record = (await progresionEjercicio(usuarioId, b.id, tx)).record || null
+      if (b.tipo === 'temporizador' && b.modo === 'cronometro') x.historial = await historialTiempo(usuarioId, b.nombre, s.id, tx)
+    }
     bloques.push(x)
   }
   return {
@@ -461,7 +466,7 @@ async function vistaEntreno(usuarioId, id, tx = null) {
     actual: s.paso < s.orden.length ? s.orden[s.paso] : null,
     descanso: s.descanso ? { ...s.descanso, fase: calculo.faseActual(s.descanso, t) } : null,
     minutos: Math.round(calculo.duracionEntreno(s, s.fin ?? t) / 60),
-    constantes: { PREPARACION_S: calculo.PREPARACION_S, DESCUENTO_S: calculo.DESCUENTO_S, AVISO_FIN_DESCANSO_S: calculo.AVISO_FIN_DESCANSO_S },
+    constantes: { PREPARACION_S: calculo.PREPARACION_S, DESCUENTO_S: calculo.DESCUENTO_S, AVISO_FIN_DESCANSO_S: calculo.AVISO_FIN_DESCANSO_S, PAUSA_MAXIMA_S: calculo.PAUSA_MAXIMA_S, TOPE_XP_EXTRA: calculo.TOPE_XP_EXTRA },
   }
 }
 
@@ -507,10 +512,17 @@ async function historialTiempo(usuarioId, nombre, excepto = null, tx = null) {
 /** Últimos entrenos terminados, con el nombre de la rutina. */
 async function historialEntrenos(usuarioId, cantidad = 30, tx = null) {
   const todas = new Map((await rutinas.listarRutinas(usuarioId, { inactivas: true, borradas: true }, tx)).map((r) => [r.id, r]))
-  return (await datos.ultimas(usuarioId, cantidad, tx)).map(aSesion).map((s) => ({
-    id: s.id, fecha: s.fecha, rutina: (todas.get(s.rutinaId) || {}).nombre || s.rutinaId, series: s.series.length, xpExtra: s.xpExtra || 0,
-    minutos: Math.max(1, Math.round(calculo.duracionEntreno(s, s.fin ?? s.inicio) / 60)),
-  }))
+  return (await datos.ultimas(usuarioId, cantidad, tx)).map(aSesion).map((s) => {
+    const r = todas.get(s.rutinaId)
+    const ids = [...new Set(s.series.map((x) => x.bloqueId))]
+    return {
+      id: s.id, fecha: s.fecha, rutina: (r || {}).nombre || s.rutinaId, series: s.series.length, xpExtra: s.xpExtra || 0,
+      minutos: Math.max(1, Math.round(calculo.duracionEntreno(s, s.fin ?? s.inicio) / 60)),
+      // Lo hecho, ejercicio por ejercicio (para el historial de entrenos).
+      ejercicios: ids.map((id) => ({ bloqueId: id, nombre: ((r && bloqueDe(r, id)) || {}).nombre || id, series: seriesDe(s, id) })),
+      tiempos: s.tiempos || [],
+    }
+  })
 }
 
 /**

@@ -1,7 +1,7 @@
 # Módulo entreno
 
 **Qué hace:** rutinas con bloques (ejercicio con series, calentamiento, temporizador, cronómetro de colgarse, rondas, casilla), ejercicios enlazados entre rutinas, el entreno en curso (series, descanso con 3·2·1 y sombra, relojes, peso de hoy, objetivo y sugerencia), XP extra por mejorar (récord +5, subir peso +10, tope 20), planes para empezar y las **series rápidas** (flexiones, dominadas) con cuota, extra y propuesta de subir.
-Pantallas: `/entreno` (inicio, botón **Entreno** 鍛 de la barra), `/entreno/rutina?id=` (editor con guardado automático), `/entreno/sesion` (entreno en curso), `/entreno/series` (series rápidas).
+Pantallas (igual que la v0.88.27): `/entreno` (Mis rutinas: historial, rutinas, ideas, «Elegir cómo empezar»), `/entreno/historial` (entrenos pasados, solo lectura), `/entreno/rutina?id=` (editor con guardado automático, enlaces y gráfico de progreso), `/entreno/sesion` (entreno en curso a pantalla completa; el pilar Entreno de Hoy lleva acá), `/entreno/series` (contadores).
 
 ## Lo que ofrece su ventanilla (`ventanilla/index.js`)
 
@@ -45,7 +45,7 @@ Todas aceptan `tx` opcional al final.
 - `calculo.js`: cuentas puras (descanso, relojes, marcas, récords, cuotas). De `src/services/entreno.ts` y `src/domain/cuotas.ts`.
 - `planes.js`: planes (Nay, Gimnasio A·B·C), rutina de ejemplo y series rápidas iniciales. De `src/data/planes.ts` y `semilla.ts`.
 - `ventanilla/`: `index.js` (la puerta), `rutinas.js`, `entrenos.js`, `series.js`, `ayuda.js`.
-- `pantallas/`: `entreno`, `rutina`, `sesion`, `series` (.html + .js) y `estilo.css`.
+- `pantallas/`: `entreno`, `historial`, `rutina`, `sesion`, `series` (.html + .js), con el estilo de `comun/v88.css`.
 
 ## Qué módulos usa
 

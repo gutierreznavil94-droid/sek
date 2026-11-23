@@ -348,7 +348,7 @@ test('web: pantallas y API de entreno piden sesión y funcionan', async () => {
   const r = await app.inject({ method: 'POST', url: '/api/sesion/crear-cuenta', payload: { nombre: 'Web', email: 'web-entreno@prueba.com', clave: 'clave-segura' } })
   const cookie = r.headers['set-cookie'].split(';')[0]
   const pedir = (method, url, payload) => app.inject({ method, url, headers: { cookie }, payload })
-  for (const p of ['/entreno', '/entreno/rutina', '/entreno/sesion', '/entreno/series', '/m/entreno/entreno.js', '/m/entreno/rutina.js', '/m/entreno/sesion.js', '/m/entreno/series.js', '/m/entreno/estilo.css']) {
+  for (const p of ['/entreno', '/entreno/rutina', '/entreno/sesion', '/entreno/series', '/m/entreno/entreno.js', '/m/entreno/rutina.js', '/m/entreno/sesion.js', '/m/entreno/series.js', '/entreno/historial', '/m/entreno/historial.js']) {
     assert.equal((await pedir('GET', p)).statusCode, 200, p)
   }
   let inicio = (await pedir('GET', '/api/entreno')).json()

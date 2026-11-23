@@ -1,89 +1,97 @@
-// Series rápidas: tocar para sumar, deshacer, ver los últimos 14 días, responder la propuesta de subir y editar.
+// Contadores (series rápidas), igual que la v0.88.27 (Contadores.tsx): cada contador con su cuota, extra y XP,
+// editar, crear y cargar a mano. Pide a /api/series (rutas de su módulo) y los atributos a /api/ciclo.
 (function () {
   'use strict'
-  const { api, $, seguro, barra, mensaje } = SEK
-  const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
-  const datosForm = (form) => Object.fromEntries([...new FormData(form)].map(([k, v]) => [k, k === 'nombre' ? v : Number(v)]))
+  const { api, $, seguro } = SEK
+  const { esc, avisar, hoja, fechaLegible } = SEK.v88
+  SEK.v88.montar({ activo: 'mas', companero: 'esquina' })
+  const extraDe = (cuota) => Math.ceil(cuota * 1.5)
+  let atributos = []
 
-  function pintar(r) {
-    const cont = $('#series')
-    cont.innerHTML = r.series.length ? '' : '<p class="chico apagado">No tenés series rápidas activas.</p>'
-    for (const x of r.series) {
-      const c = x.contador
-      const max = Math.max(1, ...x.porDia.map((d) => Math.max(d.total, d.cuota)))
-      const div = document.createElement('section')
-      div.className = 'tarjeta'
-      div.innerHTML = `
-        <div class="fila entre"><h2>${esc(c.nombre)}</h2><span class="chico">${x.repsHoy} × ${x.series} series</span></div>
-        <div class="fila entre"><span class="grande">${x.hoy}</span><span class="chico ${x.extraLogradoHoy ? 'record' : x.metaLogradaHoy ? 'ok' : ''}">cuota ${x.cuotaHoy}${x.metaLogradaHoy ? ' ✓' : ''} · extra ${x.extraHoy}${x.extraLogradoHoy ? ' ✓' : ''}</span></div>
-        <div class="barra-progreso"><span style="width:${Math.min(100, (100 * x.hoy) / Math.max(1, x.cuotaHoy))}%"></span></div>
-        <div class="botones">
-          <button class="principal" data-toque>+${c.cantidadPorToque}</button>
-          <input type="number" inputmode="numeric" min="1" placeholder="Otra cantidad" data-cantidad style="width:150px" aria-label="Otra cantidad">
-          <button class="mini" data-otra>Sumar</button>
-          <button class="mini" data-deshacer ${x.toquesHoy ? '' : 'disabled'}>Deshacer último</button>
-        </div>
-        ${x.propuesta ? `<div class="bloque pregunta"><p>Cumpliste la cuota 3 días seguidos. ¿Subís de ${x.propuesta.de} a <b>${x.propuesta.a}</b> por serie (cuota ${x.propuesta.cuota})?</p><div class="botones"><button class="mini principal" data-si>Sí, subir</button><button class="mini" data-no>Todavía no</button></div></div>` : ''}
-        <div><span class="chico">Últimos 14 días</span><div class="barritas">${x.porDia.map((d, i) => `<span class="${d.total >= d.cuota ? 'ok' : ''}${i === 13 ? ' hoy' : ''}" style="height:${Math.max(3, (100 * d.total) / max)}%" title="${d.fecha}: ${d.total} de ${d.cuota}"></span>`).join('')}</div></div>
-        <p class="chico">Semana: ${x.semana} · Días con cuota: ${x.diasConMeta} · con extra: ${x.diasConExtra}${x.record ? ` · Récord: ${x.record.total} (${x.record.fecha})` : ''}</p>
-        <details><summary>Editar</summary>
-          <form class="campos" data-editar>
-            <label class="ancho">Nombre <input name="nombre" value="${esc(c.nombre)}" required></label>
-            <label>Reps por serie <input name="cantidadPorToque" type="number" inputmode="numeric" min="1" value="${c.cantidadPorToque}"></label>
-            <label>Series por día <input name="seriesPorDia" type="number" inputmode="numeric" min="1" value="${x.series}"></label>
-            <label>XP de la cuota <input name="xpMetaDiaria" type="number" inputmode="numeric" min="0" value="${c.xpMetaDiaria}"></label>
-            <label>XP del extra <input name="xpExtra" type="number" inputmode="numeric" min="0" value="${c.xpExtra ?? 5}"></label>
-            <p class="ayuda ancho">La cuota es reps × series. Los cambios valen desde hoy; los días pasados conservan la cuota que tenían.</p>
-            <button class="principal" type="submit">Guardar</button>
-            <button type="button" class="peligro" data-pausar>Pausar</button>
-          </form>
-        </details>`
-      const id = encodeURIComponent(c.id)
-      const en = (sel, fn) => { const el = div.querySelector(sel); if (el) el.onclick = seguro(fn) }
-      const toque = async (cantidad) => {
-        const t = await api(`/api/series/${id}/toque`, cantidad ? { cantidad } : {})
-        if (t.toque.xp && t.toque.metaLograda) { mensaje(t.toque.extraLogrado ? '¡Extra del día!' : '¡Cuota del día!'); SEK.evento('logro', { modulo: 'entreno' }) }
-        pintar(t)
+  function editar(c) {
+    let atr = c ? c.atributoIds || [] : ['fisico']
+    const h = hoja(c ? `Editar ${c.nombre}` : 'Nuevo contador', `
+      <div class="campo"><label for="c-nombre">Nombre</label><input id="c-nombre" maxlength="60" value="${esc(c ? c.nombre : '')}" placeholder="Ej.: Sentadillas"></div>
+      <div class="rejilla-2">
+        <div class="campo"><label for="c-reps">Reps por serie</label><input id="c-reps" type="number" inputmode="numeric" min="1" value="${c ? c.cantidadPorToque : 10}"><span class="ayuda">Cada toque suma esto.</span></div>
+        <div class="campo"><label for="c-series">Series por día</label><input id="c-series" type="number" inputmode="numeric" min="1" value="${c ? c.seriesPorDia || 5 : 5}"><span class="ayuda">5 por defecto.</span></div>
+        <div class="campo"><label for="c-cuota">Cuota diaria</label><input id="c-cuota" type="number" inputmode="numeric" min="1"><span class="ayuda" data-cuota-ayuda></span></div>
+        <div class="campo"><label for="c-extra">Extra</label><input id="c-extra" type="number" inputmode="numeric" min="1"><span class="ayuda">1,5 × la cuota si lo dejás así.</span></div>
+        <div class="campo"><label for="c-xp">XP de la cuota</label><input id="c-xp" type="number" inputmode="numeric" min="0" max="100" value="${c ? c.xpMetaDiaria ?? 10 : 10}"></div>
+        <div class="campo"><label for="c-xpextra">XP del extra</label><input id="c-xpextra" type="number" inputmode="numeric" min="0" max="100" value="${c ? c.xpExtra ?? 5 : 5}"></div>
+      </div>
+      <div class="campo"><label>Atributo que alimenta</label><div class="chips" data-atr></div></div>
+      <label class="fila chico" style="gap: 8px;"><input type="checkbox" id="c-subida" ${c && c.sinSubida ? '' : 'checked'}> Proponer subir las reps cada 3 días</label>
+      <label class="fila chico" style="gap: 8px;"><input type="checkbox" id="c-amano" ${c && c.cuotaAMano ? 'checked' : ''}> Cuota a mano (en vez de reps × series)</label>
+      ${c ? `<label class="fila chico" style="gap: 8px;"><input type="checkbox" id="c-activo" ${c.activo ? 'checked' : ''}> Activo (aparece en Hoy)</label>` : ''}
+      <button type="button" class="boton primario ancho" data-guardar>Guardar</button>`)
+    const q = (s) => h.el.querySelector(s)
+    const n = (s) => Number(q(s).value)
+    const cuota = q('#c-cuota'), extra = q('#c-extra'), amano = q('#c-amano')
+    let extraTocado = !!(c && c.metaExtra !== undefined && c.metaExtra !== extraDe(c.metaDiaria))
+    cuota.value = c ? c.metaDiaria : 50
+    extra.value = c ? c.metaExtra ?? extraDe(c.metaDiaria) : extraDe(50)
+    const recalcular = () => {
+      if (!amano.checked) cuota.value = n('#c-reps') * n('#c-series')
+      cuota.readOnly = !amano.checked
+      q('[data-cuota-ayuda]').textContent = amano.checked ? 'Fija: no cambia al subir las reps' : `${n('#c-reps')} × ${n('#c-series')} series`
+      if (!extraTocado) extra.value = extraDe(Number(cuota.value) || 0)
+    }
+    ;['#c-reps', '#c-series', '#c-cuota'].forEach((s) => q(s).addEventListener('input', recalcular))
+    amano.onchange = recalcular
+    extra.addEventListener('input', () => { extraTocado = true })
+    recalcular()
+    const pintarAtr = () => {
+      q('[data-atr]').innerHTML = atributos.map((a) => `<button type="button" class="${atr.includes(a.id) ? 'activo' : ''}" aria-pressed="${atr.includes(a.id)}" data-a="${esc(a.id)}">${esc(a.nombre)}</button>`).join('')
+      q('[data-atr]').querySelectorAll('[data-a]').forEach((b) => { b.onclick = () => { const id = b.dataset.a; atr = atr.includes(id) ? atr.filter((x) => x !== id) : [...atr, id]; pintarAtr() } })
+    }
+    pintarAtr()
+    q('[data-guardar]').onclick = seguro(async () => {
+      const cuerpo = {
+        ...(c ? { id: c.id } : {}), nombre: q('#c-nombre').value.trim(), cantidadPorToque: n('#c-reps'), seriesPorDia: n('#c-series'),
+        cuotaAMano: amano.checked, metaDiaria: Number(cuota.value), metaExtra: Number(extra.value), xpMetaDiaria: n('#c-xp'), xpExtra: n('#c-xpextra'),
+        atributoIds: atr, sinSubida: !q('#c-subida').checked, ...(c ? { activo: q('#c-activo').checked } : {}),
       }
-      en('[data-toque]', () => toque())
-      en('[data-otra]', () => { const n = Number(div.querySelector('[data-cantidad]').value); if (!(n > 0)) throw new Error('Poné una cantidad'); return toque(n) })
-      en('[data-deshacer]', async () => pintar(await api(`/api/series/${id}/deshacer`, {})))
-      en('[data-si]', async () => { pintar(await api(`/api/series/${id}/propuesta`, { acepta: true })); mensaje('¡Subiste las reps por serie!') })
-      en('[data-no]', async () => pintar(await api(`/api/series/${id}/propuesta`, { acepta: false })))
-      en('[data-pausar]', async () => { await api('/api/series', { id: c.id, activo: false }); mensaje('Serie pausada.'); cargar() })
-      div.querySelector('[data-editar]').onsubmit = seguro(async (e) => {
-        e.preventDefault()
-        const d = datosForm(e.target)
-        await api('/api/series', { id: c.id, ...d, metaDiaria: undefined })
-        mensaje('Guardado.')
-        cargar()
-      })
-      cont.appendChild(div)
-    }
-    const pausadas = (r.todas || []).filter((c) => !c.activo)
-    if (pausadas.length) {
-      const div = document.createElement('section')
-      div.className = 'tarjeta'
-      div.innerHTML = '<h3>Pausadas</h3>' + pausadas.map((c) => `<div class="item"><div class="texto"><b>${esc(c.nombre)}</b></div><button class="mini" data-activar="${esc(c.id)}">Activar</button></div>`).join('')
-      div.onclick = seguro(async (e) => {
-        const b = e.target.closest('[data-activar]')
-        if (!b) return
-        await api('/api/series', { id: b.dataset.activar, activo: true })
-        cargar()
-      })
-      cont.appendChild(div)
-    }
+      await api('/api/series', cuerpo)
+      h.cerrar()
+      avisar('Contador guardado. Vale de hoy en adelante.', { tipo: 'ok' })
+      cargar()
+    })
+  }
+
+  function aMano(c) {
+    const h = hoja(`${c.nombre}: cargar a mano`, `
+      <div class="campo"><label for="m-cant">Cantidad</label><input id="m-cant" type="number" inputmode="numeric" min="1" value="${c.cantidadPorToque}"></div>
+      <button type="button" class="boton primario ancho" data-sumar>Sumar ${c.cantidadPorToque}</button>`)
+    const cant = h.el.querySelector('#m-cant'), b = h.el.querySelector('[data-sumar]')
+    cant.oninput = () => { b.textContent = `Sumar ${cant.value}`; b.disabled = !(Number(cant.value) > 0) }
+    b.onclick = seguro(async () => {
+      const r = await api(`/api/series/${encodeURIComponent(c.id)}/toque`, { cantidad: Number(cant.value) })
+      h.cerrar()
+      avisar(`${c.nombre}: ${r.toque.total} hoy${r.toque.xp ? ` · +${r.toque.xp} XP` : ''}`, { tipo: 'ok' })
+      cargar()
+    })
+  }
+
+  function pintar(d) {
+    const res = (id) => d.series.find((x) => x.contador.id === id)
+    $('#lista').innerHTML = d.todas.length ? d.todas.map((c, i) => {
+      const r = res(c.id)
+      const subidas = (r && r.escalonesReps) || []
+      return `<section class="tarjeta compacta"><div class="fila entre">
+        <div class="col" style="gap: 0;"><b>${esc(c.nombre)}${c.activo ? '' : '<span class="etiqueta" style="margin-left: 6px;">inactivo</span>'}</b>
+          <span class="chico texto-3">${c.cantidadPorToque} por serie × ${c.seriesPorDia || 5} series · cuota ${c.metaDiaria} (+${c.xpMetaDiaria ?? 10} XP) · extra ${c.metaExtra ?? extraDe(c.metaDiaria)} (+${c.xpExtra ?? 5} XP)</span>
+          ${subidas.length > 1 ? `<span class="linea-cuota">Reps por serie: ${subidas.map((x, k) => (k === 0 ? `${x.reps}` : `${x.reps} (${esc(fechaLegible(x.desde))})`)).join(' → ')}</span>` : ''}
+          ${r ? `<span class="chico texto-2">Hoy ${r.hoy} · semana ${r.semana} · total ${r.total}${r.record ? ` · récord ${r.record.total}` : ''}</span>` : ''}</div>
+        <div class="col" style="gap: 4px;"><button type="button" class="boton chico" data-editar="${i}">Editar</button>${c.activo ? `<button type="button" class="boton chico suave" data-mano="${i}">Cargar a mano</button>` : ''}</div>
+      </div></section>`
+    }).join('') : '<p class="vacio">Sin contadores. Sumá uno con «+ Nuevo».</p>'
+    $('#lista').querySelectorAll('[data-editar]').forEach((b) => { b.onclick = () => editar(d.todas[Number(b.dataset.editar)]) })
+    $('#lista').querySelectorAll('[data-mano]').forEach((b) => { b.onclick = () => aMano(d.todas[Number(b.dataset.mano)]) })
   }
 
   const cargar = seguro(async () => pintar(await api('/api/series')))
-  $('#form-nueva').onsubmit = seguro(async (e) => {
-    e.preventDefault()
-    await api('/api/series', datosForm(e.target))
-    e.target.reset()
-    $('#nueva').open = false
-    mensaje('Serie rápida creada.')
-    cargar()
-  })
-  barra('entreno')
+  $('#nuevo').onclick = () => editar(null)
+  seguro(async () => { const c = await api('/api/ciclo').catch(() => null); atributos = (c && c.atributos) || [] })()
   cargar()
 })()

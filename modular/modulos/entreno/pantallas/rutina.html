@@ -5,42 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SEK · Rutina</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
-  <link rel="stylesheet" href="/m/entreno/estilo.css">
+  <!-- Igual que la v0.88.27: su estilo y el del tema Shinobi -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
 </head>
 <body>
-  <main>
-    <div class="fila entre"><a href="/entreno" class="chico">← Entreno</a><span class="estado-guardado" id="estado" aria-live="polite"></span></div>
-    <h1>鍛 Rutina</h1>
-
-    <section class="tarjeta">
-      <label>Nombre <input id="nombre" maxlength="80"></label>
-      <div><span class="chico">Días</span><div class="dias" id="dias"></div></div>
-      <div class="campos">
-        <label>Minutos (aprox.) <input id="minutos" type="number" min="1" inputmode="numeric"></label>
-        <label style="flex-direction:row;align-items:center;gap:8px"><input id="activa" type="checkbox" style="width:auto;min-height:0"> Activa</label>
-      </div>
-      <p class="ayuda">Se guarda sola mientras escribís. Pausada: no aparece en Hoy, pero no se borra.</p>
-    </section>
-
-    <section class="lista" id="preguntas"></section>
-
-    <section class="tarjeta">
-      <h3>Bloques</h3>
-      <div class="lista" id="bloques"></div>
-      <div class="botones">
-        <button class="mini" data-nuevo="ejercicio">+ Ejercicio</button>
-        <button class="mini" data-nuevo="calentamiento">+ Calentamiento</button>
-        <button class="mini" data-nuevo="temporizador">+ Temporizador</button>
-        <button class="mini" data-nuevo="cronometro">+ Cronómetro</button>
-        <button class="mini" data-nuevo="rondas">+ Rondas</button>
-        <button class="mini" data-nuevo="casilla">+ Casilla</button>
-      </div>
-    </section>
-
-    <button class="peligro" id="borrar">Borrar rutina</button>
+  <main class="contenido">
+    <a class="atras" href="/entreno">← Rutinas</a>
+    <div class="col" id="caja" style="gap: 12px;"><p class="vacio">Cargando…</p></div>
   </main>
   <script src="/comun/marco.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
   <script src="/m/entreno/rutina.js"></script>
 </body>
 </html>

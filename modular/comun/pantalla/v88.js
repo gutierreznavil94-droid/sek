@@ -5,6 +5,7 @@
  * «igual que la vieja»; necesita /comun/v88.css, /comun/marco.js y /comun/v88-dibujos.js antes.
  *
  *   SEK.v88.montar({ activo: 'hoy', horario: true })   arma todo alrededor del <main class="contenido">
+ *   SEK.v88.montar({ completa: 'entreno-app' })          pantalla completa, sin cabecera ni barra de abajo
  *   SEK.v88.avisar(texto, { tipo: 'ok'|'bajo', accion: { texto, fn } })
  *   SEK.v88.hoja(titulo, html) → { el, cerrar }          hoja que sube desde abajo
  *   SEK.v88.brillo(estado, indice)                        atributos data-brillo y desfase (como brillo.ts)
@@ -12,7 +13,7 @@
  */
 (function () {
   'use strict'
-  const VERSION = '0.12'
+  const VERSION = '0.13'
   const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
   const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
   const FASES = ['Disciplina', 'Constancia', 'Mi yo ideal']
@@ -93,9 +94,17 @@
   }
 
   /** Arma la app de la v0.88 alrededor del <main class="contenido"> de la página. */
-  function montar({ activo = 'hoy', horario = false, companero = null } = {}) {
+  function montar({ activo = 'hoy', horario = false, companero = null, completa = '' } = {}) {
     const main = document.querySelector('main.contenido') || document.querySelector('main')
     main.classList.add('contenido')
+    // Pantalla completa (el entreno): sin cabecera ni barra de abajo, como `app entreno-app` de la vieja.
+    if (completa) {
+      const app = document.createElement('div')
+      app.className = `app ${completa}`
+      document.body.insertBefore(app, main)
+      app.appendChild(main)
+      return { app, listo: Promise.resolve({}), huecoExtra: null, huecoHorario: null, mover: () => {} }
+    }
     const app = document.createElement('div')
     app.className = 'app'
     app.dataset.fase = '1'

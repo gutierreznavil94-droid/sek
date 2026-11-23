@@ -25,6 +25,7 @@ const ACCIONES = {
   'parar-reloj': (u, id) => v.pararReloj(u, id),
   cronometro: (u, id, b) => v.terminarCronometro(u, id, b.bloqueId, num(b.peso) || 0),
   tiempo: (u, id, b) => v.corregirTiempo(u, id, b.bloqueId, num(b.segundos) || 0),
+  objetivo: (u, id, b) => v.fijarObjetivoCronometro(u, String(b.nombre || ''), Math.max(1, num(b.segundos) || 1), b.bloqueId),
   terminar: (u, id) => v.terminarEntreno(u, id),
   reabrir: (u, id) => v.reabrirEntreno(u, id),
   reiniciar: (u, id) => v.reiniciarEntreno(u, id),
@@ -39,6 +40,7 @@ module.exports = async function rutasEntreno(app) {
   app.get('/entreno/rutina', conUsuario, async (p, r) => pagina(r, 'entreno', 'rutina.html'))
   app.get('/entreno/sesion', conUsuario, async (p, r) => pagina(r, 'entreno', 'sesion.html'))
   app.get('/entreno/series', conUsuario, async (p, r) => pagina(r, 'entreno', 'series.html'))
+  app.get('/entreno/historial', conUsuario, async (p, r) => pagina(r, 'entreno', 'historial.html'))
 
   // Inicio del módulo: lo de hoy, rutinas, planes y últimos entrenos.
   app.get('/api/entreno', conUsuario, async (p) => ({

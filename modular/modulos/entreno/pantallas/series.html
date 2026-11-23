@@ -3,31 +3,27 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>SEK · Series rápidas</title>
+  <title>SEK · Contadores</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
-  <link rel="stylesheet" href="/m/entreno/estilo.css">
+  <!-- Igual que la v0.88.27: su estilo y el del tema Shinobi -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
 </head>
 <body>
-  <main>
-    <a href="/entreno" class="chico">← Entreno</a>
-    <h1>鍛 Series rápidas</h1>
-    <p class="chico">Flexiones al salir, dominadas en la escalera… Cada toque suma una serie. Llegar a la cuota da XP una vez por día; el extra, un poco más.</p>
-    <div class="lista" id="series"></div>
-
-    <details class="tarjeta" id="nueva">
-      <summary>+ Serie rápida nueva</summary>
-      <form class="campos" id="form-nueva">
-        <label class="ancho">Nombre <input name="nombre" required maxlength="60"></label>
-        <label>Reps por serie <input name="cantidadPorToque" type="number" inputmode="numeric" min="1" required value="10"></label>
-        <label>Series por día <input name="seriesPorDia" type="number" inputmode="numeric" min="1" required value="5"></label>
-        <label>XP de la cuota <input name="xpMetaDiaria" type="number" inputmode="numeric" min="0" value="10"></label>
-        <label>XP del extra <input name="xpExtra" type="number" inputmode="numeric" min="0" value="5"></label>
-        <button class="principal ancho" type="submit">Crear</button>
-      </form>
-    </details>
+  <main class="contenido">
+    <a class="atras" href="/mas">← Más</a>
+    <div class="fila entre">
+      <h1>Contadores</h1>
+      <button type="button" class="boton chico primario" id="nuevo">+ Nuevo</button>
+    </div>
+    <p class="texto-2 chico">Series rápidas durante el día: cada toque en Hoy suma una serie (las reps por serie). La cuota es reps por serie × series por día. Cada serie tiene dos topes por día: la cuota (lo ideal) y el extra (para los días buenos). Cada uno da su XP una vez por día. Los cambios valen desde hoy; los días pasados conservan su cuota. No son pilares: no afectan la racha.</p>
+    <div class="col" id="lista" style="gap: 12px;"><p class="vacio">Cargando…</p></div>
   </main>
   <script src="/comun/marco.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
   <script src="/m/entreno/series.js"></script>
 </body>
 </html>

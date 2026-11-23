@@ -100,7 +100,7 @@
       const lim = ent ? p.accion.horaLimiteInicio || p.horaLimite : p.horaLimite
       if (!lim) continue
       const faltan = minutos(lim) - min
-      if (faltan >= 0 && faltan <= 30) r.push({ clave: `pilar:${p.accion.id}`, texto: `${p.accion.nombre} empieza hasta las ${lim}. Arranquemos.`, accion: ent ? { etiqueta: 'Empezar', ruta: '/entreno' } : null })
+      if (faltan >= 0 && faltan <= 30) r.push({ clave: `pilar:${p.accion.id}`, texto: `${p.accion.nombre} empieza hasta las ${lim}. Arranquemos.`, accion: ent ? { etiqueta: 'Empezar', ruta: '/entreno/sesion' } : null })
     }
     if (d.racha >= 3) r.push({ clave: 'racha', texto: `${d.racha} días seguidos. No lo cortes hoy.` })
     if (d.aplican > 0 && d.cumplidos === d.aplican) r.push({ clave: 'completo', texto: 'Día completo. Mañana seguimos.' })

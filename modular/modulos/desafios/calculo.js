@@ -179,7 +179,7 @@ function puedeAparecer(peleasHoy, momento) {
 
 /** Qué hace el botón de la pelea según el momento. */
 function accionDePelea(x) {
-  if (x.pilar) return { etiqueta: `Empezar ${x.pilar.nombre}`, ruta: x.pilar.entreno ? '/entreno' : '/hoy' }
+  if (x.pilar) return { etiqueta: `Empezar ${x.pilar.nombre}`, ruta: x.pilar.entreno ? '/entreno/sesion' : '/hoy' }
   if (x.momento === 'noche') return { etiqueta: 'Dejo celu', ruta: '/sueno' }
   if (x.momento === 'juego') return { etiqueta: 'Cerrar el juego', ruta: '/juego' }
   return { etiqueta: 'Seguir con lo mío', ruta: '/hoy' }
