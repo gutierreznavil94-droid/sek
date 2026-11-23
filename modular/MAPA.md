@@ -117,7 +117,7 @@ Los módulos 1, 2 y 3 se pueden hacer a la vez. Después 4 y 5 en orden. Del 6 a
 ## 9. habitos
 **Qué hace:** la Forja (piedra que se agrieta, 30 días / 28 válidos), Mi Código (reglas propias), caídas y nuevo round, fotos y marcas de progreso.
 **Del código viejo:** `src/services/forja.ts`, `codigo.ts`, `caidas.ts`, `fotos.ts`; `src/domain/forja.ts`; páginas `MiCodigo`, `Forja`, `FotosMarcas`, `Caida`.
-**Tablas:** `forja`, `codigo`, `caidas`, `fotos`, `marcas`.
+**Tablas:** `forja_habitos`, `codigo_reglas`, `caidas`, `fotos_progreso`, `marcas_dia` (migración 011).
 **Usa:** xp.
 **Ofrece:** `resumenHoy`, `importar`.
 

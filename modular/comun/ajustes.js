@@ -37,6 +37,10 @@ const AJUSTES_INICIALES = {
   adaptacion: null,
   minutosAvisoDormir: 30,
   frasesDormir: [],
+  // habitos: la forja (30 días / 28 válidos), la XP de una caída y si ya se cargaron los ejemplos de Mi código
+  forja: { dias: 30, validos: 28, xpDia: 5, xpForjado: 50, maximo: 3 },
+  caida: { xp: 20 },
+  codigoSembrado: false,
 }
 
 async function obtenerAjustes(usuarioId, tx = null) {
