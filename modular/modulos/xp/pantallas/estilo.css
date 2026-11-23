@@ -1,0 +1,17 @@
+/* Diseños propios de XP. Usa los colores generales de /comun/estilo.css. */
+.nivel { display: flex; flex-direction: column; line-height: 1; }
+.balances { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.balances > div { display: flex; flex-direction: column; gap: 2px; }
+.balances b { font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+.interruptor { flex-direction: row; align-items: center; gap: 8px; color: var(--texto); }
+.interruptor input { width: 22px; min-height: 22px; height: 22px; accent-color: var(--acento); }
+.porcentaje { flex: 1 1 160px; }
+.movimientos { list-style: none; margin: 0; padding: 0; }
+.movimientos li { padding: 10px 0; border-top: 1px solid var(--borde); display: flex; flex-direction: column; gap: 4px; }
+.movimientos li:first-child { border-top: 0; }
+.movimientos .linea { display: flex; justify-content: space-between; gap: 10px; }
+.movimientos .cantidad { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+.movimientos .anulado .cantidad, .movimientos .anulado .que { text-decoration: line-through; color: var(--texto-3); }
+.movimientos form { display: flex; gap: 8px; }
+.movimientos form input { flex: 1; min-width: 0; }
+.movimientos .anular { min-height: 30px; padding: 2px 10px; font-size: .8rem; }
