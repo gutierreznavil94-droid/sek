@@ -5,18 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SEK · Progreso</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
-  <link rel="stylesheet" href="/m/progreso/estilo.css">
+  <!-- Igual que la v0.88.27: su estilo y el del tema Shinobi -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
 </head>
 <body>
-  <main>
-    <a class="volver" href="/progreso">‹ Progreso</a>
-    <h1 id="titulo">Progreso</h1>
-    <p class="chico apagado" id="cargando">Cargando…</p>
-    <div id="contenido" style="display:flex;flex-direction:column;gap:14px"></div>
+  <main class="contenido">
+    <!-- Cada sección de Progreso a pantalla completa, sobre el mismo guerrero bajo la lluvia (fondo.js). -->
+    <div class="progreso-tinta" data-fondo="oscuro">
+      <div class="av-contenido">
+        <div class="av-seccion">
+          <a href="/progreso" class="codigo-volver">‹ Progreso</a>
+          <h1 class="av-seccion-titulo" id="titulo">Progreso</h1>
+          <p class="av-cargando" id="cargando">Cargando…</p>
+          <div class="av-tarjetas" id="tarjetas"></div>
+        </div>
+      </div>
+    </div>
   </main>
   <script src="/comun/marco.js"></script>
-  <script src="/m/progreso/graficos.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
+  <script src="/m/progreso/fondo.js"></script>
   <script src="/m/progreso/seccion.js"></script>
 </body>
 </html>

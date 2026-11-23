@@ -3,7 +3,7 @@
  * app vieja (src/ui/paginas/Progreso.tsx). Animación de una sola pantalla → vive en el módulo progreso.
  * Los archivos son del tema (SEK.tema.fondo('lluvia'|'rayos'|'pc')): otro tema puede traer los suyos.
  *
- *   SEK_FONDO_PROGRESO({ hoy, diaUno }) → { pausar(si), oscurecer(0..0.3) }
+ *   SEK_FONDO_PROGRESO({ hoy, diaUno, vista }) → { pausar(si), oscurecer(0..0.3) }
  *
  * - Día 1 del ciclo lluvia, Día 2 rayos, Día 3 lluvia… (sin ciclo cuenta desde el 1 nov 2026).
  * - En pantallas anchas (computadora) va el video horizontal «pc».
@@ -41,7 +41,7 @@
     return m
   }
 
-  window.SEK_FONDO_PROGRESO = function ({ hoy, diaUno }) {
+  window.SEK_FONDO_PROGRESO = function ({ hoy, diaUno, vista }) {
     const id = matchMedia(HORIZONTAL).matches ? 'pc' : delDia(hoy, diaUno)
     const cfg = VIDEOS[id]
     let medio = null
@@ -54,6 +54,7 @@
     caja.className = 'av-fondo'
     caja.setAttribute('aria-hidden', 'true')
     if (id === 'pc') caja.dataset.orientacion = 'horizontal'
+    if (vista) caja.dataset.vista = vista
     caja.innerHTML = '<div class="av-oscuro" style="opacity: 0;"></div><div class="av-tapa-arriba" style="opacity: 0;"></div>'
     document.body.appendChild(caja)
     const oscuro = caja.querySelector('.av-oscuro')

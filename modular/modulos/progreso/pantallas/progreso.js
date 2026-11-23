@@ -147,7 +147,7 @@
     }
     const SECCIONES = [
       { id: 'xp', kanji: '昇', nombre: 'XP', href: '/progreso/seccion?cual=xp' },
-      { id: 'metas', kanji: '目', nombre: 'Metas', href: '/ciclo/metas' },
+      { id: 'metas', kanji: '目', nombre: 'Metas', href: '/progreso/seccion?cual=metas' },
       { id: 'sueno', kanji: '眠', nombre: 'Sueño', href: '/progreso/seccion?cual=sueno' },
       { id: 'fuerza', kanji: '力', nombre: 'Fuerza', href: '/progreso/seccion?cual=fuerza' },
       { id: 'series', kanji: '連', nombre: 'Series', href: '/progreso/seccion?cual=series' },
