@@ -12,6 +12,7 @@ const servir = require('./comun/pantalla/servir')
 
 // Módulos
 const juego = require('./modulos/juego/rutas')
+const cuentas = require('./modulos/cuentas/rutas')
 
 function crearApp(opciones = {}) {
   const app = Fastify({ logger: opciones.logger ?? { level: 'info' } })
@@ -27,6 +28,7 @@ function crearApp(opciones = {}) {
 
   // Módulos
   app.register(juego)
+  app.register(cuentas)
 
   return app
 }

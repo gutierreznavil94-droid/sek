@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SEK · Ajustes</title>
+  <link rel="icon" href="/comun/favicon-32.png">
+  <link rel="stylesheet" href="/comun/estilo.css">
+  <link rel="stylesheet" href="/m/cuentas/estilo.css">
+</head>
+<body>
+  <main>
+    <a class="atras" href="/mas">‹ Más</a>
+    <h1>Ajustes</h1>
+    <form id="form" class="pila">
+      <section class="tarjeta">
+        <h3>Fechas</h3>
+        <label>Zona horaria <select id="zonaHoraria"></select></label>
+        <p class="chico">El día va de 00:00 a 00:00 en esta zona, aunque el teléfono esté en otra.</p>
+        <label>La semana empieza el
+          <select id="diaInicioSemana"><option value="1">Lunes</option><option value="0">Domingo</option></select>
+        </label>
+      </section>
+      <section class="tarjeta">
+        <h3>Juego</h3>
+        <div class="rejilla-2">
+          <label>Lunes a viernes (min) <input id="limiteJuegoSemana" type="number" inputmode="numeric" min="0" max="1440" required></label>
+          <label>Sábado y domingo (min) <input id="limiteJuegoFinde" type="number" inputmode="numeric" min="0" max="1440" required></label>
+          <label>Aviso al (%) <input id="avisoJuegoPorcentaje" type="number" inputmode="numeric" min="10" max="100" required></label>
+        </div>
+        <p class="chico">El cambio vale de hoy en adelante.</p>
+      </section>
+      <button class="principal" type="submit">Guardar ajustes</button>
+    </form>
+  </main>
+  <script src="/comun/marco.js"></script>
+  <script src="/m/cuentas/ajustes.js"></script>
+</body>
+</html>

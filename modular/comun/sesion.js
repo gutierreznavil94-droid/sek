@@ -54,6 +54,18 @@ async function entrar(email, clave) {
   return { usuario: { id: u.id, nombre: u.nombre, email: u.email }, ...s }
 }
 
+/**
+ * Cambia la contraseña. Pide la actual. Cierra las demás sesiones abiertas (otros teléfonos o compus)
+ * y deja viva solo la de `tokenQueQueda`.
+ */
+async function cambiarClave(usuarioId, actual, nueva, tokenQueQueda = null, tx = null) {
+  const u = await una('SELECT clave_hash FROM usuarios WHERE id = $1', [usuarioId], tx)
+  if (!u || !claveCorrecta(String(actual || ''), u.clave_hash)) throw new ErrorSek('La contraseña actual no es esa.', 400)
+  if (String(nueva || '').length < 8) throw datoInvalido('La contraseña nueva necesita al menos 8 caracteres.')
+  await consulta('UPDATE usuarios SET clave_hash = $2 WHERE id = $1', [usuarioId, hashear(nueva)], tx)
+  await consulta('DELETE FROM sesiones WHERE usuario_id = $1 AND token IS DISTINCT FROM $2', [usuarioId, tokenQueQueda], tx)
+}
+
 async function salir(token) {
   if (token) await consulta('DELETE FROM sesiones WHERE token = $1', [token])
 }
@@ -121,4 +133,4 @@ async function rutas(app) {
  */
 const alCrearCuenta = []
 
-module.exports = { COOKIE, crearUsuario, entrar, salir, crearSesion, usuarioDeToken, leerCookie, requiereUsuario, rutas, alCrearCuenta, hashear, claveCorrecta }
+module.exports = { COOKIE, crearUsuario, entrar, salir, cambiarClave, crearSesion, usuarioDeToken, leerCookie, requiereUsuario, rutas, alCrearCuenta, hashear, claveCorrecta }

@@ -7,7 +7,7 @@ Lo que usan todos los módulos. **No depende de ningún módulo** (lo revisa `gu
 | `config.js` | Puerto, dirección de la base, días de sesión. Sale de variables de entorno o de un JSON fuera del repo (`SEK_CONFIG`). |
 | `base.js` | PostgreSQL: `consulta`, `una`, `todas`, `transaccion(fn, txExterna?)`. Fechas vuelven como texto `AAAA-MM-DD`; bigint como número. |
 | `errores.js` | `ErrorSek(mensaje, estado)`, `noEncontrado`, `sinSesion`, `datoInvalido` y el manejador de Fastify (`{ error }`). |
-| `sesion.js` | Personas y sesiones: crear cuenta, entrar, salir, `requiereUsuario` (deja `pedido.usuario`). Contraseña con scrypt. Cookie `sek_sesion` HttpOnly. `alCrearCuenta`: lista de funciones que corren al crear una cuenta (los módulos que siembran datos iniciales se anotan desde `app.js`). |
+| `sesion.js` | Personas y sesiones: crear cuenta, entrar, salir, `cambiarClave` (pide la actual y cierra las demás sesiones), `requiereUsuario` (deja `pedido.usuario`). Contraseña con scrypt. Cookie `sek_sesion` HttpOnly. `alCrearCuenta`: lista de funciones que corren al crear una cuenta (los módulos que siembran datos iniciales se anotan desde `app.js`). |
 | `ajustes.js` | Ajustes de cada persona (JSON). `AJUSTES_INICIALES` lista todos; un módulo que necesite uno nuevo lo suma ahí. |
 | `historial.js` | `anotar(usuarioId, modulo, tipo, detalle)`: qué cambió y cuándo. |
 | `eventos.js` | `avisar(nombre, datos, tx)` / `escuchar(nombre, fn)`: para avisar «al revés» sin dependencias en círculo. |
