@@ -11,6 +11,7 @@ module.exports = async function rutasXp(app) {
 
   app.get('/api/xp', conUsuario, async (pedido) => v.resumen(pedido.usuario.id))
   app.get('/api/xp/estado', conUsuario, async (pedido) => v.estado(pedido.usuario.id))
+  app.get('/api/xp/niveles', conUsuario, async (pedido) => v.tablaNiveles(pedido.usuario.id))
   app.get('/api/xp/historial', {
     ...conUsuario,
     schema: { querystring: { type: 'object', properties: { antesDe: { type: 'integer' }, cantidad: { type: 'integer' } } } },

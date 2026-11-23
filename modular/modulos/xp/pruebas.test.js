@@ -214,3 +214,18 @@ test('web: la pantalla y la API de XP piden sesión y funcionan', async () => {
   assert.equal((await app.inject({ url: '/api/xp/historial?antesDe=abc', headers: { cookie } })).statusCode, 400)
   await app.close()
 })
+
+test('la tabla de niveles marca el día en que se alcanzó cada nivel', async () => {
+  const id = await personaDePrueba()
+  const hoy = require('../../comun/fechas').fechaDe(require('../../comun/reloj').ahora())
+  const t0 = await xp.tablaNiveles(id)
+  assert.equal(t0.actual, 1)
+  assert.equal(t0.filas.length, 15)
+  assert.equal(t0.filas[1].xpTotal, 100)
+  assert.equal(t0.filas[1].alcanzado, null)
+  await xp.sumar(id, { clave: 'prueba-niveles', cantidad: 150, origen: 'manual', fecha: hoy, descripcion: 'prueba' })
+  const t1 = await xp.tablaNiveles(id)
+  assert.equal(t1.actual, 2)
+  assert.equal(t1.filas[1].alcanzado, hoy)
+  assert.equal(t1.filas[2].alcanzado, null)
+})

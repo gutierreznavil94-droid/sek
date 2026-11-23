@@ -143,6 +143,26 @@ async function xpPorDia(usuarioId, desde, hasta, tx = null) {
   return datos.porDia(usuarioId, desde, hasta, tx)
 }
 
+/**
+ * La tabla de niveles (Progreso → tocar Nivel): hasta `hasta` (al menos 5 más que el actual), con el día en que se
+ * alcanzó cada nivel (el primer día en que la XP acumulada llegó a su piso). Como en la app vieja.
+ */
+async function tablaNiveles(usuarioId, tx = null) {
+  const { baseNivel } = await obtenerAjustes(usuarioId, tx)
+  const actual = calculo.estadoNivel(await total(usuarioId, tx), baseNivel).nivel
+  const hasta = Math.max(15, actual + 5)
+  const dias = await datos.porDia(usuarioId, '1900-01-01', '2999-12-31', tx)
+  const alcanzado = new Map()
+  let acumulado = 0
+  for (const d of dias) {
+    acumulado += Number(d.xp || 0)
+    for (let n = 2; n <= hasta && calculo.xpParaNivel(n, baseNivel) <= acumulado; n++) if (!alcanzado.has(n)) alcanzado.set(n, d.fecha)
+  }
+  const filas = []
+  for (let n = 1; n <= hasta; n++) filas.push({ nivel: n, xpTotal: calculo.xpParaNivel(n, baseNivel), etapa: calculo.etapaDeNivel(n), alcanzado: n <= actual ? alcanzado.get(n) || null : null })
+  return { base: baseNivel, actual, filas }
+}
+
 /** XP neta antes de una fecha (para arrancar la montaña). */
 async function xpAntesDe(usuarioId, fecha, tx = null) {
   return datos.antesDe(usuarioId, fecha, tx)
@@ -272,7 +292,7 @@ async function exportar(usuarioId, tx = null) {
 
 module.exports = {
   exportar,
-  sumar, restar, anular, anularPorId, total, estado, delDia, balanceDelDia, xpPorDia, xpAntesDe, historialXp,
+  sumar, restar, anular, anularPorId, total, estado, tablaNiveles, delDia, balanceDelDia, xpPorDia, xpAntesDe, historialXp,
   configResta, asegurarInicioResta, cambiarResta, aplicarRestas, devolverResta, avisoResta, resumen, importar,
   claveXp: calculo.claveXp,
 }

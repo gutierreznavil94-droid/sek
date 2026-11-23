@@ -5,61 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SEK · Progreso</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
-  <link rel="stylesheet" href="/m/progreso/estilo.css">
+  <!-- Igual que la v0.88.27: su estilo y el del tema Shinobi -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
 </head>
 <body>
-  <main>
-    <h1>進 Progreso</h1>
-    <p class="chico apagado" id="cargando">Cargando…</p>
-
-    <section class="tarjeta" id="nivel" hidden>
-      <div class="datos-3">
-        <div><b id="n-nivel"></b><span class="chico">NIVEL</span><span class="chico apagado" id="n-etapa"></span></div>
-        <div><b id="n-xp"></b><span class="chico">XP TOTAL</span><span class="chico apagado" id="n-falta"></span></div>
-        <div><b class="rojo" id="n-racha"></b><span class="chico">RACHA</span><span class="chico apagado" id="n-racha-txt"></span></div>
+  <main class="contenido">
+    <!-- El guerrero bajo la lluvia va de fondo (fondo.js); encima, todo de vidrio. -->
+    <div class="progreso-tinta" data-fondo="oscuro">
+      <div class="av-contenido">
+        <div class="av-hueco resumen"><span class="av-dato-flotante" id="flotante"></span></div>
+        <p class="av-cargando" id="cargando">Cargando…</p>
+        <div class="av-tarjetas" id="tarjetas" hidden>
+          <section class="av-tarjeta av-fila-3 av-tocable" id="nivel" role="button" tabindex="0" aria-label="Nivel, XP y racha. Tocá para ver la tabla de niveles"></section>
+          <section class="av-tarjeta camino-tarjeta" id="camino" aria-label="El camino" hidden></section>
+          <div class="av-ninjas av-nota" id="caidas" hidden></div>
+          <a class="av-tarjeta av-pilares-mini" id="pilares" href="/progreso/seccion?cual=pilares" hidden></a>
+          <nav class="av-secciones" id="secciones" aria-label="Secciones de Progreso"></nav>
+          <button type="button" class="av-ninjas av-nota marcas-linea" id="marcas" hidden></button>
+          <section class="av-tarjeta fotos-tarjeta" id="fotos" aria-label="Fotos de progreso"></section>
+        </div>
       </div>
-      <div class="barra-progreso" aria-hidden="true"><span id="n-barra" style="width:0%"></span></div>
-    </section>
-
-    <section class="tarjeta" id="camino" hidden>
-      <div class="fila entre"><h2>道 El camino</h2><span class="chico" id="c-dia"></span></div>
-      <div id="c-montana"></div>
-      <div class="leyenda">
-        <span><i style="background:var(--verde)"></i>XP ganada</span>
-        <span><i style="background:var(--peligro)"></i>XP perdida</span>
-        <span><i style="background:var(--texto-2)"></i>caída</span>
-        <span><i style="background:var(--ambar)"></i>forja</span>
-        <span><i style="background:var(--violeta)"></i>día marcado</span>
-      </div>
-      <p class="chico apagado">El progreso no es lineal: cada punto es un día del ciclo.</p>
-    </section>
-    <section class="tarjeta" id="sin-ciclo" hidden>
-      <p>La montaña empieza el Día 1 del ciclo.</p>
-      <a class="boton" href="/ciclo">Ir a Ciclo</a>
-    </section>
-
-    <p class="chico" id="caidas" hidden></p>
-
-    <a class="tarjeta" id="pilares" href="/progreso/seccion?cual=pilares" style="text-decoration:none;color:inherit" hidden>
-      <div class="fila entre"><h3>Pilares en el ciclo</h3><span class="chico" id="p-dias"></span></div>
-      <div class="anillos" id="p-anillos"></div>
-    </a>
-
-    <nav class="secciones" id="secciones" aria-label="Secciones de Progreso" hidden></nav>
-
-    <section class="tarjeta" id="fases" hidden>
-      <h3>Cierre de fase con números</h3>
-      <div class="fila" id="f-botones"></div>
-    </section>
-
-    <section class="tarjeta" id="marcas" hidden>
-      <h3>印 Días marcados</h3>
-      <div id="m-lista" class="chico"></div>
-    </section>
+    </div>
   </main>
+  <input type="file" accept="image/*" id="archivo-foto" hidden>
   <script src="/comun/marco.js"></script>
-  <script src="/m/progreso/graficos.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
+  <script src="/m/progreso/fondo.js"></script>
+  <script src="/m/progreso/camino.js"></script>
   <script src="/m/progreso/progreso.js"></script>
 </body>
 </html>
