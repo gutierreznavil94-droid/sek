@@ -5,60 +5,61 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SEK · Copia de seguridad</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
-  <link rel="stylesheet" href="/m/copia/estilo.css">
+  <!-- Igual que la v0.88.27 (Más → Copia): su estilo y el del tema Shinobi -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
+  <style>
+    /* Solo de esta pantalla: la lista de lo que trae una copia. */
+    .cp-partes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+    .cp-partes li { display: flex; justify-content: space-between; gap: 10px; font-size: 0.9rem; }
+    .cp-partes li b { font-variant-numeric: tabular-nums; }
+    .cp-partes li.cero { color: var(--texto-3); }
+    .cp-partes .motivo { display: block; font-size: 0.75rem; color: var(--texto-3); }
+    .cp-texto { width: 100%; font-size: 12px; }
+  </style>
 </head>
 <body>
-  <main>
-    <a class="atras" href="/mas">‹ Más</a>
-    <h1>写 Copia de seguridad</h1>
+  <main class="contenido">
+    <a class="atras" href="/mas">← Más</a>
+    <h1>Copia de seguridad</h1>
 
     <section class="tarjeta">
-      <h3>Traer mis datos</h3>
-      <p class="chico">De la app vieja: <b>Más → Copia de seguridad → «Copiar todo como texto»</b>, y pegalo acá. También sirve una copia exportada de esta app.</p>
-      <textarea id="texto" rows="5" placeholder="Pegá la copia acá" spellcheck="false"></textarea>
-      <div class="fila">
-        <button id="revisar" class="principal" disabled>Revisar copia</button>
-        <label class="boton archivo">Elegir archivo<input id="archivo" type="file" accept="application/json,.json,.txt"></label>
+      <div class="tarjeta-cab"><h2>Exportar</h2></div>
+      <p class="chico texto-2">Los datos viven solo en este teléfono. Si desinstalás la app o perdés el teléfono, se pierden. Una copia por semana alcanza: guardala en Drive, Telegram o el correo.</p>
+      <div class="fila entre chico"><span class="texto-2">Última copia</span><b id="ultima">nunca</b></div>
+      <a class="boton primario ancho" id="descargar" href="/api/copia/exportar?descargar=1" download>Exportar todo (JSON)</a>
+      <button type="button" class="boton ancho" id="copiar">Copiar todo como texto</button>
+      <div id="copiado-caja" hidden>
+        <p class="chico texto-2">Si no se copió solo: tocá el cuadro, «Seleccionar todo» y «Copiar». Pegalo en un mail o una nota.</p>
+        <textarea class="cp-texto" id="copiado" rows="5" readonly></textarea>
       </div>
-      <p id="error" class="mal" hidden></p>
     </section>
 
-    <section class="tarjeta" id="vista" hidden>
-      <div class="fila entre"><h3>Qué trae</h3><span class="chico" id="vista-de"></span></div>
-      <ul class="partes" id="partes"></ul>
-      <details id="sin-usar" hidden>
-        <summary class="chico">Lo que no se trae</summary>
-        <ul class="partes apagado" id="sin-usar-lista"></ul>
-      </details>
-      <p class="chico">Se <b>suma</b> a lo que ya tenés en esta app: lo repetido no entra dos veces y no se borra nada. Si algo falla, no entra nada.</p>
-      <p class="aviso" id="ya" hidden></p>
-      <div class="fila">
-        <button id="importar" class="principal">Importar</button>
-        <button id="cancelar">Cancelar</button>
-      </div>
+    <section class="tarjeta">
+      <div class="tarjeta-cab"><h2>Importar</h2></div>
+      <p class="chico texto-2">Sirve la copia de la app vieja (<b>Más → Copia → «Copiar todo como texto»</b>) o una de esta. Se <b>suma</b> a lo que ya tenés: lo repetido no entra dos veces y no se borra nada.</p>
+      <label class="boton ancho" style="position: relative; overflow: hidden;">Elegir archivo JSON<input id="archivo" type="file" accept="application/json,.json,.txt" style="position: absolute; inset: 0; opacity: 0;"></label>
+      <p class="chico texto-2">O pegá acá el texto de la copia:</p>
+      <textarea class="cp-texto" id="texto" rows="4" placeholder="Pegá la copia acá" spellcheck="false"></textarea>
+      <button type="button" class="boton ancho" id="revisar" disabled>Importar texto pegado</button>
+      <p class="error" id="error" hidden></p>
     </section>
 
     <section class="tarjeta" id="listo" hidden>
-      <h3 class="ok">Listo</h3>
-      <ul class="partes" id="listo-partes"></ul>
-    </section>
-
-    <section class="tarjeta">
-      <h3>Guardar una copia</h3>
-      <div class="fila entre chico"><span>Última copia</span><b id="ultima">nunca</b></div>
-      <p class="chico">Todo lo tuyo de esta app en un archivo. Guardalo en Drive, Telegram o el correo. Se puede volver a importar acá.</p>
-      <a class="boton principal" id="descargar" href="/api/copia/exportar?descargar=1" download>Descargar copia (JSON)</a>
-      <button id="copiar">Copiar todo como texto</button>
-      <textarea id="copiado" rows="4" readonly hidden></textarea>
+      <div class="tarjeta-cab"><h2>Listo</h2></div>
+      <ul class="cp-partes" id="listo-partes"></ul>
     </section>
 
     <section class="tarjeta" id="historial" hidden>
-      <h3>Copias importadas</h3>
-      <ul class="partes" id="historial-lista"></ul>
+      <div class="tarjeta-cab"><h2>Copias importadas</h2></div>
+      <ul class="cp-partes" id="historial-lista"></ul>
     </section>
   </main>
   <script src="/comun/marco.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
   <script src="/m/copia/copia.js"></script>
 </body>
 </html>

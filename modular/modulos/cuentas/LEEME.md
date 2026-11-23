@@ -1,6 +1,6 @@
 # Módulo cuentas
 
-**Qué hace:** la pantalla **Más**: la lista de secciones (con buscador), los ajustes de la persona (zona horaria, día en que empieza la semana, límites de juego), los nombres (de la app, de la persona y de las fases del ciclo), cambiar la contraseña y salir.
+**Qué hace:** la pantalla **Más**: la lista de secciones (con buscador), los ajustes de la persona (zona horaria, día en que empieza la semana, límites de juego), los nombres (de la app, de la persona y de las fases del ciclo; se editan en la pantalla Tema y nombres del módulo temas) y el historial de cambios. La pantalla **Ajustes** junta, igual que la v0.88.27, la lluvia (temas), «lo no cumplido resta» (xp) y la forja (habitos), cada una por la ruta de su módulo.
 
 ## Pantallas
 
@@ -9,10 +9,8 @@
 | `/mas` | `mas.html` + `mas.js` | Las secciones (lista `SECCIONES` de `mas.js`: cada módulo con pantalla en Más suma su fila ahí), buscador y Salir. |
 | `/mas/historial` | `historial.html` + `historial.js` | Historial de cambios (lo que anotan los módulos con `comun/historial.js`), con filtros, como la v0.88.27. |
 | `/mas/ajustes` | `ajustes.html` + `ajustes.js` | Zona horaria, inicio de semana, límites de juego. |
-| `/mas/nombres` | `nombres.html` + `nombres.js` | Nombre de la app, tu nombre, nombres de las fases. |
-| `/mas/cuenta` | `cuenta.html` + `cuenta.js` | Nombre y email, cambiar contraseña, salir. |
 
-`estilo.css`: la grilla de Más y los detalles propios. Suma el botón **Más** (他) a la barra de abajo (`comun/pantalla/marco.js`).
+Las pantallas usan `comun/v88.css` (estilo de la v0.88.27). La API de contraseña sigue (`/api/cuentas/clave`), sin pantalla: en el celu no hay cuenta. Suma el botón **Más** (他) a la barra de abajo (`comun/pantalla/marco.js`).
 
 ## Direcciones de la API
 

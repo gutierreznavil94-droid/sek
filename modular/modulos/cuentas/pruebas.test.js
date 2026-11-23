@@ -88,7 +88,7 @@ test('por la web: pantallas, ajustes, contraseña y salir', async () => {
   assert.equal((await app.inject({ url: '/mas' })).statusCode, 302)
   const r = await app.inject({ method: 'POST', url: '/api/sesion/crear-cuenta', payload: { nombre: 'Web', email: 'web-cuentas@prueba.com', clave: 'clave-segura' } })
   const cookie = r.headers['set-cookie'].split(';')[0]
-  for (const url of ['/mas', '/mas/ajustes', '/mas/nombres', '/mas/cuenta', '/m/cuentas/mas.js', '/m/cuentas/estilo.css']) {
+  for (const url of ['/mas', '/mas/ajustes', '/mas/historial', '/m/cuentas/mas.js', '/m/cuentas/ajustes.js']) {
     assert.equal((await app.inject({ url, headers: { cookie } })).statusCode, 200, url)
   }
   const g = await app.inject({ url: '/api/cuentas', headers: { cookie } })

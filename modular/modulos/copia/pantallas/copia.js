@@ -1,9 +1,11 @@
-// Pantalla Copia de seguridad: traer datos (app vieja o esta) y guardar una copia. Pide solo a /api/copia.
+// Más → Copia de seguridad, igual que la v0.88.27 (Copia.tsx): exportar (archivo o texto) e importar.
+// Importar muestra primero qué trae (en una hoja) y se suma a lo que hay. Pide solo a /api/copia.
 (function () {
   'use strict'
-  const { api, $, seguro, mensaje, barra } = SEK
+  const { api, $, seguro } = SEK
+  const { esc, avisar, hoja } = SEK.v88
+  SEK.v88.montar({ activo: 'mas', companero: 'esquina' })
 
-  const escapar = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
   const fecha = (ms) => (ms ? new Date(ms).toLocaleString('es-AR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—')
   const de = (origen) => (origen === 'vieja' ? 'app vieja' : 'esta app')
   let nombres = {}
@@ -12,62 +14,52 @@
     $('#error').textContent = texto || ''
     $('#error').hidden = !texto
   }
+  const filas = (lista) => lista.map((p) => `<li class="${p.filas ? '' : 'cero'}"><span>${esc(p.nombre)}</span><b>${p.filas}</b></li>`).join('')
 
-  function filas(lista) {
-    return lista.map((p) => `<li class="${p.filas ? '' : 'cero'}"><span>${escapar(p.nombre)}</span><b>${p.filas}</b></li>`).join('')
-  }
-
-  async function revisar() {
+  async function revisar(texto) {
     error('')
     $('#listo').hidden = true
-    try {
-      const r = await api('/api/copia/revisar', { texto: $('#texto').value })
-      $('#vista-de').textContent = `De la ${de(r.origen)} · ${fecha(r.exportado)}`
-      $('#partes').innerHTML = filas(r.partes) + `<li><span>Ajustes</span><b>${r.ajustes}</b></li>`
-      $('#sin-usar').hidden = !r.sinUsar.length
-      $('#sin-usar-lista').innerHTML = r.sinUsar.map((x) => `<li><span>${escapar(x.tabla)}<span class="motivo">${escapar(x.motivo)}</span></span><b>${x.filas}</b></li>`).join('')
-      $('#ya').hidden = !r.yaImportada
-      $('#ya').textContent = r.yaImportada ? `Esta copia ya se importó el ${fecha(r.yaImportada)}.` : ''
-      $('#importar').disabled = !!r.yaImportada
-      $('#vista').hidden = false
-      $('#vista').scrollIntoView({ behavior: 'smooth' })
-    } catch (e) {
-      $('#vista').hidden = true
-      error(e.message)
-    }
-  }
-
-  async function importar() {
-    $('#importar').disabled = true
-    try {
-      const r = await api('/api/copia/importar', { texto: $('#texto').value })
-      $('#vista').hidden = true
-      $('#texto').value = ''
-      $('#revisar').disabled = true
-      $('#listo-partes').innerHTML = filas(Object.entries(r.resultado).map(([k, n]) => ({ nombre: nombres[k] || k, filas: n })))
-        + `<li><span><b>Total</b></span><b>${r.total}</b></li>`
-      $('#listo').hidden = false
-      mensaje(`Importado: ${r.total} cosas`)
-      await cargarEstado()
-    } catch (e) {
-      error(e.message)
-      $('#importar').disabled = false
-    }
+    let r
+    try { r = await api('/api/copia/revisar', { texto }) } catch (e) { return error(e.message) }
+    const sinUsar = r.sinUsar.length ? `<details class="zona-escondida"><summary>Lo que no se trae</summary><ul class="cp-partes">${r.sinUsar.map((x) => `<li><span>${esc(x.tabla)}<span class="motivo">${esc(x.motivo)}</span></span><b>${x.filas}</b></li>`).join('')}</ul></details>` : ''
+    const h = hoja('¿Importar esta copia?', `
+      <p class="chico texto-2">De la ${de(r.origen)} · ${fecha(r.exportado)}</p>
+      <ul class="cp-partes">${filas(r.partes)}<li><span>Ajustes</span><b>${r.ajustes}</b></li></ul>
+      ${sinUsar}
+      <p class="chico texto-2">Se suma a lo que ya tenés. Si algo falla, no entra nada.</p>
+      ${r.yaImportada ? `<p class="chico" style="color: var(--peligro, #e0644a);">Esta copia ya se importó el ${fecha(r.yaImportada)}.</p>` : ''}
+      <div class="rejilla-2"><button type="button" class="boton suave" data-no>Cancelar</button><button type="button" class="boton primario" data-si ${r.yaImportada ? 'disabled' : ''}>Importar</button></div>`)
+    h.el.querySelector('[data-no]').onclick = h.cerrar
+    h.el.querySelector('[data-si]').onclick = seguro(async (e) => {
+      e.currentTarget.disabled = true
+      try {
+        const res = await api('/api/copia/importar', { texto })
+        h.cerrar()
+        $('#texto').value = ''
+        $('#revisar').disabled = true
+        $('#listo-partes').innerHTML = filas(Object.entries(res.resultado).map(([k, n]) => ({ nombre: nombres[k] || k, filas: n })))
+          + `<li><span><b>Total</b></span><b>${res.total}</b></li>`
+        $('#listo').hidden = false
+        avisar(`Importado: ${res.total} cosas`, { tipo: 'ok' })
+        await cargarEstado()
+      } catch (err) {
+        h.cerrar()
+        error(err.message)
+      }
+    })
   }
 
   async function copiarTexto() {
-    const r = await api('/api/copia/exportar')
-    const texto = JSON.stringify(r)
-    const caja = $('#copiado')
-    caja.value = texto
-    caja.hidden = false
+    const texto = JSON.stringify(await api('/api/copia/exportar'))
+    $('#copiado').value = texto
+    $('#copiado-caja').hidden = false
     try {
       await navigator.clipboard.writeText(texto)
-      mensaje('Copia copiada. Pegala en un mail o una nota para guardarla.')
+      avisar('Copia copiada. Pegala en un mail o una nota para guardarla.', { tipo: 'ok' })
     } catch (e) {
-      caja.focus()
-      caja.select()
-      mensaje('Tocá el cuadro, «Seleccionar todo» y «Copiar».')
+      $('#copiado').focus()
+      $('#copiado').select()
+      avisar('Seleccioná todo el texto de abajo y copialo.')
     }
     await cargarEstado()
   }
@@ -80,20 +72,18 @@
     $('#historial-lista').innerHTML = r.importaciones.map((x) => `<li><span>${fecha(x.creado)}<span class="motivo">de la ${de(x.origen)}, armada el ${fecha(x.exportado)}</span></span><b>${x.total}</b></li>`).join('')
   }
 
-  $('#texto').addEventListener('input', () => { $('#revisar').disabled = !$('#texto').value.trim(); $('#vista').hidden = true })
-  $('#archivo').addEventListener('change', async (ev) => {
+  $('#texto').addEventListener('input', () => { $('#revisar').disabled = !$('#texto').value.trim() })
+  $('#copiado').addEventListener('focus', (e) => e.target.select())
+  $('#archivo').addEventListener('change', seguro(async (ev) => {
     const f = ev.target.files && ev.target.files[0]
-    if (!f) return
-    $('#texto').value = await f.text()
-    $('#revisar').disabled = false
     ev.target.value = ''
-    revisar()
-  })
-  $('#revisar').addEventListener('click', revisar)
-  $('#importar').addEventListener('click', importar)
-  $('#cancelar').addEventListener('click', () => { $('#vista').hidden = true })
+    if (f) await revisar(await f.text())
+  }))
+  $('#revisar').addEventListener('click', seguro(() => revisar($('#texto').value)))
   $('#copiar').addEventListener('click', seguro(copiarTexto))
-  $('#descargar').addEventListener('click', () => setTimeout(() => seguro(cargarEstado)(), 1500))
-  barra('mas')
+  $('#descargar').addEventListener('click', () => {
+    setTimeout(seguro(cargarEstado), 1500)
+    avisar('Copia exportada. Guardala en Drive, Telegram o el correo.', { tipo: 'ok' })
+  })
   seguro(cargarEstado)()
 })()

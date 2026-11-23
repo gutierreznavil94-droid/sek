@@ -3,50 +3,36 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>SEK · Tema</title>
+  <title>SEK · Tema y nombres</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
-  <link rel="stylesheet" href="/m/temas/estilo.css">
+  <!-- Igual que la v0.88.27 (Más → Tema y nombres): su estilo y el del tema Shinobi -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
 </head>
 <body>
-  <main>
-    <a class="atras" href="/mas">‹ Más</a>
-    <h1><span class="kanji">彩</span> Tema</h1>
-
+  <main class="contenido">
+    <a class="atras" href="/mas">← Más</a>
+    <h1>Tema y nombres</h1>
     <section class="tarjeta">
-      <h3>Elegí cómo se ve SEK</h3>
-      <div class="lista-temas" id="temas" aria-live="polite"></div>
+      <div class="tarjeta-cab"><h2>Tema</h2></div>
+      <p class="chico texto-2">La cara de la app: personaje, fondos y color. Cambiarlo no toca tu XP, tus pilares ni tu historial.</p>
+      <div class="pv-temas" id="temas"><p class="vacio">Cargando…</p></div>
     </section>
-
-    <section class="tarjeta">
-      <div class="fila entre"><h3>Lluvia de fondo</h3><span class="chico apagado">En todas las pantallas</span></div>
-      <div class="segmentos" id="lluvia" role="radiogroup" aria-label="Lluvia de fondo">
-        <button type="button" data-valor="apagada" role="radio">Apagada</button>
-        <button type="button" data-valor="llovizna" role="radio">Llovizna</button>
-        <button type="button" data-valor="lluvia" role="radio">Lluvia</button>
-        <button type="button" data-valor="tormenta" role="radio">Tormenta</button>
-      </div>
-      <p class="chico apagado">Con un tema subido no llueve. Si el celu tiene «reducir movimiento», la lluvia queda quieta.</p>
-    </section>
-
-    <section class="tarjeta">
-      <h3>Subir tu propio tema</h3>
-      <p class="chico">Un archivo <b>.sektema</b> con nombre, colores, emojis e imágenes. Lo ves solo vos. Subir otro con el mismo nombre lo reemplaza.</p>
-      <label class="boton" for="archivo">Elegir archivo…</label>
-      <input type="file" id="archivo" accept=".sektema,.json,application/json" hidden>
-    </section>
-
-    <section class="tarjeta">
-      <h3>Probar cómo se ve</h3>
-      <div class="fila" id="probar">
-        <button type="button" data-evento="completar">Completar</button>
-        <button type="button" data-evento="logro">Logro</button>
-        <button type="button" data-evento="alerta">Alerta</button>
-        <button type="button" data-evento="xp.nivel">Subir de nivel</button>
-      </div>
+    <section class="tarjeta" id="nombres">
+      <div class="tarjeta-cab"><h2>Nombres</h2></div>
+      <div class="campo"><label for="tn-app">Nombre de la app</label><input id="tn-app" maxlength="20"></div>
+      <div class="campo"><label for="tn-nombre">Tu nombre</label><input id="tn-nombre" maxlength="40" placeholder="Opcional"></div>
+      <div class="separador"></div>
+      <p class="chico texto-2">Nombres de las fases del ciclo (se ven en la barra de arriba).</p>
+      <div class="col" id="fases" style="gap: 10px;"></div>
+      <button type="button" class="boton primario ancho" id="guardar">Guardar nombres</button>
     </section>
   </main>
   <script src="/comun/marco.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
   <script src="/m/temas/temas.js"></script>
 </body>
 </html>

@@ -34,7 +34,7 @@ function definicionPropia(fila) {
 }
 
 /** Lo corto para la lista de temas. */
-const tarjeta = (t) => ({ id: t.id, nombre: t.nombre, descripcion: t.descripcion, personaje: t.personaje, acento: t.acento, claro: !!t.claro, propio: !!t.propio, vistaPrevia: t.vistaPrevia })
+const tarjeta = (t) => ({ id: t.id, nombre: t.nombre, descripcion: t.descripcion, personaje: t.personaje, acento: t.acento, claro: !!t.claro, propio: !!t.propio, vistaPrevia: t.vistaPrevia, sprite: (t.medios && t.medios.sprite) || null })
 
 /** Todos los temas que puede elegir la persona: los de la app y, después, los que subió. */
 async function lista(usuarioId, tx = null) {

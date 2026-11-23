@@ -56,7 +56,7 @@ Todas aceptan `tx` opcional al final (transacción compartida). El aviso de `xp.
 
 | Dirección | Qué |
 |---|---|
-| `GET /temas` | Pantalla **Tema** (en Más): elegir tema, lluvia, subir/compartir/borrar temas propios, probar efectos. `temas.html` + `temas.js` + `estilo.css`. |
+| `GET /temas` | Pantalla **Tema y nombres** (en Más), igual que la v0.88.27: elegir tema (tarjetas con video y sprite), importar o borrar temas propios, y los nombres (guardan por `PUT /api/cuentas/ajustes`). La lluvia se elige en Más → Ajustes. `temas.html` + `temas.js`. |
 | `GET /api/temas/activo` | Lo que pide `tema.js` en cada pantalla. |
 | `GET /api/temas` | La lista. |
 | `PUT /api/temas/elegido` `{ id }` | Elegir. |

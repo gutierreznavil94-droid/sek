@@ -10,8 +10,6 @@ module.exports = async function rutasCuentas(app) {
 
   app.get('/mas', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'cuentas', 'mas.html'))
   app.get('/mas/ajustes', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'cuentas', 'ajustes.html'))
-  app.get('/mas/nombres', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'cuentas', 'nombres.html'))
-  app.get('/mas/cuenta', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'cuentas', 'cuenta.html'))
   app.get('/mas/historial', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'cuentas', 'historial.html'))
 
   // Historial de cambios (lo que anotan todos los módulos con comun/historial.js). Solo lectura.

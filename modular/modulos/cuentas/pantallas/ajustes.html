@@ -5,35 +5,71 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SEK · Ajustes</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
-  <link rel="stylesheet" href="/m/cuentas/estilo.css">
+  <!-- Igual que la v0.88.27 (Más → Ajustes): su estilo y el del tema Shinobi -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
 </head>
 <body>
-  <main>
-    <a class="atras" href="/mas">‹ Más</a>
+  <main class="contenido">
+    <a class="atras" href="/mas">← Más</a>
     <h1>Ajustes</h1>
-    <form id="form" class="pila">
+    <p class="vacio" id="cargando">Cargando…</p>
+    <div class="col" id="tarjetas" style="gap: 14px;" hidden>
       <section class="tarjeta">
-        <h3>Fechas</h3>
-        <label>Zona horaria <select id="zonaHoraria"></select></label>
-        <p class="chico">El día va de 00:00 a 00:00 en esta zona, aunque el teléfono esté en otra.</p>
-        <label>La semana empieza el
-          <select id="diaInicioSemana"><option value="1">Lunes</option><option value="0">Domingo</option></select>
-        </label>
-      </section>
-      <section class="tarjeta">
-        <h3>Juego</h3>
-        <div class="rejilla-2">
-          <label>Lunes a viernes (min) <input id="limiteJuegoSemana" type="number" inputmode="numeric" min="0" max="1440" required></label>
-          <label>Sábado y domingo (min) <input id="limiteJuegoFinde" type="number" inputmode="numeric" min="0" max="1440" required></label>
-          <label>Aviso al (%) <input id="avisoJuegoPorcentaje" type="number" inputmode="numeric" min="10" max="100" required></label>
+        <div class="tarjeta-cab"><h2>Fondo con lluvia</h2></div>
+        <p class="chico texto-2">Lluvia dibujada detrás de la pantalla (sin video, casi no gasta). Con «reducir movimiento» queda quieta.</p>
+        <div class="campo"><label>Intensidad</label>
+          <div class="fila" id="lluvia" style="gap: 6px;">
+            <button type="button" class="boton chico crece" data-lluvia="apagada">Apagada</button>
+            <button type="button" class="boton chico crece" data-lluvia="llovizna">Llovizna</button>
+            <button type="button" class="boton chico crece" data-lluvia="lluvia">Lluvia</button>
+            <button type="button" class="boton chico crece" data-lluvia="tormenta">Tormenta</button>
+          </div>
         </div>
-        <p class="chico">El cambio vale de hoy en adelante.</p>
+        <p class="ayuda">Llovizna: menos gotas, sin gotas cerca ni relámpagos. Lluvia: gotas en el vidrio, gotas cerca y un relámpago cada tanto. Tormenta: más de todo. Con un tema subido no llueve.</p>
       </section>
-      <button class="principal" type="submit">Guardar ajustes</button>
-    </form>
+      <section class="tarjeta">
+        <div class="tarjeta-cab"><h2>Juego</h2></div>
+        <div class="rejilla-2">
+          <div class="campo"><label for="limiteJuegoSemana">Lunes a viernes (min)</label><input id="limiteJuegoSemana" type="number" inputmode="numeric" min="0" max="1440"></div>
+          <div class="campo"><label for="limiteJuegoFinde">Sáb, dom y feriados (min)</label><input id="limiteJuegoFinde" type="number" inputmode="numeric" min="0" max="1440"></div>
+          <div class="campo"><label for="avisoJuegoPorcentaje">Aviso al (%)</label><input id="avisoJuegoPorcentaje" type="number" inputmode="numeric" min="10" max="100"></div>
+        </div>
+        <p class="ayuda">Los feriados se marcan desde el Calendario. El cambio vale de hoy en adelante; los días ya cerrados no se recalculan.</p>
+      </section>
+      <section class="tarjeta">
+        <div class="tarjeta-cab"><h2>Lo no cumplido resta</h2></div>
+        <label class="fila chico" style="gap: 8px;"><input type="checkbox" id="resta-activa"> Lo no cumplido resta</label>
+        <div class="rejilla-2">
+          <div class="campo"><label for="resta-porcentaje">Cuánto resta (% de la XP que da)</label><input id="resta-porcentaje" type="number" inputmode="numeric" min="10" max="100"></div>
+        </div>
+        <p class="ayuda" id="resta-ayuda"></p>
+      </section>
+      <section class="tarjeta">
+        <div class="tarjeta-cab"><h2>鍛 Forja de hábitos</h2></div>
+        <div class="rejilla-2">
+          <div class="campo"><label for="forja-dias">Días de forja</label><input id="forja-dias" data-forja="dias" data-min="1" data-max="120" type="number" inputmode="numeric"></div>
+          <div class="campo"><label for="forja-validos">Días válidos necesarios</label><input id="forja-validos" data-forja="validos" data-min="1" data-max="120" type="number" inputmode="numeric"></div>
+          <div class="campo"><label for="forja-xpDia">XP por día cumplido</label><input id="forja-xpDia" data-forja="xpDia" data-min="0" data-max="100" type="number" inputmode="numeric"></div>
+          <div class="campo"><label for="forja-xpForjado">XP al forjarse</label><input id="forja-xpForjado" data-forja="xpForjado" data-min="0" data-max="500" type="number" inputmode="numeric"></div>
+        </div>
+        <p class="ayuda">Cada semana de la forja perdona 1 falla. Si los válidos son más que los días, se usan los días. La XP ya ganada no cambia.</p>
+      </section>
+      <section class="tarjeta">
+        <div class="tarjeta-cab"><h2>Fechas</h2></div>
+        <div class="campo"><label for="zonaHoraria">Zona horaria</label><select id="zonaHoraria"></select>
+          <span class="ayuda">El día va de 00:00 a 00:00 en esta zona, aunque el teléfono esté en otra.</span></div>
+        <div class="campo"><label for="diaInicioSemana">La semana empieza el</label>
+          <select id="diaInicioSemana"><option value="1">Lunes</option><option value="0">Domingo</option></select></div>
+      </section>
+      <button type="button" class="boton primario ancho" id="guardar">Guardar ajustes</button>
+    </div>
   </main>
   <script src="/comun/marco.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
   <script src="/m/cuentas/ajustes.js"></script>
 </body>
 </html>

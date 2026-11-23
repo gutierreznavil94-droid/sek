@@ -11,10 +11,9 @@
   const SISTEMA = [
     { a: '/organizacion', icono: 'icono-organizacion', k: '陣', t: 'Organización', d: 'Notas y tareas', claves: 'organizacion tareas notas pendientes frentes bandeja anotar me toca hoy' },
     { a: '/mas/copia', icono: 'icono-copia', k: '写', t: 'Copia', d: 'Exportar e importar', claves: 'copia seguridad backup exportar importar json texto guardar datos app vieja traer' },
-    { a: '/temas', icono: 'icono-tema', k: '彩', t: 'Tema', d: 'Cómo se ve y lluvia', claves: 'tema temas colores apariencia lluvia fondo shinobi subir propio' },
-    { a: '/mas/ajustes', icono: 'icono-ajustes', k: '設', t: 'Ajustes', d: 'Juego, semana, zona', claves: 'ajustes configuracion limite juego racha zona horaria semana lunes aviso minutos' },
+    { a: '/temas', icono: 'icono-tema', k: '彩', t: 'Tema', d: 'Tema y nombres', claves: 'tema temas colores apariencia shinobi subir propio nombres nombre app fases disciplina constancia' },
+    { a: '/mas/ajustes', icono: 'icono-ajustes', k: '設', t: 'Ajustes', d: 'Juego, forja, lluvia', claves: 'ajustes configuracion limite juego zona horaria semana lunes aviso minutos lluvia fondo resta no cumplido xp forja habitos' },
     { a: '/mas/historial', icono: 'icono-historial', k: '歴', t: 'Historial', d: 'Lo que cambió', claves: 'historial cambios registro corregir anulado' },
-    { a: '/mas/nombres', icono: 'icono-nombres', k: '名', t: 'Nombres', d: 'App, vos y fases', claves: 'nombres nombre app fases disciplina constancia' },
     { a: '/ciclo', icono: 'icono-ciclo', k: '始', t: 'Nuevo ciclo', d: 'Día 1 y otros 90', claves: 'fecha inicio nuevo ciclo dia 1 empezar 90 dias reiniciar' },
   ]
 

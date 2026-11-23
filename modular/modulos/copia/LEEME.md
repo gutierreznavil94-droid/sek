@@ -11,7 +11,7 @@ Importar **suma** a lo que ya hay: no borra nada y lo repetido no entra dos vece
 
 | Dirección | Archivos | Qué muestra |
 |---|---|---|
-| `/mas/copia` | `copia.html` + `copia.js` + `estilo.css` | Pegar o elegir la copia → «Revisar copia» (qué trae, lo que no se trae, si ya se importó) → «Importar». «Descargar copia (JSON)», «Copiar todo como texto», última copia y copias importadas. |
+| `/mas/copia` | `copia.html` + `copia.js` | Igual que la v0.88.27: Exportar («Exportar todo (JSON)», «Copiar todo como texto», última copia) e Importar (archivo o texto pegado → hoja con qué trae, lo que no se trae y si ya se importó → «Importar»). Copias importadas. |
 
 La fila **Copia de seguridad** (写) está en `SECCIONES` de `modulos/cuentas/pantallas/mas.js`. No va en la barra de abajo.
 
