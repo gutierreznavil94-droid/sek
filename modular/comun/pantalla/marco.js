@@ -18,6 +18,7 @@
     { id: 'juego', texto: 'Juego', kanji: '遊', ruta: '/juego' },
     { id: 'xp', texto: 'Nivel', kanji: '段', ruta: '/xp' },
     { id: 'organizacion', texto: 'Tareas', kanji: '陣', ruta: '/organizacion' },
+    { id: 'entreno', texto: 'Entreno', kanji: '鍛', ruta: '/entreno' },
     { id: 'mas', texto: 'Más', kanji: '他', ruta: '/mas' },
   ]
 

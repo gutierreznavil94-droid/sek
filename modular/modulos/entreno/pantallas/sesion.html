@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SEK · Entrenando</title>
+  <link rel="icon" href="/comun/favicon-32.png">
+  <link rel="stylesheet" href="/comun/estilo.css">
+  <link rel="stylesheet" href="/m/entreno/estilo.css">
+</head>
+<body>
+  <main>
+    <div class="fila entre"><a href="/entreno" class="chico">← Entreno</a><span class="chico" id="minutos"></span></div>
+    <h1 id="titulo">鍛 Entrenando</h1>
+
+    <section class="tarjeta" id="sin-entreno" hidden>
+      <p>No hay ningún entreno en curso.</p>
+      <a class="boton principal" href="/entreno">Elegir rutina</a>
+    </section>
+
+    <section class="tarjeta descanso" id="descanso" hidden aria-live="polite">
+      <div class="fase" id="descanso-fase"></div>
+      <div class="cronometro" id="descanso-reloj">0:00</div>
+      <p class="chico" id="descanso-siguiente" style="text-align:center"></p>
+      <div class="botones" style="justify-content:center">
+        <button id="alargar">+30 s</button>
+        <button class="principal" id="fin-descanso">Saltar descanso</button>
+      </div>
+    </section>
+
+    <section class="tarjeta" id="actual" hidden></section>
+
+    <section class="tarjeta" id="resumen" hidden aria-live="polite"></section>
+
+    <details class="tarjeta" id="todos">
+      <summary>Todos los bloques</summary>
+      <div class="lista" id="bloques"></div>
+    </details>
+
+    <section class="botones" id="acciones" hidden>
+      <button class="principal" id="terminar">Terminar entreno</button>
+      <button id="reiniciar">Empezar de cero</button>
+      <button class="peligro" id="descartar">Descartar</button>
+    </section>
+  </main>
+  <script src="/comun/marco.js"></script>
+  <script src="/m/entreno/sesion.js"></script>
+</body>
+</html>

@@ -23,7 +23,9 @@ Avisos «al revés» (el que emite no conoce a quien escucha):
 | Aviso | Lo emite | Lo escucha |
 |---|---|---|
 | `juego.terminado` | juego | (desafios: Tajo; celular) |
+| `entreno.empezado` | entreno | dia (pilar «iniciado») |
 | `entreno.terminado` | entreno | dia (pilar Entrenamiento) |
+| `entreno.deshecho` | entreno | dia (desmarcar el pilar) |
 | `sueno.dejo_celu` | sueno | dia (pilar Dormir a horario) |
 | `comida.registrada` | comida | dia (pilar Comer según el plan) |
 | `organizacion.tarea.hecha` | organizacion | (temas: animación) |

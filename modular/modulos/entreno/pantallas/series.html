@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SEK · Series rápidas</title>
+  <link rel="icon" href="/comun/favicon-32.png">
+  <link rel="stylesheet" href="/comun/estilo.css">
+  <link rel="stylesheet" href="/m/entreno/estilo.css">
+</head>
+<body>
+  <main>
+    <a href="/entreno" class="chico">← Entreno</a>
+    <h1>鍛 Series rápidas</h1>
+    <p class="chico">Flexiones al salir, dominadas en la escalera… Cada toque suma una serie. Llegar a la cuota da XP una vez por día; el extra, un poco más.</p>
+    <div class="lista" id="series"></div>
+
+    <details class="tarjeta" id="nueva">
+      <summary>+ Serie rápida nueva</summary>
+      <form class="campos" id="form-nueva">
+        <label class="ancho">Nombre <input name="nombre" required maxlength="60"></label>
+        <label>Reps por serie <input name="cantidadPorToque" type="number" inputmode="numeric" min="1" required value="10"></label>
+        <label>Series por día <input name="seriesPorDia" type="number" inputmode="numeric" min="1" required value="5"></label>
+        <label>XP de la cuota <input name="xpMetaDiaria" type="number" inputmode="numeric" min="0" value="10"></label>
+        <label>XP del extra <input name="xpExtra" type="number" inputmode="numeric" min="0" value="5"></label>
+        <button class="principal ancho" type="submit">Crear</button>
+      </form>
+    </details>
+  </main>
+  <script src="/comun/marco.js"></script>
+  <script src="/m/entreno/series.js"></script>
+</body>
+</html>
