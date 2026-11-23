@@ -5,7 +5,7 @@
   'use strict'
   const { api, $, seguro } = SEK
   const { esc, brillo, fechaLegible, litros, avisar, hoja, diaSemana } = SEK.v88
-  const marco = SEK.v88.montar({ activo: 'hoy', horario: true })
+  const marco = SEK.v88.montar({ activo: 'hoy', horario: true, companero: 'pasea' })
   const idUrl = (id) => encodeURIComponent(id)
   const sumarDias = (f, n) => { const x = new Date(`${f}T12:00:00Z`); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10) }
   const duracion = (min) => { const m = Math.max(0, Math.round(min)); const h = Math.floor(m / 60); return h ? `${h} h ${String(m % 60).padStart(2, '0')} min` : `${m} min` }

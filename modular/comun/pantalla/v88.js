@@ -93,7 +93,7 @@
   }
 
   /** Arma la app de la v0.88 alrededor del <main class="contenido"> de la página. */
-  function montar({ activo = 'hoy', horario = false } = {}) {
+  function montar({ activo = 'hoy', horario = false, companero = null } = {}) {
     const main = document.querySelector('main.contenido') || document.querySelector('main')
     main.classList.add('contenido')
     const app = document.createElement('div')
@@ -109,12 +109,20 @@
         <div id="hueco-horario" class="hueco-horario ${horario ? 'con' : ''}" aria-hidden="true"></div>
         ${window.SEK_DIBUJOS ? window.SEK_DIBUJOS.divisor : ''}
       </header>
-      ${horario ? `<div class="barra-horario-fija"><div class="barra-horario-int"><span class="barra-dia" aria-hidden="true"></span><div id="barra-horario-slot" class="barra-horario-slot"></div></div>${window.SEK_DIBUJOS ? window.SEK_DIBUJOS.barraPincel : ''}</div>` : ''}
+      <canvas class="motas-tinta" aria-hidden="true"></canvas>
+      <canvas class="motas-torpe" aria-hidden="true"></canvas>
+      <div class="dia-mini" aria-hidden="true"></div>
+      ${horario ? `<div class="barra-horario-fija"><canvas class="tema-papel-mojado" aria-hidden="true"></canvas><div class="barra-horario-int"><span class="barra-dia" aria-hidden="true"></span><div id="barra-horario-slot" class="barra-horario-slot"></div></div>${window.SEK_DIBUJOS ? window.SEK_DIBUJOS.barraPincel : ''}</div>` : ''}
       <nav class="nav" aria-label="Secciones">${NAV.map((n) => `<a href="${n.ruta}"${n.id === activo ? ' class="activo" aria-current="page"' : ''}>${ICONOS[n.id]}${n.texto}</a>`).join('')}</nav>`
     document.body.insertBefore(app, main)
     app.insertBefore(main, app.querySelector('nav'))
     const barra = app.querySelector('.barra-horario-fija')
-    const mover = barra ? seguirHueco(barra) : () => {}
+    // La cabecera se hace polvo al bajar (v88-polvo.js); si no está cargado, la barra solo sigue al hueco.
+    const polvo = window.SEK_POLVO ? window.SEK_POLVO({ cabecera: app.querySelector('.cabecera'), barra, mini: app.querySelector('.dia-mini'), lienzo: app.querySelector('.motas-tinta'), lienzoTorpe: app.querySelector('.motas-torpe') }) : null
+    const mover = polvo ? polvo.mover : barra ? seguirHueco(barra) : () => {}
+    if (barra && window.SEK_PAPEL_MOJADO) window.SEK_PAPEL_MOJADO(barra.querySelector('.tema-papel-mojado'))
+    // El compañero del tema (temas/companero.js): pasea en Hoy, quieto en una esquina en otras.
+    if (companero && window.SEK_COMPANERO) window.SEK_COMPANERO({ lugar: companero })
 
     // Datos de la cabecera: el ciclo (ciclo) y los nombres de las fases (cuentas).
     const listo = Promise.all([
@@ -125,6 +133,7 @@
       const hoy = (c && c.hoy) || new Date().toLocaleDateString('en-CA')
       pintarCabecera(app.querySelector('.cabecera'), e, cu && cu.ajustes && cu.ajustes.nombresFases, hoy)
       if (barra) barra.querySelector('.barra-dia').textContent = textoMini(e)
+      app.querySelector('.dia-mini').textContent = textoMini(e)
       mover()
       return { ciclo: e, ajustes: cu && cu.ajustes }
     })
