@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>SEK · Modo sueño</title>
+  <link rel="icon" href="/comun/favicon-32.png">
+  <link rel="stylesheet" href="/comun/estilo.css">
+  <link rel="stylesheet" href="/m/sueno/estilo.css">
+</head>
+<body class="modo-sueno">
+  <main role="dialog" aria-label="Modo sueño">
+    <section id="saludo" class="ms-centro" hidden>
+      <span class="kanji ms-kanji" aria-hidden="true">眠</span>
+      <div class="ms-titulo" id="saludo-titulo">Buenas noches</div>
+      <div class="ms-linea" id="saludo-resumen"></div>
+      <div class="ms-nota" id="saludo-xp" hidden>Celu dejado a tiempo. +XP guardado.</div>
+      <div class="ms-nota">Tocá para pasar al reloj</div>
+    </section>
+
+    <section id="reloj" class="ms-centro" hidden>
+      <div class="ms-hora" id="hora">--:--</div>
+      <div class="ms-linea" id="hasta"></div>
+      <div class="ms-linea" id="dormido"></div>
+      <div class="ms-nota" id="aperturas" hidden></div>
+    </section>
+
+    <section id="buenos-dias" class="ms-centro" hidden>
+      <span class="kanji ms-kanji" aria-hidden="true">朝</span>
+      <div class="ms-titulo">Buenos días</div>
+      <a class="boton principal" href="/sueno">Ver cómo dormí</a>
+    </section>
+
+    <button id="salir" class="ms-salir">Salir del modo sueño</button>
+  </main>
+
+  <dialog id="dlg-salir" aria-labelledby="dlg-salir-titulo">
+    <form method="dialog" class="col">
+      <h2 id="dlg-salir-titulo">¿Salir del modo sueño?</h2>
+      <p class="chico">Es para emergencias o correcciones. Queda registrado en el historial. No cambia el XP de la noche.</p>
+      <div class="fila">
+        <button value="cancelar">Cancelar</button>
+        <button value="salir" class="peligro">Salir</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/comun/marco.js"></script>
+  <script src="/m/sueno/modo.js"></script>
+</body>
+</html>
