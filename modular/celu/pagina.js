@@ -10,6 +10,18 @@
   var madre = window.parent
   if (madre === window || !madre.SEK_LOCAL) return
 
+  // Para verla en un link (herramientas/armar-web.js) la app vive en una subcarpeta: la madre dice cuál es
+  // (SEK_RAIZ) y las direcciones del paquete se resuelven desde ahí con un <base>.
+  var raiz = madre.SEK_RAIZ || null
+  if (raiz && !document.querySelector('base')) {
+    var base = document.createElement('base')
+    base.href = raiz
+    document.head ? document.head.prepend(base) : document.documentElement.prepend(base)
+  }
+  if (raiz) {
+    Object.defineProperty(window, 'SEK_IR_WEB', { configurable: true, set: function (v) { madre.SEK_IR(String(v)) } })
+  }
+
   var q = new URLSearchParams(location.search)
   var ruta = q.get('__ruta')
   if (ruta) history.replaceState(history.state, '', ruta)
@@ -17,8 +29,11 @@
   /** Un archivo del paquete (estilos, scripts, fuentes, medios del tema): se pide normal. */
   function esArchivo(camino) { return /^\/(comun|m|pglite)\//.test(camino) && /\.[a-z0-9]+$/i.test(camino) }
   function local(url) {
-    var u = new URL(url, location.href)
-    return u.origin === location.origin && !esArchivo(u.pathname) ? u.pathname + u.search : null
+    var u = new URL(url, document.baseURI)
+    if (u.origin !== location.origin) return null
+    var camino = u.pathname
+    if (raiz && u.href.indexOf(raiz) === 0) camino = '/' + u.href.slice(raiz.length).split(/[?#]/)[0]
+    return !esArchivo(camino) ? camino + u.search : null
   }
 
   async function pedir(camino, init) {
@@ -31,7 +46,10 @@
     var cab = new Headers()
     Object.keys(r.headers).forEach(function (k) { if (k !== 'set-cookie') cab.set(k, String(r.headers[k])) })
     var sinCuerpo = r.statusCode === 204 || r.statusCode === 304
-    return new Response(sinCuerpo ? null : r.body, { status: r.statusCode, headers: cab })
+    var cuerpoR = r.body
+    // En el link, los archivos que nombran las respuestas (/m/temas/...) se piden desde la raíz de la app.
+    if (raiz && typeof cuerpoR === 'string' && /json/.test(cab.get('content-type') || '')) cuerpoR = cuerpoR.replace(/"\/(comun|m|pglite)\//g, '"$1/')
+    return new Response(sinCuerpo ? null : cuerpoR, { status: r.statusCode, headers: cab })
   }
 
   var fetchReal = window.fetch.bind(window)
