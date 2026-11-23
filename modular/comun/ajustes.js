@@ -4,7 +4,7 @@
  * Solo se suman campos nuevos; nunca se borra lo cargado.
  * Cada módulo que necesite un ajuste propio lo agrega acá con su valor inicial y lo anota en su LEEME.
  */
-const { una, consulta } = require('./base')
+const { una, consulta, generacionBase } = require('./base')
 const { ahora } = require('./reloj')
 const { ZONA_POR_DEFECTO } = require('./fechas')
 
@@ -52,19 +52,30 @@ const AJUSTES_INICIALES = {
   xpCompromisoPorDefecto: 10,
 }
 
+// Recuerdo en memoria de los ajustes: la pantalla Hoy los pedía 26 veces por carga (cada consulta cuesta en el celu).
+// Solo se recuerda lo leído fuera de una transacción; guardar lo borra. Se tira si cambia la base.
+const recuerdo = new Map()
+let generacion = -1
+
 async function obtenerAjustes(usuarioId, tx = null) {
+  if (generacion !== generacionBase()) { recuerdo.clear(); generacion = generacionBase() }
+  if (!tx && recuerdo.has(usuarioId)) return structuredClone(recuerdo.get(usuarioId))
   const f = await una('SELECT datos FROM ajustes WHERE usuario_id = $1', [usuarioId], tx)
-  return { ...AJUSTES_INICIALES, ...(f ? f.datos : {}) }
+  const a = { ...AJUSTES_INICIALES, ...(f ? f.datos : {}) }
+  if (!tx) recuerdo.set(usuarioId, structuredClone(a))
+  return a
 }
 
 /** Guarda solo los campos que vienen. Devuelve los ajustes completos. */
 async function guardarAjustes(usuarioId, cambios, tx = null) {
+  recuerdo.delete(usuarioId)
   const limpio = {}
   for (const [k, v] of Object.entries(cambios || {})) if (k in AJUSTES_INICIALES && v !== undefined) limpio[k] = v
   await consulta(
     `INSERT INTO ajustes (usuario_id, datos, actualizado) VALUES ($1, $2, $3)
      ON CONFLICT (usuario_id) DO UPDATE SET datos = ajustes.datos || EXCLUDED.datos, actualizado = EXCLUDED.actualizado`,
     [usuarioId, limpio, ahora()], tx)
+  recuerdo.delete(usuarioId)
   return obtenerAjustes(usuarioId, tx)
 }
 

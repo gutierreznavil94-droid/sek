@@ -227,10 +227,12 @@ async function correrEntreno(usuarioId, fecha, hora, tx = null) {
 }
 
 /** Lo que necesita agenda.bloquesDelDia para una fecha. */
-async function entradaBloques(usuarioId, fecha, c, a, todasFc, tx) {
-  const accion = await datos.accion(usuarioId, 'entrenamiento', tx)
+/** `pre` (para un mes entero): { accion, feriados: Map } ya leídos, así no se piden día por día. */
+async function entradaBloques(usuarioId, fecha, c, a, todasFc, tx, pre = null) {
+  const accion = pre ? pre.accion : await datos.accion(usuarioId, 'entrenamiento', tx)
   const compromiso = accion ? await datos.compromiso(usuarioId, `entrenamiento:${fecha}`, tx) : null
-  return { config: c, fecha, feriado: await esFeriado(usuarioId, fecha, tx), entreno: accion ? { accion, compromiso } : null,
+  const feriado = pre ? pre.feriados.has(fecha) : await esFeriado(usuarioId, fecha, tx)
+  return { config: c, fecha, feriado, entreno: accion ? { accion, compromiso } : null,
     fechasClave: todasFc.filter((fc) => agenda.caeEn(fc, fecha)), ajustes: a }
 }
 
@@ -298,10 +300,11 @@ async function calendarioMes(usuarioId, mes, tx = null) {
   const todasFc = await datos.fechasClave(usuarioId, tx)
   const fcPorDia = agenda.fechasClavePorDia(todasFc, desde, hasta)
   const config = await configHorario(usuarioId, tx)
+  const pre = { accion: await datos.accion(usuarioId, 'entrenamiento', tx), feriados }
   const dias = []
   for (let f = desde; f <= hasta; f = sumarDias(f, 1)) {
     const cu = cumplimiento.get(f)
-    const bloques = agenda.bloquesDelDia(await entradaBloques(usuarioId, f, config, a, todasFc, tx)).filter((b) => b.tipo !== 'dormir')
+    const bloques = agenda.bloquesDelDia(await entradaBloques(usuarioId, f, config, a, todasFc, tx, pre)).filter((b) => b.tipo !== 'dormir')
     dias.push({
       fecha: f,
       hoy: f === hoy,

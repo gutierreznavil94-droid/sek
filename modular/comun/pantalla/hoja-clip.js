@@ -18,7 +18,8 @@
 
     function cargar(url) {
       if (!cache.has(url)) {
-        const imagen = new Promise((ok, mal) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => mal(new Error('sin hoja')); i.src = `${url}.webp` })
+        // decode(): la hoja queda lista antes de dibujarla, así tocar un botón no espera a descomprimirla.
+        const imagen = new Promise((ok, mal) => { const i = new Image(); i.onload = () => (i.decode ? i.decode().catch(() => {}) : Promise.resolve()).then(() => ok(i)); i.onerror = () => mal(new Error('sin hoja')); i.src = `${url}.webp` })
         const datos = fetch(`${url}.json`).then((r) => { if (!r.ok) throw new Error('sin datos'); return r.json() })
         const p = Promise.all([imagen, datos]).then(([img, h]) => ({ img, h }))
         p.catch(() => cache.delete(url))

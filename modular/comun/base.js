@@ -23,7 +23,12 @@ function conexion() {
 }
 
 /** Cambia la base: sin nada, una nueva en memoria (pruebas); 'idb://sek' en el celu; una carpeta en la compu. */
+let generacion = 0
+/** Cambia cada vez que se cambia de base: los recuerdos en memoria (ajustes) se tiran. */
+const generacionBase = () => generacion
+
 function usarBase(nuevoLugar) {
+  generacion++
   if (db) db.close().catch(() => {})
   db = null
   lugar = nuevoLugar || undefined
@@ -63,4 +68,4 @@ async function cerrar() { if (db) { const d = db; db = null; await d.close() } }
 /** Guarda ya en la memoria del teléfono lo que falte (en el celu se guarda sin esperar a cada consulta). */
 async function guardarYa() { if (db && typeof db.syncToFs === 'function') await db.syncToFs(false) }
 
-module.exports = { guardarYa, consulta, una, todas, ejecutar, transaccion, usarBase, abrir, cerrar }
+module.exports = { generacionBase, guardarYa, consulta, una, todas, ejecutar, transaccion, usarBase, abrir, cerrar }

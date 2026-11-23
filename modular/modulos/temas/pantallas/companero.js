@@ -80,9 +80,17 @@
     return { indice, texto: f[indice] }
   }
   const minutos = (h) => { const [a, b] = String(h).split(':').map(Number); return a * 60 + b }
+  /** Lo del día que usan los consejos. /api/dia/hoy es el pedido más pesado: se recuerda 2 min entre pantallas. */
+  async function diaDeHoy() {
+    try { const x = JSON.parse(sessionStorage.getItem('sek-companero-dia') || 'null'); if (x && Date.now() - x.t < 120000) return x.d } catch (e) { /* sin almacenamiento */ }
+    const h = await SEK.api('/api/dia/hoy')
+    const d = { racha: h.racha, aplican: h.aplican, cumplidos: h.cumplidos, pilares: (h.pilares || []).map((p) => ({ compromiso: p.compromiso && { estado: p.compromiso.estado }, horaLimite: p.horaLimite, accion: p.accion && { id: p.accion.id, nombre: p.accion.nombre, tipo: p.accion.tipo, horaLimiteInicio: p.accion.horaLimiteInicio } })) }
+    try { sessionStorage.setItem('sek-companero-dia', JSON.stringify({ t: Date.now(), d })) } catch (e) { /* sin almacenamiento */ }
+    return d
+  }
   async function consejos() {
     let d
-    try { d = await SEK.api('/api/dia/hoy') } catch (e) { return [] }
+    try { d = await diaDeHoy() } catch (e) { return [] }
     const r = []
     const ahora = new Date()
     const min = ahora.getHours() * 60 + ahora.getMinutes()
@@ -176,7 +184,8 @@
     boton.onclick = tocar
     // Habla solo una vez por día al abrir (o un consejo nuevo), si no hay un Tajo en pantalla.
     const cuandoLibre = (fn, ms) => { const intentar = () => { if (document.querySelector('.tajo, .dz-capa')) return setTimeout(intentar, 5000); fn() }; setTimeout(intentar, ms) }
-    consejos().then((lista) => {
+    // Espera a que la pantalla termine sus propios pedidos: el compañero no tiene apuro.
+    new Promise((ok) => setTimeout(ok, 2500)).then(consejos).then((lista) => {
       const e = estado()
       if (e.consejos.length < 3) {
         const c1 = lista.find((x) => !e.consejos.includes(x.clave))
