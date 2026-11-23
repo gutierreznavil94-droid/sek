@@ -26,8 +26,7 @@ Lo que usan todos los módulos. **No depende de ningún módulo** (lo revisa `gu
 | Archivo | Qué hace |
 |---|---|
 | `estilo.css` | Colores, letras (Pincel y Brocha), fondo, tarjetas, botones, campos, barra de abajo. Tema Shinobi. |
-| `marco.js` | `SEK.api`, `SEK.barra`, `SEK.mensaje`, `SEK.minutos`, `SEK.seguro`, `SEK.$`, `SEK.icono(nombre)` (kanji o ícono del tema elegido por nombre genérico; lo responde el módulo **temas**, y mientras carga la lista de respaldo `ICONOS`) y `SEK.evento(nombre, detalle)` (evento visual genérico: avisa `sek-evento` en `document`). La lista `MENU` tiene los botones de la barra de abajo: cada módulo con pantalla principal suma el suyo. Al arrancar pone las variables de color guardadas del último tema y carga `/m/temas/tema.js` (ver `modulos/temas/LEEME.md`). |
+| `marco.js` | `SEK.api`, `SEK.barra`, `SEK.mensaje`, `SEK.minutos`, `SEK.seguro`, `SEK.$`, `SEK.icono(nombre)` (kanji o ícono del tema elegido por nombre genérico; lo responde el módulo **temas**, y mientras carga la lista de respaldo `ICONOS`) y `SEK.evento(nombre, detalle)` (evento visual genérico: avisa `sek-evento` en `document`). La lista `MENU` tiene los **5 botones fijos** de la barra de abajo (Hoy, Calendario, Juego, Sueño, Más): las demás pantallas principales van como fila en **Más** (`modulos/cuentas/pantallas/mas.js`). Una pantalla que no está en la barra marca **Más** como activo. Al arrancar pone las variables de color guardadas del último tema y carga `/m/temas/tema.js` (ver `modulos/temas/LEEME.md`). |
 | `servir.js` | Sirve `/comun/*` y `/m/<modulo>/*` (sin librerías y sin dejar salir de la carpeta). `pagina(respuesta, modulo, archivo)` para las rutas de cada módulo. |
 | `entrar.html` | Entrar y crear cuenta. |
-| `inicio.html` | Hoy provisorio, hasta que exista el módulo **dia**. |
 | `fuentes/` | `pincel.woff2` (Yuji Syuku) y `brocha.woff2` (Kaushan Script). |

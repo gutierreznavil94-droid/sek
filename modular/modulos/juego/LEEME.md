@@ -17,6 +17,7 @@ Es el **módulo de ejemplo** del monolito: copiá su forma para armar los demás
 | `limiteRespetado(usuarioId, fecha)` | `{ minutos, limite, respetado }`. Para el pilar «Respetar el límite de juego» del módulo **dia**. |
 | `resumen(usuarioId)` | Todo lo de la pantalla: sesión, hoy, semana, estado del límite. |
 | `historial(usuarioId, cantidad?)` | Últimas sesiones. |
+| `conectar({ esFeriado })` | app.js le pasa `dia.esFeriado`: los feriados usan el límite de finde (juego no requiere dia, porque dia ya usa juego). |
 | `importar(usuarioId, sesionesViejas)` | Trae `sesionesJuego` de una copia de la app vieja. Lo usa el módulo **copia**. |
 | `exportar(usuarioId)` | Todas las sesiones con la forma que recibe `importar` (que no duplica una sesión con el mismo inicio). Lo usa **copia**. |
 
@@ -39,10 +40,9 @@ Ajustes que usa (de `comun/ajustes.js`): `limiteJuegoSemana`, `limiteJuegoFinde`
 
 ## Qué módulos usa
 
-Ninguno. Solo `comun/`.
+Ninguno. Solo `comun/`. Los feriados le llegan de **dia** por `conectar` (en `app.js`).
 
 ## Pendiente (de la app vieja)
 
-- Feriados con límite de finde (cuando exista el módulo que tenga el calendario).
 - «Mis juegos del celu» (lo cuenta Android solo): llega con el módulo **celular**.
 - Avisos al acercarse al límite y el Tajo.

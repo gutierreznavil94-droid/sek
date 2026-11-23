@@ -1,6 +1,6 @@
 'use strict'
 /**
- * Dia · la única puerta del módulo (parte 1: pilares y cierre del día).
+ * Dia · pilares y cierre del día (parte 1). La puerta del módulo es ventanilla/index.js.
  * Los pilares y compromisos de cada día (cumplir, tarde, omitir, extra, deshacer, corregir), el cierre de los días
  * pendientes (lo sin marcar queda omitido, límite de juego, comida, lo no cumplido resta, racha de 7), cumplimiento,
  * racha, atributos, excepciones y el Tajo. Las cuentas están en calculo.js.
@@ -11,18 +11,18 @@
  * se suman después.
  */
 const crypto = require('node:crypto')
-const datos = require('./datos')
-const calculo = require('./calculo')
-const xp = require('../xp/ventanilla')
-const ciclo = require('../ciclo/ventanilla')
-const juego = require('../juego/ventanilla')
-const { transaccion } = require('../../comun/base')
-const { obtenerAjustes } = require('../../comun/ajustes')
-const { anotar } = require('../../comun/historial')
-const { escuchar } = require('../../comun/eventos')
-const { ahora } = require('../../comun/reloj')
-const { fechaDe, instanteDe, sumarDias, diaSemanaDe, esFechaValida } = require('../../comun/fechas')
-const { datoInvalido, noEncontrado } = require('../../comun/errores')
+const datos = require('../datos')
+const calculo = require('../calculo')
+const xp = require('../../xp/ventanilla')
+const ciclo = require('../../ciclo/ventanilla')
+const juego = require('../../juego/ventanilla')
+const { transaccion } = require('../../../comun/base')
+const { obtenerAjustes } = require('../../../comun/ajustes')
+const { anotar } = require('../../../comun/historial')
+const { escuchar } = require('../../../comun/eventos')
+const { ahora } = require('../../../comun/reloj')
+const { fechaDe, instanteDe, sumarDias, diaSemanaDe, esFechaValida } = require('../../../comun/fechas')
+const { datoInvalido, noEncontrado } = require('../../../comun/errores')
 
 const nuevoId = (prefijo) => `${prefijo}_${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`
 const { idCompromiso, ID_PILAR_COMIDA } = calculo
@@ -673,6 +673,12 @@ async function compromisoPara(usuarioId, accionId, fecha, tx) {
 }
 
 const AVISOS = {
+  // «Empecé» en el 3·2·1 (desafios): el compromiso pasa a «iniciado».
+  'desafios.inicio': async ({ usuarioId, compromisoId }, tx) => {
+    if (!compromisoId) return
+    const c = await datos.compromiso(usuarioId, compromisoId, tx)
+    if (c && c.estado === 'pendiente') await cambiarEstado(usuarioId, c.id, { estado: 'iniciado', inicioReal: ahora() }, 'editar', 'Empezó con el 3·2·1', tx)
+  },
   // Revisión diaria o semanal guardada (ciclo): completa su pilar y da su XP.
   'ciclo.revision': async ({ usuarioId, tipo, fecha }, tx) => {
     const accionId = tipo === 'diaria' ? 'revision_diaria' : tipo === 'semanal' ? 'revision_semanal' : null

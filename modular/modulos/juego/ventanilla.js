@@ -71,11 +71,19 @@ async function borrar(usuarioId, id, motivo = '', tx = null) {
   await anotar(usuarioId, 'juego', 'borrar', { antes: sinId(antes), motivo }, tx)
 }
 
-/** Límite de un día: finde (sábado y domingo) o semana. Los feriados se sumarán cuando exista el módulo que los tenga. */
-function limiteDelDia(ajustes, fecha) {
+/**
+ * Feriados: los tiene el módulo dia, que ya usa juego (no se puede requerir al revés). app.js le conecta
+ * `esFeriado(usuarioId, fecha, tx)` con `conectar`; sin eso, solo sábado y domingo son finde.
+ */
+let esFeriado = null
+function conectar({ esFeriado: fn } = {}) { if (fn === null || typeof fn === 'function') esFeriado = fn }
+
+/** Límite de un día: finde (sábado, domingo y feriado) o semana. */
+function limiteDelDia(ajustes, fecha, feriado = false) {
   const ds = diaSemanaDe(fecha)
-  return ds === 0 || ds === 6 ? ajustes.limiteJuegoFinde : ajustes.limiteJuegoSemana
+  return ds === 0 || ds === 6 || feriado ? ajustes.limiteJuegoFinde : ajustes.limiteJuegoSemana
 }
+const feriadoDe = async (usuarioId, fecha, tx) => (esFeriado ? !!(await esFeriado(usuarioId, fecha, tx)) : false)
 
 /** Minutos jugados en una fecha (AAAA-MM-DD). Lo usa el módulo que evalúe el pilar «límite de juego». */
 async function minutosDelDia(usuarioId, fecha, tx = null) {
@@ -90,7 +98,7 @@ async function minutosDelDia(usuarioId, fecha, tx = null) {
 async function limiteRespetado(usuarioId, fecha, tx = null) {
   const a = await obtenerAjustes(usuarioId, tx)
   const minutos = await minutosDelDia(usuarioId, fecha, tx)
-  const limite = limiteDelDia(a, fecha)
+  const limite = limiteDelDia(a, fecha, await feriadoDe(usuarioId, fecha, tx))
   return { minutos, limite, respetado: minutos <= limite }
 }
 
@@ -109,14 +117,14 @@ async function resumen(usuarioId, tx = null) {
   for (let i = 0; i < 7; i++) {
     const f = sumarDias(lunes, i)
     const minutos = Math.round(porDia.get(f) || 0)
-    const limite = limiteDelDia(a, f)
+    const limite = limiteDelDia(a, f, await feriadoDe(usuarioId, f, tx))
     semana.push({ fecha: f, minutos, limite })
     minutosSemana += minutos
     limiteSemana += limite
   }
   const activa = await sesionActiva(usuarioId, tx)
   const minutosHoy = Math.round(porDia.get(hoy) || 0)
-  const limiteHoy = limiteDelDia(a, hoy)
+  const limiteHoy = limiteDelDia(a, hoy, await feriadoDe(usuarioId, hoy, tx))
   return {
     hoy,
     activa: activa || null,
@@ -155,4 +163,4 @@ async function exportar(usuarioId, tx = null) {
   return (await datos.todasLasSesiones(usuarioId, tx)).map(({ id, ...s }) => s)
 }
 
-module.exports = { exportar, sesionActiva, empezar, pausar, seguir, terminar, agregarManual, borrar, minutosDelDia, limiteRespetado, resumen, historial, importar }
+module.exports = { conectar, exportar, sesionActiva, empezar, pausar, seguir, terminar, agregarManual, borrar, minutosDelDia, limiteRespetado, resumen, historial, importar }

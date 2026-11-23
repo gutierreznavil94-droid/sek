@@ -61,6 +61,12 @@ Para no depender de módulos que se suman después, dia recibe estas funciones (
 - tabla `excepciones`: días que no cuentan.
 - tabla `dia_vistas`: última vez a la vista y día en que salió el Tajo.
 
+Migración `014-dia.sql` (parte 2):
+
+- tabla `feriados`: fecha, nombre, `propio` (lo marcó la persona) o precargado.
+- tabla `fechas_clave`: notas del calendario (título, nota, anual, hora y hasta).
+- tabla `horarios`: Mi horario, un JSON por persona (`{ activo, horarios: [{ id, nombre, bloques }], excepciones: { fecha: [bloqueId] } }`).
+
 Ajustes propios (en `comun/ajustes.js`): `margenNocheMinutos` (10), `umbralRacha` (75), `xpRacha7` (20), `minimoProgramadosAtributo` (5), `maxCompromisosXpPorDia` (5), `xpCompromisoPorDefecto` (10). Usa también los de sueno (`horaCorteNoche`, `horaDejarCelu`, `horaLimiteCelu`, `horaAlistarse`; si faltan, 06:00, 21:15, 22:15 y 20:50) y `zonaHoraria`.
 
 ## Direcciones (`rutas.js`)

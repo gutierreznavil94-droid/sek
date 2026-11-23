@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SEK · Calendario</title>
+  <link rel="icon" href="/comun/favicon-32.png">
+  <link rel="stylesheet" href="/comun/estilo.css">
+  <link rel="stylesheet" href="/m/dia/estilo.css">
+</head>
+<body>
+  <main>
+    <div class="fila entre">
+      <h1><span class="kanji" aria-hidden="true">暦</span> Calendario</h1>
+      <a class="boton mini" href="/horario">Mi horario ›</a>
+    </div>
+    <section class="tarjeta">
+      <div class="mes-cabeza">
+        <button class="mini" id="anterior" aria-label="Mes anterior">‹</button>
+        <h2 id="titulo-mes" aria-live="polite"></h2>
+        <button class="mini" id="siguiente" aria-label="Mes siguiente">›</button>
+      </div>
+      <div class="rejilla-mes" id="rejilla" role="grid"></div>
+      <div class="leyenda">
+        <span><i style="background:var(--verde)"></i>cumplido</span>
+        <span><i style="background:var(--ambar)"></i>tarde</span>
+        <span><i style="background:var(--peligro)"></i>no cumplido</span>
+        <span><span class="kanji" style="color:var(--acento)">印</span> fecha clave</span>
+        <span style="color:var(--ambar)">feriado</span>
+      </div>
+      <button class="mini" id="ir-hoy">Ir a hoy</button>
+    </section>
+    <section class="tarjeta detalle-dia" id="detalle" aria-live="polite"></section>
+  </main>
+  <script src="/comun/marco.js"></script>
+  <script src="/m/dia/ayuda.js"></script>
+  <script src="/m/dia/calendario.js"></script>
+</body>
+</html>
