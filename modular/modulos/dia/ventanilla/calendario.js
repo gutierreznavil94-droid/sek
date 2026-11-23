@@ -3,7 +3,7 @@
  * Dia · parte 2: feriados, fechas clave, Mi horario y el Calendario del mes.
  * La puerta del módulo es ventanilla/index.js. Todas aceptan `tx` opcional al final.
  */
-const crypto = require('node:crypto')
+const crypto = globalThis.crypto
 const datos = require('../datos')
 const agenda = require('../agenda')
 const pilares = require('./pilares')

@@ -1,10 +1,10 @@
 # SEK · monolito modular
 
-Una sola app Node.js (JavaScript), un repo y una base PostgreSQL. Las reglas están en `REGLAS.md` (archivos del proyecto). El mapa de módulos y el orden de la mudanza están en `MAPA.md`.
+Una sola app en JavaScript que corre **en el celu** (APK con Capacitor), un repo y una base PostgreSQL **dentro del celu** (PGlite). Sin servidor. Las reglas están en `REGLAS.md` (archivos del proyecto). El mapa de módulos y el orden de la mudanza están en `MAPA.md`.
 
 ```
 modular/
-  app.js          ← arranca el servidor y registra las rutas de cada módulo
+  app.js          ← arma la app (enrutador de comun/) y registra las rutas de cada módulo
   comun/          ← lo que usan todos (ver comun/LEEME.md)
     pantalla/     ← estilo.css, marco.js, servir.js
   modulos/
@@ -16,16 +16,11 @@ Mientras se muda, vive en la carpeta `modular/` del repo, al lado de la app viej
 
 ## Cómo se prueba en una compu
 
-Necesita Node 22 y PostgreSQL.
+Necesita Node 22. No hace falta instalar PostgreSQL: las pruebas usan PGlite en memoria (una base nueva en cada archivo de pruebas).
 
 ```bash
 cd modular
 npm install
-# base real
-export DATABASE_URL=postgres://usuario:clave@localhost:5432/sek
-npm start                    # aplica migraciones y abre http://localhost:3000
-# pruebas (usan OTRA base, que se borra en cada corrida)
-export SEK_BASE_PRUEBA=postgres://usuario:clave@localhost:5432/sek_prueba
 npm test
 ```
 

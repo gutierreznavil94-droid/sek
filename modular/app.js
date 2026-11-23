@@ -1,11 +1,10 @@
 'use strict'
 /**
- * SEK · arranca el servidor y registra las rutas de cada módulo.
+ * SEK · arma la app (el enrutador de comun/) y registra las rutas de cada módulo. Corre en el celu.
  * Para sumar un módulo: requerir su rutas.js y registrarlo abajo (y, si necesita datos al crear
  * una cuenta, anotar su función en sesion.alCrearCuenta).
  */
-const Fastify = require('fastify')
-const config = require('./comun/config')
+const { crearEnrutador } = require('./comun/enrutador')
 const errores = require('./comun/errores')
 const sesion = require('./comun/sesion')
 const servir = require('./comun/pantalla/servir')
@@ -57,7 +56,7 @@ async function bloqueoSueno(pedido, respuesta) {
 }
 
 function crearApp(opciones = {}) {
-  const app = Fastify({ logger: opciones.logger ?? { level: 'info' } })
+  const app = crearEnrutador({ logger: opciones.logger ?? true })
   app.setErrorHandler(errores.manejador)
   app.addHook('preHandler', bloqueoSueno)
 
@@ -87,10 +86,3 @@ function crearApp(opciones = {}) {
 }
 
 module.exports = { crearApp }
-
-if (require.main === module) {
-  const { migrar } = require('./comun/migrar')
-  migrar()
-    .then(() => crearApp().listen({ port: config.puerto, host: config.host }))
-    .catch((e) => { console.error(e); process.exit(1) })
-}

@@ -1,12 +1,10 @@
 'use strict'
 /** Direcciones web del módulo organizacion. Reciben el pedido, llaman a la ventanilla y responden. */
-const fs = require('node:fs')
-const path = require('node:path')
 const v = require('./ventanilla')
 const { requiereUsuario } = require('../../comun/sesion')
 const { pagina } = require('../../comun/pantalla/servir')
 
-const MODELO = path.join(__dirname, 'modelo.js')
+const CELU = typeof SEK_CELU !== 'undefined' && SEK_CELU
 
 module.exports = async function rutasOrganizacion(app) {
   const conUsuario = { preHandler: requiereUsuario }
@@ -18,7 +16,9 @@ module.exports = async function rutasOrganizacion(app) {
   app.get('/m/organizacion/modelo.js', async (pedido, respuesta) => {
     respuesta.header('Content-Type', 'text/javascript; charset=utf-8')
     respuesta.header('Cache-Control', 'no-cache')
-    return respuesta.send(fs.createReadStream(MODELO))
+    // En el celu el archivo ya está en el paquete (www/m/organizacion/modelo.js).
+    if (CELU) return respuesta.header('X-SEK-Archivo', 'm/organizacion/modelo.js').send('')
+    return respuesta.send(require('node:fs').readFileSync(require('node:path').join(__dirname, 'modelo.js'), 'utf8'))
   })
 
   // El «almacén» de la pantalla: leer todo y guardar todo.

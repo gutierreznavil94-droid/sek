@@ -1,50 +1,49 @@
 'use strict'
 /**
- * La base PostgreSQL. Todos los datos.js consultan por acá.
+ * La base: PostgreSQL ADENTRO del celu (PGlite). No hay servidor.
+ * - En el celu guarda en la memoria del teléfono (IndexedDB, 'idb://sek').
+ * - En las pruebas y en la compu, en memoria (o en una carpeta si se pide con `usarBase('./datos')`).
  *
- * - `consulta(texto, valores, tx)`: SQL siempre con valores aparte ($1, $2).
- * - `transaccion(fn)`: todo o nada. `fn` recibe `tx` y se lo pasa a cada ventanilla
- *   que toque (las funciones de ventanilla aceptan `tx` opcional al final).
+ * Misma forma de siempre: `consulta(texto, valores, tx)`, `una`, `todas`, `transaccion(fn, txExterna?)`.
+ * SQL siempre con valores aparte ($1, $2). Fechas (date) vuelven como texto AAAA-MM-DD; bigint como número.
  */
-const { Pool, types } = require('pg')
+const { PGlite } = require('@electric-sql/pglite')
 
-// Fechas (date) vuelven como texto AAAA-MM-DD, nunca como Date (evita corrimientos de zona).
-types.setTypeParser(1082, (v) => v)
-// bigint (instantes en milisegundos) vuelve como número.
-types.setTypeParser(20, (v) => Number(v))
-const config = require('./config')
+// Fechas como texto (sin corrimientos de zona), bigint como número, numeric como texto (igual que pg).
+// Ojo: se pasan en CADA consulta, porque las transacciones de PGlite no heredan los del constructor.
+const PARSERS = { 1082: (v) => v, 20: (v) => Number(v), 1700: (v) => v }
 
-let pool = null
+let db = null
+let lugar = (typeof SEK_LUGAR_BASE !== 'undefined' && SEK_LUGAR_BASE) || undefined // undefined = en memoria
 
 function conexion() {
-  if (!pool) {
-    pool = new Pool({ connectionString: config.baseUrl, max: 10 })
-    pool.on('error', (e) => console.error('[base]', e.message))
-  }
-  return pool
+  if (!db) db = new PGlite(lugar, { parsers: PARSERS })
+  return db
 }
 
-/** Cambia la base (pruebas). */
-function usarBase(url) {
-  if (pool) pool.end().catch(() => {})
-  pool = new Pool({ connectionString: url, max: 5 })
-  pool.on('error', (e) => console.error('[base]', e.message))
+/** Cambia la base: sin nada, una nueva en memoria (pruebas); 'idb://sek' en el celu; una carpeta en la compu. */
+function usarBase(nuevoLugar) {
+  if (db) db.close().catch(() => {})
+  db = null
+  lugar = nuevoLugar || undefined
 }
+
+const adaptar = (r) => ({ rows: r.rows, rowCount: r.affectedRows ?? r.rows.length })
 
 async function consulta(texto, valores = [], tx = null) {
-  return (tx || conexion()).query(texto, valores)
+  const q = tx || conexion()
+  // Varias sentencias juntas (las migraciones): exec, sin valores.
+  if (!valores.length && /;\s*\S/.test(texto)) { await q.exec(texto); return { rows: [], rowCount: 0 } }
+  return adaptar(await q.query(texto, valores, { parsers: PARSERS }))
 }
+
+/** Un guion con varias sentencias (las migraciones). */
+async function ejecutar(texto, tx = null) { await (tx || conexion()).exec(texto) }
 
 /** Primera fila o null. */
-async function una(texto, valores = [], tx = null) {
-  const r = await consulta(texto, valores, tx)
-  return r.rows[0] || null
-}
+async function una(texto, valores = [], tx = null) { return (await consulta(texto, valores, tx)).rows[0] || null }
 
-async function todas(texto, valores = [], tx = null) {
-  const r = await consulta(texto, valores, tx)
-  return r.rows
-}
+async function todas(texto, valores = [], tx = null) { return (await consulta(texto, valores, tx)).rows }
 
 /**
  * Corre `fn(tx)` en una transacción. Si ya viene una (`txExterna`), usa esa y no la cierra:
@@ -52,22 +51,12 @@ async function todas(texto, valores = [], tx = null) {
  */
 async function transaccion(fn, txExterna = null) {
   if (txExterna) return fn(txExterna)
-  const cliente = await conexion().connect()
-  try {
-    await cliente.query('BEGIN')
-    const r = await fn(cliente)
-    await cliente.query('COMMIT')
-    return r
-  } catch (e) {
-    await cliente.query('ROLLBACK').catch(() => {})
-    throw e
-  } finally {
-    cliente.release()
-  }
+  return conexion().transaction(async (tx) => fn(tx))
 }
 
-async function cerrar() {
-  if (pool) { const p = pool; pool = null; await p.end() }
-}
+/** Espera a que la base esté abierta (en el celu, la primera vez tarda un poco). */
+async function abrir() { await conexion().waitReady }
 
-module.exports = { consulta, una, todas, transaccion, usarBase, cerrar }
+async function cerrar() { if (db) { const d = db; db = null; await d.close() } }
+
+module.exports = { consulta, una, todas, ejecutar, transaccion, usarBase, abrir, cerrar }

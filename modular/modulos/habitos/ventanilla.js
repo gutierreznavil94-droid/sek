@@ -8,7 +8,7 @@
  * Las cuentas puras están en calculo.js. La XP la maneja el módulo xp, por su ventanilla.
  * Todas las funciones aceptan `tx` opcional al final (transacción compartida).
  */
-const crypto = require('node:crypto')
+const crypto = globalThis.crypto
 const datos = require('./datos')
 const calculo = require('./calculo')
 const xp = require('../xp/ventanilla')

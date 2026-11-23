@@ -2,15 +2,16 @@
   "name": "sek-modular",
   "version": "0.1.0",
   "private": true,
-  "description": "SEK como monolito modular: una app Node.js, un repo, una base PostgreSQL.",
+  "description": "SEK como monolito modular: una app en JavaScript que corre en el celu, un repo y una base PostgreSQL dentro del celu (PGlite).",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
-    "migrar": "node comun/migrar.js",
-    "test": "node --test --test-concurrency=1 \"modulos/**/*.test.js\" \"comun/**/*.test.js\""
+    "test": "node --test --test-concurrency=1 \"modulos/**/*.test.js\" \"comun/**/*.test.js\"",
+    "celu": "node herramientas/armar-celu.js"
   },
   "dependencies": {
-    "fastify": "^5.2.0",
-    "pg": "^8.13.1"
+    "@electric-sql/pglite": "0.2.17"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.2"
   }
 }

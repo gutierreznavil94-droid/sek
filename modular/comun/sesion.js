@@ -1,10 +1,10 @@
 'use strict'
 /**
  * Personas y sesiones. De acá sale siempre quién está usando la app (`pedido.usuario`).
- * Contraseñas con hash (scrypt de Node, sin librerías). La sesión es una cookie con un token al azar
+ * Contraseñas con hash (PBKDF2 de WebCrypto: anda igual en el celu y en la compu, sin librerías). La sesión es una cookie con un token al azar
  * que se guarda en la base; salir la borra.
  */
-const crypto = require('node:crypto')
+const crypto = globalThis.crypto
 const { una, consulta } = require('./base')
 const { ahora } = require('./reloj')
 const config = require('./config')
@@ -12,18 +12,30 @@ const { ErrorSek, sinSesion, datoInvalido } = require('./errores')
 
 const COOKIE = 'sek_sesion'
 
-function hashear(clave) {
-  const sal = crypto.randomBytes(16).toString('hex')
-  const hash = crypto.scryptSync(clave, sal, 64).toString('hex')
-  return `scrypt:${sal}:${hash}`
+const VUELTAS = 100000
+const aHex = (b) => Array.from(new Uint8Array(b), (x) => x.toString(16).padStart(2, '0')).join('')
+const deHex = (h) => new Uint8Array((h.match(/../g) || []).map((x) => parseInt(x, 16)))
+const azar = (n) => crypto.getRandomValues(new Uint8Array(n))
+
+async function derivar(clave, sal, vueltas) {
+  const llave = await crypto.subtle.importKey('raw', new TextEncoder().encode(clave), 'PBKDF2', false, ['deriveBits'])
+  return crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: sal, iterations: vueltas }, llave, 256)
 }
 
-function claveCorrecta(clave, guardado) {
-  const [tipo, sal, hash] = String(guardado).split(':')
-  if (tipo !== 'scrypt' || !sal || !hash) return false
-  const calc = crypto.scryptSync(clave, sal, 64)
-  const esperado = Buffer.from(hash, 'hex')
-  return esperado.length === calc.length && crypto.timingSafeEqual(calc, esperado)
+/** 'pbkdf2:<vueltas>:<sal>:<hash>'. Nunca guarda la contraseña. */
+async function hashear(clave) {
+  const sal = azar(16)
+  return `pbkdf2:${VUELTAS}:${aHex(sal)}:${aHex(await derivar(clave, sal, VUELTAS))}`
+}
+
+async function claveCorrecta(clave, guardado) {
+  const [tipo, vueltas, sal, hash] = String(guardado).split(':')
+  if (tipo !== 'pbkdf2' || !sal || !hash || !(Number(vueltas) > 0)) return false
+  const calc = aHex(await derivar(clave, deHex(sal), Number(vueltas)))
+  // Comparación sin cortar antes (mismo tiempo siempre).
+  let dif = calc.length ^ hash.length
+  for (let i = 0; i < Math.max(calc.length, hash.length); i++) dif |= (calc.charCodeAt(i) || 0) ^ (hash.charCodeAt(i) || 0)
+  return dif === 0
 }
 
 function normalizarEmail(email) { return String(email || '').trim().toLowerCase() }
@@ -36,11 +48,11 @@ async function crearUsuario({ nombre, email, clave }, tx = null) {
   const ya = await una('SELECT id FROM usuarios WHERE email = $1', [e], tx)
   if (ya) throw new ErrorSek('Ya hay una cuenta con ese email.', 409)
   return una('INSERT INTO usuarios (nombre, email, clave_hash, creado) VALUES ($1, $2, $3, $4) RETURNING id, nombre, email',
-    [String(nombre).trim(), e, hashear(clave), ahora()], tx)
+    [String(nombre).trim(), e, await hashear(clave), ahora()], tx)
 }
 
 async function crearSesion(usuarioId, tx = null) {
-  const token = crypto.randomBytes(32).toString('base64url')
+  const token = aHex(azar(32))
   const vence = ahora() + config.diasSesion * 86400000
   await consulta('INSERT INTO sesiones (token, usuario_id, vence) VALUES ($1, $2, $3)', [token, usuarioId, vence], tx)
   return { token, vence }
@@ -49,7 +61,7 @@ async function crearSesion(usuarioId, tx = null) {
 /** Devuelve { usuario, token } o tira 401. */
 async function entrar(email, clave) {
   const u = await una('SELECT id, nombre, email, clave_hash FROM usuarios WHERE email = $1', [normalizarEmail(email)])
-  if (!u || !claveCorrecta(String(clave || ''), u.clave_hash)) throw new ErrorSek('Email o contraseña incorrectos.', 401)
+  if (!u || !(await claveCorrecta(String(clave || ''), u.clave_hash))) throw new ErrorSek('Email o contraseña incorrectos.', 401)
   const s = await crearSesion(u.id)
   return { usuario: { id: u.id, nombre: u.nombre, email: u.email }, ...s }
 }
@@ -60,9 +72,9 @@ async function entrar(email, clave) {
  */
 async function cambiarClave(usuarioId, actual, nueva, tokenQueQueda = null, tx = null) {
   const u = await una('SELECT clave_hash FROM usuarios WHERE id = $1', [usuarioId], tx)
-  if (!u || !claveCorrecta(String(actual || ''), u.clave_hash)) throw new ErrorSek('La contraseña actual no es esa.', 400)
+  if (!u || !(await claveCorrecta(String(actual || ''), u.clave_hash))) throw new ErrorSek('La contraseña actual no es esa.', 400)
   if (String(nueva || '').length < 8) throw datoInvalido('La contraseña nueva necesita al menos 8 caracteres.')
-  await consulta('UPDATE usuarios SET clave_hash = $2 WHERE id = $1', [usuarioId, hashear(nueva)], tx)
+  await consulta('UPDATE usuarios SET clave_hash = $2 WHERE id = $1', [usuarioId, await hashear(nueva)], tx)
   await consulta('DELETE FROM sesiones WHERE usuario_id = $1 AND token IS DISTINCT FROM $2', [usuarioId, tokenQueQueda], tx)
 }
 

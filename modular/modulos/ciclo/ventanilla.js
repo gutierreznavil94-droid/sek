@@ -8,7 +8,7 @@
  * Lo que necesita datos de otros módulos (pilares cumplidos, sueño, juego) no lo calcula acá:
  * la revisión recibe la «foto» de quien la llama y los avisos `ciclo.*` le cuentan a dia lo que pasó.
  */
-const crypto = require('node:crypto')
+const crypto = globalThis.crypto
 const datos = require('./datos')
 const calculo = require('./calculo')
 const xp = require('../xp/ventanilla')

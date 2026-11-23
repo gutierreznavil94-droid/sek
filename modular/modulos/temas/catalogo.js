@@ -5,14 +5,25 @@
  * Las direcciones de sus archivos quedan completas: `/m/temas/<carpeta>/<archivo>`.
  * Lo usa solo ventanilla.js.
  */
-const fs = require('node:fs')
-const path = require('node:path')
-
-const PANTALLAS = path.join(__dirname, 'pantallas')
 const TEMA_POR_DEFECTO = 'shinobi'
 
-function leerJson(archivo) {
-  return JSON.parse(fs.readFileSync(archivo, 'utf8'))
+/**
+ * Las carpetas de temas: { carpeta: { tema, iconos } }. En el celu vienen adentro del paquete
+ * (SEK_TEMAS, lo arma herramientas/armar-celu.js); en la compu se leen de pantallas/.
+ */
+function leerCarpetas() {
+  if (typeof SEK_TEMAS !== 'undefined') return SEK_TEMAS
+  const fs = require('node:fs')
+  const path = require('node:path')
+  const pantallas = path.join(__dirname, 'pantallas')
+  const leer = (a) => JSON.parse(fs.readFileSync(a, 'utf8'))
+  const salida = {}
+  for (const e of fs.readdirSync(pantallas, { withFileTypes: true })) {
+    const dir = path.join(pantallas, e.name)
+    if (!e.isDirectory() || !fs.existsSync(path.join(dir, 'tema.json'))) continue
+    salida[e.name] = { tema: leer(path.join(dir, 'tema.json')), iconos: fs.existsSync(path.join(dir, 'iconos.json')) ? leer(path.join(dir, 'iconos.json')) : null }
+  }
+  return salida
 }
 
 /** Dirección web de un archivo de la carpeta del tema (o null si no hay). */
@@ -20,7 +31,7 @@ function url(carpeta, relativa) {
   return relativa ? `/m/temas/${carpeta}/${relativa}` : null
 }
 
-function completar(crudo, carpeta, base) {
+function completar(crudo, carpeta, base, iconos) {
   const lleno = Object.fromEntries(Object.entries(crudo).filter(([, v]) => v !== '' && v !== null && v !== undefined))
   const t = base ? { ...base, ...lleno } : lleno
   const m = crudo.medios || {}
@@ -45,7 +56,7 @@ function completar(crudo, carpeta, base) {
       grano: url(carpeta, m.grano),
       personaje: null,
     } : (base ? base.medios : {}),
-    svg: fs.existsSync(path.join(PANTALLAS, carpeta, 'iconos.json')) ? leerJson(path.join(PANTALLAS, carpeta, 'iconos.json')) : (base ? base.svg : {}),
+    svg: iconos || (base ? base.svg : {}),
   }
 }
 
@@ -54,11 +65,10 @@ let cache = null
 /** Todos los temas que trae la app, ordenados. El primero que importa es Shinobi (la base). */
 function temasIncluidos() {
   if (cache) return cache
-  const carpetas = fs.readdirSync(PANTALLAS, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && fs.existsSync(path.join(PANTALLAS, e.name, 'tema.json')))
-    .map((e) => e.name)
-  const base = completar(leerJson(path.join(PANTALLAS, TEMA_POR_DEFECTO, 'tema.json')), TEMA_POR_DEFECTO, null)
-  const otros = carpetas.filter((c) => c !== TEMA_POR_DEFECTO).map((c) => completar(leerJson(path.join(PANTALLAS, c, 'tema.json')), c, base))
+  const carpetas = leerCarpetas()
+  const de = (c, b) => completar(carpetas[c].tema, c, b, carpetas[c].iconos)
+  const base = de(TEMA_POR_DEFECTO, null)
+  const otros = Object.keys(carpetas).filter((c) => c !== TEMA_POR_DEFECTO).map((c) => de(c, base))
   cache = [base, ...otros].sort((a, b) => (a.orden ?? 99) - (b.orden ?? 99))
   return cache
 }
@@ -73,7 +83,7 @@ function incluido(id) {
 
 /** Tarjetas «Próximamente» que se muestran al lado de los temas listos. */
 function proximos() {
-  return leerJson(path.join(__dirname, 'proximamente.json')).temas
+  return require('./proximamente.json').temas
 }
 
-module.exports = { TEMA_POR_DEFECTO, temasIncluidos, base, incluido, proximos }
+module.exports = { leerCarpetas, TEMA_POR_DEFECTO, temasIncluidos, base, incluido, proximos }

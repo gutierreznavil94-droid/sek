@@ -11,12 +11,12 @@ const { crearApp } = require('../app')
 before(prepararBase)
 after(terminar)
 
-test('la contraseña se guarda con hash y se reconoce', () => {
-  const h = sesion.hashear('una-clave-larga')
-  assert.ok(h.startsWith('scrypt:'))
+test('la contraseña se guarda con hash y se reconoce', async () => {
+  const h = await sesion.hashear('una-clave-larga')
+  assert.ok(h.startsWith('pbkdf2:'))
   assert.ok(!h.includes('una-clave-larga'))
-  assert.equal(sesion.claveCorrecta('una-clave-larga', h), true)
-  assert.equal(sesion.claveCorrecta('otra', h), false)
+  assert.equal(await sesion.claveCorrecta('una-clave-larga', h), true)
+  assert.equal(await sesion.claveCorrecta('otra', h), false)
 })
 
 test('crear cuenta pide email válido y clave de 8', async () => {

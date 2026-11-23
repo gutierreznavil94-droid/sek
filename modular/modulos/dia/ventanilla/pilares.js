@@ -10,7 +10,7 @@
  * (`escucharAvisos`) y por `conectar` (funciones que app.js le pasa), así dia no depende de módulos que
  * se suman después.
  */
-const crypto = require('node:crypto')
+const crypto = globalThis.crypto
 const datos = require('../datos')
 const calculo = require('../calculo')
 const xp = require('../../xp/ventanilla')
