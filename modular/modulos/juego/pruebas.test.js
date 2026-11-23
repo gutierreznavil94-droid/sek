@@ -128,11 +128,13 @@ test('el resumen trae los últimos 7 días con su límite', async () => {
   assert.equal(r.limiteSemanaDia, 60)
 })
 
-test('las escenas de la pantalla (pelea, a jugar, jugando, té) están en el módulo', () => {
+test('las escenas de la pantalla (a jugar, jugando, té) están en el módulo como hojas de cuadros', () => {
   const fs = require('node:fs')
   const path = require('node:path')
   const raiz = path.join(__dirname, 'pantallas', 'escenas')
-  for (const e of ['pelea/pelea', 'juego/a-jugar', 'juego/jugando', 'juego/te-entra', 'juego/te-bucle', 'juego/te-sale']) {
-    for (const fin of ['.mp4', '-inicio.webp', '-quieto.jpg', '-fin.jpg']) assert.ok(fs.existsSync(path.join(raiz, e + fin)), e + fin)
+  for (const e of ['a-jugar', 'jugando', 'te-entra', 'te-bucle', 'te-sale']) {
+    for (const fin of ['.webp', '.json', '-quieto.jpg']) assert.ok(fs.existsSync(path.join(raiz, 'juego', e + fin)), e + fin)
+    const h = JSON.parse(fs.readFileSync(path.join(raiz, 'juego', e + '.json'), 'utf8'))
+    assert.ok(h.n > 0 && h.fps > 0 && h.columnas * h.celda[0] <= 4096, e)
   }
 })

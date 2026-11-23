@@ -1,6 +1,6 @@
 // Pantalla Juego, igual que la v0.88.27 (Juego.tsx de la app vieja) pero en HTML+JS.
 // Temporizador con el ensō que se cierra con los minutos de hoy contra el límite; la escena del shōji (escena.js);
-// Hoy y la semana; Mis juegos del celu (solo Android); los últimos 7 días; el historial por día con corregir y borrar.
+// Hoy y la semana; los últimos 7 días; el historial por día con corregir y borrar.
 // Pide a: /api/juego (resumen), /api/juego/historial, empezar/pausar/seguir/terminar, manual, PUT y DELETE de sesiones.
 (function () {
   'use strict'
@@ -250,7 +250,7 @@
   $('#explicar').onclick = () => {
     if (!r) return
     hoja('Cómo funciona', `
-      <p>Iniciás, pausás y finalizás. Si marcás tus juegos del celu (más abajo), su tiempo se suma solo. La sesión activa queda guardada en el teléfono, así que cerrar la app no la pierde.</p>
+      <p>Iniciás, pausás y finalizás. La sesión activa queda guardada en el teléfono, así que cerrar la app no la pierde.</p>
       <p class="texto-2 chico">Registrar el juego no da XP. Respetar el límite del día (${r.limiteHoy} min hoy: ${r.limiteSemanaDia} de lunes a viernes, ${r.limiteFinde} sábados, domingos y feriados) sí, y se resuelve al cerrar el día. Los avisos del límite se eligen en Más → Alarmas (Notificación, Alarma o Nada).</p>`)
   }
 
