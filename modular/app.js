@@ -34,6 +34,7 @@ const temas = require('./modulos/temas/rutas')
 const entreno = require('./modulos/entreno/rutas')
 const desafios = require('./modulos/desafios/rutas')
 const entrenoVentanilla = require('./modulos/entreno/ventanilla')
+const progreso = require('./modulos/progreso/rutas')
 
 // Datos iniciales al crear una cuenta.
 sesion.alCrearCuenta.push((id) => entrenoVentanilla.sembrar(id))
@@ -68,6 +69,7 @@ function crearApp(opciones = {}) {
   app.register(entreno)
   app.register(dia)
   app.register(desafios)
+  app.register(progreso)
 
   return app
 }

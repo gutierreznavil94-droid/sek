@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SEK · Progreso</title>
+  <link rel="icon" href="/comun/favicon-32.png">
+  <link rel="stylesheet" href="/comun/estilo.css">
+  <link rel="stylesheet" href="/m/progreso/estilo.css">
+</head>
+<body>
+  <main>
+    <h1>進 Progreso</h1>
+    <p class="chico apagado" id="cargando">Cargando…</p>
+
+    <section class="tarjeta" id="nivel" hidden>
+      <div class="datos-3">
+        <div><b id="n-nivel"></b><span class="chico">NIVEL</span><span class="chico apagado" id="n-etapa"></span></div>
+        <div><b id="n-xp"></b><span class="chico">XP TOTAL</span><span class="chico apagado" id="n-falta"></span></div>
+        <div><b class="rojo" id="n-racha"></b><span class="chico">RACHA</span><span class="chico apagado" id="n-racha-txt"></span></div>
+      </div>
+      <div class="barra-progreso" aria-hidden="true"><span id="n-barra" style="width:0%"></span></div>
+    </section>
+
+    <section class="tarjeta" id="camino" hidden>
+      <div class="fila entre"><h2>道 El camino</h2><span class="chico" id="c-dia"></span></div>
+      <div id="c-montana"></div>
+      <div class="leyenda">
+        <span><i style="background:var(--verde)"></i>XP ganada</span>
+        <span><i style="background:var(--peligro)"></i>XP perdida</span>
+        <span><i style="background:var(--texto-2)"></i>caída</span>
+        <span><i style="background:var(--ambar)"></i>forja</span>
+        <span><i style="background:var(--violeta)"></i>día marcado</span>
+      </div>
+      <p class="chico apagado">El progreso no es lineal: cada punto es un día del ciclo.</p>
+    </section>
+    <section class="tarjeta" id="sin-ciclo" hidden>
+      <p>La montaña empieza el Día 1 del ciclo.</p>
+      <a class="boton" href="/ciclo">Ir a Ciclo</a>
+    </section>
+
+    <p class="chico" id="caidas" hidden></p>
+
+    <a class="tarjeta" id="pilares" href="/progreso/seccion?cual=pilares" style="text-decoration:none;color:inherit" hidden>
+      <div class="fila entre"><h3>Pilares en el ciclo</h3><span class="chico" id="p-dias"></span></div>
+      <div class="anillos" id="p-anillos"></div>
+    </a>
+
+    <nav class="secciones" id="secciones" aria-label="Secciones de Progreso" hidden></nav>
+
+    <section class="tarjeta" id="fases" hidden>
+      <h3>Cierre de fase con números</h3>
+      <div class="fila" id="f-botones"></div>
+    </section>
+
+    <section class="tarjeta" id="marcas" hidden>
+      <h3>印 Días marcados</h3>
+      <div id="m-lista" class="chico"></div>
+    </section>
+  </main>
+  <script src="/comun/marco.js"></script>
+  <script src="/m/progreso/graficos.js"></script>
+  <script src="/m/progreso/progreso.js"></script>
+</body>
+</html>
