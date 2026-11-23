@@ -79,7 +79,7 @@ function desdeDelRango(rango, hoy, inicioCiclo) {
  * Los números de un período para el cierre de fase («Base / fase anterior / fase»).
  * Nada se inventa: lo que no tiene registros vuelve null y la pantalla muestra «—».
  */
-function numerosDelPeriodo({ diasCerrados, entrenos, noches, xpGanado }) {
+function numerosDelPeriodo({ diasCerrados, entrenos, noches, xpGanado, inicios = 0 }) {
   let cumplidos = 0
   let programados = 0
   for (const d of diasCerrados) if (!d.excepcion) { cumplidos += d.cumplidos; programados += d.programados }
@@ -90,6 +90,7 @@ function numerosDelPeriodo({ diasCerrados, entrenos, noches, xpGanado }) {
     noches: { cumplidas: noches.filter((n) => n.cumplido).length, total: noches.length },
     juegoPorDia: conJuego ? Math.round(diasCerrados.reduce((s, d) => s + d.minutosJuego, 0) / conJuego) : null,
     xp: xpGanado,
+    inicios,
   }
 }
 

@@ -57,11 +57,10 @@ No tiene tablas. Lee estas vistas (todas con `usuario_id`), creadas en `015-prog
 
 ## Qué módulos usa
 
-xp, ciclo, dia, sueno, entreno (solo lectura, por su ventanilla). La entrada está en **Más** (fila en `modulos/cuentas/pantallas/mas.js`); no suma botón a la barra de abajo.
+xp, ciclo, dia, sueno, entreno y desafios («Inicios con 3-2-1» del cierre de fase), solo lectura, por su ventanilla. La entrada está en **Más** (fila en `modulos/cuentas/pantallas/mas.js`); no suma botón a la barra de abajo.
 
 ## Pendiente (de la app vieja)
 
-- «Inicios con 3-2-1» en el cierre de fase: llega con **desafios**.
 - Ninjas vencidos de la semana: archivados en la app vieja; llegan con **desafios** si se prenden.
 - Video de fondo del día y animación del camino del Shinobi (`Camino.tsx`, `TumbaRota`): los dibuja **temas** (`SEK.tema.fondo`, `SEK.tema.escena`).
 - Metas de la semana y «Mi código» dentro de Progreso: ya tienen su pantalla en **ciclo** (/ciclo/metas) y **habitos** (/habitos); se pueden sumar como botones si Navil quiere.

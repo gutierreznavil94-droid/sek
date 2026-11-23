@@ -9,6 +9,7 @@ const xp = require('../xp/ventanilla')
 const ciclo = require('../ciclo/ventanilla')
 const habitos = require('../habitos/ventanilla')
 const comida = require('../comida/ventanilla')
+const desafios = require('../desafios/ventanilla')
 const { crearApp } = require('../../app')
 
 // La hora de prueba es el lunes 23 nov 2026, 10:00 en Córdoba.
@@ -127,10 +128,13 @@ test('cierre de fase: base, esta fase y la que todavía no empezó', async () =>
   assert.equal(f1.numeros.esta.xp, 35)
   assert.equal(f1.numeros.anterior, null)
   assert.equal(f1.numeros.esta.cumplimiento, null) // sin días cerrados: «—»
+  assert.equal(f1.numeros.esta.inicios, 0)
   const f2 = await progreso.cierreFase(id, 2)
   assert.equal(f2.empezo, false)
   assert.ok(f2.numeros.anterior, 'la fase 2 compara con la 1')
   await assert.rejects(progreso.cierreFase(id, 9), /fase/i)
+  await desafios.registrarInicio(id, { accion: 'Abrir el cuaderno' })
+  assert.equal((await progreso.cierreFase(id, 1)).numeros.esta.inicios, 1) // «Inicios con 3-2-1»
 })
 
 test('sueño, fuerza, comida y series responden aunque no haya nada cargado', async () => {

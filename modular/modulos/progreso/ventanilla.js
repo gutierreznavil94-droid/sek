@@ -13,6 +13,7 @@ const ciclo = require('../ciclo/ventanilla')
 const dia = require('../dia/ventanilla')
 const sueno = require('../sueno/ventanilla')
 const entreno = require('../entreno/ventanilla')
+const desafios = require('../desafios/ventanilla')
 const { obtenerAjustes } = require('../../comun/ajustes')
 const { ahora } = require('../../comun/reloj')
 const { fechaDe, sumarDias, lunesDe, fechaDelDiaDelCiclo } = require('../../comun/fechas')
@@ -211,6 +212,8 @@ async function numeros(usuarioId, desde, hasta, tx) {
     entrenos: await datos.entrenosPrevistos(usuarioId, desde, hasta, tx),
     noches: await datos.noches(usuarioId, desde, hasta, tx),
     xpGanado: await datos.xpGanado(usuarioId, desde, hasta, tx),
+    // «Inicios con 3-2-1»: los que se empezaron de verdad (desafios).
+    inicios: (await desafios.iniciosEntre(usuarioId, desde, hasta, tx)).filter((i) => i.iniciado).length,
   })
 }
 

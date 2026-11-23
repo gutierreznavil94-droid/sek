@@ -26,6 +26,7 @@
       ${fila('Noches a hora / registradas', (x) => par(x.noches))}
       ${fila('Juego por día', (x) => x.juegoPorDia, ' min')}
       ${fila('XP ganada', (x) => x.xp)}
+      ${fila('Inicios con 3-2-1', (x) => x.inicios)}
     </tbody>`
     $('#resultados').hidden = false
 
