@@ -14,6 +14,7 @@
     { ruta: '/desafios', kanji: '進', t: 'Desafíos', d: 'Tensión, No cumplí, 3·2·1, Tajo y la frase', claves: 'desafios tension no cumpli caida flexiones duelo tajo 321 tres dos uno empezar frase dudar fracasar' },
     { ruta: '/progreso', kanji: '進', t: 'Progreso', d: 'La montaña de XP, pilares, sueño, fuerza, comida y cierre de fase', claves: 'progreso montaña camino xp grafico estadisticas pilares atributos sueño fuerza entreno comida agua peso series caidas fase cierre' },
     { ruta: '/juego', kanji: '遊', t: 'Juego', d: 'Temporizador y semana', claves: 'juego temporizador jugar semana limite' },
+    { ruta: '/mas/copia', kanji: '写', t: 'Copia de seguridad', d: 'Traer datos de la app vieja y guardar una copia', claves: 'copia seguridad backup exportar importar pegar texto json app vieja traer datos guardar' },
     { ruta: '/mas/cuenta', kanji: '鍵', t: 'Cuenta', d: 'Contraseña y salir', claves: 'cuenta contraseña clave email salir cerrar sesion' },
   ]
 

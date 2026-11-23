@@ -1,0 +1,562 @@
+{
+ "app": "sistema-progreso",
+ "version": 1,
+ "exportado": 1795393800000,
+ "tablas": {
+  "identidad": [
+   {
+    "id": "unica",
+    "vision": "Ser alguien que cumple lo que se promete",
+    "obstaculos": "El juego de noche",
+    "actualizado": 1793624400000
+   }
+  ],
+  "atributos": [
+   {
+    "id": "disciplina",
+    "nombre": "Disciplina",
+    "descripcion": "Hacer lo que toca",
+    "orden": 1,
+    "ventanaDias": 14,
+    "creado": 1793538000000
+   },
+   {
+    "id": "atr_manga",
+    "nombre": "Manga",
+    "descripcion": "Dibujar",
+    "orden": 6,
+    "ventanaDias": 7,
+    "creado": 1793538000000
+   }
+  ],
+  "ciclos": [
+   {
+    "id": "ciclo_1",
+    "numero": 1,
+    "inicio": "2026-11-02",
+    "diaCero": "2026-11-01",
+    "duracionDias": 90,
+    "diasPorFase": 30,
+    "estado": "activo",
+    "creado": 1793538000000
+   }
+  ],
+  "fases": [
+   {
+    "id": "fase_1",
+    "cicloId": "ciclo_1",
+    "numero": 1,
+    "diaInicio": 1,
+    "diaFin": 30,
+    "foco": "Disciplina",
+    "queSeMide": "% de pilares"
+   },
+   {
+    "id": "fase_2",
+    "cicloId": "ciclo_1",
+    "numero": 2,
+    "diaInicio": 31,
+    "diaFin": 60,
+    "foco": "Constancia",
+    "queSeMide": ""
+   },
+   {
+    "id": "fase_3",
+    "cicloId": "ciclo_1",
+    "numero": 3,
+    "diaInicio": 61,
+    "diaFin": 90,
+    "foco": "Mi yo ideal",
+    "queSeMide": ""
+   }
+  ],
+  "objetivos": [
+   {
+    "id": "obj_1",
+    "cicloId": "ciclo_1",
+    "faseNumero": 1,
+    "atributoId": "disciplina",
+    "titulo": "Cumplir 80 % de los pilares",
+    "indicador": "% cumplido",
+    "creado": 1793624400000
+   }
+  ],
+  "metas": [
+   {
+    "id": "meta_1",
+    "fecha": "2026-11-30",
+    "titulo": "Terminar el capítulo 1",
+    "tipo": "propia",
+    "estado": "pendiente",
+    "xp": 15,
+    "creado": 1793710800000
+   }
+  ],
+  "revisiones": [
+   {
+    "id": "rev_1",
+    "tipo": "diaria",
+    "periodo": "2026-11-22",
+    "respuestas": {
+     "ajuste": "Levantarme 7:00"
+    },
+    "foto": {
+     "cumplidos": 4
+    },
+    "creado": 1795392000000,
+    "actualizado": 1795392000000
+   }
+  ],
+  "acciones": [
+   {
+    "id": "manga",
+    "nombre": "Dibujar manga",
+    "tipo": "compromiso",
+    "dias": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "horaLimite": "20:50",
+    "pilar": true,
+    "atributoIds": [
+     "atr_manga"
+    ],
+    "objetivoIds": [],
+    "peso": 1,
+    "activa": true,
+    "orden": 3,
+    "creado": 1793538000000,
+    "minutosExtra": 30
+   }
+  ],
+  "reglasXp": [
+   {
+    "id": "r_manga",
+    "accionId": "manga",
+    "xp": 15,
+    "maximo": 1,
+    "periodo": "dia",
+    "validaDesde": "2026-11-01"
+   }
+  ],
+  "compromisos": [
+   {
+    "id": "manga:2026-11-20",
+    "accionId": "manga",
+    "fecha": "2026-11-20",
+    "estado": "completado",
+    "minutos": 30,
+    "extra": true,
+    "actualizado": 1795215600000
+   }
+  ],
+  "diasCerrados": [
+   {
+    "fecha": "2026-11-20",
+    "cumplidos": 1,
+    "programados": 1,
+    "porcentaje": 100,
+    "minutosJuego": 25,
+    "cerradoEn": 1795251600000
+   }
+  ],
+  "excepciones": [
+   {
+    "fecha": "2026-11-11",
+    "motivo": "Viaje",
+    "creado": 1794315600000
+   }
+  ],
+  "atributosDiarios": [
+   {
+    "fecha": "2026-11-20",
+    "atributoId": "atr_manga",
+    "valor": 80,
+    "cumplidos": 1,
+    "programados": 1
+   }
+  ],
+  "xp": [
+   {
+    "id": 1,
+    "clave": "compromiso:manga:2026-11-20",
+    "cantidad": 15,
+    "origen": "compromiso",
+    "fecha": "2026-11-20",
+    "creado": 1795215600000,
+    "descripcion": "Dibujar manga"
+   },
+   {
+    "id": 2,
+    "clave": "resta:manga:2026-11-21",
+    "cantidad": -7,
+    "origen": "resta",
+    "fecha": "2026-11-21",
+    "creado": 1795338000000,
+    "descripcion": "Dibujar manga sin hacer"
+   },
+   {
+    "id": 3,
+    "clave": "manual:1",
+    "cantidad": 30,
+    "origen": "manual",
+    "fecha": "2026-11-21",
+    "creado": 1795262400000,
+    "descripcion": "Error",
+    "anulado": true,
+    "anuladoEn": 1795262700000,
+    "motivoAnulacion": "Lo cargué mal"
+   }
+  ],
+  "sesionesJuego": [
+   {
+    "id": 4,
+    "inicio": 1795197600000,
+    "fin": 1795199100000,
+    "pausas": []
+   }
+  ],
+  "organizacion": [
+   {
+    "id": "datos",
+    "actualizado": 1795176000000,
+    "datos": {
+     "formato": 1,
+     "frentes": [
+      {
+       "id": "tumi",
+       "nombre": "Tumi",
+       "icono": "🗺",
+       "color": "#3fb0ac",
+       "movido": "2026-11-10",
+       "tareas": [
+        {
+         "id": "t1",
+         "texto": "Mandar presupuesto",
+         "estado": "por_hacer",
+         "quien": "yo",
+         "creada": 1,
+         "fecha": "2026-11-20"
+        }
+       ]
+      }
+     ],
+     "bandeja": [
+      {
+       "id": "b1",
+       "texto": "llamar a mamá",
+       "creada": 5
+      }
+     ]
+    }
+   }
+  ],
+  "suenio": [
+   {
+    "id": 1,
+    "noche": "2026-11-19",
+    "horaPrevista": "21:15",
+    "horaReal": 1795133100000,
+    "retrasoMinutos": 0,
+    "cumplido": true,
+    "creado": 1795133100000,
+    "dormido": 1795134000000,
+    "levantado": 1795162020000,
+    "levantadoCorregido": true,
+    "aperturas": 2,
+    "despertares": 1
+   }
+  ],
+  "modoSuenio": [],
+  "forja": [
+   {
+    "id": "forja_agua",
+    "nombre": "Agua",
+    "kanji": "水",
+    "inicio": "2026-11-02",
+    "cumplidos": [
+     "2026-11-02",
+     "2026-11-03"
+    ],
+    "fallas": 0,
+    "estado": "forja",
+    "creado": 1793617200000
+   }
+  ],
+  "codigo": [
+   {
+    "id": "cod_1",
+    "texto": "Flexiones al despertar",
+    "grupo": "cuerpo",
+    "orden": 1,
+    "creado": 1793617200000
+   }
+  ],
+  "caidas": [
+   {
+    "id": "c1",
+    "fecha": "2026-11-10",
+    "instante": 1794358800000,
+    "origen": "tension",
+    "xp": 20
+   }
+  ],
+  "fotos": [
+   {
+    "id": "foto_1",
+    "fecha": "2026-11-03",
+    "dia": 2,
+    "imagen": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "creada": 1793703600000
+   }
+  ],
+  "marcas": [
+   {
+    "fecha": "2026-11-05",
+    "texto": "Cambié de estilo",
+    "creada": 1793876400000
+   }
+  ],
+  "alimentosPropios": [
+   {
+    "id": "al-viejo",
+    "n": "Tarta de mamá",
+    "kcal": 250,
+    "p": 8,
+    "c": 20,
+    "g": 14,
+    "por": "1 porción",
+    "gr": 150,
+    "fuente": "propio",
+    "creado": 1
+   }
+  ],
+  "comidas": [
+   {
+    "id": "com1",
+    "fecha": "2026-11-20",
+    "franja": "cena",
+    "alimentoId": "al-viejo",
+    "nombre": "Tarta de mamá",
+    "gramos": 150,
+    "kcal": 375,
+    "p": 12,
+    "c": 30,
+    "g": 21,
+    "instante": 1795219200000
+   },
+   {
+    "id": "com2",
+    "fecha": "2026-11-20",
+    "franja": "almuerzo",
+    "alimentoId": "t001",
+    "nombre": "Pechuga de pollo cocida",
+    "gramos": 100,
+    "kcal": 165,
+    "p": 31,
+    "c": 0,
+    "g": 3.6,
+    "instante": 1795190400000
+   }
+  ],
+  "comidasGuardadas": [
+   {
+    "id": "cg1",
+    "nombre": "Cena de mamá",
+    "items": [
+     {
+      "alimentoId": "al-viejo",
+      "nombre": "Tarta de mamá",
+      "gramos": 150
+     }
+    ],
+    "creado": 1
+   }
+  ],
+  "pesos": [
+   {
+    "id": "peso-2026-11-01",
+    "fecha": "2026-11-01",
+    "kg": 72.5,
+    "instante": 1793530800000
+   }
+  ],
+  "agua": [
+   {
+    "id": "a1",
+    "fecha": "2026-11-20",
+    "ml": 750,
+    "envase": "botella-750",
+    "instante": 1795179600000
+   }
+  ],
+  "frutas": [
+   {
+    "id": "f1",
+    "fecha": "2026-11-20",
+    "instante": 1795183200000
+   }
+  ],
+  "rutinas": [
+   {
+    "id": "rutina-a",
+    "nombre": "Rutina A",
+    "dias": [
+     1,
+     4
+    ],
+    "bloques": [
+     {
+      "id": "a-banca",
+      "tipo": "ejercicio",
+      "nombre": "Banca",
+      "series": 2,
+      "reps": 8,
+      "repsTope": 12,
+      "peso": 53,
+      "descanso": 90,
+      "sombra": 30
+     }
+    ],
+    "minutos": 40,
+    "orden": 1,
+    "activa": true,
+    "creado": 1793538000000
+   }
+  ],
+  "sesionesEntreno": [
+   {
+    "id": 7,
+    "rutinaId": "rutina-a",
+    "fecha": "2026-11-20",
+    "inicio": 1795212000000,
+    "fin": 1795214400000,
+    "estado": "terminada",
+    "paso": 1,
+    "orden": [
+     "a-banca"
+    ],
+    "series": [
+     {
+      "bloqueId": "a-banca",
+      "n": 1,
+      "reps": 8,
+      "peso": 53,
+      "instante": 1795212060000
+     }
+    ],
+    "hechos": [],
+    "saltados": [],
+    "xpExtra": 0
+   }
+  ],
+  "contadores": [
+   {
+    "id": "flexiones",
+    "nombre": "Flexiones",
+    "cantidadPorToque": 14,
+    "metaDiaria": 70,
+    "xpMetaDiaria": 10,
+    "orden": 1,
+    "activo": true,
+    "creado": 1793538000000
+   }
+  ],
+  "registrosContador": [
+   {
+    "id": 3,
+    "contadorId": "flexiones",
+    "fecha": "2026-11-20",
+    "instante": 1795172400000,
+    "cantidad": 14
+   }
+  ],
+  "ajustes": [
+   {
+    "id": "unicos",
+    "zonaHoraria": "America/Argentina/Cordoba",
+    "baseNivel": 100,
+    "limiteJuegoSemana": 45,
+    "limiteJuegoFinde": 120,
+    "avisoJuegoPorcentaje": 80,
+    "nombrePersona": "Navil",
+    "nombreApp": "SEK",
+    "tema": "shinobi",
+    "nombresFases": [
+     "Disciplina",
+     "Constancia",
+     "Mi yo ideal"
+    ],
+    "lluviaIntensidad": "tormenta",
+    "horaDejarCelu": "21:15",
+    "animaciones": "todas",
+    "temaAnimaciones": "epico",
+    "ultimaExportacion": 1795392000000,
+    "forja": {
+     "xpDia": 6
+    },
+    "caida": {
+     "xp": 25
+    },
+    "codigoSembrado": true,
+    "comida": {
+     "peso": 70,
+     "altura": 175,
+     "edad": 30,
+     "sexo": "hombre",
+     "actividad": "moderado",
+     "meta": "mantener",
+     "kcal": 2550,
+     "proteina": 100
+    },
+    "agua": {
+     "envases": [
+      {
+       "id": "mate",
+       "nombre": "Mate",
+       "ml": 1000
+      }
+     ],
+     "principal": "mate"
+    },
+    "fruta": {
+     "nombre": "Banana",
+     "objetivo1": 2,
+     "objetivo2": 3
+    }
+   }
+  ],
+  "eventos": [
+   {
+    "id": 1,
+    "tipo": "editar",
+    "entidad": "ajustes",
+    "entidadId": "unicos",
+    "instante": 1793538000000
+   }
+  ],
+  "niveles": [],
+  "siguienteAccion": [],
+  "temporizador": [],
+  "recomendaciones": [],
+  "ninjas": [
+   {
+    "id": "n1",
+    "nombre": "Distracción",
+    "fecha": "2026-11-20"
+   }
+  ],
+  "feriados": [
+   {
+    "fecha": "2026-12-08",
+    "nombre": "Inmaculada Concepción"
+   }
+  ],
+  "fechasClave": []
+ }
+}

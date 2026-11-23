@@ -594,6 +594,31 @@ async function importar(usuarioId, tablas, tx = null) {
   }, tx)
 }
 
+/**
+ * Todo lo de comida con la forma de la app vieja, que es la que recibe `importar` (lo usa el módulo copia).
+ * Los alimentos propios salen con id `p<n>` y las comidas los nombran igual (`alimentoId`).
+ */
+async function exportar(usuarioId, tx = null) {
+  const T0 = '0001-01-01'
+  const T1 = '9999-12-31'
+  const cfg = (await datos.config(usuarioId, tx)) || {}
+  return {
+    alimentosPropios: (await datos.propios(usuarioId, tx)).reverse().map((a) => ({
+      id: `p${a.id}`, n: a.nombre, kcal: a.kcal, p: a.p, c: a.c, g: a.g, por: a.porcion, gr: a.gramos, fuente: a.fuente, codigo: a.codigo || undefined, up: a.up, creado: a.creado,
+    })),
+    comidas: (await datos.comidasEntre(usuarioId, T0, T1, tx)).map((r) => ({
+      fecha: r.fecha, franja: r.franja, alimentoId: r.alimento, nombre: r.nombre, gramos: r.gramos, kcal: r.kcal, p: r.p, c: r.c, g: r.g, up: r.up, instante: r.instante,
+    })),
+    comidasGuardadas: (await datos.guardadas(usuarioId, tx)).map((g) => ({
+      nombre: g.nombre, items: (g.items || []).map((i) => ({ alimentoId: i.alimento, nombre: i.nombre, gramos: i.gramos })), creado: g.creado,
+    })),
+    pesos: await datos.pesos(usuarioId, tx),
+    agua: (await datos.tomasEntre(usuarioId, T0, T1, tx)).map(({ id, ...a }) => a),
+    frutas: (await datos.frutasTodas(usuarioId, tx)).map(({ id, ...f }) => f),
+    ajustes: [{ id: 'unicos', comida: cfg.objetivo || undefined, agua: cfg.agua || undefined, fruta: cfg.fruta || undefined }],
+  }
+}
+
 module.exports = {
   hoy,
   alimento, buscar, crearPropio, buscarCodigo,
@@ -602,5 +627,5 @@ module.exports = {
   objetivo, guardarObjetivo, registrarPeso, pesos, planDelDia,
   configAgua, guardarConfigAgua, aguaDelDia, tomarAgua, deshacerAgua, borrarToma, resumenAgua,
   configFruta, guardarConfigFruta, frutaDelDia, comerFruta, deshacerFruta, historialFruta,
-  resumenSemanas, resumenHoy, resumen, ajustes, importar,
+  resumenSemanas, resumenHoy, resumen, ajustes, importar, exportar,
 }

@@ -106,4 +106,9 @@ async function importar(usuarioId, viejo, tx = null) {
   }, tx)
 }
 
-module.exports = { leer, guardar, resumenHoy, marcarHecha, importar }
+/** Los datos de Organización, con la forma que recibe `importar` (lo usa el módulo copia). */
+async function exportar(usuarioId, tx = null) {
+  return (await leer(usuarioId, tx)).datos
+}
+
+module.exports = { leer, guardar, resumenHoy, marcarHecha, importar, exportar }

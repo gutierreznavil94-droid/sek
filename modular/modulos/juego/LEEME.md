@@ -18,6 +18,7 @@ Es el **módulo de ejemplo** del monolito: copiá su forma para armar los demás
 | `resumen(usuarioId)` | Todo lo de la pantalla: sesión, hoy, semana, estado del límite. |
 | `historial(usuarioId, cantidad?)` | Últimas sesiones. |
 | `importar(usuarioId, sesionesViejas)` | Trae `sesionesJuego` de una copia de la app vieja. Lo usa el módulo **copia**. |
+| `exportar(usuarioId)` | Todas las sesiones con la forma que recibe `importar` (que no duplica una sesión con el mismo inicio). Lo usa **copia**. |
 
 Todas aceptan `tx` opcional al final (transacción compartida).
 

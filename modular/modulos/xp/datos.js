@@ -53,4 +53,8 @@ const ultimos = (usuarioId, cantidad, antesDeId, tx) =>
   todas(`SELECT ${COLUMNAS} FROM xp_registros WHERE usuario_id = $1 AND ($3::bigint IS NULL OR id < $3)
          ORDER BY id DESC LIMIT $2`, [usuarioId, cantidad, antesDeId], tx)
 
-module.exports = { bloquear, porId, porClave, total, crear, reactivar, anular, delDia, porDia, antesDe, ultimos }
+/** Todos los movimientos, en orden (para la copia). */
+const todos = (usuarioId, tx) =>
+  todas(`SELECT ${COLUMNAS} FROM xp_registros WHERE usuario_id = $1 ORDER BY id`, [usuarioId], tx)
+
+module.exports = { todos, bloquear, porId, porClave, total, crear, reactivar, anular, delDia, porDia, antesDe, ultimos }

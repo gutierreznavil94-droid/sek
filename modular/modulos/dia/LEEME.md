@@ -26,6 +26,7 @@
 | `anotarVista(u)` / `tajo(u)` | El Tajo: la pantalla avisa al ocultarse; al volver pregunta. Sale si pasaron ≥ 3 h, hay un pilar pendiente, no pasó la hora de «Dejo celu» y hoy no salió. `{ mostrar, pendientes }`. |
 | `sembrar(u)` | Al crear cuenta: los 7 de fábrica (entrenamiento, empresa, manga, dormir a horario, límite de juego, revisión diaria y semanal) con su XP (30, 15, 15, 20, 15, 10, 25). Anotado en `app.js`. |
 | `importar(u, { acciones, reglasXp, compromisos, diasCerrados, excepciones, atributosDiarios })` | De «Copiar todo como texto» de la app vieja. Lo repetido no entra. Lo usa **copia**. |
+| `exportar(u)` | Lo mismo que recibe `importar`. Lo usa **copia**. Al importar, la regla sembrada con el mismo id (`r_<acción>`) se reemplaza por la de la copia. |
 | `escucharAvisos()` / `conectar({ planComida, faltantesSeries, seriesParaAtributos })` | Ver abajo. Los llama `app.js`. |
 
 Todas aceptan `tx` opcional al final (transacción compartida).

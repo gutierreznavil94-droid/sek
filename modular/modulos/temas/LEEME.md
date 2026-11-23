@@ -46,6 +46,7 @@ Escenas de Shinobi que hay (`pantallas/shinobi/escenas/`): `juego/a-jugar`, `jue
 | `archivoDe(usuarioId, id)` | `{ nombreArchivo, texto }` para volver a compartirlo. |
 | `medio(usuarioId, id, nombre)` | Una imagen/video de un tema subido: `{ tipo, bytes }`. |
 | `importar(usuarioId, { tema, archivos })` | Para el módulo **copia**: el tema elegido y archivos `.sektema` (lo que no sirve se saltea). Devuelve cuántos entraron. |
+| `exportar(usuarioId)` | El tema elegido y los temas subidos (archivo completo), con la forma que recibe `importar`. Lo usa **copia**. |
 | `guardarAviso(usuarioId, nombre, detalle)` | Guarda un aviso visual para la próxima pantalla. |
 | `conectar()` | Empieza a escuchar `xp.nivel` (lo llama `rutas.js`; una sola vez). |
 

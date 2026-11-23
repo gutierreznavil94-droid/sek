@@ -51,7 +51,7 @@ Avisos «al revés» (el que emite no conoce a quien escucha):
 | 10 | desafios | xp, entreno | medio |
 | 11 | temas | — | grande (visual) |
 | 12 | progreso | todos (solo lee) | grande |
-| 13 | copia | todos | chico |
+| 13 | copia | todos | ✅ hecho (016) |
 | 14 | celular (APK) | rutas de todos | grande (Android) |
 
 Los módulos 1, 2 y 3 se pueden hacer a la vez. Después 4 y 5 en orden. Del 6 al 11 a la vez (solo necesitan xp). 12, 13 y 14 al final.
@@ -146,6 +146,7 @@ Los módulos 1, 2 y 3 se pueden hacer a la vez. Después 4 y 5 en orden. Del 6 a
 **Qué hace:** pegar el texto de «Copiar todo como texto» de la app vieja y repartirlo a cada módulo (`ventanilla.importar`), todo en una transacción. Exportar todo de la nueva.
 **Del código viejo:** `src/services/exportar.ts`, `src/ui/paginas/Copia.tsx`.
 **Usa:** la ventanilla de todos.
+**Hecho (migración 016):** ver `modulos/copia/LEEME.md`. Pantalla en Más → Copia de seguridad. Cada módulo sumó `exportar` (misma forma que su `importar`). Falta sumar desafios (`ninjas`) y dia parte 2 (`feriados`, `fechasClave`, `horario`) cuando lleguen.
 
 ## 14. celular (APK)
 **Qué hace:** el APK con Capacitor abre el servidor en vez de llevar la app adentro. Lo nativo sigue en Java: alarmas, widgets, notificaciones, Tajo encima, «Apps que te atrapan» y «Mis juegos del celu», buscar actualización.

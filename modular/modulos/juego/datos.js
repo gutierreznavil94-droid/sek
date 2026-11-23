@@ -29,4 +29,11 @@ const entre = (usuarioId, desde, hasta, tx) =>
 const ultimas = (usuarioId, cantidad, tx) =>
   todas(`SELECT ${COLUMNAS} FROM sesiones_juego WHERE usuario_id = $1 ORDER BY inicio DESC LIMIT $2`, [usuarioId, cantidad], tx)
 
-module.exports = { activa, porId, crear, actualizar, borrar, entre, ultimas }
+const porInicio = (usuarioId, inicio, tx) =>
+  una(`SELECT ${COLUMNAS} FROM sesiones_juego WHERE usuario_id = $1 AND inicio = $2 LIMIT 1`, [usuarioId, inicio], tx)
+
+/** Todas las sesiones, en orden (para la copia). */
+const todasLasSesiones = (usuarioId, tx) =>
+  todas(`SELECT ${COLUMNAS} FROM sesiones_juego WHERE usuario_id = $1 ORDER BY inicio, id`, [usuarioId], tx)
+
+module.exports = { porInicio, todasLasSesiones, activa, porId, crear, actualizar, borrar, entre, ultimas }

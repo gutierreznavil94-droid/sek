@@ -29,6 +29,7 @@ Pantallas: `/habitos` (botón **Código** 掟 de la barra: forja + Mi código + 
 | `resumenHoy(usuarioId)` | La tarjeta de Hoy: `{ hoy, enForja: [{ id, nombre, kanji, validos, necesarios, pedazos, hechoHoy }], caidasHoy, reglas }`. |
 | `resumen(usuarioId)` | Todo lo de la pantalla. |
 | `importar(usuarioId, { forja, codigo, caidas, fotos, marcas, ajustes })` | Trae esas tablas de «Copiar todo como texto» de la app vieja. Conserva los id (así la XP importada por **xp** sigue enganchada a su hábito). Lo repetido no entra. Lo usa **copia**. |
+| `exportar(usuarioId)` | Todo (con las fotos) con la forma que recibe `importar`. Lo usa **copia**. |
 
 Todas aceptan `tx` opcional al final (transacción compartida).
 

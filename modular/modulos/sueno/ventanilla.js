@@ -396,9 +396,16 @@ async function importar(usuarioId, { suenio = [], modoSuenio = [] } = {}, tx = n
   }, tx)
 }
 
+/** Todas las noches y el modo sueño prendido, con la forma que recibe `importar` (lo usa el módulo copia). */
+async function exportar(usuarioId, tx = null) {
+  const noches = (await datos.entre(usuarioId, '0001-01-01', '9999-12-31', tx)).map(({ id, ...r }) => r)
+  const m = await datos.modo(usuarioId, tx)
+  return { suenio: noches, modoSuenio: m ? [{ id: 'activo', ...m }] : [] }
+}
+
 module.exports = {
   nocheDe, dejoCelu, deshacerDejoCelu, dormirAHorario,
   modoActivo, entrarModo, salirModo, terminarModoSiCorresponde, registrarApertura, registrarDespertar,
   corregirNoche, volverAEstimado, noches, resumenNoches, estadoAdaptacion, guardarAdaptacion, guardarAjustesSueno, ajustesSueno,
-  avisoDormir, resumen, resumenHoy, aperturasEntre, importar,
+  avisoDormir, resumen, resumenHoy, aperturasEntre, importar, exportar,
 }

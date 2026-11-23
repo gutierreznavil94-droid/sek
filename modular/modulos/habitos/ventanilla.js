@@ -482,6 +482,24 @@ async function importar(usuarioId, viejo = {}, tx = null) {
   }, tx)
 }
 
+/** Todo lo del módulo (con las fotos), con la forma que recibe `importar`. Lo usa el módulo copia. */
+async function exportar(usuarioId, tx = null) {
+  const fotos = []
+  for (const f of await datos.fotosLista(usuarioId, tx)) {
+    const img = await datos.fotoImagen(usuarioId, f.id, tx)
+    fotos.push({ ...f, imagen: img ? img.imagen : null })
+  }
+  const a = await obtenerAjustes(usuarioId, tx)
+  return {
+    forja: await datos.forjaTodos(usuarioId, tx),
+    codigo: await datos.codigoTodas(usuarioId, tx),
+    caidas: await datos.caidasTodas(usuarioId, tx),
+    fotos,
+    marcas: await datos.marcasTodas(usuarioId, tx),
+    ajustes: { forja: a.forja, caida: a.caida, codigoSembrado: !!a.codigoSembrado },
+  }
+}
+
 module.exports = {
   // forja
   configForja, listarForja, crearHabito, alternarDia, abandonarHabito, editarHabito, kanjiSugeridos: calculo.kanjiSugeridos,
@@ -492,5 +510,5 @@ module.exports = {
   // fotos y marcas
   listarFotos, imagenFoto, agregarFoto, borrarFoto, listarMarcas, marcarDia, quitarMarca,
   // resto
-  cambiarConfig, resumenHoy, resumen, importar,
+  cambiarConfig, resumenHoy, resumen, importar, exportar,
 }

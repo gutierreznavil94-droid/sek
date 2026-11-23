@@ -115,6 +115,10 @@ const frutasPorDia = (usuarioId, desde, hasta, tx) =>
   todas('SELECT fecha, count(*)::int AS n FROM frutas WHERE usuario_id = $1 AND fecha BETWEEN $2 AND $3 GROUP BY fecha ORDER BY fecha',
     [usuarioId, desde, hasta], tx)
 
+/** Todas las frutas, una por fila (para la copia). */
+const frutasTodas = (usuarioId, tx) =>
+  todas('SELECT id, fecha, instante FROM frutas WHERE usuario_id = $1 ORDER BY fecha, instante, id', [usuarioId], tx)
+
 const ultimoInstanteFruta = async (usuarioId, fecha, tx) =>
   (await una('SELECT max(instante) AS m FROM frutas WHERE usuario_id = $1 AND fecha = $2', [usuarioId, fecha], tx)).m || 0
 
@@ -124,6 +128,7 @@ const borrarUltimaFruta = (usuarioId, fecha, tx) =>
        ) RETURNING id`, [usuarioId, fecha], tx)
 
 module.exports = {
+  frutasTodas,
   config, guardarConfig,
   propios, propio, propioPorCodigo, crearPropio,
   crearComida, comida, cambiarComida, borrarComida, comidasEntre,

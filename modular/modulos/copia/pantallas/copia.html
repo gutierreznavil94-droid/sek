@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SEK · Copia de seguridad</title>
+  <link rel="icon" href="/comun/favicon-32.png">
+  <link rel="stylesheet" href="/comun/estilo.css">
+  <link rel="stylesheet" href="/m/copia/estilo.css">
+</head>
+<body>
+  <main>
+    <a class="atras" href="/mas">‹ Más</a>
+    <h1>写 Copia de seguridad</h1>
+
+    <section class="tarjeta">
+      <h3>Traer mis datos</h3>
+      <p class="chico">De la app vieja: <b>Más → Copia de seguridad → «Copiar todo como texto»</b>, y pegalo acá. También sirve una copia exportada de esta app.</p>
+      <textarea id="texto" rows="5" placeholder="Pegá la copia acá" spellcheck="false"></textarea>
+      <div class="fila">
+        <button id="revisar" class="principal" disabled>Revisar copia</button>
+        <label class="boton archivo">Elegir archivo<input id="archivo" type="file" accept="application/json,.json,.txt"></label>
+      </div>
+      <p id="error" class="mal" hidden></p>
+    </section>
+
+    <section class="tarjeta" id="vista" hidden>
+      <div class="fila entre"><h3>Qué trae</h3><span class="chico" id="vista-de"></span></div>
+      <ul class="partes" id="partes"></ul>
+      <details id="sin-usar" hidden>
+        <summary class="chico">Lo que no se trae</summary>
+        <ul class="partes apagado" id="sin-usar-lista"></ul>
+      </details>
+      <p class="chico">Se <b>suma</b> a lo que ya tenés en esta app: lo repetido no entra dos veces y no se borra nada. Si algo falla, no entra nada.</p>
+      <p class="aviso" id="ya" hidden></p>
+      <div class="fila">
+        <button id="importar" class="principal">Importar</button>
+        <button id="cancelar">Cancelar</button>
+      </div>
+    </section>
+
+    <section class="tarjeta" id="listo" hidden>
+      <h3 class="ok">Listo</h3>
+      <ul class="partes" id="listo-partes"></ul>
+    </section>
+
+    <section class="tarjeta">
+      <h3>Guardar una copia</h3>
+      <div class="fila entre chico"><span>Última copia</span><b id="ultima">nunca</b></div>
+      <p class="chico">Todo lo tuyo de esta app en un archivo. Guardalo en Drive, Telegram o el correo. Se puede volver a importar acá.</p>
+      <a class="boton principal" id="descargar" href="/api/copia/exportar?descargar=1" download>Descargar copia (JSON)</a>
+      <button id="copiar">Copiar todo como texto</button>
+      <textarea id="copiado" rows="4" readonly hidden></textarea>
+    </section>
+
+    <section class="tarjeta" id="historial" hidden>
+      <h3>Copias importadas</h3>
+      <ul class="partes" id="historial-lista"></ul>
+    </section>
+  </main>
+  <script src="/comun/marco.js"></script>
+  <script src="/m/copia/copia.js"></script>
+</body>
+</html>

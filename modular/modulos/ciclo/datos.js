@@ -124,7 +124,22 @@ const guardarRevision = (u, r, tx) =>
 const revisiones = (u, tipo, cantidad, tx) =>
   todas(`SELECT ${C_REV} FROM revisiones WHERE usuario_id = $1 AND tipo = $2 ORDER BY periodo DESC LIMIT $3`, [u, tipo, cantidad], tx)
 
+// ---------- copia ----------
+/** Todo lo del módulo, también lo archivado (para el módulo copia). */
+async function todoParaCopia(u, tx) {
+  return {
+    ciclos: await ciclos(u, tx),
+    fases: await todas(`SELECT ${C_FASE} FROM fases WHERE usuario_id = $1 ORDER BY ciclo_id, numero`, [u], tx),
+    objetivos: await todas(`SELECT ${C_OBJ} FROM objetivos WHERE usuario_id = $1 ORDER BY ciclo_id, fase_numero, creado`, [u], tx),
+    atributos: await atributos(u, true, tx),
+    identidad: await identidad(u, tx),
+    metas: await todas(`SELECT ${C_META} FROM metas WHERE usuario_id = $1 ORDER BY fecha, creado`, [u], tx),
+    revisiones: await todas(`SELECT ${C_REV} FROM revisiones WHERE usuario_id = $1 ORDER BY tipo, periodo`, [u], tx),
+  }
+}
+
 module.exports = {
+  todoParaCopia,
   cicloActivo, cicloPorId, ciclos, cuantosCiclos, crearCiclo, cerrarCiclo, cambiarInicio,
   fases, fasePorId, crearFase, editarFase, cerrarFase,
   objetivos, objetivoPorId, guardarObjetivo, ponerResultado, archivarObjetivo,
