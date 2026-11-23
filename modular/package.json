@@ -7,8 +7,7 @@
   "scripts": {
     "start": "node app.js",
     "migrar": "node comun/migrar.js",
-    "test": "node --test --test-concurrency=1 \"modulos/**/*.test.js\" \"comun/**/*.test.js\"",
-    "organizacion": "node herramientas/armar-organizacion.js"
+    "test": "node --test --test-concurrency=1 \"modulos/**/*.test.js\" \"comun/**/*.test.js\""
   },
   "dependencies": {
     "fastify": "^5.2.0",

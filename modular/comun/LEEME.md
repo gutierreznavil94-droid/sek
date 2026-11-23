@@ -26,7 +26,7 @@ Lo que usan todos los módulos. **No depende de ningún módulo** (lo revisa `gu
 | Archivo | Qué hace |
 |---|---|
 | `estilo.css` | Colores, letras (Pincel y Brocha), fondo, tarjetas, botones, campos, barra de abajo. Tema Shinobi. |
-| `marco.js` | `SEK.api`, `SEK.barra`, `SEK.mensaje`, `SEK.minutos`, `SEK.seguro`, `SEK.$`. La lista `MENU` tiene los botones de la barra de abajo: cada módulo con pantalla principal suma el suyo. |
+| `marco.js` | `SEK.api`, `SEK.barra`, `SEK.mensaje`, `SEK.minutos`, `SEK.seguro`, `SEK.$`, `SEK.icono(nombre)` (kanjis del tema por nombre genérico, lista `ICONOS`, hasta que exista el módulo temas) y `SEK.evento(nombre, detalle)` (evento visual genérico: avisa `sek-evento` en `document`). La lista `MENU` tiene los botones de la barra de abajo: cada módulo con pantalla principal suma el suyo. |
 | `servir.js` | Sirve `/comun/*` y `/m/<modulo>/*` (sin librerías y sin dejar salir de la carpeta). `pagina(respuesta, modulo, archivo)` para las rutas de cada módulo. |
 | `entrar.html` | Entrar y crear cuenta. |
 | `inicio.html` | Hoy provisorio, hasta que exista el módulo **dia**. |
