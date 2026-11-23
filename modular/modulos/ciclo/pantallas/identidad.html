@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SEK · Identidad</title>
+  <link rel="icon" href="/comun/favicon-32.png">
+  <link rel="stylesheet" href="/comun/estilo.css">
+  <link rel="stylesheet" href="/m/ciclo/estilo.css">
+</head>
+<body>
+  <main>
+    <a class="atras" href="/ciclo">← Ciclo</a>
+    <h1>己 Identidad</h1>
+    <p class="chico">Cada acción diaria está conectada con la persona que querés llegar a ser. Esto es lo que la app te recuerda.</p>
+
+    <form class="tarjeta" id="form-identidad">
+      <label>Yo ideal <textarea name="vision" rows="6" required minlength="10" maxlength="4000"></textarea></label>
+      <label>Obstáculos actuales <textarea name="obstaculos" rows="4" maxlength="4000"></textarea></label>
+      <button class="principal" type="submit" id="guardar-identidad" disabled>Guardar</button>
+    </form>
+
+    <section class="tarjeta">
+      <div class="fila entre">
+        <h3>Atributos</h3>
+        <button class="mini" type="button" id="nuevo-atributo">+ Nuevo</button>
+      </div>
+      <p class="chico">Cada atributo es el % de cumplimiento de las acciones vinculadas en una ventana de días. Las acciones se vinculan desde los pilares del día.</p>
+      <ul class="lista" id="atributos"></ul>
+    </section>
+  </main>
+  <script src="/comun/marco.js"></script>
+  <script src="/m/ciclo/ayuda.js"></script>
+  <script src="/m/ciclo/identidad.js"></script>
+</body>
+</html>

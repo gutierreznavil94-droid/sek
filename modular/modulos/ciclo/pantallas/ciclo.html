@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SEK · Ciclo</title>
+  <link rel="icon" href="/comun/favicon-32.png">
+  <link rel="stylesheet" href="/comun/estilo.css">
+  <link rel="stylesheet" href="/m/ciclo/estilo.css">
+</head>
+<body>
+  <main>
+    <h1>道 Ciclo</h1>
+
+    <!-- Sin ciclo: elegir el Día 1 -->
+    <section class="tarjeta" id="sin-ciclo" hidden>
+      <h3>Empezá tu ciclo</h3>
+      <p class="chico">Elegí el Día 1. El día va de 00:00 a 00:00 en tu zona horaria. Las fases son etapas para medir, no desbloquean nada.</p>
+      <form id="form-iniciar" class="pila">
+        <label>Día 1 <input type="date" name="inicio" required></label>
+        <label>Duración
+          <select name="duracionDias">
+            <option value="90">90 días (3 fases de 30)</option>
+            <option value="60">60 días (2 fases de 30)</option>
+            <option value="120">120 días (4 fases de 30)</option>
+            <option value="180">180 días (6 fases de 30)</option>
+            <option value="365">365 días (13 fases de 30)</option>
+          </select>
+        </label>
+        <label class="interruptor"><input type="checkbox" name="diaCero"> <span>Día 0 de calentamiento (el día antes: suma XP, nunca resta)</span></label>
+        <button class="principal" type="submit">Empezar ciclo</button>
+      </form>
+    </section>
+
+    <!-- Con ciclo -->
+    <section class="tarjeta" id="donde" hidden aria-live="polite">
+      <div class="fila entre">
+        <div class="dia-grande" id="dia"></div>
+        <span class="frase" id="fase-foco"></span>
+      </div>
+      <div class="barra-progreso" role="progressbar" aria-label="Avance del ciclo"><span id="barra" style="width:0%"></span></div>
+      <div class="fila entre chico"><span id="desde-hasta"></span><span id="numero"></span></div>
+      <p class="chico ajuste" id="ajuste" hidden></p>
+    </section>
+
+    <nav class="accesos" aria-label="Del ciclo">
+      <a href="/ciclo/revision"><span class="kanji" aria-hidden="true">省</span><b>Revisión de hoy</b><span class="desc">3 pasos, menos de 3 minutos</span></a>
+      <a href="/ciclo/revision?tipo=semanal"><span class="kanji" aria-hidden="true">週</span><b>Revisión semanal</b><span class="desc">Qué funcionó y qué cambio</span></a>
+      <a href="/ciclo/metas"><span class="kanji" aria-hidden="true">標</span><b>Metas con fecha</b><span class="desc" id="metas-desc">Qué querés lograr y para cuándo</span></a>
+      <a href="/ciclo/identidad"><span class="kanji" aria-hidden="true">己</span><b>Identidad y atributos</b><span class="desc">Tu yo ideal y lo que medís</span></a>
+    </nav>
+
+    <div id="fases" class="pila"></div>
+
+    <section class="tarjeta" id="ajustes-ciclo" hidden>
+      <h3>Este ciclo</h3>
+      <p class="chico">Cambiar la fecha no borra nada: mueve las metas automáticas (fin de fase, revisión del domingo). Un ciclo nuevo cierra este; nivel, XP e historial quedan.</p>
+      <div class="botones">
+        <button type="button" id="cambiar-inicio">Cambiar el Día 1</button>
+        <button type="button" id="nuevo-ciclo">Empezar un ciclo nuevo</button>
+      </div>
+      <p class="chico apagado" id="anteriores"></p>
+    </section>
+  </main>
+  <script src="/comun/marco.js"></script>
+  <script src="/m/ciclo/ayuda.js"></script>
+  <script src="/m/ciclo/ciclo.js"></script>
+</body>
+</html>

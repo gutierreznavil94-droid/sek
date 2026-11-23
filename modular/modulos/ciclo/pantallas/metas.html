@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SEK · Metas</title>
+  <link rel="icon" href="/comun/favicon-32.png">
+  <link rel="stylesheet" href="/comun/estilo.css">
+  <link rel="stylesheet" href="/m/ciclo/estilo.css">
+</head>
+<body>
+  <main>
+    <a class="atras" href="/ciclo">← Ciclo</a>
+    <div class="fila entre">
+      <h1>標 Metas</h1>
+      <button class="principal" type="button" id="nueva">+ Nueva meta</button>
+    </div>
+    <p class="chico">Qué querés lograr y para cuándo. El día que vence te pregunta si la lograste: verde si sí, rojo si no. Cumplirla da XP una sola vez (hasta 2 metas con XP por día).</p>
+    <p class="chico apagado" id="vacio" hidden>Todavía no hay metas. Ejemplo: «Terminar el capítulo 1 del manga» para el 30 de noviembre.</p>
+
+    <section class="tarjeta" id="sec-vencidas" hidden><h3>Esperan tu respuesta</h3><ul class="lista" id="vencidas"></ul></section>
+    <section class="tarjeta" id="sec-pendientes" hidden><h3>Por venir</h3><ul class="lista" id="pendientes"></ul></section>
+    <section class="tarjeta" id="sec-cumplidas" hidden><h3>Cumplidas</h3><ul class="lista" id="cumplidas"></ul></section>
+    <section class="tarjeta" id="sec-noCumplidas" hidden><h3>No cumplidas</h3><ul class="lista" id="noCumplidas"></ul></section>
+  </main>
+  <script src="/comun/marco.js"></script>
+  <script src="/m/ciclo/ayuda.js"></script>
+  <script src="/m/ciclo/metas.js"></script>
+</body>
+</html>

@@ -27,6 +27,9 @@ Avisos «al revés» (el que emite no conoce a quien escucha):
 | `sueno.dejo_celu` | sueno | dia (pilar Dormir a horario) |
 | `comida.registrada` | comida | dia (pilar Comer según el plan) |
 | `organizacion.tarea.hecha` | organizacion | (temas: animación) |
+| `ciclo.nuevo`, `ciclo.inicio_cambiado` | ciclo | dia (pilares del ciclo nuevo; limpiar días de antes del Día 1) |
+| `ciclo.revision` | ciclo | dia (pilar «Revisión diaria/semanal» y su XP) |
+| `ciclo.fase_cerrada` | ciclo | (temas: animación; progreso) |
 | `xp.nivel` | xp | temas (animación de nivel) |
 
 ## Orden de la mudanza (un hilo por módulo)
@@ -80,6 +83,7 @@ Los módulos 1, 2 y 3 se pueden hacer a la vez. Después 4 y 5 en orden. Del 6 a
 **Tablas:** `ciclos`, `fases`, `objetivos`, `atributos`, `identidad`, `metas`, `revisiones`.
 **Usa:** xp.
 **Ofrece:** `cicloActivo`, `diaDelCiclo(fecha)` (día y fase), `atributos`, `sembrar` (al crear cuenta), `importar`.
+**Hecho (migración 006):** ver `modulos/ciclo/LEEME.md`. `SiguienteAccion` se muda con **dia**/**desafios** (usa horario, inicios y 3·2·1) y `Juramento` con **habitos**/**temas** (es la animación de «Mi código»). La tabla de números del cierre de fase y de la revisión semanal va en **progreso**.
 
 ## 5. dia
 **Qué hace:** los pilares y compromisos de cada día (cumplir, tarde, omitir, extra, deshacer), cerrar los días pendientes, racha, excepciones, feriados, fechas clave, Mi horario, Calendario y la pantalla **Hoy** como tablero (cada módulo le presta su tarjeta).
