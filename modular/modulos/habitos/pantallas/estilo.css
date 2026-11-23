@@ -1,0 +1,83 @@
+/* Diseños propios de Hábitos (forja, Mi código, fotos). Usa los colores generales de comun/pantalla/estilo.css. */
+.hb-cabeza { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
+.hb-cabeza-kanji { font-size: 3rem; color: var(--acento); line-height: 1; }
+.hb-sello { display: flex; flex-direction: column; align-items: center; border: 2px solid var(--acento); color: var(--acento); border-radius: 8px; padding: 4px 8px; transform: rotate(-6deg); }
+.hb-sello .kanji { font-size: 1.2rem; line-height: 1; }
+.hb-k { color: var(--acento); }
+.hb-enlace { flex-direction: row; justify-content: space-between; align-items: center; color: var(--texto); text-decoration: none; }
+
+/* Forja */
+.hb-forja { display: flex; flex-direction: column; gap: 14px; }
+.hb-habito { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; align-items: start; }
+.hb-piedra-boton { background: none; border: 0; padding: 0; min-height: 0; border-radius: 50%; }
+.hb-piedra { width: 96px; height: 96px; display: block; }
+.hb-piedra .roca { fill: var(--fondo-3); stroke: var(--borde); stroke-width: 2; }
+.hb-piedra .grieta { fill: none; stroke: var(--acento); stroke-width: 2.2; stroke-linecap: round; opacity: 0; transition: opacity .4s; }
+.hb-piedra .grieta.abierta { opacity: .9; }
+.hb-piedra .kanji-piedra { font-family: var(--pincel); font-size: 44px; fill: var(--papel); text-anchor: middle; dominant-baseline: central; }
+.hb-piedra.hecho .roca { stroke: var(--verde); }
+.hb-piedra.completa .roca { fill: none; stroke-dasharray: 6 8; }
+.hb-piedra.completa .kanji-piedra { fill: var(--acento); }
+.hb-piedra-boton:active .hb-piedra { transform: scale(.96); }
+.hb-datos { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.hb-datos b { overflow-wrap: anywhere; }
+.hb-opciones { align-self: flex-start; min-height: 32px; padding: 4px 10px; font-size: .85rem; }
+.hb-camino { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+.hb-camino i { width: 10px; height: 10px; border-radius: 2px; background: var(--fondo-3); border: 1px solid var(--borde); }
+.hb-camino i.cumplido { background: var(--verde); border-color: var(--verde); }
+.hb-camino i.perdonado { background: var(--ambar); border-color: var(--ambar); opacity: .7; }
+.hb-camino i.falla { background: var(--peligro); border-color: var(--peligro); }
+.hb-camino i.hoy { border-color: var(--acento); border-width: 2px; }
+.hb-camino i.pedazo { outline: 1px solid var(--papel); outline-offset: 1px; }
+.hb-camino i.extra { border-style: dashed; }
+
+.hb-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.hb-lista li { display: flex; gap: 10px; align-items: center; }
+.hb-lista .kanji { font-size: 1.6rem; color: var(--acento); width: 32px; text-align: center; }
+
+/* Mi código */
+.hb-vistas { display: inline-flex; border: 1px solid var(--borde); border-radius: var(--radio); overflow: hidden; }
+.hb-vistas button { border: 0; border-radius: 0; min-height: 36px; padding: 6px 12px; font-size: .85rem; background: transparent; color: var(--texto-2); }
+.hb-vistas button[aria-selected="true"] { background: var(--acento); color: #fff; }
+.hb-grupo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.hb-grupo h3 { display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--borde); padding-bottom: 4px; }
+.hb-grupo h3 .kanji { font-size: 1.3rem; color: var(--acento); font-weight: 400; }
+.hb-regla { justify-content: flex-start; text-align: left; gap: 10px; width: 100%; background: transparent; border-color: transparent; }
+.hb-regla:active { border-color: var(--acento); }
+.hb-numero { font-family: var(--pincel); color: var(--acento); min-width: 28px; text-align: center; font-size: 1.1rem; }
+.hb-regla-texto { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.hb-otra { font-size: .75rem; color: var(--texto-3); white-space: nowrap; }
+
+/* Caída */
+.hb-no-cumpli { background: transparent; border: 1px solid var(--acento); color: var(--peligro); }
+.hb-deshacer { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--barra) + 16px + env(safe-area-inset-bottom)); background: var(--fondo-3); border: 1px solid var(--acento); border-radius: var(--radio); padding: 8px 10px 8px 16px; display: flex; gap: 12px; align-items: center; z-index: 21; width: max-content; max-width: calc(100% - 32px); }
+
+/* Ajustes */
+.hb-ajustes { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px; }
+.hb-ajustes > * { min-width: 0; }
+details > summary { cursor: pointer; color: var(--texto-2); min-height: 32px; display: flex; align-items: center; }
+
+/* Hoja (dialog) */
+.hb-hoja { border: 1px solid var(--borde); border-radius: var(--radio) var(--radio) 0 0; background: var(--fondo-2); color: var(--texto); padding: 0; width: 100%; max-width: 640px; margin: auto auto 0; max-height: 90vh; }
+.hb-hoja::backdrop { background: rgba(0, 0, 0, .6); }
+.hb-hoja-in { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.hb-hoja-in > .fila button { min-height: 36px; padding: 4px 12px; }
+.hb-hoja-cuerpo { display: flex; flex-direction: column; gap: 12px; }
+.hb-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.hb-chips button { min-height: 40px; padding: 6px 12px; }
+.hb-chips button[aria-checked="true"] { border-color: var(--acento); color: var(--acento); }
+.hb-chips .kanji { font-size: 1.3rem; }
+.hb-chips input { width: 70px; text-align: center; }
+.hb-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* Fotos */
+.hb-fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.hb-foto { position: relative; padding: 0; overflow: hidden; aspect-ratio: 3 / 4; min-height: 0; }
+.hb-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hb-foto span { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, .55); font-size: .75rem; padding: 2px 4px; }
+.hb-foto[aria-pressed="true"] { outline: 2px solid var(--acento); }
+.hb-par { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.hb-par figure { margin: 0; }
+.hb-par img, .hb-grande { width: 100%; border-radius: var(--radio); display: block; }
+.hb-par figcaption { font-size: .8rem; color: var(--texto-2); text-align: center; }
+.hb-marca .kanji { color: var(--acento); }
