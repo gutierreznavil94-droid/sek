@@ -23,6 +23,13 @@ const AJUSTES_INICIALES = {
   // xp
   baseNivel: 100,
   xpResta: { activa: true, porcentaje: 50, desde: null },
+  // dia: margen después de la hora límite (20:50 → 21:00), racha (umbral % y XP cada 7 días), atributos y compromisos sueltos
+  margenNocheMinutos: 10,
+  umbralRacha: 75,
+  xpRacha7: 20,
+  minimoProgramadosAtributo: 5,
+  maxCompromisosXpPorDia: 5,
+  xpCompromisoPorDefecto: 10,
 }
 
 async function obtenerAjustes(usuarioId, tx = null) {

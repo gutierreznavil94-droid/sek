@@ -41,7 +41,7 @@ Avisos «al revés» (el que emite no conoce a quien escucha):
 | 2 | xp | — | chico |
 | 3 | organizacion | — | medio (ya está sin React) |
 | 4 | ciclo | xp | medio |
-| 5 | dia | xp, ciclo, juego | grande |
+| 5 | dia | xp, ciclo, juego | grande (parte 1 ✅ pilares y cierre; parte 2: Hoy, Calendario, Mi horario) |
 | 6 | entreno | xp | grande |
 | 7 | sueno | xp | medio |
 | 8 | comida | xp | medio |

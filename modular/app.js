@@ -17,9 +17,16 @@ const xp = require('./modulos/xp/rutas')
 const organizacion = require('./modulos/organizacion/rutas')
 const ciclo = require('./modulos/ciclo/rutas')
 const cicloVentanilla = require('./modulos/ciclo/ventanilla')
+const dia = require('./modulos/dia/rutas')
+const diaVentanilla = require('./modulos/dia/ventanilla')
 
 // Datos iniciales de cada cuenta nueva (una sola vez, al cargar app.js).
 sesion.alCrearCuenta.push((usuarioId) => cicloVentanilla.sembrar(usuarioId))
+sesion.alCrearCuenta.push((usuarioId) => diaVentanilla.sembrar(usuarioId))
+
+// dia escucha los avisos de ciclo, sueno y entreno (pilares) y usa lo que le conectan los módulos que llegan después.
+// Al integrar comida y entreno: diaVentanilla.conectar({ planComida: comidaVentanilla.planDelDia, faltantesSeries: entrenoVentanilla.faltantesDelDia })
+diaVentanilla.escucharAvisos()
 
 function crearApp(opciones = {}) {
   const app = Fastify({ logger: opciones.logger ?? { level: 'info' } })
@@ -39,6 +46,7 @@ function crearApp(opciones = {}) {
   app.register(xp)
   app.register(organizacion)
   app.register(ciclo)
+  app.register(dia)
 
   return app
 }
