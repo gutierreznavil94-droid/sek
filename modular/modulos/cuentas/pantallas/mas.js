@@ -11,6 +11,7 @@
     { ruta: '/mas/ajustes', kanji: '設', t: 'Ajustes', d: 'Zona horaria, semana y límites de juego', claves: 'ajustes configuracion zona horaria semana lunes domingo limite juego minutos aviso' },
     { ruta: '/mas/nombres', kanji: '名', t: 'Nombres', d: 'De la app, el tuyo y las fases', claves: 'nombres nombre app fases ciclo disciplina constancia' },
     { ruta: '/temas', kanji: '彩', t: 'Tema', d: 'Cómo se ve, lluvia y temas propios', claves: 'tema temas colores apariencia lluvia fondo shinobi subir propio sektema' },
+    { ruta: '/progreso', kanji: '進', t: 'Progreso', d: 'La montaña de XP, pilares, sueño, fuerza, comida y cierre de fase', claves: 'progreso montaña camino xp grafico estadisticas pilares atributos sueño fuerza entreno comida agua peso series caidas fase cierre' },
     { ruta: '/juego', kanji: '遊', t: 'Juego', d: 'Temporizador y semana', claves: 'juego temporizador jugar semana limite' },
     { ruta: '/mas/cuenta', kanji: '鍵', t: 'Cuenta', d: 'Contraseña y salir', claves: 'cuenta contraseña clave email salir cerrar sesion' },
   ]

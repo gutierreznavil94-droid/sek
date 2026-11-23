@@ -33,6 +33,7 @@ const comidaVentanilla = require('./modulos/comida/ventanilla')
 const temas = require('./modulos/temas/rutas')
 const entreno = require('./modulos/entreno/rutas')
 const entrenoVentanilla = require('./modulos/entreno/ventanilla')
+const progreso = require('./modulos/progreso/rutas')
 
 // Datos iniciales al crear una cuenta.
 sesion.alCrearCuenta.push((id) => entrenoVentanilla.sembrar(id))
@@ -66,6 +67,7 @@ function crearApp(opciones = {}) {
   app.register(temas)
   app.register(entreno)
   app.register(dia)
+  app.register(progreso)
 
   return app
 }
