@@ -49,10 +49,22 @@
   }
   window.SEK_IR = function (camino, reemplazar) { ir(camino, reemplazar).catch(mostrarError) }
 
-  function mostrarError(e) { estado.textContent = 'Algo falló: ' + (e && e.message || e) }
+  var fallo = false
+  function mostrarError(e) { fallo = true; estado.textContent = 'Algo falló: ' + (e && e.message || e) }
+  // En qué paso va el arranque (si algo se traba, se ve dónde) y cualquier error suelto.
+  var ultimoPaso = Date.now()
+  window.SEK_PASO = function (t) { if (!fallo) { estado.textContent = t; ultimoPaso = Date.now() } }
+  window.addEventListener('error', function (e) { if (marco.hidden) mostrarError(e.message || 'error') })
+  window.addEventListener('unhandledrejection', function (e) { if (marco.hidden) mostrarError(e.reason && e.reason.message || e.reason) })
+  setInterval(function () {
+    if (!marco.hidden || fallo) return
+    var s = Math.round((Date.now() - ultimoPaso) / 1000)
+    if (s >= 15) estado.textContent = estado.textContent.replace(/ \(hace \d+ s\)$/, '') + ' (hace ' + s + ' s)'
+  }, 1000)
 
   var s = document.createElement('script')
   s.src = '/sek.js'
+  estado.textContent = 'Cargando la app…'
   s.onload = function () {
     window.SEK_ARRANCAR().then(function () {
       var inicio = location.pathname === '/' || location.pathname === '/index.html' ? '/' : location.pathname + location.search

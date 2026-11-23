@@ -13,13 +13,56 @@ const { crearApp } = require('../app')
 
 const TOKEN = 'sek_token'
 
+/** Muestra en la pantalla de carga en qué paso va (si algo se traba, se ve dónde). */
+function paso(texto) { try { if (globalThis.SEK_PASO) globalThis.SEK_PASO(texto) } catch { /* sin pantalla */ } }
+
+/** Baja un archivo del paquete contando los MB, para que se vea que avanza. */
+async function bajar(url, nombre, cuenta) {
+  const r = await fetch(url)
+  if (!r.ok) throw new Error(`no se pudo bajar ${nombre} (${r.status})`)
+  if (!r.body || !r.body.getReader) return new Uint8Array(await r.arrayBuffer())
+  const lector = r.body.getReader()
+  const partes = []
+  for (;;) {
+    const { done, value } = await lector.read()
+    if (done) break
+    partes.push(value)
+    cuenta(value.length)
+  }
+  const total = partes.reduce((s, p) => s + p.length, 0)
+  const todo = new Uint8Array(total)
+  let i = 0
+  for (const p of partes) { todo.set(p, i); i += p.length }
+  return todo
+}
+
 async function prepararPglite() {
-  const [wasm, datos] = await Promise.all([
-    fetch('/pglite/postgres.wasm').then((r) => r.arrayBuffer()).then((b) => WebAssembly.compile(b)),
-    fetch('/pglite/postgres.data').then((r) => r.blob()),
+  let bajado = 0
+  const cuenta = (n) => { bajado += n; paso(`Bajando la base… ${(bajado / 1048576).toFixed(1)} de 13 MB`) }
+  paso('Bajando la base…')
+  const [bytesWasm, bytesDatos] = await Promise.all([
+    bajar('/pglite/postgres.wasm', 'postgres.wasm', cuenta),
+    bajar('/pglite/postgres.data', 'postgres.data', cuenta),
   ])
+  paso('Preparando la base…')
+  let wasm
+  try { wasm = await WebAssembly.compile(bytesWasm) } catch (e) { throw new Error(`este navegador no deja correr la base (WebAssembly): ${e.message}`) }
   // relaxedDurability: guarda en la memoria del teléfono sin esperar a cada consulta (si no, cada pantalla tarda segundos).
-  globalThis.SEK_PGLITE_OPCIONES = { wasmModule: wasm, fsBundle: datos, relaxedDurability: true }
+  globalThis.SEK_PGLITE_OPCIONES = { wasmModule: wasm, fsBundle: new Blob([bytesDatos]), relaxedDurability: true }
+}
+
+/** Abre la base guardada; si el navegador no deja guardar (o se traba), sigue en memoria. */
+async function abrirBase() {
+  paso('Abriendo la base…')
+  const espera = new Promise((_, no) => setTimeout(() => no(new Error('tardó demasiado')), 20000))
+  try {
+    await Promise.race([base.abrir(), espera])
+  } catch (e) {
+    paso('Sin memoria del navegador: los datos duran mientras esté abierta…')
+    base.usarBase()
+    await base.abrir()
+    globalThis.SEK_SIN_GUARDAR = e.message
+  }
 }
 
 function guardado() { try { return localStorage.getItem(TOKEN) } catch { return null } }
@@ -46,8 +89,10 @@ async function sesionDelCelu() {
 async function arrancar() {
   const t0 = performance.now()
   await prepararPglite()
-  await base.abrir()
+  await abrirBase()
+  paso('Poniendo todo en orden…')
   await migrar({ silencio: true })
+  paso('Casi…')
   const token = await sesionDelCelu()
   const app = crearApp({ logger: false })
   await app.ready()
