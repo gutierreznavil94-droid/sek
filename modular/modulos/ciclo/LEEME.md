@@ -62,7 +62,7 @@ Ajustes que usa (de `comun/ajustes.js`): `zonaHoraria`. Los nombres cortos de la
 ## Pendiente (de la app vieja)
 
 - **Revisión con pilares:** el paso 1 «Qué cumplí» mostraba los pilares del día (marcar Sí/No ahí mismo) y la semanal mostraba cumplimiento, entrenos, noches, juego e inicios. Eso lo tiene **dia** (y entreno, sueno, juego): cuando exista, la pantalla le pide esos datos y se los pasa como `foto`. Hoy muestra lo que dejó rastro en xp.
-- **XP de la revisión:** lo da **dia** al escuchar `ciclo.revision` (regla `revision_diaria` 10 XP, `revision_semanal` 25 XP).
+- **XP de la revisión:** ✅ la da **dia** al escuchar `ciclo.revision` (regla `revision_diaria` 10 XP, `revision_semanal` 25 XP).
 - **Cierre de fase con números:** la tabla «Base / fase anterior / fase» (cumplimiento, entrenos, noches, juego, 3-2-1, XP) y los atributos de inicio y fin de fase van en **progreso**, que lee todos los módulos.
 - **Valor de los atributos** y las acciones vinculadas: **dia**.
 - **Metas rápidas en el calendario y en Hoy** (escribir una meta en un día, la línea verde/gris/roja): las pantallas son de **dia** (Calendario) y usan `crearMeta`, `resolverMeta`, `reabrirMeta` y `metasEntre`.

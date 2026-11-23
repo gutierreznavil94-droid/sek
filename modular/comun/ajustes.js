@@ -43,6 +43,13 @@ const AJUSTES_INICIALES = {
   forja: { dias: 30, validos: 28, xpDia: 5, xpForjado: 50, maximo: 3 },
   caida: { xp: 20 },
   codigoSembrado: false,
+  // dia: margen después de la hora límite (20:50 → 21:00), racha (umbral % y XP cada 7 días), atributos y compromisos sueltos
+  margenNocheMinutos: 10,
+  umbralRacha: 75,
+  xpRacha7: 20,
+  minimoProgramadosAtributo: 5,
+  maxCompromisosXpPorDia: 5,
+  xpCompromisoPorDefecto: 10,
 }
 
 async function obtenerAjustes(usuarioId, tx = null) {
