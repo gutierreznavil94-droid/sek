@@ -1,12 +1,15 @@
 'use strict'
 /**
- * Direcciones web del módulo dia (parte 1: solo API). La pantalla Hoy, el Calendario y Mi horario llegan en la parte 2.
+ * Direcciones web del módulo dia: las pantallas Hoy (/hoy), Calendario (/calendario) y Mi horario (/horario), y su API.
  * Los id de compromiso llevan «:» (manga:2026-11-23): la pantalla los manda con encodeURIComponent.
  */
 const v = require('./ventanilla')
 const { requiereUsuario } = require('../../comun/sesion')
+const { pagina } = require('../../comun/pantalla/servir')
 
 const FECHA = { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' }
+const HORA = { type: 'string', pattern: '^\\d{2}:\\d{2}$' }
+const DIAS = { type: 'array', items: { type: 'integer', minimum: 0, maximum: 6 }, maxItems: 7 }
 
 module.exports = async function rutasDia(app) {
   const conUsuario = { preHandler: requiereUsuario }
@@ -66,4 +69,53 @@ module.exports = async function rutasDia(app) {
   // El Tajo: la pantalla avisa cuando la app se oculta y pregunta al volver.
   app.post('/api/dia/vista', conUsuario, async (p) => { await v.anotarVista(u(p)); return { ok: true } })
   app.post('/api/dia/tajo', conUsuario, async (p) => v.tajo(u(p)))
+
+  // ---------- Parte 2: pantallas ----------
+  app.get('/hoy', conUsuario, async (p, r) => pagina(r, 'dia', 'hoy.html'))
+  app.get('/calendario', conUsuario, async (p, r) => pagina(r, 'dia', 'calendario.html'))
+  app.get('/horario', conUsuario, async (p, r) => pagina(r, 'dia', 'horario.html'))
+
+  // Hoy como tablero (pilares + la tarjeta de cada módulo)
+  app.get('/api/dia/hoy', conUsuario, async (p) => v.tableroHoy(u(p)))
+  app.post('/api/dia/empezar-ciclo', {
+    ...conUsuario,
+    schema: { body: { type: 'object', properties: { inicio: FECHA, duracionDias: { type: 'integer', minimum: 7, maximum: 3650 }, diaCero: { type: 'boolean' } } } },
+  }, async (p) => ({ ciclo: await v.empezarCiclo(u(p), cuerpo(p)) }))
+  app.post('/api/dia/dejo-celu', conUsuario, async (p) => v.dejoCeluDesdeHoy(u(p)))
+  app.post('/api/dia/organizacion/:frente/:tarea/hecha', conUsuario, async (p) => v.tareaHecha(u(p), p.params.frente, p.params.tarea))
+
+  // Calendario, feriados y fechas clave
+  app.get('/api/dia/calendario', { ...conUsuario, schema: { querystring: { type: 'object', required: ['mes'], properties: { mes: { type: 'string', pattern: '^\\d{4}-\\d{2}$' } } } } },
+    async (p) => v.calendarioMes(u(p), p.query.mes))
+  app.get('/api/dia/feriados', rango, async (p) => ({ feriados: await v.feriadosEntre(u(p), p.query.desde, p.query.hasta) }))
+  app.put('/api/dia/feriados/:fecha', { ...conUsuario, schema: { params: { type: 'object', properties: { fecha: FECHA } }, body: { type: 'object', properties: { nombre: { type: 'string', maxLength: 120 } } } } },
+    async (p) => ({ feriado: await v.marcarFeriado(u(p), p.params.fecha, cuerpo(p).nombre) }))
+  app.delete('/api/dia/feriados/:fecha', { ...conUsuario, schema: { params: { type: 'object', properties: { fecha: FECHA } } } },
+    async (p) => ({ quitado: await v.quitarFeriado(u(p), p.params.fecha) }))
+  const fechaClave = { type: 'object', properties: { fecha: FECHA, titulo: { type: 'string', maxLength: 120 }, nota: { type: ['string', 'null'], maxLength: 500 }, anual: { type: 'boolean' }, hora: { type: ['string', 'null'] }, horaFin: { type: ['string', 'null'] } } }
+  app.post('/api/dia/fechas-clave', { ...conUsuario, schema: { body: { ...fechaClave, required: ['fecha', 'titulo'] } } },
+    async (p) => ({ fechaClave: await v.agregarFechaClave(u(p), p.body) }))
+  app.put('/api/dia/fechas-clave/:id', { ...conUsuario, schema: { body: fechaClave } }, async (p) => ({ fechaClave: await v.editarFechaClave(u(p), p.params.id, cuerpo(p)) }))
+  app.delete('/api/dia/fechas-clave/:id', conUsuario, async (p) => { await v.borrarFechaClave(u(p), p.params.id); return { ok: true } })
+
+  // Mi horario
+  const conFecha = { ...conUsuario, schema: { querystring: { type: 'object', properties: { fecha: FECHA } } } }
+  app.get('/api/dia/horario', conFecha, async (p) => v.horarioSemana(u(p), p.query.fecha || null))
+  app.get('/api/dia/horario/dia', conFecha, async (p) => v.horarioDelDia(u(p), p.query.fecha || null))
+  const bloque = { type: 'object', required: ['nombre', 'desde', 'hasta', 'dias'], properties: { nombre: { type: 'string', maxLength: 80 }, tipo: { type: 'string' }, desde: HORA, hasta: HORA, dias: DIAS } }
+  app.post('/api/dia/horario/bloques', { ...conUsuario, schema: { body: bloque } }, async (p) => ({ bloque: await v.guardarBloque(u(p), { ...p.body, id: undefined }) }))
+  app.put('/api/dia/horario/bloques/:id', { ...conUsuario, schema: { body: bloque } }, async (p) => ({ bloque: await v.guardarBloque(u(p), { ...p.body, id: p.params.id }) }))
+  app.delete('/api/dia/horario/bloques/:id', conUsuario, async (p) => { await v.borrarBloque(u(p), p.params.id); return { ok: true } })
+  app.post('/api/dia/horario/bloques/:id/copiar', { ...conUsuario, schema: { body: { type: 'object', required: ['dias'], properties: { dias: DIAS } } } },
+    async (p) => ({ bloque: await v.copiarADias(u(p), p.params.id, p.body.dias) }))
+  app.post('/api/dia/horario/apagar', { ...conUsuario, schema: { body: { type: 'object', required: ['fecha', 'bloqueId', 'apagado'], properties: { fecha: FECHA, bloqueId: { type: 'string' }, apagado: { type: 'boolean' } } } } },
+    async (p) => { await v.apagarBloqueEnFecha(u(p), p.body.fecha, p.body.bloqueId, p.body.apagado); return v.horarioDelDia(u(p), p.body.fecha) })
+  app.post('/api/dia/horario/correr-entreno', { ...conUsuario, schema: { body: { type: 'object', required: ['fecha', 'hora'], properties: { fecha: FECHA, hora: HORA } } } },
+    async (p) => { await v.correrEntreno(u(p), p.body.fecha, p.body.hora); return v.horarioDelDia(u(p), p.body.fecha) })
+  app.post('/api/dia/horarios', { ...conUsuario, schema: { body: { type: 'object', properties: { nombre: { type: 'string', maxLength: 60 }, copiar: { type: 'boolean' } } } } },
+    async (p) => ({ horario: await v.nuevoHorario(u(p), cuerpo(p).nombre, !!cuerpo(p).copiar) }))
+  app.post('/api/dia/horarios/:id/activar', conUsuario, async (p) => ({ config: await v.activarHorario(u(p), p.params.id) }))
+  app.put('/api/dia/horarios/:id', { ...conUsuario, schema: { body: { type: 'object', required: ['nombre'], properties: { nombre: { type: 'string', maxLength: 60 } } } } },
+    async (p) => ({ config: await v.renombrarHorario(u(p), p.params.id, p.body.nombre) }))
+  app.delete('/api/dia/horarios/:id', conUsuario, async (p) => ({ config: await v.borrarHorario(u(p), p.params.id) }))
 }

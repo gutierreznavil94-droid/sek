@@ -44,18 +44,27 @@ sesion.alCrearCuenta.push((usuarioId) => diaVentanilla.sembrar(usuarioId))
 // dia escucha los avisos de ciclo, sueno y entreno (pilares) y usa lo que le conectan los módulos que llegan después.
 diaVentanilla.conectar({ planComida: comidaVentanilla.planDelDia, faltantesSeries: entrenoVentanilla.faltantesDelDia })
 diaVentanilla.escucharAvisos()
+// Los feriados (dia) usan el límite de juego de finde. juego no requiere dia: se lo conecta acá.
+require('./modulos/juego/ventanilla').conectar({ esFeriado: diaVentanilla.esFeriado })
+// Cuando llegue desafios: diaVentanilla.conectar({ desafiosHoy: desafiosVentanilla.pendientes }) (botones Tensión y No cumplí de Hoy).
+
+/** Modo sueño: ninguna pantalla se ve (salvo la del modo); manda a /sueno/modo. La regla está en dia (tablero.js). */
+async function bloqueoSueno(pedido, respuesta) {
+  if (pedido.method !== 'GET' || !diaVentanilla.esPaginaBloqueable(pedido.url)) return
+  const usuario = await sesion.usuarioDeToken(sesion.leerCookie(pedido))
+  if (usuario && await diaVentanilla.enModoSueno(usuario.id)) return respuesta.redirect('/sueno/modo')
+}
 
 function crearApp(opciones = {}) {
   const app = Fastify({ logger: opciones.logger ?? { level: 'info' } })
   app.setErrorHandler(errores.manejador)
+  app.addHook('preHandler', bloqueoSueno)
 
   // Lo común
   app.register(servir.rutas)
   app.register(sesion.rutas)
   app.get('/', async (pedido, respuesta) => respuesta.redirect('/hoy'))
   app.get('/entrar', async (pedido, respuesta) => servir.paginaComun(respuesta, 'entrar.html'))
-  // Provisorio hasta que exista el módulo «dia».
-  app.get('/hoy', { preHandler: sesion.requiereUsuario }, async (pedido, respuesta) => servir.paginaComun(respuesta, 'inicio.html'))
 
   // Módulos
   app.register(juego)

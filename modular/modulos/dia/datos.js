@@ -1,7 +1,8 @@
 'use strict'
 /**
  * Consultas SQL del módulo dia. Solo las usa ventanilla.js.
- * Tablas: acciones, reglas_xp, compromisos, dias_cerrados, atributos_diarios, excepciones, dia_vistas.
+ * Tablas: acciones, reglas_xp, compromisos, dias_cerrados, atributos_diarios, excepciones, dia_vistas (parte 1);
+ * feriados, fechas_clave, horarios (parte 2).
  */
 const { una, todas, consulta } = require('../../comun/base')
 
@@ -113,7 +114,37 @@ const marcarTajo = (u, fecha, tx) =>
   consulta(`INSERT INTO dia_vistas (usuario_id, tajo_fecha) VALUES ($1, $2)
             ON CONFLICT (usuario_id) DO UPDATE SET tajo_fecha = EXCLUDED.tajo_fecha`, [u, fecha], tx)
 
+// ---------- feriados ----------
+const C_FERIADO = 'fecha, nombre, propio, creado'
+const feriado = (u, fecha, tx) => una(`SELECT ${C_FERIADO} FROM feriados WHERE usuario_id = $1 AND fecha = $2`, [u, fecha], tx)
+const feriadosEntre = (u, desde, hasta, tx) => todas(`SELECT ${C_FERIADO} FROM feriados WHERE usuario_id = $1 AND fecha BETWEEN $2 AND $3 ORDER BY fecha`, [u, desde, hasta], tx)
+const cuantosFeriados = async (u, tx) => (await una('SELECT count(*)::int AS n FROM feriados WHERE usuario_id = $1', [u], tx)).n
+const ponerFeriado = (u, f, tx) =>
+  consulta(`INSERT INTO feriados (usuario_id, fecha, nombre, propio, creado) VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (usuario_id, fecha) DO UPDATE SET nombre = EXCLUDED.nombre, propio = EXCLUDED.propio`, [u, f.fecha, f.nombre, !!f.propio, f.creado], tx)
+const quitarFeriado = async (u, fecha, tx) => (await consulta('DELETE FROM feriados WHERE usuario_id = $1 AND fecha = $2', [u, fecha], tx)).rowCount > 0
+
+// ---------- fechas clave ----------
+const C_FC = 'id, fecha, titulo, nota, anual, hora, hora_fin AS "horaFin", creada'
+const fechaClave = async (u, id, tx) => sinNulos(await una(`SELECT ${C_FC} FROM fechas_clave WHERE usuario_id = $1 AND id = $2`, [u, id], tx))
+const fechasClave = async (u, tx) => (await todas(`SELECT ${C_FC} FROM fechas_clave WHERE usuario_id = $1 ORDER BY creada, id`, [u], tx)).map(sinNulos)
+const ponerFechaClave = (u, f, tx) =>
+  consulta(`INSERT INTO fechas_clave (usuario_id, id, fecha, titulo, nota, anual, hora, hora_fin, creada) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            ON CONFLICT (usuario_id, id) DO UPDATE SET fecha = EXCLUDED.fecha, titulo = EXCLUDED.titulo, nota = EXCLUDED.nota, anual = EXCLUDED.anual,
+              hora = EXCLUDED.hora, hora_fin = EXCLUDED.hora_fin`,
+  [u, f.id, f.fecha, f.titulo, f.nota ?? null, !!f.anual, f.hora ?? null, f.horaFin ?? null, f.creada], tx)
+const borrarFechaClave = async (u, id, tx) => (await consulta('DELETE FROM fechas_clave WHERE usuario_id = $1 AND id = $2', [u, id], tx)).rowCount > 0
+
+// ---------- Mi horario ----------
+const horario = async (u, tx) => { const f = await una('SELECT config FROM horarios WHERE usuario_id = $1', [u], tx); return f ? f.config : null }
+const guardarHorario = (u, config, instante, tx) =>
+  consulta(`INSERT INTO horarios (usuario_id, config, actualizado) VALUES ($1, $2, $3)
+            ON CONFLICT (usuario_id) DO UPDATE SET config = EXCLUDED.config, actualizado = EXCLUDED.actualizado`, [u, JSON.stringify(config), instante], tx)
+
 module.exports = {
+  feriado, feriadosEntre, cuantosFeriados, ponerFeriado, quitarFeriado,
+  fechaClave, fechasClave, ponerFechaClave, borrarFechaClave,
+  horario, guardarHorario,
   acciones, accion, cuantasAcciones, guardarAccion, activarAccion,
   reglas, reglasDe, guardarRegla, quitarRegla,
   compromiso, compromisosEntre, compromisosDeAccionDesde, crearCompromiso, ponerCompromiso, borrarCompromiso, borrarSinResolverAntesDe, borrarSinResolverDe,

@@ -8,6 +8,14 @@
    * (solo el link: la pantalla es de su módulo).
    */
   const SECCIONES = [
+    // Pantallas principales que no están en la barra de abajo (la barra tiene 5 fijos: Hoy, Calendario, Juego, Sueño, Más).
+    { ruta: '/entreno', kanji: '鍛', t: 'Entreno', d: 'Rutinas, entrenar y series rápidas', claves: 'entreno entrenamiento rutinas ejercicios series flexiones dominadas gimnasio' },
+    { ruta: '/comida', kanji: '食', t: 'Comida', d: 'Lo que comí, agua, fruta y peso', claves: 'comida comer calorias proteina agua fruta peso dieta' },
+    { ruta: '/ciclo', kanji: '道', t: 'Ciclo', d: 'Los 90 días, fases, objetivos y metas', claves: 'ciclo 90 dias fases objetivos atributos identidad metas revision' },
+    { ruta: '/organizacion', kanji: '陣', t: 'Tareas', d: 'Frentes y lo que me toca hoy', claves: 'tareas organizacion frentes anotar clasificar sueltas pendientes' },
+    { ruta: '/habitos', kanji: '掟', t: 'Código y forja', d: 'Mi código, forja de hábitos y fotos', claves: 'codigo reglas habitos forja piedra fotos caidas' },
+    { ruta: '/xp', kanji: '段', t: 'Nivel', d: 'XP, niveles e historial', claves: 'nivel xp puntos experiencia historial restas' },
+    { ruta: '/horario', kanji: '時', t: 'Mi horario', d: 'Bloques fijos de la semana', claves: 'horario mi horario bloques colegio facultad trabajo cursada semana' },
     { ruta: '/mas/ajustes', kanji: '設', t: 'Ajustes', d: 'Zona horaria, semana y límites de juego', claves: 'ajustes configuracion zona horaria semana lunes domingo limite juego minutos aviso' },
     { ruta: '/mas/nombres', kanji: '名', t: 'Nombres', d: 'De la app, el tuyo y las fases', claves: 'nombres nombre app fases ciclo disciplina constancia' },
     { ruta: '/temas', kanji: '彩', t: 'Tema', d: 'Cómo se ve, lluvia y temas propios', claves: 'tema temas colores apariencia lluvia fondo shinobi subir propio sektema' },

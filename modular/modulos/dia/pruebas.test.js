@@ -268,7 +268,7 @@ test('importa pilares, reglas, compromisos y días cerrados de la app vieja', as
     diasCerrados: [{ fecha: '2026-11-10', cumplidos: 1, programados: 1, porcentaje: 100, minutosJuego: 0, cerradoEn: 1 }],
     excepciones: [{ fecha: '2026-11-11', motivo: 'Viaje', creado: 1 }],
   })
-  assert.deepEqual(n, { acciones: 1, reglasXp: 1, compromisos: 1, diasCerrados: 1, excepciones: 1, atributosDiarios: 0 })
+  assert.deepEqual(n, { acciones: 1, reglasXp: 1, compromisos: 1, diasCerrados: 1, excepciones: 1, atributosDiarios: 0, feriados: 0, fechasClave: 0, horario: 0 })
   const c = (await dia.compromisosDelDia(id, '2026-11-10'))[0]
   assert.equal(c.extra, true)
   assert.equal(c.accion.minutosExtra, 30)

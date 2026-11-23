@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SEK · Hoy</title>
+  <link rel="icon" href="/comun/favicon-32.png">
+  <link rel="stylesheet" href="/comun/estilo.css">
+  <link rel="stylesheet" href="/m/dia/estilo.css">
+</head>
+<body>
+  <main>
+    <header class="cabeza-hoy">
+      <div>
+        <h1><span class="kanji" aria-hidden="true">今</span> Hoy</h1>
+        <div class="dia" id="dia-ciclo"></div>
+      </div>
+      <div class="botones-arriba" id="botones-arriba"></div>
+    </header>
+
+    <!-- Cuenta nueva: todavía no hay ciclo -->
+    <section class="tarjeta" id="empezar" hidden>
+      <h2>Empezar mi ciclo</h2>
+      <p class="chico">Tu ciclo es de 90 días en 3 fases de 30. Los pilares empiezan a contar desde el Día 1. Todo se puede cambiar después en Ciclo.</p>
+      <form id="form-empezar" class="tarjeta" style="padding:0;border:0;background:none">
+        <label>Día 1<input type="date" name="inicio" required></label>
+        <label>Días del ciclo<input type="number" name="duracionDias" min="7" max="3650" value="90" required></label>
+        <label class="interruptor"><input type="checkbox" name="diaCero"> Hacer un Día 0 de calentamiento (el día antes, sin restar XP)</label>
+        <button class="principal" type="submit">Empezar mi ciclo</button>
+      </form>
+    </section>
+
+    <div class="lineas" id="lineas"></div>
+
+    <section class="col" aria-label="Pilares de hoy" id="seccion-pilares">
+      <div class="fila entre">
+        <span class="seccion-titulo">Pilares de hoy</span>
+        <span class="contador" id="cuenta-pilares"></span>
+      </div>
+      <div class="lineas" id="pilares"></div>
+      <p class="chico apagado" id="horas-noche" style="text-align:center"></p>
+      <button class="celu" id="dejo-celu" hidden>Dejo celu</button>
+    </section>
+
+    <section class="tarjeta tira-tareas" id="tira-tareas" hidden aria-label="Hoy me toca a mí">
+      <div class="fila entre"><h3><span class="kanji" aria-hidden="true">陣</span> Hoy me toca a mí</h3><a class="chico suave" href="/organizacion">Tareas ›</a></div>
+      <div id="tareas"></div>
+    </section>
+
+    <div class="tarjetas" id="tarjetas"></div>
+
+    <section class="col" id="seccion-otros" hidden>
+      <div class="fila entre"><span class="seccion-titulo">Otros compromisos</span><span class="chico" id="cuenta-otros"></span></div>
+      <div class="lineas" id="otros"></div>
+    </section>
+  </main>
+  <script src="/comun/marco.js"></script>
+  <script src="/m/dia/ayuda.js"></script>
+  <!-- desafios: frase «Dudar es fracasar» y el Tajo (si el módulo todavía no está, no pasa nada) -->
+  <script src="/m/desafios/capa.js" onerror="this.remove()"></script>
+  <script src="/m/dia/hoy.js"></script>
+</body>
+</html>

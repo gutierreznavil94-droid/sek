@@ -1,7 +1,7 @@
 /*
  * Lo común en JavaScript para todas las pantallas (se carga con <script src="/comun/marco.js">).
  * - SEK.api(ruta, datos?)   pide a las rutas del servidor. Con datos hace POST. Tira Error con el mensaje del servidor.
- * - SEK.barra(activo)       dibuja la barra de abajo. Los módulos se anotan en SEK.MENU.
+ * - SEK.barra(activo)       dibuja la barra de abajo (5 fijos en MENU; si `activo` no está, marca Más).
  * - SEK.mensaje(texto, mal) aviso corto abajo.
  * - SEK.$(selector)         atajo de document.querySelector.
  * - SEK.minutos(n)          "1 h 05 min".
@@ -15,17 +15,16 @@
 (function () {
   'use strict'
 
-  /** Botones de la barra de abajo. Cada módulo nuevo con pantalla principal se suma acá (kanji del tema). */
+  /**
+   * Botones FIJOS de la barra de abajo (5, como la app vieja: Hoy es el tablero). Las demás pantallas principales
+   * (Ciclo, Nivel, Tareas, Código, Comida, Entreno, Mi horario, Tema…) van como fila en Más (modulos/cuentas/pantallas/mas.js).
+   * Una pantalla que no está acá marca «Más» como activo. Sumar un botón fijo se propone primero.
+   */
   const MENU = [
     { id: 'hoy', texto: 'Hoy', kanji: '今', ruta: '/hoy' },
+    { id: 'calendario', texto: 'Calendario', kanji: '暦', ruta: '/calendario' },
     { id: 'juego', texto: 'Juego', kanji: '遊', ruta: '/juego' },
-    { id: 'ciclo', texto: 'Ciclo', kanji: '道', ruta: '/ciclo' },
-    { id: 'xp', texto: 'Nivel', kanji: '段', ruta: '/xp' },
-    { id: 'organizacion', texto: 'Tareas', kanji: '陣', ruta: '/organizacion' },
     { id: 'sueno', texto: 'Sueño', kanji: '眠', ruta: '/sueno' },
-    { id: 'habitos', texto: 'Código', kanji: '掟', ruta: '/habitos' },
-    { id: 'comida', texto: 'Comida', kanji: '食', ruta: '/comida' },
-    { id: 'entreno', texto: 'Entreno', kanji: '鍛', ruta: '/entreno' },
     { id: 'mas', texto: 'Más', kanji: '他', ruta: '/mas' },
   ]
 
@@ -73,10 +72,11 @@
     const nav = document.createElement('nav')
     nav.className = 'barra-abajo'
     nav.setAttribute('aria-label', 'Secciones')
+    const marcado = MENU.some((m) => m.id === activo) ? activo : 'mas'
     for (const m of MENU) {
       const a = document.createElement('a')
       a.href = m.ruta
-      if (m.id === activo) { a.className = 'activo'; a.setAttribute('aria-current', 'page') }
+      if (m.id === marcado) { a.className = 'activo'; a.setAttribute('aria-current', 'page') }
       a.innerHTML = `<span class="kanji" aria-hidden="true">${m.kanji}</span><span>${m.texto}</span>`
       nav.appendChild(a)
     }

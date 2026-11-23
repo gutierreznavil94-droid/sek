@@ -1,0 +1,96 @@
+/* Diseños propios de Hoy, Calendario y Mi horario. Usa los colores generales de comun/pantalla/estilo.css. */
+button.mini { min-height: 34px; padding: 4px 10px; font-size: .82rem; }
+.enlace { background: none; border: 0; padding: 0; min-height: 0; color: var(--texto-2); text-decoration: underline; font-size: .85rem; }
+a.suave { color: var(--texto-2); text-decoration: none; }
+.crece { flex: 1; min-width: 0; }
+
+/* Hoja (formulario que sube desde abajo) */
+dialog.hoja { width: min(640px, 100%); max-width: 100%; margin: auto auto 0; border: 1px solid var(--borde); border-bottom: 0; border-radius: var(--radio) var(--radio) 0 0; background: var(--fondo-2); color: var(--texto); padding: 16px; max-height: 90vh; }
+dialog.hoja::backdrop { background: rgb(0 0 0 / .6); }
+dialog.hoja form { display: flex; flex-direction: column; gap: 12px; }
+.interruptor { flex-direction: row; align-items: center; gap: 8px; color: var(--texto); }
+.interruptor input { width: 22px; min-height: 22px; height: 22px; accent-color: var(--acento); }
+.dias-semana { display: flex; gap: 6px; flex-wrap: wrap; }
+.casilla-dia { flex-direction: row; }
+.casilla-dia input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.casilla-dia span { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--borde); display: inline-flex; align-items: center; justify-content: center; color: var(--texto-2); }
+.casilla-dia input:checked + span { background: var(--acento); border-color: var(--acento); color: #fff; }
+.casilla-dia input:focus-visible + span { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+/* ---------- Hoy ---------- */
+.cabeza-hoy { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.cabeza-hoy .dia { font-size: .85rem; color: var(--texto-2); }
+.botones-arriba { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.boton-contorno { background: transparent; border-color: var(--acento); color: var(--texto); min-height: 36px; padding: 4px 12px; font-size: .88rem; }
+.boton-contorno.rojo { color: var(--peligro); border-color: var(--peligro); }
+.lineas { display: flex; flex-direction: column; gap: 6px; }
+.linea { background: var(--fondo-2); border: 1px solid var(--borde); border-left: 3px solid var(--texto-3); border-radius: var(--radio); padding: 8px 12px; font-size: .88rem; color: var(--texto-2); text-decoration: none; display: block; }
+.linea.acento { border-left-color: var(--acento); }
+.linea.ambar { border-left-color: var(--ambar); color: var(--texto); }
+.linea.verde { border-left-color: var(--verde); }
+.seccion-titulo { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--texto-3); }
+.pilar { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; justify-content: flex-start; padding: 10px 12px; background: var(--fondo-2); }
+.pilar .marca { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--texto-3); flex: none; display: inline-flex; align-items: center; justify-content: center; font-size: .9rem; }
+.pilar .nombre { font-weight: 600; }
+.pilar .detalle { font-size: .78rem; color: var(--texto-3); }
+.pilar .xp { font-size: .78rem; color: var(--texto-3); font-variant-numeric: tabular-nums; }
+.pilar.cumplido .marca { background: var(--verde); border-color: var(--verde); color: var(--tinta); }
+.pilar.tarde .marca { border-color: var(--ambar); color: var(--ambar); }
+.pilar.omitido { opacity: .6; }
+.pilar.omitido .marca { border-color: var(--peligro); color: var(--peligro); }
+.pilar.iniciado .marca { border-color: var(--acento); border-style: dashed; }
+.pilar.descanso { opacity: .5; }
+.pilar.vencido .detalle { color: var(--peligro); }
+.contador { font-variant-numeric: tabular-nums; font-weight: 700; }
+.tarjetas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.mini-tarjeta { background: var(--fondo-2); border: 1px solid var(--borde); border-radius: var(--radio); padding: 12px; color: var(--texto); text-decoration: none; display: flex; flex-direction: column; gap: 4px; min-height: 88px; min-width: 0; }
+.mini-tarjeta .titulo { display: flex; gap: 6px; align-items: center; font-size: .8rem; color: var(--texto-3); }
+.mini-tarjeta .titulo .kanji { color: var(--acento); font-size: 1.1rem; }
+.mini-tarjeta .valor { font-weight: 600; overflow-wrap: anywhere; }
+.mini-tarjeta .detalle { font-size: .78rem; color: var(--texto-3); overflow-wrap: anywhere; }
+.mini-tarjeta .barra-progreso { height: 6px; margin-top: auto; }
+.mini-tarjeta.alerta { border-color: var(--peligro); }
+.tira-tareas .tarea { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--borde); }
+.tira-tareas .tarea:last-child { border-bottom: 0; }
+.tira-tareas .tarea .punto { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.tira-tareas .tarea.hecha .texto { text-decoration: line-through; color: var(--texto-3); }
+button.celu { background: var(--violeta); border-color: var(--violeta); color: #fff; font-weight: 600; width: 100%; }
+
+/* ---------- Calendario ---------- */
+.mes-cabeza { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mes-cabeza h2 { text-transform: capitalize; }
+.rejilla-mes { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.rejilla-mes .nombre-dia { text-align: center; font-size: .72rem; color: var(--texto-3); }
+.celda { aspect-ratio: 1 / 1.1; min-height: 0; padding: 4px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 2px; font-size: .85rem; background: var(--fondo-2); border: 1px solid transparent; position: relative; }
+.celda.vacia { background: transparent; border: 0; }
+.celda.hoy { border-color: var(--acento); }
+.celda.en-ciclo { background: var(--fondo-3); }
+.celda.futuro { color: var(--texto-3); }
+.celda.feriado .num { color: var(--ambar); }
+.celda .puntos { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; }
+.celda .puntos i { width: 5px; height: 5px; border-radius: 50%; background: var(--texto-3); }
+.celda .puntos i.cumplido { background: var(--verde); }
+.celda .puntos i.tarde { background: var(--ambar); }
+.celda .puntos i.omitido { background: var(--peligro); }
+.celda .sello { position: absolute; top: 2px; right: 4px; font-size: .65rem; color: var(--acento); font-family: var(--pincel); }
+.celda.nivel-alto { box-shadow: inset 0 -3px 0 var(--verde); }
+.celda.nivel-medio { box-shadow: inset 0 -3px 0 var(--ambar); }
+.celda.nivel-bajo { box-shadow: inset 0 -3px 0 var(--peligro); }
+.celda.elegida { outline: 2px solid var(--texto-2); outline-offset: 1px; }
+.leyenda { display: flex; gap: 12px; flex-wrap: wrap; font-size: .75rem; color: var(--texto-3); }
+.leyenda i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+.detalle-dia .fila-pilar { display: flex; justify-content: space-between; gap: 8px; font-size: .88rem; padding: 4px 0; border-bottom: 1px solid var(--borde); }
+.detalle-dia .fila-pilar:last-child { border-bottom: 0; }
+
+/* ---------- Mi horario ---------- */
+.semana-horario { display: flex; flex-direction: column; gap: 10px; }
+.dia-horario { display: flex; flex-direction: column; gap: 6px; }
+.dia-horario.hoy h3 { color: var(--acento); }
+.bloque { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: flex-start; text-align: left; padding: 8px 12px; border-left: 4px solid var(--texto-3); background: var(--fondo-2); }
+.bloque.obligatorio { border-left-color: var(--acento); }
+.bloque.entreno { border-left-color: var(--verde); }
+.bloque.otro { border-left-color: var(--violeta); }
+.bloque.apagado { opacity: .45; text-decoration: line-through; }
+.bloque .horas { font-variant-numeric: tabular-nums; font-size: .85rem; color: var(--texto-2); min-width: 92px; }
+.pestanas { display: flex; gap: 6px; flex-wrap: wrap; }
+.pestanas button.activo { border-color: var(--acento); color: var(--acento); }
