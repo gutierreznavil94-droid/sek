@@ -21,6 +21,7 @@
     { id: 'organizacion', texto: 'Tareas', kanji: '陣', ruta: '/organizacion' },
     { id: 'sueno', texto: 'Sueño', kanji: '眠', ruta: '/sueno' },
     { id: 'habitos', texto: 'Código', kanji: '掟', ruta: '/habitos' },
+    { id: 'comida', texto: 'Comida', kanji: '食', ruta: '/comida' },
     { id: 'mas', texto: 'Más', kanji: '他', ruta: '/mas' },
   ]
 
