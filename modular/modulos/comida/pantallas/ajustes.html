@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SEK · Ajustes de comida</title>
+  <link rel="icon" href="/comun/favicon-32.png">
+  <link rel="stylesheet" href="/comun/estilo.css">
+  <link rel="stylesheet" href="/m/comida/estilo.css">
+</head>
+<body>
+  <main>
+    <div class="fila entre">
+      <h1>食 Ajustes</h1>
+      <a class="boton" href="/comida">‹ Comida</a>
+    </div>
+
+    <form class="tarjeta" id="objetivo">
+      <h3>Tu objetivo</h3>
+      <p class="chico">Con esto se calcula cuántas calorías y cuánta proteína por día.</p>
+      <div class="co-dos">
+        <label>Peso (kg) <input name="peso" type="number" inputmode="decimal" step="0.1" min="26" max="349" required></label>
+        <label>Altura (cm) <input name="altura" type="number" inputmode="numeric" min="101" max="249" required></label>
+      </div>
+      <div class="co-dos">
+        <label>Edad <input name="edad" type="number" inputmode="numeric" min="11" max="109" required></label>
+        <label>Sexo <select name="sexo"><option value="hombre">Hombre</option><option value="mujer">Mujer</option></select></label>
+      </div>
+      <label>Actividad <select name="actividad">
+        <option value="sedentario">Sedentario (casi nada de ejercicio)</option>
+        <option value="ligero">Ligero (1 a 3 días por semana)</option>
+        <option value="moderado">Moderado (3 a 5 días)</option>
+        <option value="alto">Alto (6 o 7 días)</option>
+      </select></label>
+      <label>Meta <select name="meta">
+        <option value="bajar">Bajar grasa</option>
+        <option value="mantener">Mantener</option>
+        <option value="ganar">Ganar músculo</option>
+      </select></label>
+      <div class="co-calculo" aria-live="polite">
+        <div><b id="calc-kcal">—</b><span class="chico">kcal por día</span></div>
+        <div><b id="calc-prot">—</b><span class="chico">g de proteína</span></div>
+      </div>
+      <label class="co-check"><input name="manual" type="checkbox"> Corregir los números a mano</label>
+      <div class="co-dos" id="a-mano" hidden>
+        <label>Calorías <input name="kcal" type="number" inputmode="numeric" min="501" max="9999"></label>
+        <label>Proteína (g) <input name="proteina" type="number" inputmode="numeric" min="1" max="499"></label>
+      </div>
+      <button class="principal">Guardar objetivo</button>
+    </form>
+
+    <form class="tarjeta" id="peso" hidden>
+      <h3>Peso de hoy</h3>
+      <div class="fila"><input name="kg" type="number" inputmode="decimal" step="0.1" min="26" max="349" placeholder="kg" style="flex:1;min-width:0" required><button>Guardar</button></div>
+      <div class="co-pesos" id="pesos" aria-label="Últimos pesos"></div>
+      <p class="chico" id="pesos-texto"></p>
+    </form>
+
+    <form class="tarjeta" id="agua">
+      <h3>Agua</h3>
+      <p class="chico" id="agua-calculo"></p>
+      <label>Objetivo a mano (ml, vacío = calcularlo del peso) <input name="objetivoMl" type="number" inputmode="numeric" min="0" step="250"></label>
+      <p class="chico">Envases. El marcado suma con un toque; los demás, manteniendo apretado.</p>
+      <div id="envases" class="co-chips" style="flex-direction:column"></div>
+      <button type="button" id="envase-nuevo">+ Envase</button>
+      <label>En Hoy <select name="enHoy"><option value="chica">Chiquita al lado de la comida</option><option value="tarjeta">Como tarjeta aparte</option><option value="no">No la uso</option></select></label>
+      <button class="principal">Guardar agua</button>
+    </form>
+
+    <form class="tarjeta" id="fruta">
+      <h3>Fruta del día</h3>
+      <p class="chico">Cada toque en la manzana suma una y se muerde más. Mantené apretado para deshacer.</p>
+      <label class="co-check"><input name="usar" type="checkbox"> La uso</label>
+      <label>Nombre <input name="nombre" maxlength="30"></label>
+      <div class="co-dos">
+        <label>Objetivo <input name="objetivo1" type="number" inputmode="numeric" min="1"></label>
+        <label>Extra <input name="objetivo2" type="number" inputmode="numeric" min="1"></label>
+      </div>
+      <button class="principal">Guardar fruta</button>
+    </form>
+
+    <section class="tarjeta">
+      <h3>De dónde salen los datos</h3>
+      <ul class="chico" id="fuentes"></ul>
+      <p class="chico">Código de barras: Open Food Facts (base libre, con internet). Los valores son aproximados.</p>
+    </section>
+  </main>
+  <script src="/comun/marco.js"></script>
+  <script src="/m/comida/ajustes.js"></script>
+</body>
+</html>
