@@ -12,7 +12,7 @@
  */
 (function () {
   'use strict'
-  const VERSION = '0.11'
+  const VERSION = '0.12'
   const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
   const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
   const FASES = ['Disciplina', 'Constancia', 'Mi yo ideal']
@@ -105,7 +105,7 @@
           <div><div class="dia">…</div><div class="fecha"></div></div>
           <div class="fase" style="text-align: right;"><div class="cabecera-ciclo" hidden></div><span id="cabecera-extra" class="cabecera-extra"></span></div>
         </div>
-        <a class="barra-fases" href="/ciclo" aria-label="Ver detalle de la fase" hidden></a>
+        <a class="barra-fases" href="/ciclo/objetivos" aria-label="Ver detalle de la fase" hidden></a>
         <div id="hueco-horario" class="hueco-horario ${horario ? 'con' : ''}" aria-hidden="true"></div>
         ${window.SEK_DIBUJOS ? window.SEK_DIBUJOS.divisor : ''}
       </header>
@@ -174,6 +174,28 @@
     return { el: fondo.querySelector('.hoja'), cerrar }
   }
 
+  /** Hoja con «¿Seguro?» y dos botones (como Confirmar de la vieja). `fn` corre al tocar el botón rojo. */
+  function confirmar(titulo, texto, si, fn) {
+    const h = hoja(titulo, `<p class="chico texto-2">${esc(texto)}</p><div class="rejilla-2"><button type="button" class="boton suave" data-no>Cancelar</button><button type="button" class="boton peligro" data-si>${esc(si)}</button></div>`)
+    h.el.querySelector('[data-no]').onclick = h.cerrar
+    h.el.querySelector('[data-si]').onclick = async () => { h.cerrar(); try { await fn() } catch (e) { avisar(e.message, { tipo: 'bajo' }) } }
+  }
+
   window.SEK = window.SEK || {}
-  window.SEK.v88 = { VERSION, montar, avisar, hoja, brillo, esc, fechaLegible, litros, diaSemana }
+  /** Íconos de los pilares (IconoPilar de la vieja; lo usan Hoy, Calendario y la Revisión): pesa, luna, pincel, cubiertos, libro, birrete, meditar, celu, estrella, maletín. */
+  function iconoPilar(id, tipo) {
+    const s = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`
+    if (tipo === 'entrenamiento') return s('<path d="M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12"></path>')
+    if (tipo === 'acostarse') return s('<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path>')
+    if (id === 'manga' || /dibuj|manga|pint/i.test(id)) return s('<path d="M14 4l6 6-9 9H5v-6z"></path><path d="M12 6l6 6"></path>')
+    if (tipo === 'comida_plan') return s('<path d="M7 3v8a2 2 0 0 0 2 2v8M5 3v5M9 3v5M17 21V3c-2 1-3 4-3 8h3"></path>')
+    if (/leer/.test(id)) return s('<path d="M3 5h6a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H3zM21 5h-6a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h7z"></path>')
+    if (/estudiar/.test(id)) return s('<path d="M2 9l10-5 10 5-10 5z"></path><path d="M6 11v5c3 2 9 2 12 0v-5"></path>')
+    if (/meditar/.test(id)) return s('<circle cx="12" cy="5" r="2"></circle><path d="M12 8v5M5 19c2-3 4-4 7-4s5 1 7 4M8 12l4 1 4-1"></path>')
+    if (/pantalla/.test(id)) return s('<rect x="7" y="2" width="10" height="20" rx="2"></rect><path d="M4 4l16 16"></path>')
+    if (/^p-otro/.test(id)) return s('<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6-5.3-3-5.3 3 1.2-6L3.4 9.3l6-.7z"></path>')
+    return s('<rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 12h18"></path>')
+  }
+
+  window.SEK.v88 = { VERSION, montar, avisar, hoja, brillo, esc, fechaLegible, litros, diaSemana, iconoPilar, confirmar }
 })()

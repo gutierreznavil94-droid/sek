@@ -5,55 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SEK · Revisión</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
-  <link rel="stylesheet" href="/m/ciclo/estilo.css">
+  <!-- Igual que la v0.88.27: su estilo y el del tema Shinobi -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
 </head>
 <body>
-  <main>
-    <a class="atras" href="/ciclo">← Ciclo</a>
-    <div class="fila entre">
-      <h1 id="titulo">省 Revisión</h1>
-      <span class="chico" id="paso-texto"></span>
-    </div>
-
-    <!-- Diaria: 3 pasos -->
-    <section id="diaria" class="pila" hidden>
-      <div class="pasos" aria-hidden="true"><i></i><i></i><i></i></div>
-      <section class="tarjeta" data-paso="1">
-        <h3>1 · Qué cumplí</h3>
-        <ul class="lista" id="hechos"></ul>
-        <p class="chico" id="balance"></p>
-        <button class="principal" type="button" data-ir="2">Siguiente</button>
-      </section>
-      <section class="tarjeta" data-paso="2" hidden>
-        <h3>2 · Principal obstáculo</h3>
-        <div class="chips" id="obstaculos"></div>
-        <label>Detalle (opcional) <input id="detalle" maxlength="1000"></label>
-        <div class="botones"><button type="button" data-ir="1">Atrás</button><button class="principal" type="button" data-ir="3">Siguiente</button></div>
-      </section>
-      <section class="tarjeta" data-paso="3" hidden>
-        <h3>3 · Ajuste para mañana</h3>
-        <label>Una sola línea <input id="ajuste" maxlength="1000" placeholder="Ej.: entrenar apenas llego"><span class="ayuda">Mañana aparece arriba del ciclo y de Hoy.</span></label>
-        <div class="botones"><button type="button" data-ir="2">Atrás</button><button class="principal" type="button" id="guardar-diaria">Listo</button></div>
-      </section>
-    </section>
-
-    <!-- Semanal -->
-    <section id="semanal" class="pila" hidden>
-      <section class="tarjeta">
-        <h3 id="semana-titulo">La semana</h3>
-        <ul class="lista" id="semana-dias"></ul>
-        <p class="chico" id="semana-total"></p>
-      </section>
-      <form class="tarjeta" id="form-semanal">
-        <label>Qué funcionó <input name="queFunciono" maxlength="1000"></label>
-        <label>Qué cambio para la semana que viene <input name="queCambiar" maxlength="1000"></label>
-        <button class="principal" type="submit" id="guardar-semanal">Guardar</button>
-      </form>
-    </section>
+  <main class="contenido">
+    <a class="atras" href="/" id="atras">← Hoy</a>
+    <div class="col" id="caja" style="gap: 12px;"><p class="vacio">Cargando…</p></div>
   </main>
   <script src="/comun/marco.js"></script>
-  <script src="/m/ciclo/ayuda.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
   <script src="/m/ciclo/revision.js"></script>
 </body>
 </html>

@@ -4,7 +4,7 @@
 (function () {
   'use strict'
   const { api, $, seguro } = SEK
-  const { esc, brillo, fechaLegible, litros, avisar, hoja, diaSemana } = SEK.v88
+  const { esc, brillo, fechaLegible, litros, avisar, hoja, diaSemana, iconoPilar } = SEK.v88
   const marco = SEK.v88.montar({ activo: 'hoy', horario: true, companero: 'pasea' })
   const idUrl = (id) => encodeURIComponent(id)
   const sumarDias = (f, n) => { const x = new Date(`${f}T12:00:00Z`); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10) }
@@ -19,21 +19,6 @@
   const ICONO_REV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"></path></svg>'
   const ICONO_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>'
   const ICONO_SIG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>'
-
-  /** Íconos de los pilares (IconoPilar de la vieja): pesa, luna, pincel, cubiertos, libro, birrete, meditar, celu, estrella, maletín. */
-  function iconoPilar(id, tipo) {
-    const s = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`
-    if (tipo === 'entrenamiento') return s('<path d="M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12"></path>')
-    if (tipo === 'acostarse') return s('<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path>')
-    if (id === 'manga' || /dibuj|manga|pint/i.test(id)) return s('<path d="M14 4l6 6-9 9H5v-6z"></path><path d="M12 6l6 6"></path>')
-    if (tipo === 'comida_plan') return s('<path d="M7 3v8a2 2 0 0 0 2 2v8M5 3v5M9 3v5M17 21V3c-2 1-3 4-3 8h3"></path>')
-    if (/leer/.test(id)) return s('<path d="M3 5h6a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H3zM21 5h-6a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h7z"></path>')
-    if (/estudiar/.test(id)) return s('<path d="M2 9l10-5 10 5-10 5z"></path><path d="M6 11v5c3 2 9 2 12 0v-5"></path>')
-    if (/meditar/.test(id)) return s('<circle cx="12" cy="5" r="2"></circle><path d="M12 8v5M5 19c2-3 4-4 7-4s5 1 7 4M8 12l4 1 4-1"></path>')
-    if (/pantalla/.test(id)) return s('<rect x="7" y="2" width="10" height="20" rx="2"></rect><path d="M4 4l16 16"></path>')
-    if (/^p-otro/.test(id)) return s('<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6-5.3-3-5.3 3 1.2-6L3.4 9.3l6-.7z"></path>')
-    return s('<rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 12h18"></path>')
-  }
 
   const tieneExtra = (a) => !!(a.minutosExtra && a.minutosMinimos && a.minutosExtra > a.minutosMinimos)
   function estadoBrilloPilar(p) {
@@ -419,7 +404,7 @@
       <div>${lista.map((c, i) => `<button type="button" class="fila-compromiso ${esc(c.estado)}" data-i="${i}"><span class="estado-ic">${ICONO_ESTADO[c.estado] || ''}</span><span class="crece">${esc(c.accion.nombre)}<span class="texto-3 chico">${c.horaPrevista ? ` · ${esc(c.horaPrevista)}` : ''}</span></span></button>`).join('')}</div>`
     for (const b of el.querySelectorAll('[data-i]')) {
       const c = lista[Number(b.dataset.i)]
-      b.onclick = () => detallePilar({ accion: c.accion, compromiso: c, estado: c.estado === 'completado' ? 'cumplido' : c.estado })
+      b.onclick = () => { if (c.accion.tipo === 'revision_semanal') location.href = '/ciclo/revision?tipo=semanal'; else detallePilar({ accion: c.accion, compromiso: c, estado: c.estado === 'completado' ? 'cumplido' : c.estado }) }
     }
   }
 

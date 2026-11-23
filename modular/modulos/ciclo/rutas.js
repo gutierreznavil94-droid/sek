@@ -18,6 +18,8 @@ module.exports = async function rutasCiclo(app) {
   app.get('/ciclo', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'ciclo', 'ciclo.html'))
   app.get('/ciclo/metas', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'ciclo', 'metas.html'))
   app.get('/ciclo/identidad', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'ciclo', 'identidad.html'))
+  app.get('/ciclo/atributos', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'ciclo', 'atributos.html'))
+  app.get('/ciclo/objetivos', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'ciclo', 'objetivos.html'))
   app.get('/ciclo/revision', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'ciclo', 'revision.html'))
 
   // Ciclo y fases

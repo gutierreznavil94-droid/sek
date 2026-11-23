@@ -5,7 +5,7 @@
 (function () {
   'use strict'
   const { api, $, seguro, evento } = SEK
-  const { esc, avisar, hoja } = SEK.v88
+  const { esc, avisar, hoja, confirmar } = SEK.v88
   SEK.v88.montar({ activo: 'progreso', companero: 'esquina' })
   const reducido = () => matchMedia('(prefers-reduced-motion: reduce)').matches
   let r = null
@@ -22,13 +22,6 @@
   }
   const fechaCorta = (f) => (f ? `${f.slice(8, 10)}/${f.slice(5, 7)}` : '')
   const TRAZO_GRUPO = '<svg class="codigo-grupo-trazo" viewBox="0 0 200 8" preserveAspectRatio="none" aria-hidden="true"><path d="M2,5 C40,2 90,7 140,4 C170,2 190,5 198,4"/></svg>'
-
-  /** Hoja con «¿Seguro?»: dos botones. */
-  function confirmar(titulo, texto, si, fn) {
-    const h = hoja(titulo, `<p class="chico texto-2">${esc(texto)}</p><div class="rejilla-2"><button type="button" class="boton suave" data-no>Cancelar</button><button type="button" class="boton peligro" data-si>${esc(si)}</button></div>`)
-    h.el.querySelector('[data-no]').onclick = h.cerrar
-    h.el.querySelector('[data-si]').onclick = seguro(async () => { h.cerrar(); await fn() })
-  }
 
   // ---------- Forja ----------
   let golpeDe = null // id del hábito recién marcado (su piedra hace el golpe una vez)

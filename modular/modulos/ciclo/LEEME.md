@@ -52,9 +52,13 @@ Ajustes que usa (de `comun/ajustes.js`): `zonaHoraria`. Los nombres cortos de la
 ## Archivos
 
 - `calculo.js`: cuentas puras (fases, metas automáticas, día del ciclo, estado de las metas) y los datos de fábrica. Traído de `src/services/ciclo.ts`, `metas.ts`, `src/data/semilla.ts` y `src/domain/fechas.ts` (lo de fechas ya estaba en `comun/fechas.js`).
-- `pantallas/ciclo.html` + `ciclo.js`: dónde estoy, fases con objetivos, cerrar fase, empezar o mover el ciclo.
-- `pantallas/metas.html` + `metas.js`, `identidad.html` + `identidad.js`, `revision.html` + `revision.js`.
-- `pantallas/ayuda.js`: lo común a las pantallas del ciclo (escapar, fechas cortas, la hoja de formulario). `estilo.css`: diseños propios.
+Pantallas (todas con el estilo de la v0.88.27: `comun/v88.css` y `SEK.v88`):
+- `pantallas/ciclo.html` + `ciclo.js` (/ciclo, «Nuevo ciclo» en Más): sin ciclo, elegir el Día 1; con ciclo, cambiar la fecha de inicio o empezar uno nuevo.
+- `objetivos.*` (/ciclo/objetivos): una tarjeta por fase, sus objetivos, cerrar la fase o el ciclo.
+- `atributos.*` (/ciclo/atributos): valor de hoy y acciones vinculadas (de /api/dia), crear, editar, archivar.
+- `identidad.*` (/ciclo/identidad): yo ideal y obstáculos.
+- `metas.*` (/ciclo/metas): metas con fecha.
+- `revision.*` (/ciclo/revision, ?tipo=semanal, ?fecha=): diaria en 3 pasos con los pilares del día; semanal con cumplimiento, entrenos, descanso, juego, XP, atributos y reflexión.
 
 ## Qué módulos usa
 

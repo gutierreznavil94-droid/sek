@@ -5,32 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SEK · Identidad</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
-  <link rel="stylesheet" href="/m/ciclo/estilo.css">
+  <!-- Igual que la v0.88.27: su estilo y el del tema Shinobi -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
 </head>
 <body>
-  <main>
-    <a class="atras" href="/ciclo">← Ciclo</a>
-    <h1>己 Identidad</h1>
-    <p class="chico">Cada acción diaria está conectada con la persona que querés llegar a ser. Esto es lo que la app te recuerda.</p>
-
-    <form class="tarjeta" id="form-identidad">
-      <label>Yo ideal <textarea name="vision" rows="6" required minlength="10" maxlength="4000"></textarea></label>
-      <label>Obstáculos actuales <textarea name="obstaculos" rows="4" maxlength="4000"></textarea></label>
-      <button class="principal" type="submit" id="guardar-identidad" disabled>Guardar</button>
-    </form>
-
+  <main class="contenido">
+    <a class="atras" href="/mas">← Más</a>
+    <h1>Identidad</h1>
+    <p class="texto-2 chico">Cada acción diaria está conectada con la persona que querés llegar a ser. Esto es lo que la app te recuerda.</p>
     <section class="tarjeta">
-      <div class="fila entre">
-        <h3>Atributos</h3>
-        <button class="mini" type="button" id="nuevo-atributo">+ Nuevo</button>
-      </div>
-      <p class="chico">Cada atributo es el % de cumplimiento de las acciones vinculadas en una ventana de días. Las acciones se vinculan desde los pilares del día.</p>
-      <ul class="lista" id="atributos"></ul>
+      <div class="tarjeta-cab"><h2>Yo ideal</h2></div>
+      <div class="campo"><textarea id="vision" rows="6" maxlength="4000" aria-label="Yo ideal"></textarea></div>
     </section>
+    <section class="tarjeta">
+      <div class="tarjeta-cab"><h2>Obstáculos actuales</h2></div>
+      <div class="campo"><textarea id="obstaculos" rows="4" maxlength="4000" aria-label="Obstáculos actuales"></textarea></div>
+    </section>
+    <button type="button" class="boton primario ancho" id="guardar" disabled>Guardar</button>
   </main>
   <script src="/comun/marco.js"></script>
-  <script src="/m/ciclo/ayuda.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
   <script src="/m/ciclo/identidad.js"></script>
 </body>
 </html>

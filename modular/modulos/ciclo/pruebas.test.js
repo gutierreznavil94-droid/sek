@@ -256,7 +256,7 @@ test('rutas: pantallas y API con sesión', async () => {
   const r = await app.inject({ method: 'POST', url: '/api/sesion/crear-cuenta', payload: { nombre: 'Web', email: 'webciclo@prueba.com', clave: 'clave-segura' } })
   const cookie = r.headers['set-cookie'].split(';')[0]
   const pide = (method, url, payload) => app.inject({ method, url, payload, headers: { cookie } })
-  for (const p of ['/ciclo', '/ciclo/metas', '/ciclo/identidad', '/ciclo/revision', '/m/ciclo/ciclo.js', '/m/ciclo/estilo.css']) {
+  for (const p of ['/ciclo', '/ciclo/metas', '/ciclo/identidad', '/ciclo/revision', '/ciclo/atributos', '/ciclo/objetivos', '/m/ciclo/ciclo.js', '/m/ciclo/revision.js']) {
     assert.equal((await pide('GET', p)).statusCode, 200, p)
   }
   const vacio = (await pide('GET', '/api/ciclo')).json()

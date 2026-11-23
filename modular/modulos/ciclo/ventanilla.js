@@ -347,7 +347,7 @@ async function borrarMeta(usuarioId, id, tx = null) {
 /** Metas propias agrupadas: { pendientes, vencidas (Hoy pregunta), cumplidas, noCumplidas }. */
 async function resumenMetas(usuarioId, hoy = null, tx = null) {
   const h = hoy || await hoyDe(usuarioId, tx)
-  return calculo.agruparMetas(await datos.metasPropias(usuarioId, tx), h)
+  return { ...calculo.agruparMetas(await datos.metasPropias(usuarioId, tx), h), hoy: h }
 }
 
 /** Metas propias cuya fecha llegó y siguen sin respuesta. Para la tarjeta de Hoy (dia). */

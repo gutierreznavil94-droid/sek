@@ -6,7 +6,7 @@
 (function () {
   'use strict'
   const { api, $, seguro } = SEK
-  const { esc, avisar, hoja } = SEK.v88
+  const { esc, avisar, hoja, iconoPilar } = SEK.v88
   SEK.v88.montar({ activo: 'calendario', companero: 'esquina' })
 
   const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
@@ -17,15 +17,6 @@
   const fechaLarga = (f) => `${DIAS[diaSemana(f)]} ${Number(f.slice(8))} ${MESES[Number(f.slice(5, 7)) - 1]}`
   const diaDelCiclo = (inicio, f) => Math.round((Date.parse(f) - Date.parse(inicio)) / 86400000) + 1
   const hora = (ms) => new Date(ms).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
-
-  function iconoPilar(id, tipo) {
-    const s = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`
-    if (tipo === 'entrenamiento') return s('<path d="M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12"></path>')
-    if (tipo === 'acostarse') return s('<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path>')
-    if (id === 'manga' || /dibuj|manga|pint/i.test(id)) return s('<path d="M14 4l6 6-9 9H5v-6z"></path><path d="M12 6l6 6"></path>')
-    if (tipo === 'comida_plan') return s('<path d="M7 3v8a2 2 0 0 0 2 2v8M5 3v5M9 3v5M17 21V3c-2 1-3 4-3 8h3"></path>')
-    return s('<rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 12h18"></path>')
-  }
 
   let mes = null // 'AAAA-MM'
   let d = null // datos del mes
