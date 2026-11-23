@@ -1,0 +1,4 @@
+/* Calendario (v0.88.27): lo poco que cambia porque acá algunos botones son enlaces (<a>) en vez de <button>. */
+a.barra-fases { display: flex; text-decoration: none; }
+a.hor-boton, .hor-dia-lista a, .hoja a.boton { text-decoration: none; }
+.hoja a.boton { display: inline-flex; justify-content: center; }

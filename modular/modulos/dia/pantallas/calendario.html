@@ -5,35 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SEK · Calendario</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
-  <link rel="stylesheet" href="/m/dia/estilo.css">
+  <!-- Igual que la v0.88.27: su estilo y el del tema Shinobi -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
+  <link rel="stylesheet" href="/m/dia/calendario.css">
 </head>
 <body>
-  <main>
+  <main class="contenido">
+    <a class="boton ancho hor-boton" href="/horario"><span>Mi horario<span class="desc">bloques fijos de la semana: colegio, trabajo, entreno</span></span><span class="flecha">›</span></a>
     <div class="fila entre">
-      <h1><span class="kanji" aria-hidden="true">暦</span> Calendario</h1>
-      <a class="boton mini" href="/horario">Mi horario ›</a>
+      <button class="boton chico" id="anterior" aria-label="Mes anterior">‹</button>
+      <h1 class="cal-titulo" style="text-transform: capitalize;"><span class="cal-kanji" aria-hidden="true">暦</span><span id="titulo-mes"></span></h1>
+      <button class="boton chico" id="siguiente" aria-label="Mes siguiente">›</button>
     </div>
     <section class="tarjeta">
-      <div class="mes-cabeza">
-        <button class="mini" id="anterior" aria-label="Mes anterior">‹</button>
-        <h2 id="titulo-mes" aria-live="polite"></h2>
-        <button class="mini" id="siguiente" aria-label="Mes siguiente">›</button>
-      </div>
-      <div class="rejilla-mes" id="rejilla" role="grid"></div>
-      <div class="leyenda">
-        <span><i style="background:var(--verde)"></i>cumplido</span>
-        <span><i style="background:var(--ambar)"></i>tarde</span>
-        <span><i style="background:var(--peligro)"></i>no cumplido</span>
-        <span><span class="kanji" style="color:var(--acento)">印</span> fecha clave</span>
-        <span style="color:var(--ambar)">feriado</span>
-      </div>
-      <button class="mini" id="ir-hoy">Ir a hoy</button>
+      <div class="calendario tinta" id="rejilla"></div>
+      <ul class="cal-leyenda" aria-label="Qué significa cada marca">
+        <li><span class="cal-barra muestra"><i class="cumplido"></i><i class="cumplido"></i><i class="omitido"></i><i></i></span> pilares: verde hecho, rojo no</li>
+        <li><span class="cal-rio muestra"></span> forja cumplida</li>
+        <li><b class="cal-icono hoy">今</b> hoy</li>
+        <li><b class="cal-icono marca">印</b> día marcado</li>
+        <li><b class="cal-icono clave">印</b> fecha clave</li>
+        <li><b class="cal-icono caida">墓</b> caída</li>
+        <li><b class="cal-icono feriado">祝</b> feriado</li>
+        <li><span class="cal-muestra-dia completo"></span> día completo</li>
+        <li><span class="cal-muestra-dia fase"></span> inicio de fase</li>
+        <li><span class="cal-muestra-dia libre"></span> día libre</li>
+        <li><b class="cal-mas">·</b> hay más: tocá el día</li>
+      </ul>
+      <p class="cal-pista">Mantené apretado un día para marcarlo (cambio de estilo, algo importante…)</p>
     </section>
-    <section class="tarjeta detalle-dia" id="detalle" aria-live="polite"></section>
+    <div id="marca-fila"></div>
+    <div id="detalle"></div>
   </main>
   <script src="/comun/marco.js"></script>
-  <script src="/m/dia/ayuda.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
   <script src="/m/dia/calendario.js"></script>
 </body>
 </html>
