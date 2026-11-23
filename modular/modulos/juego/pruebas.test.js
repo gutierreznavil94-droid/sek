@@ -104,3 +104,35 @@ test('web: la pantalla y la API de juego piden sesión y funcionan', async () =>
   assert.equal(m.statusCode, 400)
   await app.close()
 })
+
+test('corregir una sesión cambia inicio y fin y guarda el motivo', async () => {
+  const id = await personaDePrueba()
+  const t = reloj.ahora() - 5 * 60 * MIN
+  const s = await juego.agregarManual(id, { inicio: t, fin: t + 90 * MIN })
+  const [h] = await juego.historial(id, 1)
+  await assert.rejects(juego.corregir(id, h.id, { inicio: t, fin: t + 30 * MIN, motivo: '' }), /motivo/)
+  await assert.rejects(juego.corregir(id, h.id, { inicio: t, fin: t - MIN, motivo: 'x' }), /después del inicio/)
+  const c = await juego.corregir(id, h.id, { inicio: t + 10 * MIN, fin: t + 40 * MIN, motivo: 'me olvidé de parar' })
+  assert.equal(c.inicio, t + 10 * MIN)
+  assert.equal(c.fin, t + 40 * MIN)
+  assert.match(c.nota, /corregida · me olvidé/)
+  assert.ok(s)
+})
+
+test('el resumen trae los últimos 7 días con su límite', async () => {
+  const id = await personaDePrueba()
+  const r = await juego.resumen(id)
+  assert.equal(r.ultimos7.length, 7)
+  assert.equal(r.ultimos7[6].fecha, r.hoy || r.ultimos7[6].fecha)
+  assert.ok(r.ultimos7.every((d) => typeof d.minutos === 'number' && typeof d.limite === 'number'))
+  assert.equal(r.limiteSemanaDia, 60)
+})
+
+test('las escenas de la pantalla (pelea, a jugar, jugando, té) están en el módulo', () => {
+  const fs = require('node:fs')
+  const path = require('node:path')
+  const raiz = path.join(__dirname, 'pantallas', 'escenas')
+  for (const e of ['pelea/pelea', 'juego/a-jugar', 'juego/jugando', 'juego/te-entra', 'juego/te-bucle', 'juego/te-sale']) {
+    for (const fin of ['.mp4', '-inicio.webp', '-quieto.jpg', '-fin.jpg']) assert.ok(fs.existsSync(path.join(raiz, e + fin)), e + fin)
+  }
+})

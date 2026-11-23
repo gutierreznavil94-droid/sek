@@ -64,6 +64,20 @@ async function agregarManual(usuarioId, { inicio, fin, nota }, tx = null) {
   return s
 }
 
+/** Corrige el inicio y el fin de una sesión terminada. El motivo queda en la nota y en el historial. */
+async function corregir(usuarioId, id, { inicio, fin, motivo }, tx = null) {
+  const antes = await datos.porId(usuarioId, id, tx)
+  if (!antes) throw noEncontrado('Esa sesión')
+  if (antes.fin == null) throw datoInvalido('La sesión todavía está corriendo: terminala antes de corregirla.')
+  if (!Number.isFinite(inicio) || !Number.isFinite(fin) || fin <= inicio) throw datoInvalido('El fin tiene que ser después del inicio.')
+  if (fin - inicio > 16 * 3600000) throw datoInvalido('Una sesión no puede durar más de 16 horas.')
+  if (fin > ahora()) throw datoInvalido('No se puede anotar juego en el futuro.')
+  if (!String(motivo || '').trim()) throw datoInvalido('Escribí el motivo: queda en el historial.')
+  const s = sinId(await datos.actualizar(usuarioId, id, { inicio, fin, pausas: [], nota: `corregida · ${String(motivo).trim()}` }, tx))
+  await anotar(usuarioId, 'juego', 'corregir', { antes: sinId(antes), inicio, fin, motivo }, tx)
+  return s
+}
+
 async function borrar(usuarioId, id, motivo = '', tx = null) {
   const antes = await datos.porId(usuarioId, id, tx)
   if (!antes) throw noEncontrado('Esa sesión')
@@ -108,7 +122,8 @@ async function resumen(usuarioId, tx = null) {
   const t = ahora()
   const hoy = fechaDe(t, a.zonaHoraria)
   const lunes = lunesDe(hoy)
-  const desde = inicioDelDia(lunes, a.zonaHoraria)
+  const hace6 = sumarDias(hoy, -6)
+  const desde = inicioDelDia(hace6 < lunes ? hace6 : lunes, a.zonaHoraria)
   const sesiones = (await datos.entre(usuarioId, desde, t + 1, tx)).map(sinId)
   const porDia = calculo.minutosPorDia(sesiones, t, a.zonaHoraria)
   const semana = []
@@ -121,6 +136,12 @@ async function resumen(usuarioId, tx = null) {
     semana.push({ fecha: f, minutos, limite })
     minutosSemana += minutos
     limiteSemana += limite
+  }
+  // Los últimos 7 días (hoy incluido), para las barritas de la pantalla.
+  const ultimos7 = []
+  for (let i = 6; i >= 0; i--) {
+    const f = sumarDias(hoy, -i)
+    ultimos7.push({ fecha: f, minutos: Math.round(porDia.get(f) || 0), limite: limiteDelDia(a, f, await feriadoDe(usuarioId, f, tx)) })
   }
   const activa = await sesionActiva(usuarioId, tx)
   const minutosHoy = Math.round(porDia.get(hoy) || 0)
@@ -136,6 +157,11 @@ async function resumen(usuarioId, tx = null) {
     minutosSemana,
     limiteSemana,
     semana,
+    ultimos7,
+    limiteSemanaDia: a.limiteJuegoSemana,
+    limiteFinde: a.limiteJuegoFinde,
+    avisoPorcentaje: a.avisoJuegoPorcentaje,
+    zonaHoraria: a.zonaHoraria,
   }
 }
 
@@ -163,4 +189,4 @@ async function exportar(usuarioId, tx = null) {
   return (await datos.todasLasSesiones(usuarioId, tx)).map(({ id, ...s }) => s)
 }
 
-module.exports = { conectar, exportar, sesionActiva, empezar, pausar, seguir, terminar, agregarManual, borrar, minutosDelDia, limiteRespetado, resumen, historial, importar }
+module.exports = { conectar, exportar, sesionActiva, empezar, pausar, seguir, terminar, agregarManual, corregir, borrar, minutosDelDia, limiteRespetado, resumen, historial, importar }

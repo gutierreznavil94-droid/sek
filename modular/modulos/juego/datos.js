@@ -14,9 +14,9 @@ const crear = (usuarioId, { inicio, fin = null, pausas = [], nota = null }, tx) 
   una(`INSERT INTO sesiones_juego (usuario_id, inicio, fin, pausas, nota) VALUES ($1, $2, $3, $4, $5) RETURNING ${COLUMNAS}`,
     [usuarioId, inicio, fin, JSON.stringify(pausas), nota], tx)
 
-const actualizar = (usuarioId, id, { pausas, fin = null, nota = null }, tx) =>
-  una(`UPDATE sesiones_juego SET pausas = $3, fin = $4, nota = COALESCE($5, nota) WHERE usuario_id = $1 AND id = $2 RETURNING ${COLUMNAS}`,
-    [usuarioId, id, JSON.stringify(pausas), fin, nota], tx)
+const actualizar = (usuarioId, id, { pausas, fin = null, nota = null, inicio = null }, tx) =>
+  una(`UPDATE sesiones_juego SET pausas = $3, fin = $4, nota = COALESCE($5, nota), inicio = COALESCE($6, inicio) WHERE usuario_id = $1 AND id = $2 RETURNING ${COLUMNAS}`,
+    [usuarioId, id, JSON.stringify(pausas), fin, nota, inicio], tx)
 
 const borrar = (usuarioId, id, tx) =>
   consulta('DELETE FROM sesiones_juego WHERE usuario_id = $1 AND id = $2', [usuarioId, id], tx)

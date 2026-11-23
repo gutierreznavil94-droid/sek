@@ -111,7 +111,7 @@
     const c = capa(d, 900)
     if (!c) return
     const s = document.createElement('span')
-    s.className = 'tema-sello'
+    s.className = 'tema-sello-efecto'
     s.textContent = icono('icono-sello-hecho') || '済'
     c.appendChild(s)
     animar(s, [

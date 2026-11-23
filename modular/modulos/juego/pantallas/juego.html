@@ -5,47 +5,75 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SEK · Juego</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
+  <!-- Igual que la v0.88.27: su estilo y el del tema Shinobi -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
   <link rel="stylesheet" href="/m/juego/estilo.css">
 </head>
 <body>
-  <main>
-    <h1>遊 Juego</h1>
-
-    <section class="tarjeta" aria-live="polite">
+  <main class="contenido">
+    <h1 class="juego-titulo"><span class="juego-kanji" aria-hidden="true">遊</span>Juego</h1>
+    <section class="tarjeta compacta">
       <div class="fila entre">
-        <span class="chico" id="etiqueta-sesion">Sin jugar ahora</span>
-        <span class="chico" id="estado-limite"></span>
+        <span class="seccion-titulo">Temporizador de juego</span>
+        <button class="boton chico suave icono" id="explicar" aria-label="Explicar Cómo funciona" style="min-width: 32px; min-height: 32px; padding: 4px; color: var(--texto-3);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg></button>
       </div>
-      <div class="grande" id="reloj">0:00</div>
-      <div class="fila" id="botones">
-        <button class="principal" id="empezar">Empezar a jugar</button>
-        <button id="pausar" hidden>Pausar</button>
-        <button id="seguir" hidden>Seguir</button>
-        <button id="terminar" hidden>Terminar</button>
+      <div class="juego-temporizador">
+        <div class="enso ok" id="enso">
+          <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="40" class="enso-fantasma"></circle><path class="enso-trazo"></path><path class="enso-seco"></path></svg>
+          <div class="enso-centro"><div class="juego-segundos" id="segundos">00:00</div></div>
+        </div>
+        <div class="juego-lado" aria-live="polite">
+          <div class="texto-3 muy-chico" id="estado-sesion">Sin sesión activa</div>
+          <button class="boton primario pincel" id="iniciar">▶ Iniciar</button>
+          <div class="fila" id="botones-activa" style="gap: 6px; flex-wrap: wrap;" hidden>
+            <button class="boton pincel" id="reanudar" hidden>▶ Reanudar</button>
+            <button class="boton pincel" id="pausar">❚❚ Pausar</button>
+            <button class="boton peligro pincel" id="finalizar">■ Finalizar</button>
+          </div>
+        </div>
+      </div>
+      <!-- La casa, enmarcada como un shōji: pelean hasta que empezás a jugar; jugando, concentrados; en pausa, té. -->
+      <div class="juego-shoji" id="escena"></div>
+    </section>
+
+    <section class="tarjeta compacta">
+      <div class="fila entre"><span class="texto-2">Hoy</span><b class="mono" id="hoy-texto">0 / 0 min</b></div>
+      <div class="barra ok" id="hoy-barra"><div style="width: 0%;"></div></div>
+      <span class="chico" id="hoy-aviso" hidden></span>
+      <div class="fila entre chico">
+        <span class="texto-2">Esta semana</span>
+        <span class="mono"><span id="semana-texto">0 min</span> <span class="texto-3" id="semana-limite"></span></span>
       </div>
     </section>
 
     <section class="tarjeta">
-      <div class="fila entre"><h3>Hoy</h3><span id="hoy-texto" class="chico"></span></div>
-      <div class="barra-progreso" role="progressbar" aria-label="Juego de hoy"><span id="hoy-barra" style="width:0%"></span></div>
+      <div class="tarjeta-cab"><h2>Mis juegos del celu</h2></div>
+      <p class="texto-2 chico">Marcá qué apps son juegos: su tiempo se suma solo al de hoy, junto con el temporizador. Te avisa antes de llegar y al pasarte del límite salta el Tajo encima del juego.</p>
+      <p class="aviso-chico">Esto funciona solo en la app de Android (APK). Acá ves cómo queda.</p>
+      <div class="vigia-app"><span class="vigia-sin-icono" aria-hidden="true">🎮</span><span class="crece col" style="gap: 1px;"><b>Clash Royale</b><span class="chico texto-3">Cuenta solo</span></span><button class="boton chico suave" disabled aria-label="Quitar Clash Royale">✕</button></div>
+      <div class="vigia-app"><span class="vigia-sin-icono" aria-hidden="true">🎮</span><span class="crece col" style="gap: 1px;"><b>Free Fire</b><span class="chico texto-3">Cuenta solo</span></span><button class="boton chico suave" disabled aria-label="Quitar Free Fire">✕</button></div>
+      <button class="boton ancho" disabled>+ Marcar juego</button>
+      <p class="ayuda">Usa el mismo límite de juego de siempre (semana y finde). SEK solo ve cuántos minutos estuvo abierto el juego, no qué hacés adentro.</p>
     </section>
 
     <section class="tarjeta">
-      <div class="fila entre"><h3>Esta semana</h3><span id="semana-texto" class="chico"></span></div>
-      <div class="semana" id="semana"></div>
+      <div class="tarjeta-cab"><h2>Últimos 7 días</h2></div>
+      <div class="barras" id="barras"></div>
+      <div class="barras-etq" id="barras-etq"></div>
     </section>
 
-    <details class="tarjeta">
-      <summary>Me olvidé de anotar</summary>
-      <form id="form-manual" class="fila">
-        <label>Desde <input id="manual-desde" type="datetime-local" required></label>
-        <label>Hasta <input id="manual-hasta" type="datetime-local" required></label>
-        <button type="submit">Sumar</button>
-      </form>
-    </details>
+    <section class="tarjeta">
+      <div class="tarjeta-cab"><h2>Historial</h2><button class="boton chico" id="anadir">+ Añadir a mano</button></div>
+      <div id="historial"><p class="vacio">Cargando…</p></div>
+    </section>
   </main>
   <script src="/comun/marco.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
+  <script src="/m/juego/escena.js"></script>
   <script src="/m/juego/juego.js"></script>
 </body>
 </html>

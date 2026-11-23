@@ -141,17 +141,21 @@
         ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(n.x, n.y, n.r * 1.8, n.r * 0.5, 0, 0, Math.PI * 2); ctx.fill()
       }
       ctx.lineCap = 'round'
+      // Juego con el temporizador corriendo (clase juego-corriendo): más lenta y tenue, para concentrarse.
+      const calma = document.documentElement.classList.contains('juego-corriendo')
+      const lento = calma ? 0.45 : 1
+      const tenue = calma ? 0.6 : 1
       for (const g of gotas) {
-        g.y += g.vel * dt; g.x += g.vel * dt * perfil.diagonal
+        g.y += g.vel * dt * lento; g.x += g.vel * dt * lento * perfil.diagonal
         if (g.y > h + 20 || g.x > w + 60 || g.x < -60) Object.assign(g, nueva(false))
-        ctx.strokeStyle = `rgba(${COLOR}, ${perfil.alfa[g.capa ? 0 : 1]})`
+        ctx.strokeStyle = `rgba(${COLOR}, ${perfil.alfa[g.capa ? 0 : 1] * tenue})`
         ctx.lineWidth = g.capa ? 1.7 : 1.1
         ctx.beginPath(); ctx.moveTo(g.x, g.y); ctx.lineTo(g.x - g.largo * perfil.diagonal, g.y - g.largo); ctx.stroke()
       }
       // Adelante: gotas cercanas, desenfocadas.
       fr.lineCap = 'round'
       for (const g of cerca) {
-        g.y += g.vel * dt; g.x += g.vel * dt * perfil.diagonal
+        g.y += g.vel * dt * (calma ? 0.4 : 1); g.x += g.vel * dt * (calma ? 0.4 : 1) * perfil.diagonal
         if (g.y > h + 140) Object.assign(g, nuevaCerca(false))
         fr.strokeStyle = `rgba(${COLOR}, ${g.a})`
         fr.lineWidth = g.ancho

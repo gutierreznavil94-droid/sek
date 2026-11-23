@@ -1,10 +1,2 @@
-/* Diseños propios de Juego. Usa los colores generales de /comun/estilo.css. */
-.semana { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; align-items: end; height: 120px; }
-.semana .dia { display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; min-width: 0; }
-.semana .columna { width: 100%; max-width: 28px; background: var(--fondo-3); border-radius: 6px 6px 2px 2px; position: relative; flex: 1; display: flex; align-items: flex-end; overflow: hidden; }
-.semana .columna span { width: 100%; background: var(--acento); border-radius: 6px 6px 2px 2px; }
-.semana .columna span.ok { background: var(--verde); }
-.semana .dia small { font-size: .7rem; color: var(--texto-3); }
-.semana .dia.hoy small { color: var(--texto); font-weight: 600; }
-#form-manual label { flex: 1 1 180px; }
-summary { cursor: pointer; color: var(--texto-2); }
+/* Juego usa el estilo de la v0.88.27 (/comun/v88.css) y el del tema; acá van solo los retoques propios. */
+.hoja .error { color: var(--bajo); margin: 0; }

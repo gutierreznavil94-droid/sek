@@ -49,7 +49,8 @@ test('los archivos de Shinobi que nombra su tema.json existen (escenas, fondos, 
   const archivo = (url) => path.join(raiz, url.replace('/m/temas/', ''))
   for (const f of Object.values(s.medios.fondos)) { assert.ok(fs.existsSync(archivo(f.video)), f.video); assert.ok(fs.existsSync(archivo(f.imagen)), f.imagen) }
   for (const u of [s.medios.sprite, s.medios.tajo, s.medios.grano, s.vistaPrevia.imagen]) assert.ok(fs.existsSync(archivo(u)), u)
-  for (const e of ['juego/jugando', 'noche/durmiendo', 'sueno/sentado', 'pelea/pelea']) {
+  // Las escenas de Juego (pelea, a jugar, té) viven en el módulo juego: solo las usa esa pantalla.
+  for (const e of ['noche/durmiendo', 'sueno/sentado']) {
     for (const fin of ['.mp4', '-inicio.webp', '-quieto.jpg', '-fin.jpg']) assert.ok(fs.existsSync(archivo(s.medios.escenas + e + fin)), e + fin)
   }
 })

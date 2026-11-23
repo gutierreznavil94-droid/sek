@@ -13,7 +13,7 @@
 
 /* Capa de los efectos (sello, tinta, tajo): encima de todo, no toma toques. */
 .tema-capa { position: fixed; pointer-events: none; z-index: 250; }
-.tema-sello { position: absolute; right: 10px; top: 50%; width: 34px; height: 34px; margin-top: -17px; display: grid; place-items: center; border: 2px solid var(--acento); border-radius: 6px; color: var(--acento); font-family: var(--pincel); font-size: 19px; background: rgba(200, 16, 46, .08); }
+.tema-sello-efecto { position: absolute; right: 10px; top: 50%; width: 34px; height: 34px; margin-top: -17px; display: grid; place-items: center; border: 2px solid var(--acento); border-radius: 6px; color: var(--acento); font-family: var(--pincel); font-size: 19px; background: rgba(200, 16, 46, .08); }
 
 /* Subiste de nivel */
 .tema-nivel { position: fixed; inset: 0; z-index: 240; display: grid; place-items: center; background: rgba(0, 0, 0, .45); cursor: pointer; }

@@ -10,7 +10,9 @@ module.exports = async function rutasJuego(app) {
   app.get('/juego', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'juego', 'juego.html'))
 
   app.get('/api/juego', conUsuario, async (pedido) => v.resumen(pedido.usuario.id))
-  app.get('/api/juego/historial', conUsuario, async (pedido) => ({ sesiones: await v.historial(pedido.usuario.id) }))
+  app.get('/api/juego/historial', {
+    ...conUsuario, schema: { querystring: { type: 'object', properties: { cantidad: { type: 'integer', minimum: 1, maximum: 3000 } } } },
+  }, async (pedido) => ({ sesiones: await v.historial(pedido.usuario.id, pedido.query.cantidad || 30) }))
   app.post('/api/juego/empezar', conUsuario, async (pedido) => { await v.empezar(pedido.usuario.id); return v.resumen(pedido.usuario.id) })
   app.post('/api/juego/pausar', conUsuario, async (pedido) => { await v.pausar(pedido.usuario.id); return v.resumen(pedido.usuario.id) })
   app.post('/api/juego/seguir', conUsuario, async (pedido) => { await v.seguir(pedido.usuario.id); return v.resumen(pedido.usuario.id) })
@@ -23,6 +25,13 @@ module.exports = async function rutasJuego(app) {
     schema: { body: { type: 'object', required: ['inicio', 'fin'], properties: { inicio: { type: 'number' }, fin: { type: 'number' }, nota: { type: 'string' } } } },
   }, async (pedido) => {
     await v.agregarManual(pedido.usuario.id, pedido.body)
+    return v.resumen(pedido.usuario.id)
+  })
+  app.put('/api/juego/sesiones/:id', {
+    ...conUsuario,
+    schema: { body: { type: 'object', required: ['inicio', 'fin', 'motivo'], properties: { inicio: { type: 'number' }, fin: { type: 'number' }, motivo: { type: 'string', maxLength: 300 } } } },
+  }, async (pedido) => {
+    await v.corregir(pedido.usuario.id, Number(pedido.params.id), pedido.body)
     return v.resumen(pedido.usuario.id)
   })
   app.delete('/api/juego/sesiones/:id', conUsuario, async (pedido) => {
