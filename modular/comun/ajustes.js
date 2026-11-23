@@ -14,6 +14,8 @@ const AJUSTES_INICIALES = {
   nombrePersona: '',
   tema: 'shinobi',
   diaInicioSemana: 1,
+  // cuentas (pantalla Más → Nombres): los nombres de las fases del ciclo
+  nombresFases: ['Disciplina', 'Constancia', 'Mi yo ideal'],
   // juego
   limiteJuegoSemana: 60,
   limiteJuegoFinde: 120,

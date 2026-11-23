@@ -14,6 +14,7 @@
   const MENU = [
     { id: 'hoy', texto: 'Hoy', kanji: '今', ruta: '/hoy' },
     { id: 'juego', texto: 'Juego', kanji: '遊', ruta: '/juego' },
+    { id: 'mas', texto: 'Más', kanji: '他', ruta: '/mas' },
   ]
 
   async function api(ruta, datos, metodo) {
