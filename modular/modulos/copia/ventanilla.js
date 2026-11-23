@@ -24,6 +24,7 @@ const VENTANILLAS = {
   habitos: require('../habitos/ventanilla'),
   comida: require('../comida/ventanilla'),
   entreno: require('../entreno/ventanilla'),
+  desafios: require('../desafios/ventanilla'),
   temas: require('../temas/ventanilla'),
 }
 

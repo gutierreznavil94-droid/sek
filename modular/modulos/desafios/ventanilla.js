@@ -335,7 +335,8 @@ async function resumen(usuarioId, tx = null) {
 
 /**
  * Trae lo de una copia de la app vieja («Copiar todo como texto»): `ninjas` (peleas), `siguienteAccion` (3·2·1) y los
- * ajustes viejos `tension`, `batalla`, `rival`, `distracciones`, `ninjas`. Lo repetido no entra. Lo usa **copia**.
+ * ajustes viejos `tension`, `batalla`, `rival`, `distracciones`, `ninjas`. También lo que devuelve `exportar`
+ * (copia de esta app): `inicios` y `config`. Lo repetido no entra. Lo usa **copia**.
  * Devuelve { peleas, inicios }.
  */
 async function importar(usuarioId, viejo = {}, tx = null) {
@@ -362,8 +363,21 @@ async function importar(usuarioId, viejo = {}, tx = null) {
       }, t)
       inicios++
     }
+    // Copia de esta app (lo que devuelve exportar).
+    for (const i of viejo.inicios || []) {
+      if (!i || !Number.isFinite(i.creado) || !String(i.accion || '').trim() || !esFechaValida(i.fecha)) continue
+      if (await datos.inicioIgual(usuarioId, i.creado, String(i.accion).trim().slice(0, 120), t)) continue
+      await datos.crearInicio(usuarioId, {
+        fecha: i.fecha, creado: i.creado, iniciado: i.iniciado, terminado: i.terminado,
+        resultado: ['hecha', 'parcial', 'no_hecha'].includes(i.resultado) ? i.resultado : null,
+        accion: String(i.accion).trim().slice(0, 120), tareaAmbigua: String(i.tareaAmbigua || '').slice(0, 200),
+        compromisoId: i.compromisoId, segundosHastaEmpezar: Number.isFinite(i.segundosHastaEmpezar) ? Math.round(i.segundosHastaEmpezar) : null,
+      }, t)
+      inicios++
+    }
     const a = viejo.ajustes || {}
     const cambios = {}
+    if (viejo.config && typeof viejo.config === 'object') Object.assign(cambios, viejo.config)
     if (a.tension) cambios.tension = { ...(a.tension.kanji ? { kanji: a.tension.kanji } : {}), ...(typeof a.tension.frase === 'string' ? { frase: a.tension.frase } : {}) }
     if (typeof a.ninjas === 'boolean') cambios.ninjas = a.ninjas
     if (Array.isArray(a.distracciones)) cambios.distracciones = a.distracciones

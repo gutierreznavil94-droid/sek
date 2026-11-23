@@ -48,6 +48,10 @@ const iniciosEntre = (usuarioId, desde, hasta, tx) =>
 const iniciosRecientes = (usuarioId, cantidad, tx) =>
   todas(`SELECT ${COL_INICIO} FROM inicios WHERE usuario_id = $1 ORDER BY creado DESC, id DESC LIMIT $2`, [usuarioId, cantidad], tx)
 
+/** ¿Ya hay un inicio con ese instante y esa acción? (para no duplicar al importar una copia de esta app) */
+const inicioIgual = (usuarioId, creado, accion, tx) =>
+  una('SELECT id FROM inicios WHERE usuario_id = $1 AND creado = $2 AND accion = $3', [usuarioId, creado, accion], tx)
+
 const inicioViejo = (usuarioId, idViejo, tx) =>
   una('SELECT id FROM inicios WHERE usuario_id = $1 AND id_viejo = $2', [usuarioId, idViejo], tx)
 
@@ -74,6 +78,6 @@ const todosLosInicios = (usuarioId, tx) =>
 
 module.exports = {
   config, guardarConfig, guardarMarcas,
-  crearInicio, inicioPorId, marcarIniciado, cerrarInicio, iniciosEntre, iniciosRecientes, inicioViejo, todosLosInicios,
+  crearInicio, inicioPorId, marcarIniciado, cerrarInicio, iniciosEntre, iniciosRecientes, inicioViejo, inicioIgual, todosLosInicios,
   crearPelea, peleasEntre, peleaIgual, todasLasPeleas,
 }

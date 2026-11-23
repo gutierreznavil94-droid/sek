@@ -46,12 +46,13 @@ Las dos que reciben texto aceptan hasta 80 MB (las fotos de progreso y los temas
 | habitos | `forja`, `codigo`, `caidas`, `fotos`, `marcas` + de `ajustes`: `forja`, `caida`, `codigoSembrado` |
 | comida | `alimentosPropios`, `comidas`, `comidasGuardadas`, `pesos`, `agua`, `frutas` + de `ajustes`: `comida`, `agua`, `fruta` |
 | entreno | `rutinas`, `sesionesEntreno`, `contadores`, `registrosContador` |
+| desafios | `ninjas`, `siguienteAccion` (los 3·2·1) y los ajustes viejos de tensión, batalla, rival y distracciones |
 | temas | de `ajustes`: `tema` |
 | comun/ajustes | la fila `ajustes` (`unicos`): todo lo que existe en `AJUSTES_INICIALES` (zona horaria, límites, horas de sueño, nombres, resta, racha…). `lluviaIntensidad` → `lluvia` (y si `fondoLluvia` estaba todo apagado → `apagada`). |
 
 Se cargan en ese orden (ciclo antes que dia: las acciones nombran atributos).
 
-**Lo que no se trae** (se muestra con el motivo antes de importar): `eventos` (historial viejo), `niveles`, `siguienteAccion`, `temporizador`, `recomendaciones`, y lo que todavía no tiene módulo: `ninjas` (desafíos), `feriados` y `fechasClave` (dia parte 2), `horario` de los ajustes (Mi horario, dia parte 2). Las fotos solo vienen si en la app vieja se tildó «Incluir fotos de progreso».
+**Lo que no se trae** (se muestra con el motivo antes de importar): `eventos` (historial viejo), `niveles`, `temporizador`, `recomendaciones`, y lo que todavía no tiene módulo: `feriados` y `fechasClave` (dia parte 2), `horario` de los ajustes (Mi horario, dia parte 2). Las fotos solo vienen si en la app vieja se tildó «Incluir fotos de progreso».
 
 ## Lo que ofrece su ventanilla
 
@@ -66,7 +67,7 @@ Todas aceptan `tx` opcional al final. Ningún otro módulo usa a copia.
 
 ## Qué módulos usa (solo por su ventanilla)
 
-ciclo, dia, xp, juego, organizacion, sueno, habitos, comida, entreno y temas: de cada uno, `importar(usuarioId, parte, tx)` y `exportar(usuarioId, tx)`. Para sumar un módulo nuevo (por ejemplo desafíos): que su ventanilla tenga `importar` y `exportar` con la misma forma, sumarlo a `MODULOS` (y a `TABLAS_VIEJAS`, sacándolo de `SIN_LUGAR`) en `formato.js` y a `VENTANILLAS` en `ventanilla.js`.
+ciclo, dia, xp, juego, organizacion, sueno, habitos, comida, entreno, desafios y temas: de cada uno, `importar(usuarioId, parte, tx)` y `exportar(usuarioId, tx)`. Para sumar un módulo nuevo: que su ventanilla tenga `importar` y `exportar` con la misma forma, sumarlo a `MODULOS` (y a `TABLAS_VIEJAS`, sacándolo de `SIN_LUGAR`) en `formato.js` y a `VENTANILLAS` en `ventanilla.js`.
 
 Para esto, cada uno de esos módulos sumó a su ventanilla `exportar(usuarioId)`, que devuelve **lo mismo que recibe su `importar`** (entreno ya lo tenía). Además:
 - **juego**: `importar` ya no duplica una sesión con el mismo inicio.
@@ -91,4 +92,4 @@ Para esto, cada uno de esos módulos sumó a su ventanilla `exportar(usuarioId)`
 - ciclo: un atributo con el mismo id que uno sembrado (p. ej. `disciplina`) no se pisa: queda el nombre de la cuenta nueva.
 - CSV de registros (la vieja lo tenía): no se pidió todavía.
 - Aviso «hace X días que no guardás una copia» (ajuste viejo `diasAvisoCopia`): con Hoy (dia parte 2).
-- Cuando lleguen **desafios** y **dia parte 2**: sumar `ninjas`, `feriados`, `fechasClave` y `ajustes.horario`.
+- Cuando llegue **dia parte 2**: sumar `feriados`, `fechasClave` y `ajustes.horario`.

@@ -26,6 +26,7 @@ const MODULOS = [
   { clave: 'habitos', nombre: 'Forja, Mi código, caídas y fotos' },
   { clave: 'comida', nombre: 'Comida, agua y fruta' },
   { clave: 'entreno', nombre: 'Rutinas, entrenos y series' },
+  { clave: 'desafios', nombre: 'Tensión, 3·2·1 y ninjas' },
   { clave: 'temas', nombre: 'Tema' },
 ]
 const CLAVES = MODULOS.map((m) => m.clave)
@@ -41,6 +42,7 @@ const TABLAS_VIEJAS = {
   habitos: ['forja', 'codigo', 'caidas', 'fotos', 'marcas'],
   comida: ['alimentosPropios', 'comidas', 'comidasGuardadas', 'pesos', 'agua', 'frutas'],
   entreno: ['rutinas', 'sesionesEntreno', 'contadores', 'registrosContador'],
+  desafios: ['ninjas', 'siguienteAccion'],
   temas: [],
 }
 
@@ -48,10 +50,8 @@ const TABLAS_VIEJAS = {
 const SIN_LUGAR = {
   eventos: 'historial de cambios de la app vieja (no hace falta)',
   niveles: 'los niveles se calculan solos',
-  siguienteAccion: 'se arma de nuevo con el día',
   temporizador: 'el temporizador en curso no se trae',
   recomendaciones: 'van al formulario, no a la app',
-  ninjas: 'llega con el módulo desafíos',
   feriados: 'llega con Hoy y Calendario (dia parte 2)',
   fechasClave: 'llega con Hoy y Calendario (dia parte 2)',
 }
@@ -114,6 +114,7 @@ function desdeVieja(o) {
     habitos: { ...tomar(TABLAS_VIEJAS.habitos), ajustes: aj },
     comida: { ...tomar(TABLAS_VIEJAS.comida), ajustes: L('ajustes') },
     entreno: tomar(TABLAS_VIEJAS.entreno),
+    desafios: { ...tomar(TABLAS_VIEJAS.desafios), ajustes: aj },
     temas: { tema: typeof aj.tema === 'string' ? aj.tema : undefined },
   }
   const usadas = new Set(['ajustes', ...Object.values(TABLAS_VIEJAS).flat()])
