@@ -1,49 +1,71 @@
-// Pantalla Más: la lista de secciones (con buscador) y salir. Pide a /api/cuentas (las rutas de su módulo).
+// Pantalla Más, igual que la v0.88.27 (Mas.tsx de la app vieja) pero en HTML+JS: buscador, aviso de copia,
+// la grilla de la app y tres grupos cortos. Solo están las secciones que ya andan en la app nueva (lo que no
+// funciona no se muestra). Cada pantalla es de su módulo: acá va solo el link.
 (function () {
   'use strict'
-  const { api, $, seguro, barra } = SEK
+  const { api, $, seguro } = SEK
+  const { esc } = SEK.v88
+  SEK.v88.montar({ activo: 'mas', companero: 'esquina' })
 
-  /**
-   * Secciones de Más. Cuando un módulo nuevo tenga una pantalla que va en Más, se suma acá su fila
-   * (solo el link: la pantalla es de su módulo).
-   */
-  const SECCIONES = [
-    // Pantallas principales que no están en la barra de abajo (la barra tiene 5 fijos: Hoy, Calendario, Juego, Sueño, Más).
-    { ruta: '/entreno', kanji: '鍛', t: 'Entreno', d: 'Rutinas, entrenar y series rápidas', claves: 'entreno entrenamiento rutinas ejercicios series flexiones dominadas gimnasio' },
-    { ruta: '/comida', kanji: '食', t: 'Comida', d: 'Lo que comí, agua, fruta y peso', claves: 'comida comer calorias proteina agua fruta peso dieta' },
-    { ruta: '/ciclo', kanji: '道', t: 'Ciclo', d: 'Los 90 días, fases, objetivos y metas', claves: 'ciclo 90 dias fases objetivos atributos identidad metas revision' },
-    { ruta: '/organizacion', kanji: '陣', t: 'Tareas', d: 'Frentes y lo que me toca hoy', claves: 'tareas organizacion frentes anotar clasificar sueltas pendientes' },
-    { ruta: '/habitos', kanji: '掟', t: 'Código y forja', d: 'Mi código, forja de hábitos y fotos', claves: 'codigo reglas habitos forja piedra fotos caidas' },
-    { ruta: '/xp', kanji: '段', t: 'Nivel', d: 'XP, niveles e historial', claves: 'nivel xp puntos experiencia historial restas' },
-    { ruta: '/horario', kanji: '時', t: 'Mi horario', d: 'Bloques fijos de la semana', claves: 'horario mi horario bloques colegio facultad trabajo cursada semana' },
-    { ruta: '/mas/ajustes', kanji: '設', t: 'Ajustes', d: 'Zona horaria, semana y límites de juego', claves: 'ajustes configuracion zona horaria semana lunes domingo limite juego minutos aviso' },
-    { ruta: '/mas/nombres', kanji: '名', t: 'Nombres', d: 'De la app, el tuyo y las fases', claves: 'nombres nombre app fases ciclo disciplina constancia' },
-    { ruta: '/temas', kanji: '彩', t: 'Tema', d: 'Cómo se ve, lluvia y temas propios', claves: 'tema temas colores apariencia lluvia fondo shinobi subir propio sektema' },
-    { ruta: '/desafios', kanji: '進', t: 'Desafíos', d: 'Tensión, No cumplí, 3·2·1, Tajo y la frase', claves: 'desafios tension no cumpli caida flexiones duelo tajo 321 tres dos uno empezar frase dudar fracasar' },
-    { ruta: '/progreso', kanji: '進', t: 'Progreso', d: 'La montaña de XP, pilares, sueño, fuerza, comida y cierre de fase', claves: 'progreso montaña camino xp grafico estadisticas pilares atributos sueño fuerza entreno comida agua peso series caidas fase cierre' },
-    { ruta: '/juego', kanji: '遊', t: 'Juego', d: 'Temporizador y semana', claves: 'juego temporizador jugar semana limite' },
-    { ruta: '/mas/copia', kanji: '写', t: 'Copia de seguridad', d: 'Traer datos de la app vieja y guardar una copia', claves: 'copia seguridad backup exportar importar pegar texto json app vieja traer datos guardar' },
-    { ruta: '/mas/cuenta', kanji: '鍵', t: 'Cuenta', d: 'Contraseña y salir', claves: 'cuenta contraseña clave email salir cerrar sesion' },
+  /** Lo de la app en sí: la grilla de arriba. */
+  const SISTEMA = [
+    { a: '/organizacion', icono: 'icono-organizacion', k: '陣', t: 'Organización', d: 'Notas y tareas', claves: 'organizacion tareas notas pendientes frentes bandeja anotar me toca hoy' },
+    { a: '/mas/copia', icono: 'icono-copia', k: '写', t: 'Copia', d: 'Exportar e importar', claves: 'copia seguridad backup exportar importar json texto guardar datos app vieja traer' },
+    { a: '/temas', icono: 'icono-tema', k: '彩', t: 'Tema', d: 'Cómo se ve y lluvia', claves: 'tema temas colores apariencia lluvia fondo shinobi subir propio' },
+    { a: '/mas/ajustes', icono: 'icono-ajustes', k: '設', t: 'Ajustes', d: 'Juego, semana, zona', claves: 'ajustes configuracion limite juego racha zona horaria semana lunes aviso minutos' },
+    { a: '/mas/nombres', icono: 'icono-nombres', k: '名', t: 'Nombres', d: 'App, vos y fases', claves: 'nombres nombre app fases disciplina constancia' },
+    { a: '/ciclo', icono: 'icono-ciclo', k: '始', t: 'Nuevo ciclo', d: 'Día 1 y otros 90', claves: 'fecha inicio nuevo ciclo dia 1 empezar 90 dias reiniciar' },
+  ]
+
+  /** El resto, en tres grupos cortos (la explicación larga va adentro de cada pantalla). */
+  const GRUPOS = [
+    { titulo: 'Yo', items: [
+      { a: '/ciclo/identidad', t: 'Identidad', d: 'Visión y obstáculos', claves: 'identidad vision obstaculos quien soy' },
+      { a: '/ciclo', t: 'Atributos', d: 'Tus cinco áreas', claves: 'atributos areas stats fuerza' },
+      { a: '/ciclo/metas', t: 'Metas con fecha', d: 'Qué querés lograr y cuándo', claves: 'metas fecha objetivo lograr verde rojo' },
+      { a: '/ciclo', t: 'Objetivos y fases', d: 'Qué buscás en cada etapa', claves: 'objetivos fases etapas 30 dias disciplina constancia' },
+      { a: '/habitos', t: 'Mi código y forja', d: 'Reglas, hábitos forjados y caídas', claves: 'codigo reglas habitos forja piedra caidas okite' },
+    ] },
+    { titulo: 'Día a día', items: [
+      { a: '/horario', t: 'Mi horario', d: 'Bloques fijos de la semana', claves: 'horario bloques colegio facultad trabajo cursada semana' },
+      { a: '/comida/ajustes', t: 'Comida', d: 'Calorías, proteína y agua', claves: 'comida calorias proteina peso agua botella dieta plan' },
+      { a: '/entreno/series', t: 'Contadores', d: 'Flexiones y dominadas', claves: 'contadores flexiones dominadas series cuota extra' },
+      { a: '/desafios', t: 'Desafíos', d: 'Tensión, No cumplí, 3·2·1 y Tajo', claves: 'desafios tension no cumpli caida duelo tajo 321 tres dos uno empezar frase' },
+      { a: '/xp', t: 'Nivel y XP', d: 'Historial y restas', claves: 'nivel xp puntos experiencia historial restas' },
+    ] },
+    { titulo: 'Entreno y descanso', items: [
+      { a: '/entreno', t: 'Mis rutinas', d: 'Rutinas, ejercicios y días', claves: 'rutinas ejercicios entreno gimnasio colgarse barra historial series' },
+      { a: '/sueno', t: 'Sueño', d: 'Noches, adaptación y ajustes', claves: 'sueno dormir descanso acostarse hora noche' },
+    ] },
   ]
 
   const normalizar = (x) => String(x).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
-  const coincide = (s, q) => !q || normalizar(q).split(/\s+/).every((p) => normalizar(`${s.t} ${s.d} ${s.claves}`).includes(p))
-  const escapar = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+  const coincide = (s, q) => !normalizar(q) || normalizar(q).split(/\s+/).every((p) => normalizar(`${s.t} ${s.d} ${s.claves}`).includes(p))
+  const icono = (s) => { try { const i = SEK.icono && SEK.icono(s.icono); if (i && i !== s.icono) return i } catch (e) { /* respaldo */ } return s.k }
 
+  let copiaPendiente = false
   function pintar() {
     const q = $('#buscar').value
-    const visibles = SECCIONES.filter((s) => coincide(s, q))
-    $('#lista').innerHTML = visibles.map((s) => `
-      <a href="${s.ruta}"><span class="kanji" aria-hidden="true">${s.kanji}</span><span class="nombre">${escapar(s.t)}</span><span class="desc">${escapar(s.d)}</span></a>`).join('')
-    $('#nada').hidden = visibles.length > 0
+    $('#borrar').hidden = !q
+    const sistema = SISTEMA.filter((s) => coincide(s, q))
+    const grupos = GRUPOS.map((g) => ({ ...g, items: g.items.filter((s) => coincide(s, q)) })).filter((g) => g.items.length)
+    $('#aviso-copia').hidden = !copiaPendiente || !!q
+    $('#sistema').hidden = !sistema.length
+    $('#sistema').innerHTML = sistema.map((s) => `<a class="mas-sis ${s.a === '/mas/copia' && copiaPendiente ? 'pendiente' : ''}" href="${s.a}"><span class="mas-sis-icono" aria-hidden="true">${icono(s)}</span><span class="mas-sis-nombre">${esc(s.t)}</span><span class="mas-sis-desc">${esc(s.d)}</span></a>`).join('')
+    $('#grupos').innerHTML = grupos.map((g) => `<section class="tarjeta compacta"><div class="tarjeta-cab"><h2>${esc(g.titulo)}</h2></div><div class="lista-nav">${g.items.map((s) => `<a href="${s.a}"><span>${esc(s.t)}<span class="desc">${esc(s.d)}</span></span><span class="flecha">›</span></a>`).join('')}</div></section>`).join('')
+    $('#nada').hidden = sistema.length + grupos.length > 0
   }
 
   $('#buscar').addEventListener('input', pintar)
-  $('#salir').addEventListener('click', seguro(async () => { await api('/api/sesion/salir', {}); location.href = '/entrar' }))
-  barra('mas')
+  $('#borrar').onclick = () => { $('#buscar').value = ''; pintar(); $('#buscar').focus() }
+  $('#version').textContent = `v${SEK.v88.VERSION}`
   pintar()
+  // Aviso de copia: si nunca exportaste, o hace 7 días o más.
   seguro(async () => {
-    const r = await api('/api/cuentas')
-    $('#quien').textContent = r.usuario.email
+    const r = await api('/api/copia')
+    const dias = r.ultimaExportacion ? Math.floor((Date.now() - r.ultimaExportacion) / 86400000) : null
+    copiaPendiente = dias === null || dias >= 7
+    $('#aviso-copia-texto').textContent = dias === null ? 'Todavía no hiciste ninguna copia de seguridad.' : `Última copia hace ${dias} días.`
+    pintar()
   })()
 })()
