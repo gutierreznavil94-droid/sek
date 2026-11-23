@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SEK · Hoy</title>
+  <link rel="icon" href="/comun/favicon-32.png">
+  <link rel="stylesheet" href="/comun/estilo.css">
+</head>
+<body>
+  <!-- Página provisoria: cuando exista el módulo «dia», su pantalla Hoy ocupa /hoy y esta se borra. -->
+  <main>
+    <div class="fila entre">
+      <h1>今 Hoy</h1>
+      <button id="salir">Salir</button>
+    </div>
+    <p class="frase" id="saludo"></p>
+    <div class="tarjeta">
+      <h3>SEK se está mudando a módulos</h3>
+      <p class="chico">Por ahora está el módulo de ejemplo: <a href="/juego" class="ok">Juego</a>. Cada módulo nuevo suma su botón a la barra de abajo.</p>
+    </div>
+  </main>
+  <script src="/comun/marco.js"></script>
+  <script>
+    const { api, $, seguro, barra } = SEK
+    barra('hoy')
+    api('/api/sesion/yo').then((r) => { $('#saludo').textContent = `Vamos, ${r.usuario.nombre}` }).catch(() => {})
+    $('#salir').onclick = seguro(async () => { await api('/api/sesion/salir', {}); location.href = '/entrar' })
+  </script>
+</body>
+</html>

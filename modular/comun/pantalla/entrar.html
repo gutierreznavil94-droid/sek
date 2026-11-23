@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SEK · Entrar</title>
+  <link rel="icon" href="/comun/favicon-32.png">
+  <link rel="stylesheet" href="/comun/estilo.css">
+  <style>
+    body { padding-bottom: 24px; }
+    .marca { text-align: center; display: flex; flex-direction: column; gap: 4px; padding-block: 24px 8px; }
+    .marca h1 { font-size: 3rem; color: var(--acento); }
+    form { display: flex; flex-direction: column; gap: 12px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="marca">
+      <h1>SEK</h1>
+      <p class="frase">Dudar es fracasar</p>
+    </div>
+
+    <form id="form-entrar" class="tarjeta">
+      <h2>Entrar</h2>
+      <label>Email <input id="entrar-email" type="email" autocomplete="email" required></label>
+      <label>Contraseña <input id="entrar-clave" type="password" autocomplete="current-password" required></label>
+      <button class="principal" type="submit">Entrar</button>
+      <button type="button" id="ir-crear">No tengo cuenta</button>
+    </form>
+
+    <form id="form-crear" class="tarjeta" hidden>
+      <h2>Crear cuenta</h2>
+      <label>Nombre <input id="crear-nombre" autocomplete="name" required></label>
+      <label>Email <input id="crear-email" type="email" autocomplete="email" required></label>
+      <label>Contraseña (8 o más) <input id="crear-clave" type="password" autocomplete="new-password" minlength="8" required></label>
+      <button class="principal" type="submit">Crear cuenta</button>
+      <button type="button" id="ir-entrar">Ya tengo cuenta</button>
+    </form>
+  </main>
+  <script src="/comun/marco.js"></script>
+  <script>
+    const { api, $, seguro } = SEK
+    $('#ir-crear').onclick = () => { $('#form-entrar').hidden = true; $('#form-crear').hidden = false }
+    $('#ir-entrar').onclick = () => { $('#form-crear').hidden = true; $('#form-entrar').hidden = false }
+    $('#form-entrar').addEventListener('submit', seguro(async (e) => {
+      e.preventDefault()
+      await api('/api/sesion/entrar', { email: $('#entrar-email').value, clave: $('#entrar-clave').value })
+      location.href = '/hoy'
+    }))
+    $('#form-crear').addEventListener('submit', seguro(async (e) => {
+      e.preventDefault()
+      await api('/api/sesion/crear-cuenta', { nombre: $('#crear-nombre').value, email: $('#crear-email').value, clave: $('#crear-clave').value })
+      location.href = '/hoy'
+    }))
+  </script>
+</body>
+</html>

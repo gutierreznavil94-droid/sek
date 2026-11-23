@@ -1,0 +1,75 @@
+/*
+ * Lo visual común de SEK: colores, letras, fondo y botones generales.
+ * Los módulos usan estas variables; su estilo.css propio es solo para diseños propios.
+ * Hoy está el tema Shinobi. Otro tema = cambiar las variables de :root (ver LEEME de comun).
+ */
+@font-face { font-family: 'Pincel'; src: url('/comun/fuentes/pincel.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Brocha'; src: url('/comun/fuentes/brocha.woff2') format('woff2'); font-display: swap; }
+
+:root {
+  --acento: #C8102E;
+  --acento-2: #a60d26;
+  --fondo: #121110;
+  --fondo-2: #1b1918;
+  --fondo-3: #262321;
+  --borde: #3A3836;
+  --texto: #EEECE7;
+  --texto-2: #b9b4ac;
+  --texto-3: #8E8A84;
+  --papel: #F1EBDF;
+  --verde: #78BD97;
+  --ambar: #e0a23a;
+  --peligro: #ff8c96;
+  --letra: system-ui, Roboto, 'Segoe UI', sans-serif;
+  --pincel: 'Pincel', 'Yuji Syuku', serif;
+  --brocha: 'Brocha', 'Kaushan Script', cursive;
+  --radio: 10px;
+  --barra: 64px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; background: var(--fondo); color: var(--texto); font-family: var(--letra); font-size: 16px; line-height: 1.45; overflow-x: clip; }
+body { padding: 16px max(16px, env(safe-area-inset-right)) calc(var(--barra) + 24px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+main { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+
+h1, h2, h3 { margin: 0; font-weight: 400; }
+h1 { font-family: var(--pincel); font-size: 1.9rem; }
+h2 { font-family: var(--pincel); font-size: 1.35rem; }
+h3 { font-size: 1rem; font-weight: 600; }
+p { margin: 0; }
+.frase { font-family: var(--brocha); color: var(--acento); }
+.chico { font-size: .85rem; color: var(--texto-2); }
+.apagado { color: var(--texto-3); }
+.kanji { font-family: var(--pincel); }
+
+.tarjeta { background: var(--fondo-2); border: 1px solid var(--borde); border-radius: var(--radio); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.fila { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.fila.entre { justify-content: space-between; }
+.grande { font-size: 2.4rem; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+button, .boton { font: inherit; border: 1px solid var(--borde); background: var(--fondo-3); color: var(--texto); border-radius: var(--radio); padding: 10px 16px; min-height: 44px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+button.principal, .boton.principal { background: var(--acento); border-color: var(--acento); color: #fff; font-weight: 600; }
+button.principal:active { background: var(--acento-2); }
+button.peligro { color: var(--peligro); }
+button:disabled { opacity: .5; cursor: default; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+input, select, textarea { font: inherit; background: var(--fondo-3); color: var(--texto); border: 1px solid var(--borde); border-radius: var(--radio); padding: 10px 12px; min-height: 44px; width: 100%; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: .9rem; color: var(--texto-2); }
+
+.barra-progreso { height: 8px; background: var(--fondo-3); border-radius: 999px; overflow: hidden; }
+.barra-progreso > span { display: block; height: 100%; background: var(--acento); border-radius: 999px; }
+.ok { color: var(--verde); } .aviso { color: var(--ambar); } .mal { color: var(--peligro); }
+
+/* Barra de abajo (la arma marco.js) */
+.barra-abajo { position: fixed; left: 0; right: 0; bottom: 0; height: calc(var(--barra) + env(safe-area-inset-bottom)); padding: 0 max(8px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(8px, env(safe-area-inset-left)); background: var(--fondo-2); border-top: 1px solid var(--borde); display: flex; justify-content: space-around; align-items: stretch; z-index: 10; }
+.barra-abajo a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--texto-3); text-decoration: none; font-size: .72rem; }
+.barra-abajo a .kanji { font-size: 1.35rem; line-height: 1; }
+.barra-abajo a.activo { color: var(--acento); }
+
+.mensaje { position: fixed; left: 50%; bottom: calc(var(--barra) + 16px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--fondo-3); border: 1px solid var(--borde); border-radius: var(--radio); padding: 10px 16px; z-index: 20; max-width: calc(100% - 32px); }
+.mensaje.mal { border-color: var(--peligro); }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

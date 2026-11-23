@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SEK · Juego</title>
+  <link rel="icon" href="/comun/favicon-32.png">
+  <link rel="stylesheet" href="/comun/estilo.css">
+  <link rel="stylesheet" href="/m/juego/estilo.css">
+</head>
+<body>
+  <main>
+    <h1>遊 Juego</h1>
+
+    <section class="tarjeta" aria-live="polite">
+      <div class="fila entre">
+        <span class="chico" id="etiqueta-sesion">Sin jugar ahora</span>
+        <span class="chico" id="estado-limite"></span>
+      </div>
+      <div class="grande" id="reloj">0:00</div>
+      <div class="fila" id="botones">
+        <button class="principal" id="empezar">Empezar a jugar</button>
+        <button id="pausar" hidden>Pausar</button>
+        <button id="seguir" hidden>Seguir</button>
+        <button id="terminar" hidden>Terminar</button>
+      </div>
+    </section>
+
+    <section class="tarjeta">
+      <div class="fila entre"><h3>Hoy</h3><span id="hoy-texto" class="chico"></span></div>
+      <div class="barra-progreso" role="progressbar" aria-label="Juego de hoy"><span id="hoy-barra" style="width:0%"></span></div>
+    </section>
+
+    <section class="tarjeta">
+      <div class="fila entre"><h3>Esta semana</h3><span id="semana-texto" class="chico"></span></div>
+      <div class="semana" id="semana"></div>
+    </section>
+
+    <details class="tarjeta">
+      <summary>Me olvidé de anotar</summary>
+      <form id="form-manual" class="fila">
+        <label>Desde <input id="manual-desde" type="datetime-local" required></label>
+        <label>Hasta <input id="manual-hasta" type="datetime-local" required></label>
+        <button type="submit">Sumar</button>
+      </form>
+    </details>
+  </main>
+  <script src="/comun/marco.js"></script>
+  <script src="/m/juego/juego.js"></script>
+</body>
+</html>
