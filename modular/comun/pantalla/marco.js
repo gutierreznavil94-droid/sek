@@ -19,6 +19,7 @@
     { id: 'ciclo', texto: 'Ciclo', kanji: '道', ruta: '/ciclo' },
     { id: 'xp', texto: 'Nivel', kanji: '段', ruta: '/xp' },
     { id: 'organizacion', texto: 'Tareas', kanji: '陣', ruta: '/organizacion' },
+    { id: 'sueno', texto: 'Sueño', kanji: '眠', ruta: '/sueno' },
     { id: 'mas', texto: 'Más', kanji: '他', ruta: '/mas' },
   ]
 
@@ -26,6 +27,7 @@
   const ICONOS = {
     'icono-hoy': '今', 'icono-organizacion': '陣', 'icono-bandeja': '箱', 'icono-sueltas-fondo': '散', 'icono-sello-hecho': '済',
     'kanji-quien': '人', 'kanji-importancia': '重', 'kanji-rapidez': '速', 'kanji-donde': '所', 'kanji-fecha': '日', 'kanji-frente': '陣',
+    'icono-sueno': '眠',
   }
   const icono = (nombre) => ICONOS[nombre] || ''
 

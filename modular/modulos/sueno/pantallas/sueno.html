@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SEK · Sueño</title>
+  <link rel="icon" href="/comun/favicon-32.png">
+  <link rel="stylesheet" href="/comun/estilo.css">
+  <link rel="stylesheet" href="/m/sueno/estilo.css">
+</head>
+<body>
+  <main>
+    <h1><span class="kanji" aria-hidden="true">眠</span> Sueño</h1>
+
+    <p class="tarjeta aviso-dormir frase" id="aviso" hidden></p>
+
+    <section class="tarjeta" id="esta-noche" aria-live="polite">
+      <div class="fila entre"><h3>Esta noche</h3><span class="chico" id="noche-hora"></span></div>
+      <div id="noche-estado" class="chico"></div>
+      <button class="principal ancho grande-boton" id="dejo-celu">Dejo celu</button>
+      <button class="enlace" id="deshacer" hidden>Deshacer «Dejo celu»</button>
+    </section>
+
+    <button class="tarjeta anoche" id="anoche" aria-label="Anoche. Tocá para corregir las horas">
+      <span class="anoche-grande" id="anoche-grande">Anoche · sin registro</span>
+      <span class="chico" id="anoche-chica">Se completa solo con «Dejo celu» · tocá para cargarlo a mano</span>
+      <span class="chico veredicto" id="anoche-veredicto" hidden></span>
+    </button>
+
+    <section class="tarjeta">
+      <div class="fila entre">
+        <h3>Noches</h3>
+        <div class="seg" role="tablist" aria-label="Rango del gráfico">
+          <button role="tab" data-rango="semana">Semana</button>
+          <button role="tab" data-rango="mes">Mes</button>
+          <button role="tab" data-rango="todo">Todo</button>
+        </div>
+      </div>
+      <div id="grafico"></div>
+      <p class="chico" id="grafico-ayuda"></p>
+    </section>
+
+    <section class="tarjeta">
+      <div class="fila entre"><h3>Tu adaptación</h3><button id="editar-adaptacion" class="chico-boton">Editar</button></div>
+      <div class="sh-barra" id="etapas-barra" role="group" aria-label="Dónde estás en la adaptación"></div>
+      <div class="globo"><span class="kanji globo-kanji" aria-hidden="true">眠</span><p id="discurso"></p></div>
+      <form id="form-adaptacion" hidden>
+        <label>Empecé a mejorar mi sueño el <input type="date" id="ad-desde"></label>
+        <div id="ad-etapas"></div>
+        <label>«A horario»: minutos de tolerancia después de «Dejo celu» <input type="number" id="ad-tol" min="0" max="120" inputmode="numeric"></label>
+        <div class="fila">
+          <button type="button" id="ad-restaurar">Restaurar lo sugerido</button>
+          <button type="submit" class="principal">Guardar</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="tarjeta">
+      <h3>Cómo vas mejorando</h3>
+      <div class="cifras" id="cifras"></div>
+    </section>
+
+    <button id="abrir-ajustes">⚙ Ajustes del sueño</button>
+  </main>
+
+  <dialog id="dlg-noche" aria-labelledby="dlg-noche-titulo">
+    <form method="dialog" id="form-noche" class="col">
+      <h2 id="dlg-noche-titulo">Noche</h2>
+      <div id="campos-noche"></div>
+      <label>¿Te despertaste? <span class="apagado">· opcional</span>
+        <select id="n-despertares">
+          <option value="">No lo cargo</option>
+          <option value="0">No, dormí de corrido</option>
+          <option value="1">1 vez</option>
+          <option value="2">2 veces</option>
+          <option value="3">3 o más</option>
+        </select>
+      </label>
+      <p class="chico">Si lo cargás, entra en el veredicto de la noche según tu etapa. Si no, no se asume nada.</p>
+      <p class="chico" id="n-ayuda-nueva" hidden>Si no ponés «me dormí», se calcula con tu latencia. Una noche cargada a mano no cuenta para «Dormir a horario».</p>
+      <div class="fila">
+        <button value="cancelar" formnovalidate>Cerrar</button>
+        <button value="guardar" class="principal">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-ajustes" aria-labelledby="dlg-ajustes-titulo">
+    <form method="dialog" id="form-ajustes" class="col">
+      <h2 id="dlg-ajustes-titulo">Ajustes del sueño</h2>
+      <div class="rejilla-2">
+        <label>Hora de «Dejo celu» <input type="time" id="aj-celu" required></label>
+        <label>Minutos hasta dormirte <input type="number" id="aj-lat" inputmode="numeric" required></label>
+        <label>Me levanto entre <input type="time" id="aj-vent" required><span class="apagado" id="aj-vent-fin"></span></label>
+        <label>Objetivo (horas) <input type="number" id="aj-obj" step="0.5" min="4" max="12" inputmode="decimal" required></label>
+      </div>
+      <p class="chico apagado">Reloj inteligente: no conectado (próximamente)</p>
+      <div class="fila">
+        <button value="cancelar" formnovalidate>Cerrar</button>
+        <button value="guardar" class="principal">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/comun/marco.js"></script>
+  <script src="/m/sueno/sueno.js"></script>
+</body>
+</html>

@@ -23,6 +23,20 @@ const AJUSTES_INICIALES = {
   // xp
   baseNivel: 100,
   xpResta: { activa: true, porcentaje: 50, desde: null },
+  // sueno
+  horaAlistarse: '20:50',
+  horaDejarCelu: '21:15',
+  horaDormido: '21:20',
+  horaCorteNoche: '06:00',
+  horaLimiteCelu: '22:15',
+  horaFinSuenio: '05:00',
+  latenciaDormirseMinutos: 15,
+  objetivoSuenioHoras: 7.5,
+  relojInteligente: false,
+  xpDejoCelu: 20,
+  adaptacion: null,
+  minutosAvisoDormir: 30,
+  frasesDormir: [],
 }
 
 async function obtenerAjustes(usuarioId, tx = null) {

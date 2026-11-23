@@ -20,6 +20,7 @@ const cicloVentanilla = require('./modulos/ciclo/ventanilla')
 
 // Datos iniciales de cada cuenta nueva (una sola vez, al cargar app.js).
 sesion.alCrearCuenta.push((usuarioId) => cicloVentanilla.sembrar(usuarioId))
+const sueno = require('./modulos/sueno/rutas')
 
 function crearApp(opciones = {}) {
   const app = Fastify({ logger: opciones.logger ?? { level: 'info' } })
@@ -39,6 +40,7 @@ function crearApp(opciones = {}) {
   app.register(xp)
   app.register(organizacion)
   app.register(ciclo)
+  app.register(sueno)
 
   return app
 }
