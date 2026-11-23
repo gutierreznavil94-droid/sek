@@ -786,7 +786,10 @@ async function importar(usuarioId, vieja = {}, tx = null) {
     }
     for (const r of vieja.reglasXp || []) {
       if (!r || !r.accionId || !Number.isFinite(r.xp) || !esFechaValida(r.validaDesde)) continue
-      await datos.guardarRegla(usuarioId, { ...r, id: r.id || nuevoId('regla'), creado: r.creado ?? ahora() }, t)
+      const id = r.id || nuevoId('regla')
+      // Una cuenta nueva ya tiene sembrada `r_<acción>` desde hoy: la de la copia (otra fecha) la reemplaza, si no chocan los id.
+      await datos.quitarRegla(usuarioId, id, t)
+      await datos.guardarRegla(usuarioId, { ...r, id, creado: r.creado ?? ahora() }, t)
       n.reglasXp++
     }
     for (const c of vieja.compromisos || []) {
@@ -816,6 +819,21 @@ async function importar(usuarioId, vieja = {}, tx = null) {
   }, tx)
 }
 
+/** Todo lo del módulo, con la forma que recibe `importar` (lo usa el módulo copia). */
+async function exportar(usuarioId, tx = null) {
+  const T0 = '0001-01-01'
+  const T1 = '9999-12-31'
+  const sinVacios = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined && v !== null))
+  return {
+    acciones: (await datos.acciones(usuarioId, tx)).map(sinVacios),
+    reglasXp: await datos.reglas(usuarioId, tx),
+    compromisos: await datos.compromisosEntre(usuarioId, T0, T1, tx),
+    diasCerrados: await datos.cerradosEntre(usuarioId, T0, T1, tx),
+    excepciones: await datos.excepcionesEntre(usuarioId, T0, T1, tx),
+    atributosDiarios: await datos.atributosDiariosTodos(usuarioId, tx),
+  }
+}
+
 module.exports = {
   conectar, escucharAvisos, dejarDeEscuchar,
   acciones, accionesConXp, guardarAccion, activarAccion, cambiarXp, reglasDe, activarPilarComida,
@@ -824,5 +842,5 @@ module.exports = {
   cumplimientoPorDia, cumplimientoEntre, racha, rachaHasta, atributosHoy,
   marcarExcepcion, quitarExcepcion, excepciones,
   pilaresDelDia, pilaresPorDia, anotarVista, tajo,
-  resumenHoy, sembrar, importar,
+  resumenHoy, sembrar, importar, exportar,
 }

@@ -141,6 +141,16 @@ async function importar(usuarioId, { tema, archivos } = {}, tx = null) {
   return n
 }
 
+/** El tema elegido y los temas subidos (archivo completo), con la forma que recibe `importar`. Lo usa el módulo copia. */
+async function exportar(usuarioId, tx = null) {
+  const archivos = []
+  for (const f of await datos.propios(usuarioId, tx)) {
+    const completo = await datos.propio(usuarioId, f.clave, tx)
+    if (completo) archivos.push(completo.archivo)
+  }
+  return { tema: (await obtenerAjustes(usuarioId, tx)).tema, archivos }
+}
+
 /** Guarda un aviso visual para mostrarlo la próxima vez que se abra una pantalla. */
 async function guardarAviso(usuarioId, nombre, detalle = {}, tx = null) {
   await datos.crearAviso(usuarioId, nombre, detalle, ahora(), tx)
@@ -160,5 +170,5 @@ function desconectar() { conectado = false }
 
 module.exports = {
   INTENSIDADES, AVISOS_QUE_ESCUCHA, EXTENSION_TEMA: revisar.EXTENSION_TEMA, MAX_ARCHIVO: revisar.MAX_ARCHIVO,
-  lista, temaDe, activo, elegir, guardarLluvia, subir, borrarPropio, archivoDe, medio, importar, guardarAviso, conectar, desconectar,
+  lista, temaDe, activo, elegir, guardarLluvia, subir, borrarPropio, archivoDe, medio, importar, exportar, guardarAviso, conectar, desconectar,
 }

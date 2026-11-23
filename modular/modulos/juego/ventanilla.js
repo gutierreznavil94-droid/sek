@@ -137,16 +137,22 @@ async function historial(usuarioId, cantidad = 30, tx = null) {
 
 /**
  * Trae las sesiones de una copia de la app vieja (tabla `sesionesJuego` de «Copiar todo como texto»).
- * Lo llama el módulo de copia. Devuelve cuántas entraron.
+ * Lo llama el módulo de copia. Una sesión con el mismo inicio que otra ya cargada no entra. Devuelve cuántas entraron.
  */
 async function importar(usuarioId, sesionesViejas, tx = null) {
   let n = 0
   for (const s of sesionesViejas || []) {
-    if (!Number.isFinite(s.inicio)) continue
+    if (!s || !Number.isFinite(s.inicio)) continue
+    if (await datos.porInicio(usuarioId, s.inicio, tx)) continue
     await datos.crear(usuarioId, { inicio: s.inicio, fin: s.fin ?? null, pausas: Array.isArray(s.pausas) ? s.pausas : [], nota: s.nota ?? null }, tx)
     n++
   }
   return n
 }
 
-module.exports = { sesionActiva, empezar, pausar, seguir, terminar, agregarManual, borrar, minutosDelDia, limiteRespetado, resumen, historial, importar }
+/** Todas las sesiones, con la misma forma que recibe `importar` (lo usa el módulo copia). */
+async function exportar(usuarioId, tx = null) {
+  return (await datos.todasLasSesiones(usuarioId, tx)).map(({ id, ...s }) => s)
+}
+
+module.exports = { exportar, sesionActiva, empezar, pausar, seguir, terminar, agregarManual, borrar, minutosDelDia, limiteRespetado, resumen, historial, importar }

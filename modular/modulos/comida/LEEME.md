@@ -24,6 +24,7 @@
 | `resumenSemanas(usuarioId, fecha)` | Para **progreso**: promedios por semana, pesos, ultraprocesados. |
 | `resumen(usuarioId, fecha?)` / `ajustes(usuarioId)` | Todo lo de cada pantalla. |
 | `importar(usuarioId, tablas)` | Trae de «Copiar todo como texto» de la app vieja: `alimentosPropios`, `comidas`, `comidasGuardadas`, `pesos`, `agua`, `frutas` y `ajustes` (comida, agua, fruta). Pasa los ids viejos de propios a los nuevos. Todo o nada. Lo usa **copia**. |
+| `exportar(usuarioId)` | Todo con la forma de la app vieja (la que recibe `importar`); los propios salen como `p<n>`. Lo usa **copia**. |
 
 Todas aceptan `tx` opcional al final (transacción compartida).
 

@@ -35,6 +35,9 @@ const guardarRegla = (u, r, tx) =>
        ON CONFLICT (usuario_id, accion_id, valida_desde) DO UPDATE SET xp = EXCLUDED.xp, maximo = EXCLUDED.maximo, periodo = EXCLUDED.periodo
        RETURNING ${C_REGLA}`, [u, r.id, r.accionId, r.xp, r.maximo ?? 1, r.periodo || 'dia', r.validaDesde, r.creado], tx)
 
+/** Saca una regla por id (al importar, la sembrada con el mismo id la reemplaza la de la copia). */
+const quitarRegla = (u, id, tx) => consulta('DELETE FROM reglas_xp WHERE usuario_id = $1 AND id = $2', [u, id], tx)
+
 // ---------- compromisos ----------
 const C_COMP = `id, accion_id AS "accionId", fecha, hora_prevista AS "horaPrevista", estado, inicio_real AS "inicioReal", fin_real AS "finReal",
   reprogramado_a AS "reprogramadoA", reprogramado_desde AS "reprogramadoDesde", minutos, nota, respuesta, retraso_minutos AS "retrasoMinutos", extra, actualizado`
@@ -90,6 +93,9 @@ const guardarAtributoDiario = (u, f, tx) =>
 const atributoDiario = (u, atributoId, fecha, tx) =>
   una('SELECT fecha, atributo_id AS "atributoId", valor, cumplidos, programados FROM atributos_diarios WHERE usuario_id = $1 AND atributo_id = $2 AND fecha = $3', [u, atributoId, fecha], tx)
 
+const atributosDiariosTodos = (u, tx) =>
+  todas('SELECT fecha, atributo_id AS "atributoId", valor, cumplidos, programados FROM atributos_diarios WHERE usuario_id = $1 ORDER BY fecha, atributo_id', [u], tx)
+
 // ---------- excepciones ----------
 const excepcion = (u, fecha, tx) => una('SELECT fecha, motivo, creado FROM excepciones WHERE usuario_id = $1 AND fecha = $2', [u, fecha], tx)
 const excepcionesEntre = (u, desde, hasta, tx) => todas('SELECT fecha, motivo, creado FROM excepciones WHERE usuario_id = $1 AND fecha BETWEEN $2 AND $3 ORDER BY fecha', [u, desde, hasta], tx)
@@ -109,9 +115,9 @@ const marcarTajo = (u, fecha, tx) =>
 
 module.exports = {
   acciones, accion, cuantasAcciones, guardarAccion, activarAccion,
-  reglas, reglasDe, guardarRegla,
+  reglas, reglasDe, guardarRegla, quitarRegla,
   compromiso, compromisosEntre, compromisosDeAccionDesde, crearCompromiso, ponerCompromiso, borrarCompromiso, borrarSinResolverAntesDe, borrarSinResolverDe,
   diaCerrado, ultimoCerrado, cerradosEntre, guardarCerrado, borrarCerradosAntesDe, guardarAtributoDiario, atributoDiario,
   excepcion, excepcionesEntre, ponerExcepcion, quitarExcepcion,
-  vistas, anotarVista, marcarTajo,
+  vistas, anotarVista, marcarTajo, atributosDiariosTodos,
 }

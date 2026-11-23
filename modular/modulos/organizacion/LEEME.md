@@ -11,6 +11,7 @@
 | `resumenHoy(usuarioId)` | Para la tira «Hoy me toca a mí» de la pantalla Hoy (módulo **dia**): `{ hoy, limite, tareas: [{ frente, tarea }], meToca, bandeja, hechas, total, porcentaje }`. |
 | `marcarHecha(usuarioId, frenteId, tareaId)` | El ✓ de la tira de Hoy. Devuelve `resumenHoy`. |
 | `importar(usuarioId, viejo)` | Trae la tabla `organizacion` de «Copiar todo como texto» de la app vieja (o el objeto de datos). Reemplaza lo que haya. Lo usa el módulo **copia**. |
+| `exportar(usuarioId)` | Los datos de Organización, con la forma que recibe `importar`. Lo usa **copia**. |
 
 Todas aceptan `tx` opcional al final (transacción compartida). «Hoy» es el día en la zona horaria de la persona (`comun/ajustes.js`).
 

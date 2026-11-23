@@ -20,6 +20,7 @@
 | `avisoResta(usuarioId, hoy, faltantes)` | `{ faltantes, porcentaje, total, texto }` para «Te quedan 2 sin hacer: −15 XP…», o `null`. |
 | `resumen(usuarioId)` | Todo lo de la pantalla. |
 | `importar(usuarioId, registrosViejos)` | Trae la tabla `xp` de «Copiar todo como texto» de la app vieja (claves, anulados y restas). Lo repetido no entra. Lo usa **copia**. |
+| `exportar(usuarioId)` | Todo el XP con la forma que recibe `importar`. Lo usa **copia**. |
 
 Todas aceptan `tx` opcional al final (transacción compartida). Las que escriben corren en su propia transacción si no reciben una.
 

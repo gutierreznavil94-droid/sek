@@ -22,6 +22,7 @@
 | `resumen(u)` | Todo lo de la pantalla Ciclo. |
 | `sembrar(u)` | Al crear una cuenta: identidad y los 5 atributos de fábrica (`disciplina`, `fisico`, `autocontrol`, `claridad`, `confianza`). El ciclo lo empieza la persona eligiendo el Día 1. Anotado en `app.js` (`sesion.alCrearCuenta`). |
 | `importar(u, { ciclos, fases, objetivos, atributos, identidad, metas, revisiones })` | Trae esas tablas de «Copiar todo como texto» de la app vieja, con sus mismos id. Lo repetido no entra. Lo usa **copia**. |
+| `exportar(u)` | Todo lo del ciclo (también lo cerrado y archivado), con la forma que recibe `importar`. Lo usa **copia**. |
 
 Todas aceptan `tx` opcional al final (transacción compartida).
 

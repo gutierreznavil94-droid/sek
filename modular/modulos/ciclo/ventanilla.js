@@ -443,7 +443,15 @@ async function ultimasRevisiones(usuarioId, tipo, cantidad = 10, tx = null) {
   return datos.revisiones(usuarioId, tipo, Math.min(100, Math.max(1, cantidad)), tx)
 }
 
-// ====================== Pantallas, siembra e importar ======================
+// ====================== Pantallas, siembra, importar y exportar ======================
+
+/** Todo lo del ciclo (también lo cerrado y archivado), con la forma que recibe `importar`. Lo usa el módulo copia. */
+async function exportar(usuarioId, tx = null) {
+  const t = await datos.todoParaCopia(usuarioId, tx)
+  // Los null pasan a «no está», como en la app vieja.
+  const sinNulos = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null))
+  return { ...t, ciclos: t.ciclos.map(sinNulos), fases: t.fases.map(sinNulos), objetivos: t.objetivos.map(sinNulos), metas: t.metas.map(sinNulos), identidad: t.identidad || null }
+}
 
 /** Todo lo de la pantalla Ciclo: dónde estoy, fases con sus objetivos, atributos e identidad. */
 async function resumen(usuarioId, tx = null) {
@@ -554,5 +562,5 @@ module.exports = {
   // revisiones
   revision, guardarRevision, datosRevision, fotoRevision, ajusteParaHoy, ultimasRevisiones, OBSTACULOS: calculo.OBSTACULOS,
   // pantalla, siembra, copia
-  resumen, sembrar, importar,
+  resumen, sembrar, importar, exportar,
 }

@@ -24,6 +24,7 @@
 | `resumenHoy(usuarioId)` | La tarjeta chica para **Hoy**. |
 | `aperturasEntre(usuarioId, desde, hasta)` | Aperturas de noche, para la revisión semanal de **ciclo**. |
 | `importar(usuarioId, { suenio, modoSuenio })` | Trae las tablas `suenio` y `modoSuenio` de «Copiar todo como texto» de la app vieja. Una noche que ya está no se pisa. Lo usa **copia**. |
+| `exportar(usuarioId)` | Todas las noches y el modo sueño prendido, con la forma que recibe `importar`. Lo usa **copia**. |
 
 Todas aceptan `tx` opcional al final (transacción compartida). Las que escriben corren en su propia transacción si no reciben una: «Dejo celu» + XP + modo sueño es todo o nada.
 

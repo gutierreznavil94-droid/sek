@@ -265,7 +265,13 @@ async function importar(usuarioId, registrosViejos, tx = null) {
   return n
 }
 
+/** Todo el XP de la persona, con la misma forma que recibe `importar` (lo usa el módulo copia). */
+async function exportar(usuarioId, tx = null) {
+  return (await datos.todos(usuarioId, tx)).map(({ id, ...r }) => r)
+}
+
 module.exports = {
+  exportar,
   sumar, restar, anular, anularPorId, total, estado, delDia, balanceDelDia, xpPorDia, xpAntesDe, historialXp,
   configResta, asegurarInicioResta, cambiarResta, aplicarRestas, devolverResta, avisoResta, resumen, importar,
   claveXp: calculo.claveXp,

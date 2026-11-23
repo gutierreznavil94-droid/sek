@@ -12,6 +12,7 @@
     { ruta: '/mas/nombres', kanji: '名', t: 'Nombres', d: 'De la app, el tuyo y las fases', claves: 'nombres nombre app fases ciclo disciplina constancia' },
     { ruta: '/temas', kanji: '彩', t: 'Tema', d: 'Cómo se ve, lluvia y temas propios', claves: 'tema temas colores apariencia lluvia fondo shinobi subir propio sektema' },
     { ruta: '/juego', kanji: '遊', t: 'Juego', d: 'Temporizador y semana', claves: 'juego temporizador jugar semana limite' },
+    { ruta: '/mas/copia', kanji: '写', t: 'Copia de seguridad', d: 'Traer datos de la app vieja y guardar una copia', claves: 'copia seguridad backup exportar importar pegar texto json app vieja traer datos guardar' },
     { ruta: '/mas/cuenta', kanji: '鍵', t: 'Cuenta', d: 'Contraseña y salir', claves: 'cuenta contraseña clave email salir cerrar sesion' },
   ]
 
