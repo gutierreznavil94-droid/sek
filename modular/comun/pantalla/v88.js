@@ -12,7 +12,7 @@
  */
 (function () {
   'use strict'
-  const VERSION = '0.10'
+  const VERSION = '0.11'
   const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
   const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
   const FASES = ['Disciplina', 'Constancia', 'Mi yo ideal']

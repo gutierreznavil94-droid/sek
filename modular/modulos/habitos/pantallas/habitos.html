@@ -5,86 +5,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SEK · Mi código</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
-  <link rel="stylesheet" href="/m/habitos/estilo.css">
+  <!-- Igual que la v0.88.27: su estilo y el del tema Shinobi -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
 </head>
 <body>
-  <main>
-    <header class="hb-cabeza">
-      <span class="hb-cabeza-kanji kanji" aria-hidden="true">掟</span>
-      <div>
-        <h1>Mi código</h1>
-        <p class="chico">Okite: el código que un shinobi no rompe. No son tareas del día: es tu forma de vivir.</p>
-      </div>
-      <span class="hb-sello" id="sello" hidden><span class="kanji" aria-hidden="true">誓</span><b id="sello-n">0</b></span>
-    </header>
+  <main class="contenido">
+    <!-- Sobre el mismo guerrero bajo la lluvia de Progreso (temas/fondo.js). -->
+    <div class="progreso-tinta" data-fondo="oscuro">
+      <div class="av-contenido">
+        <div class="codigo">
+          <a href="/progreso" class="codigo-volver">‹ Progreso</a>
+          <header class="codigo-cabeza">
+            <span class="codigo-kanji" aria-hidden="true">掟</span>
+            <div class="codigo-cabeza-texto">
+              <h1>Mi código</h1>
+              <p class="av-nota">Okite: el código que un shinobi no rompe. No son tareas del día: es tu forma de vivir.</p>
+            </div>
+            <span class="codigo-cabeza-sello" id="sello" hidden><span aria-hidden="true">誓</span><b id="sello-n">0</b></span>
+            <svg class="codigo-cabeza-trazo" viewBox="0 0 300 10" preserveAspectRatio="none" aria-hidden="true"><path d="M3,6 C50,2 110,9 170,5 C220,2 265,7 297,4"/></svg>
+          </header>
 
-    <!-- Forja -->
-    <section class="tarjeta" aria-labelledby="t-forja">
-      <h2 id="t-forja"><span class="kanji hb-k">鍛</span> En forja</h2>
-      <div id="en-forja" class="hb-forja"></div>
-      <p class="chico" id="forja-vacia" hidden>Un hábito nuevo es una piedra dura. Cada día cumplido la agrieta; a los 28 días válidos se rompe y queda su kanji.</p>
-      <button type="button" id="nuevo-habito">+ Forjar hábito</button>
-    </section>
+          <section class="codigo-grupo forja-codigo" aria-label="En forja">
+            <div class="codigo-grupo-titulo"><span class="codigo-grupo-kanji" aria-hidden="true">鍛</span><span class="codigo-grupo-nombre">En forja</span><svg class="codigo-grupo-trazo" viewBox="0 0 200 8" preserveAspectRatio="none" aria-hidden="true"><path d="M2,5 C40,2 90,7 140,4 C170,2 190,5 198,4"/></svg></div>
+            <div id="en-forja"></div>
+            <p class="av-nota" id="forja-vacia" hidden>Un hábito nuevo es una piedra dura. Cada día cumplido la agrieta; a los 28 días válidos se rompe y queda su kanji.</p>
+            <button type="button" class="boton ancho forja-nueva" id="nuevo-habito">+ Forjar hábito</button>
+          </section>
+          <section class="codigo-grupo forja-forjados" id="forjados-caja" aria-label="Ya forjados" hidden>
+            <div class="codigo-grupo-titulo"><span class="codigo-grupo-kanji" aria-hidden="true">誓</span><span class="codigo-grupo-nombre">Ya forjados</span><svg class="codigo-grupo-trazo" viewBox="0 0 200 8" preserveAspectRatio="none" aria-hidden="true"><path d="M2,5 C40,2 90,7 140,4 C170,2 190,5 198,4"/></svg></div>
+            <div id="forjados"></div>
+          </section>
 
-    <section class="tarjeta" id="forjados-tarjeta" hidden aria-labelledby="t-forjados">
-      <h2 id="t-forjados"><span class="kanji hb-k">誓</span> Ya forjados</h2>
-      <ul class="hb-lista" id="forjados"></ul>
-    </section>
-
-    <!-- Mi código -->
-    <section class="tarjeta" aria-labelledby="t-codigo">
-      <div class="fila entre">
-        <h2 id="t-codigo"><span class="kanji hb-k">掟</span> Reglas</h2>
-        <div class="hb-vistas" role="tablist" aria-label="Ordenar el código">
-          <button type="button" role="tab" data-vista="momento">Por momento</button>
-          <button type="button" role="tab" data-vista="area">Por área</button>
+          <div class="codigo-vistas" role="tablist" aria-label="Ordenar el código">
+            <button type="button" role="tab" data-vista="momento">Por momento<svg class="codigo-vistas-trazo" viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true"><path d="M3,5 C25,2 50,7 75,4 C85,3 92,5 97,4"/></svg></button>
+            <button type="button" role="tab" data-vista="area">Por área<svg class="codigo-vistas-trazo" viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true"><path d="M3,5 C25,2 50,7 75,4 C85,3 92,5 97,4"/></svg></button>
+          </div>
+          <div class="codigo-lista" id="codigo"></div>
+          <p class="av-nota" id="codigo-vacio" style="text-align: center;" hidden>Tu código está vacío. Escribí la primera regla.</p>
+          <button type="button" class="boton ancho codigo-nueva" id="nueva-regla">+ Nueva regla</button>
+          <p class="av-nota" style="text-align: center;">Se leen, no se marcan. Tocá una regla para editarla, moverla o borrarla.</p>
         </div>
       </div>
-      <div id="codigo"></div>
-      <p class="chico" id="codigo-vacio" hidden>Tu código está vacío. Escribí la primera regla.</p>
-      <button type="button" id="nueva-regla">+ Nueva regla</button>
-      <p class="chico apagado">Se leen, no se marcan. Tocá una regla para editarla, moverla o borrarla.</p>
-    </section>
-
-    <!-- Caída -->
-    <section class="tarjeta" aria-labelledby="t-caida">
-      <h2 id="t-caida">Nuevo round</h2>
-      <p class="chico" id="caida-texto"></p>
-      <button type="button" class="hb-no-cumpli" id="no-cumpli">No cumplí mi palabra</button>
-      <p class="chico apagado" id="caida-total"></p>
-    </section>
-
-    <a class="tarjeta hb-enlace" href="/habitos/fotos"><span class="kanji hb-k">写</span> Fotos y días marcados <span aria-hidden="true">›</span></a>
-
-    <details class="tarjeta">
-      <summary>Ajustes de la forja y la caída</summary>
-      <form id="ajustes" class="hb-ajustes">
-        <label>Días que dura la forja <input name="dias" type="number" min="1" max="365"></label>
-        <label>Días válidos para forjarse <input name="validos" type="number" min="1" max="365"></label>
-        <label>XP por día cumplido <input name="xpDia" type="number" min="0" max="100"></label>
-        <label>XP al forjarse <input name="xpForjado" type="number" min="0" max="1000"></label>
-        <label>Hábitos en forja a la vez <input name="maximo" type="number" min="1" max="10"></label>
-        <label>XP que saca una caída <input name="caidaXp" type="number" min="0" max="200"></label>
-        <button type="submit" class="principal">Guardar</button>
-      </form>
-    </details>
+    </div>
   </main>
-
-  <div class="hb-deshacer" id="deshacer" role="status" hidden>
-    <span id="deshacer-texto"></span>
-    <button type="button" id="deshacer-boton">Deshacer</button>
-  </div>
-
-  <dialog class="hb-hoja" id="hoja" aria-labelledby="hoja-titulo">
-    <form method="dialog" class="hb-hoja-in">
-      <div class="fila entre"><h2 id="hoja-titulo"></h2><button value="cerrar" aria-label="Cerrar">✕</button></div>
-      <div id="hoja-cuerpo" class="hb-hoja-cuerpo"></div>
-    </form>
-  </dialog>
-
   <script src="/comun/marco.js"></script>
-  <script src="/m/habitos/piedra.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
+  <script src="/m/temas/fondo.js"></script>
+  <script src="/m/temas/piedra.js"></script>
+  <script src="/m/habitos/juramento.js"></script>
   <script src="/m/habitos/habitos.js"></script>
 </body>
 </html>

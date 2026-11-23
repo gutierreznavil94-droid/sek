@@ -24,7 +24,7 @@
       { a: '/ciclo', t: 'Atributos', d: 'Tus cinco áreas', claves: 'atributos areas stats fuerza' },
       { a: '/ciclo/metas', t: 'Metas con fecha', d: 'Qué querés lograr y cuándo', claves: 'metas fecha objetivo lograr verde rojo' },
       { a: '/ciclo', t: 'Objetivos y fases', d: 'Qué buscás en cada etapa', claves: 'objetivos fases etapas 30 dias disciplina constancia' },
-      { a: '/habitos', t: 'Mi código y forja', d: 'Reglas, hábitos forjados y caídas', claves: 'codigo reglas habitos forja piedra caidas okite' },
+      { a: '/habitos', t: 'Mi código y forja', d: 'Reglas y hábitos en forja', claves: 'codigo reglas habitos forja piedra caidas okite' },
     ] },
     { titulo: 'Día a día', items: [
       { a: '/horario', t: 'Mi horario', d: 'Bloques fijos de la semana', claves: 'horario bloques colegio facultad trabajo cursada semana' },

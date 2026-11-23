@@ -1,6 +1,6 @@
 /*
  * El guerrero bajo la lluvia (o los rayos): el video vertical de fondo de Progreso, igual que VideoDeFondo de la
- * app vieja (src/ui/paginas/Progreso.tsx). Animación de una sola pantalla → vive en el módulo progreso.
+ * app vieja (src/ui/paginas/Progreso.tsx). Lo usan Progreso (y sus secciones) y Mi código (habitos): por eso vive en temas.
  * Los archivos son del tema (SEK.tema.fondo('lluvia'|'rayos'|'pc')): otro tema puede traer los suyos.
  *
  *   SEK_FONDO_PROGRESO({ hoy, diaUno, vista }) → { pausar(si), oscurecer(0..0.3) }
