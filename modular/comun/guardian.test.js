@@ -78,7 +78,8 @@ test('ningún módulo usa la tabla de otro (datos.js nombra solo tablas propias 
     const ruta = fs.existsSync(path.join(MODULOS, m, 'datos.js')) ? path.join(MODULOS, m, 'datos.js') : null
     if (!ruta) continue
     const sql = fs.readFileSync(ruta, 'utf8')
-    for (const t of sql.matchAll(/\b(?:FROM|JOIN|INTO|UPDATE)\s+([a-z_]+)/gi)) {
+    // «ON CONFLICT … DO UPDATE SET» no nombra tabla: se saltea.
+    for (const t of sql.matchAll(/\b(?:FROM|JOIN|INTO|(?<!DO\s+)UPDATE)\s+([a-z_]+)/gi)) {
       if (!propias.has(t[1])) faltas.push(`${m}: datos.js usa la tabla «${t[1]}», que no figura como propia en su LEEME`)
     }
   }

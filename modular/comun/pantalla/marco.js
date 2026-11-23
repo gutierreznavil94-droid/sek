@@ -5,8 +5,11 @@
  * - SEK.mensaje(texto, mal) aviso corto abajo.
  * - SEK.$(selector)         atajo de document.querySelector.
  * - SEK.minutos(n)          "1 h 05 min".
- * - SEK.icono(nombre)       kanji o texto del tema por nombre genérico ('' si el tema no tiene). Hasta que exista el módulo temas, la lista es ICONOS.
+ * - SEK.icono(nombre)       kanji o ícono del tema elegido por nombre genérico ('' si el tema no tiene). Lo responde el módulo temas
+ *                           (SEK.tema.icono); mientras carga, o si no está, la lista de respaldo ICONOS (Shinobi).
  * - SEK.evento(nombre, d)   evento visual genérico (completar, aparecer, logro, alerta…): avisa 'sek-evento' en document para que el tema lo dibuje.
+ * El tema: al empezar pone las variables de color guardadas del último tema (así no parpadea) y carga
+ * /m/temas/tema.js, que pide el tema elegido y lo aplica (ver modulos/temas/LEEME.md). Si falta, queda estilo.css.
  * Sin librerías.
  */
 (function () {
@@ -26,7 +29,25 @@
     'icono-hoy': '今', 'icono-organizacion': '陣', 'icono-bandeja': '箱', 'icono-sueltas-fondo': '散', 'icono-sello-hecho': '済',
     'kanji-quien': '人', 'kanji-importancia': '重', 'kanji-rapidez': '速', 'kanji-donde': '所', 'kanji-fecha': '日', 'kanji-frente': '陣',
   }
-  const icono = (nombre) => ICONOS[nombre] || ''
+  const icono = (nombre) => {
+    try { if (window.SEK.tema && window.SEK.tema.actual) return window.SEK.tema.icono(nombre) } catch (e) { /* respaldo */ }
+    return ICONOS[nombre] || ''
+  }
+
+  /** Variables de color del último tema (las guarda el módulo temas), para que la pantalla no parpadee. */
+  function ponerTemaGuardado() {
+    try {
+      const v = JSON.parse(localStorage.getItem('sek-tema-variables') || '{}')
+      for (const [k, x] of Object.entries(v)) if (/^--[a-z0-9-]+$/.test(k) && typeof x === 'string') document.documentElement.style.setProperty(k, x)
+    } catch (e) { /* sin almacenamiento */ }
+  }
+  function cargarTema() {
+    if (document.querySelector('script[data-tema]')) return
+    const s = document.createElement('script')
+    s.src = '/m/temas/tema.js'
+    s.dataset.tema = ''
+    document.head.appendChild(s)
+  }
 
   function evento(nombre, detalle) {
     try { document.dispatchEvent(new CustomEvent('sek-evento', { detail: { nombre, ...(detalle || {}) } })) } catch (e) { /* nunca rompe */ }
@@ -78,5 +99,7 @@
     return async (...args) => { try { await fn(...args) } catch (e) { mensaje(e.message, true) } }
   }
 
-  window.SEK = { api, barra, mensaje, minutos, seguro, icono, evento, MENU, ICONOS, $: (s) => document.querySelector(s) }
+  window.SEK = { ...(window.SEK || {}), api, barra, mensaje, minutos, seguro, icono, evento, MENU, ICONOS, $: (s) => document.querySelector(s) }
+  ponerTemaGuardado()
+  cargarTema()
 })()
