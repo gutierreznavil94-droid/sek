@@ -8,11 +8,12 @@
   <link rel="icon" href="/comun/favicon-32.png">
   <link rel="stylesheet" href="/comun/estilo.css">
   <link rel="stylesheet" href="/m/sueno/estilo.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
 </head>
 <body class="modo-sueno">
   <main role="dialog" aria-label="Modo sueño">
     <section id="saludo" class="ms-centro" hidden>
-      <span class="kanji ms-kanji" aria-hidden="true">眠</span>
+      <div class="ms-escena" id="escena-saludo"><span class="kanji ms-kanji" aria-hidden="true">眠</span></div>
       <div class="ms-titulo" id="saludo-titulo">Buenas noches</div>
       <div class="ms-linea" id="saludo-resumen"></div>
       <div class="ms-nota" id="saludo-xp" hidden>Celu dejado a tiempo. +XP guardado.</div>
@@ -21,6 +22,7 @@
 
     <section id="reloj" class="ms-centro" hidden>
       <div class="ms-hora" id="hora">--:--</div>
+      <div class="ms-escena" id="escena-reloj"></div>
       <div class="ms-linea" id="hasta"></div>
       <div class="ms-linea" id="dormido"></div>
       <div class="ms-nota" id="aperturas" hidden></div>
@@ -47,6 +49,8 @@
   </dialog>
 
   <script src="/comun/marco.js"></script>
+  <script src="/comun/hoja-clip.js"></script>
+  <script src="/m/sueno/escena.js"></script>
   <script src="/m/sueno/modo.js"></script>
 </body>
 </html>

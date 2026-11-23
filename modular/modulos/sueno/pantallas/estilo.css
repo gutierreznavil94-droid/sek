@@ -76,3 +76,7 @@ body.modo-sueno main { min-height: calc(100vh - 48px); justify-content: center; 
 
 @media (max-width: 380px) { .cifras { grid-template-columns: 1fr; } .rejilla-2 { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: no-preference) { .ms-hora { transition: opacity .6s; } }
+
+/* Escena de la noche (modo sueño): el shinobi en su ventanilla. */
+.ms-escena { width: min(320px, 86vw); margin: 0 auto 8px; }
+.ms-escena:empty { display: none; }

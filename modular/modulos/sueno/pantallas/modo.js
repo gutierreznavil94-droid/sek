@@ -40,6 +40,8 @@
       $('#saludo-resumen').textContent = modo.resumen
       $('#saludo-xp').hidden = modo.tarde
       mostrar('saludo')
+      // La escena de la noche (escena.js): «buenas noches» y después durmiendo.
+      if (window.SEK_ESCENA_NOCHE) SEK_ESCENA_NOCHE($('#escena-saludo'))
       evento('dormir')
       setTimeout(() => { if (!$('#saludo').hidden) { mostrar('reloj'); pintarReloj() } }, 12000)
     } else {
@@ -52,6 +54,10 @@
     setInterval(seguro(async () => { if (await revisar()) pintarReloj() }), 15000)
   }
 
+  // En el reloj, el shinobi ya durmiendo (una sola vez).
+  let escenaReloj = false
+  const mostrarSeccion = mostrar
+  mostrar = (id) => { mostrarSeccion(id); if (id === 'reloj' && !escenaReloj && window.SEK_ESCENA_NOCHE) { escenaReloj = true; SEK_ESCENA_NOCHE($('#escena-reloj'), { directo: true }) } }
   $('#saludo').addEventListener('click', () => { mostrar('reloj'); pintarReloj() })
   $('#salir').addEventListener('click', () => $('#dlg-salir').showModal())
   $('#dlg-salir').addEventListener('close', seguro(async () => {

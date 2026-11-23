@@ -324,14 +324,19 @@ async function avisoDormir(usuarioId, tx = null) {
   return { noche, mostrar, frase: calculo.fraseDormir(a, noche) }
 }
 
-/** Todo lo que muestra la pantalla de Sueño. `rango`: 'semana' | 'mes' | 'todo'. */
+/** Todo lo que muestra la pantalla de Sueño. `rango`: 'semana' | 'mes' | 'ciclo' (desde que empezó el ciclo) | 'todo'. */
 async function resumen(usuarioId, { rango = 'semana' } = {}, tx = null) {
   const a = await obtenerAjustes(usuarioId, tx)
   const t = ahora()
   const noche = nocheDeSuenio(t, a.zonaHoraria, a.horaCorteNoche)
   const r = await resumenNoches(usuarioId, 14, tx)
   const ad = await estadoAdaptacion(usuarioId, tx)
-  const desde = rango === 'mes' ? sumarDias(noche, -30) : rango === 'todo' ? (await datos.primeraNoche(usuarioId, tx)) || sumarDias(noche, -14) : sumarDias(noche, -7)
+  let desde = rango === 'mes' ? sumarDias(noche, -30) : rango === 'todo' ? (await datos.primeraNoche(usuarioId, tx)) || sumarDias(noche, -14) : sumarDias(noche, -7)
+  if (rango === 'ciclo') {
+    // Como la vieja: desde el inicio del ciclo (si ya empezó); si no hay, las últimas dos semanas.
+    const c = await require('../ciclo/ventanilla').cicloActivo(usuarioId, tx)
+    desde = c && c.inicio <= noche ? c.inicio : sumarDias(noche, -14)
+  }
   const lista = await noches(usuarioId, desde, noche, tx)
   const conEtapa = lista.map((n) => ({ ...n, etapa: calculo.etapaDe(n.noche, ad.inicio, ad.etapas).indice, veredicto: calculo.veredictoDe(n, ad, lista) }))
   const esta = await datos.deNoche(usuarioId, noche, tx)

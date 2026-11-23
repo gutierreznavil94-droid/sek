@@ -9,7 +9,7 @@ const FECHA = { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' }
 
 module.exports = async function rutasSueno(app) {
   const conUsuario = { preHandler: requiereUsuario }
-  const rango = (pedido) => (['semana', 'mes', 'todo'].includes(pedido.query && pedido.query.rango) ? pedido.query.rango : 'semana')
+  const rango = (pedido) => (['semana', 'mes', 'ciclo', 'todo'].includes(pedido.query && pedido.query.rango) ? pedido.query.rango : 'semana')
 
   // Pantallas
   app.get('/sueno', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'sueno', 'sueno.html'))
@@ -69,17 +69,17 @@ module.exports = async function rutasSueno(app) {
     schema: { body: { type: 'object', required: ['horaDejarCelu', 'latenciaDormirseMinutos', 'horaFinSuenio', 'objetivoSuenioHoras'], properties: { horaDejarCelu: HORA, horaFinSuenio: HORA, latenciaDormirseMinutos: { type: 'number' }, objetivoSuenioHoras: { type: 'number' } } } },
   }, async (pedido) => {
     await v.guardarAjustesSueno(pedido.usuario.id, pedido.body)
-    return v.resumen(pedido.usuario.id)
+    return v.resumen(pedido.usuario.id, { rango: rango(pedido) })
   })
   app.put('/api/sueno/adaptacion', {
     ...conUsuario,
     schema: { body: { type: 'object', required: ['etapas'], properties: { desde: { anyOf: [FECHA, { type: 'null' }] }, toleranciaMinutos: { type: 'number' }, etapas: { type: 'array', minItems: 1, maxItems: 6 } } } },
   }, async (pedido) => {
     await v.guardarAdaptacion(pedido.usuario.id, pedido.body)
-    return v.resumen(pedido.usuario.id)
+    return v.resumen(pedido.usuario.id, { rango: rango(pedido) })
   })
   app.delete('/api/sueno/adaptacion', conUsuario, async (pedido) => {
     await v.guardarAdaptacion(pedido.usuario.id, null)
-    return v.resumen(pedido.usuario.id)
+    return v.resumen(pedido.usuario.id, { rango: rango(pedido) })
   })
 }
