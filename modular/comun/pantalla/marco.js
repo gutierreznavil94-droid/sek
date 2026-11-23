@@ -5,6 +5,8 @@
  * - SEK.mensaje(texto, mal) aviso corto abajo.
  * - SEK.$(selector)         atajo de document.querySelector.
  * - SEK.minutos(n)          "1 h 05 min".
+ * - SEK.icono(nombre)       kanji o texto del tema por nombre genérico ('' si el tema no tiene). Hasta que exista el módulo temas, la lista es ICONOS.
+ * - SEK.evento(nombre, d)   evento visual genérico (completar, aparecer, logro, alerta…): avisa 'sek-evento' en document para que el tema lo dibuje.
  * Sin librerías.
  */
 (function () {
@@ -15,8 +17,20 @@
     { id: 'hoy', texto: 'Hoy', kanji: '今', ruta: '/hoy' },
     { id: 'juego', texto: 'Juego', kanji: '遊', ruta: '/juego' },
     { id: 'xp', texto: 'Nivel', kanji: '段', ruta: '/xp' },
+    { id: 'organizacion', texto: 'Tareas', kanji: '陣', ruta: '/organizacion' },
     { id: 'mas', texto: 'Más', kanji: '他', ruta: '/mas' },
   ]
+
+  /** Kanjis del tema Shinobi por nombre genérico. Cuando exista el módulo temas, esto lo da el tema elegido. */
+  const ICONOS = {
+    'icono-hoy': '今', 'icono-organizacion': '陣', 'icono-bandeja': '箱', 'icono-sueltas-fondo': '散', 'icono-sello-hecho': '済',
+    'kanji-quien': '人', 'kanji-importancia': '重', 'kanji-rapidez': '速', 'kanji-donde': '所', 'kanji-fecha': '日', 'kanji-frente': '陣',
+  }
+  const icono = (nombre) => ICONOS[nombre] || ''
+
+  function evento(nombre, detalle) {
+    try { document.dispatchEvent(new CustomEvent('sek-evento', { detail: { nombre, ...(detalle || {}) } })) } catch (e) { /* nunca rompe */ }
+  }
 
   async function api(ruta, datos, metodo) {
     const opciones = { method: metodo || (datos === undefined ? 'GET' : 'POST'), headers: {}, credentials: 'same-origin' }
@@ -64,5 +78,5 @@
     return async (...args) => { try { await fn(...args) } catch (e) { mensaje(e.message, true) } }
   }
 
-  window.SEK = { api, barra, mensaje, minutos, seguro, MENU, $: (s) => document.querySelector(s) }
+  window.SEK = { api, barra, mensaje, minutos, seguro, icono, evento, MENU, ICONOS, $: (s) => document.querySelector(s) }
 })()
