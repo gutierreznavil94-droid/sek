@@ -88,6 +88,10 @@ module.exports = async function rutasComida(app) {
     return { dia: r.dia, recienLlego: r.recienLlego }
   })
   app.post('/api/comida/agua/deshacer', conUsuario, async (pedido) => ({ dia: await v.deshacerAgua(id(pedido), fechaDe(pedido)) }))
+  app.delete('/api/comida/agua/tomas/:id', conUsuario, async (pedido) => {
+    await v.borrarToma(id(pedido), Number(pedido.params.id))
+    return { dia: await v.aguaDelDia(id(pedido), fechaDe(pedido) || await v.hoy(id(pedido))) }
+  })
   app.put('/api/comida/agua/config', {
     ...conUsuario,
     ...cuerpo([], {

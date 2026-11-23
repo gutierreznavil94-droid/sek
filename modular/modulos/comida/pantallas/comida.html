@@ -5,120 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SEK · Comida</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
-  <link rel="stylesheet" href="/m/comida/estilo.css">
+  <!-- Igual que la v0.88.27: su estilo y el del tema Shinobi -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
 </head>
 <body>
-  <main>
-    <div class="fila entre">
-      <h1>食 Comida</h1>
-      <a class="boton" href="/comida/ajustes" aria-label="Objetivo, agua y fruta">⚙ Ajustes</a>
+  <main class="contenido">
+    <div class="co-pantalla" id="pantalla">
+      <a class="atras" href="/hoy">← Hoy</a>
+      <div class="co-titulo"><span class="co-kanji grande" aria-hidden="true">食</span><h1>Comida</h1>
+        <span class="fila co-dia" style="gap: 2px; margin-left: auto;">
+          <button type="button" class="boton chico suave icono" id="dia-antes" aria-label="Día anterior">‹</button>
+          <span class="texto-3 chico" id="dia-nombre"></span>
+          <button type="button" class="boton chico suave icono" id="dia-despues" aria-label="Día siguiente">›</button>
+        </span>
+      </div>
+      <p class="vacio" id="cargando">Cargando…</p>
+      <div class="col" id="cuerpo" style="gap: 14px;" hidden></div>
     </div>
-
-    <nav class="co-dias fila entre" aria-label="Día">
-      <button id="dia-antes" aria-label="Día anterior">‹</button>
-      <b id="dia-nombre">Hoy</b>
-      <button id="dia-despues" aria-label="Día siguiente">›</button>
-    </nav>
-
-    <section class="tarjeta" aria-live="polite">
-      <div id="sin-objetivo" class="co-sin-objetivo" hidden>
-        <p>Poné tu objetivo y la app te dice cuánto comer: <b>calorías</b> y <b>proteína</b>. Dos números mandan.</p>
-        <a class="boton principal" href="/comida/ajustes">Poner mi objetivo</a>
-      </div>
-      <div id="con-objetivo" class="co-anillos">
-        <div class="co-anillo" id="anillo-kcal"></div>
-        <div class="co-anillo" id="anillo-prot"></div>
-      </div>
-      <p class="chico centro" id="macros"></p>
-      <div class="co-tomas">
-        <button class="co-toma" id="agua" type="button" aria-label="Tomé agua (mantené apretado para más opciones)">
-          <svg viewBox="0 0 100 150" class="co-cantimplora" aria-hidden="true">
-            <defs><clipPath id="cuerpo"><path d="M33 34 Q10 62 13 126 Q14 136 25 136 H75 Q86 136 87 126 Q90 62 67 34 Z"/></clipPath></defs>
-            <path class="co-agua-fondo" d="M33 34 Q10 62 13 126 Q14 136 25 136 H75 Q86 136 87 126 Q90 62 67 34 Z"/>
-            <g clip-path="url(#cuerpo)"><rect id="agua-nivel" class="co-agua-nivel" x="0" y="136" width="100" height="140"/></g>
-            <path class="co-trazo" d="M33 34 Q10 62 13 126 Q14 136 25 136 H75 Q86 136 87 126 Q90 62 67 34"/>
-            <path class="co-trazo" d="M38 34 V20 Q38 16 42 16 H58 Q62 16 62 20 V34"/>
-            <rect class="co-tapa" x="35" y="6" width="30" height="12" rx="4"/>
-          </svg>
-          <span><b id="agua-ml">0 L</b><span class="chico" id="agua-obj"></span></span>
-        </button>
-        <button class="co-toma" id="fruta" type="button" aria-label="Comí una fruta (mantené apretado para deshacer)">
-          <svg viewBox="0 0 100 110" class="co-manzana" aria-hidden="true">
-            <defs><mask id="mordida"><rect width="100" height="110" fill="#fff"/><circle id="mordida-1" cx="92" cy="50" r="0" fill="#000"/><circle id="mordida-2" cx="8" cy="66" r="0" fill="#000"/></mask></defs>
-            <path class="co-manzana-cuerpo" mask="url(#mordida)" d="M50 30 C 30 14, 6 26, 8 56 C 10 86, 30 104, 50 96 C 70 104, 90 86, 92 56 C 94 26, 70 14, 50 30 Z"/>
-            <path class="co-trazo" d="M50 30 Q 52 14 58 6"/>
-            <path class="co-hojita" d="M54 16 Q 70 4 80 12 Q 68 22 54 16 Z"/>
-          </svg>
-          <span><b id="fruta-n">0</b><span class="chico" id="fruta-obj"></span></span>
-        </button>
-      </div>
-      <button class="principal grande-boton" id="comi" type="button">+ Comí</button>
-    </section>
-
-    <div id="franjas" class="co-franjas"></div>
   </main>
-
-  <!-- Hoja «Comí»: buscar, frecuentes, guardadas, propio, código, cantidad -->
-  <dialog id="hoja" class="co-hoja">
-    <form method="dialog" class="fila entre co-hoja-arriba"><h2 id="hoja-titulo">Comí</h2><button aria-label="Cerrar">✕</button></form>
-    <div id="vista-buscar">
-      <div class="co-franja-elegir" id="elegir-franja" role="radiogroup" aria-label="Franja"></div>
-      <input id="buscar" type="search" placeholder="Buscar: pollo, arroz, banana…" autocomplete="off" enterkeyhint="search">
-      <ul class="co-resultados" id="resultados"></ul>
-      <div id="atajos">
-        <p class="chico" id="titulo-frecuentes">Lo de siempre</p>
-        <div class="co-chips" id="frecuentes"></div>
-        <p class="chico" id="titulo-guardadas">Comidas guardadas</p>
-        <div class="co-chips" id="guardadas"></div>
-        <div class="fila">
-          <button type="button" id="ir-codigo">▥ Código de barras</button>
-          <button type="button" id="ir-propio">+ Propio</button>
-          <button type="button" id="repetir-ayer" hidden>↻ Repetir ayer</button>
-        </div>
-      </div>
-    </div>
-    <div id="vista-cantidad" hidden>
-      <p class="chico" id="cant-info"></p>
-      <div class="co-chips" id="porciones"></div>
-      <label>Gramos <input id="gramos" type="number" inputmode="numeric" min="1" step="1"></label>
-      <p class="grande centro" id="cant-kcal">0</p>
-      <p class="chico centro" id="cant-macros"></p>
-      <div class="fila entre"><button type="button" class="volver">‹ Volver</button><button type="button" class="principal" id="agregar">Agregar</button></div>
-    </div>
-    <form id="vista-propio" hidden>
-      <p class="chico">Lo que dice la etiqueta o lo que sabés de <b>una porción</b>. Se guarda para la próxima.</p>
-      <label>Nombre <input name="nombre" required minlength="2" maxlength="80"></label>
-      <div class="co-dos"><label>Porción <input name="porcion" placeholder="1 plato"></label><label>Gramos <input name="gramos" type="number" inputmode="numeric" min="1" value="100"></label></div>
-      <div class="co-dos"><label>Calorías <input name="kcal" type="number" inputmode="decimal" min="0" required></label><label>Proteína (g) <input name="proteina" type="number" inputmode="decimal" min="0" value="0"></label></div>
-      <div class="co-dos"><label>Carbos (g) <input name="carbos" type="number" inputmode="decimal" min="0"></label><label>Grasas (g) <input name="grasas" type="number" inputmode="decimal" min="0"></label></div>
-      <label class="co-check"><input name="up" type="checkbox"> Es ultraprocesado</label>
-      <input name="codigo" type="hidden">
-      <div class="fila entre"><button type="button" class="volver">‹ Volver</button><button class="principal">Seguir</button></div>
-    </form>
-    <form id="vista-codigo" hidden>
-      <p class="chico">Escribí los números que están abajo de las barras. Se busca en Open Food Facts (con internet) y queda guardado.</p>
-      <input name="codigo" inputmode="numeric" placeholder="7790000000000" required minlength="8">
-      <div class="fila entre"><button type="button" class="volver">‹ Volver</button><button class="principal">Buscar</button></div>
-    </form>
-  </dialog>
-
-  <!-- Editar algo ya cargado -->
-  <dialog id="editar" class="co-hoja">
-    <form method="dialog" class="fila entre co-hoja-arriba"><h2 id="editar-titulo"></h2><button aria-label="Cerrar">✕</button></form>
-    <label>Gramos <input id="editar-gramos" type="number" inputmode="numeric" min="1"></label>
-    <div class="fila entre"><button type="button" class="peligro" id="editar-quitar">Quitar</button><button type="button" class="principal" id="editar-guardar">Guardar</button></div>
-  </dialog>
-
-  <!-- Agua: otro envase o deshacer -->
-  <dialog id="hoja-agua" class="co-hoja">
-    <form method="dialog" class="fila entre co-hoja-arriba"><h2>Agua</h2><button aria-label="Cerrar">✕</button></form>
-    <div class="co-chips" id="envases"></div>
-    <button type="button" id="agua-deshacer">↶ Restar el último</button>
-    <a class="chico" href="/comida/ajustes#agua">Cambiar envases y objetivo</a>
-  </dialog>
-
   <script src="/comun/marco.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
   <script src="/m/comida/comida.js"></script>
 </body>
 </html>

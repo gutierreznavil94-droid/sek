@@ -1,6 +1,6 @@
 # Módulo comida
 
-**Qué hace:** lo que comés y tomás. Comidas con alimentos (tabla común de ~400, propios y código de barras), comidas guardadas, «repetir ayer», objetivo de calorías y proteína, peso, agua con envases y fruta del día. Pantallas en `/comida` (botón **Comida** 食 de la barra) y `/comida/ajustes`.
+**Qué hace:** lo que comés y tomás. Comidas con alimentos (tabla común de ~400, propios y código de barras), comidas guardadas, «repetir ayer», objetivo de calorías y proteína, peso, agua con envases y fruta del día. Pantallas en `/comida` (desde la tarjeta Comida de Hoy) y `/comida/ajustes` (Más → Comida), las dos iguales a la v0.88.27.
 
 ## Lo que ofrece su ventanilla
 
@@ -48,9 +48,9 @@ Ajustes comunes que usa: solo `zonaHoraria`. Lo propio va en `comida_config` (no
 
 - `calculo.js`: cuentas puras (buscador, macros, objetivo, franjas, agua, fruta, Open Food Facts). Traído de `src/services/comidas.ts`, `agua.ts`, `fruta.ts`.
 - `alimentos.json`: tabla común (USDA y tablas argentinas), copia de `src/comidas/alimentos.json`.
-- `pantallas/comida.html` + `comida.js`: anillos de calorías y proteína, cantimplora (toque suma, mantener = otro envase o deshacer), manzana (toque suma, mantener deshace), «+ Comí» (buscar, lo de siempre, guardadas, propio, código, repetir ayer), lista por franja, días anteriores.
-- `pantallas/ajustes.html` + `ajustes.js`: objetivo, peso con curva chica, envases de agua, fruta y fuentes.
-- `pantallas/estilo.css`: lo propio (anillos, cantimplora, manzana, hojas).
+- `pantallas/comida.html` + `comida.js`: anillos de calorías y proteína, «+ Comí», el agua con sus tomas (tocar una la borra) y las franjas. La hoja «Comí»: franja, buscar, frecuentes, guardadas (mantener = borrar), propio, código de barras (cámara si el celu puede), repetir ayer. Extra: ‹ › para días anteriores.
+- `pantallas/ajustes.html` + `ajustes.js`: tu objetivo, peso de hoy, agua (en Hoy chiquita / tarjeta / no, envases, objetivo), fruta, pilar «Comer según el plan» (por `/api/dia/comida`) y fuentes.
+- El estilo es el de `comun/v88.css`; la cantimplora y la manzana están en `SEK.v88` (las usa también Hoy).
 
 ## Qué módulos usa
 

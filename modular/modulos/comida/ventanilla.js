@@ -488,7 +488,8 @@ async function resumenHoy(usuarioId, tx = null) {
     totales,
     cargados: lista.length,
     estado: o ? calculo.estadoKcal(totales.kcal, o.kcal) : null,
-    agua: await aguaDelDia(usuarioId, f, tx),
+    // enHoy: 'chica' (dentro de Comida), 'tarjeta' (aparte) o 'no'. Envases para «mantené apretado».
+    agua: await (async () => { const c = await configAgua(usuarioId, tx); return { ...(await aguaDelDia(usuarioId, f, tx)), enHoy: c.config.enHoy || 'chica', envases: c.config.envases, principal: c.principal } })(),
     fruta: await frutaDelDia(usuarioId, f, tx),
   }
 }
@@ -527,6 +528,7 @@ async function ajustes(usuarioId, tx = null) {
     agua: await configAgua(usuarioId, tx),
     fruta: await configFruta(usuarioId, tx),
     fuentes: calculo.FUENTES_TABLA,
+    alimentosEnTabla: calculo.TABLA_ALIMENTOS.length,
   }
 }
 

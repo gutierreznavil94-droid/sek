@@ -4,7 +4,7 @@
 (function () {
   'use strict'
   const { api, $, seguro } = SEK
-  const { esc, brillo, fechaLegible, litros, avisar, hoja, diaSemana, iconoPilar } = SEK.v88
+  const { esc, brillo, fechaLegible, litros, avisar, hoja, diaSemana, iconoPilar, cantimplora, manzana } = SEK.v88
   const marco = SEK.v88.montar({ activo: 'hoy', horario: true, companero: 'pasea' })
   const idUrl = (id) => encodeURIComponent(id)
   const sumarDias = (f, n) => { const x = new Date(`${f}T12:00:00Z`); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10) }
@@ -246,19 +246,51 @@
   }
 
   // ---------- Comida: agua chica, fruta y Objetivo / + Comí ----------
-  function cantimplora(nivel) {
-    const lleno = Math.max(0, Math.min(1, nivel || 0))
-    const y = 134 - lleno * 100
-    return `<svg viewBox="0 0 100 150" width="20" height="30" class="agua-svg ${nivel >= 0.999 ? 'llena' : ''} ${nivel > 1.001 ? 'rebalsa' : ''}" role="img"><defs><clipPath id="agua-cuerpo"><path d="M33 34 Q10 62 13 126 Q14 136 25 136 H75 Q86 136 87 126 Q90 62 67 34 Z"></path></clipPath></defs><path class="agua-fondo" d="M33 34 Q10 62 13 126 Q14 136 25 136 H75 Q86 136 87 126 Q90 62 67 34 Z"></path><g clip-path="url(#agua-cuerpo)"><g class="agua-nivel" style="transform: translateY(${y}px);"><path class="agua-ola" d="M-100 4 Q-87 0 -75 4 T-50 4 T-25 4 T0 4 T25 4 T50 4 T75 4 T100 4 T125 4 T150 4 T175 4 T200 4 V140 H-100 Z"></path><path class="agua-ola dos" d="M-100 6 Q-90 2 -80 6 T-60 6 T-40 6 T-20 6 T0 6 T20 6 T40 6 T60 6 T80 6 T100 6 T120 6 T140 6 T160 6 T180 6 T200 6 V140 H-100 Z"></path></g></g><path class="agua-trazo fino" d="M17 70 Q50 76 83 70"></path><path class="agua-trazo fino" d="M14 104 Q50 110 86 104"></path><path class="agua-trazo cuerpo" d="M33 34 Q10 62 13 126 Q14 136 25 136 H75 Q86 136 87 126 Q90 62 67 34"></path><path class="agua-trazo" d="M38 34 V20 Q38 16 42 16 H58 Q62 16 62 20 V34"></path><rect class="agua-tapa" x="35" y="6" width="30" height="12" rx="4"></rect><path class="agua-trazo fino" d="M38 24 H62 M38 29 H62"></path><path class="agua-trazo cordel" d="M35 12 C 20 14, 12 30, 16 50 M65 12 C 80 14, 88 30, 84 50"></path></svg>`
-  }
-  const MORDISCOS = [{ x: 94, y: 88, r: 22 }, { x: 6, y: 96, r: 22 }, { x: 88, y: 58, r: 16 }, { x: 12, y: 62, r: 16 }, { x: 86, y: 124, r: 16 }]
-  function manzana(mordido) {
-    const trazos = '<path class="tema-manzana-trazo" d="M50 52 C50 40 52 30 57 22"></path><path class="tema-manzana-trazo fino" d="M55 32 C62 22 74 22 78 26 C72 34 62 36 55 32 Z"></path>'
-    if (mordido >= 0.999) return `<svg viewBox="0 0 100 150" width="20" height="30" class="tema-manzana centro" role="img">${trazos}<path class="tema-manzana-cuerpo" d="M36 54 C44 50 56 50 64 54 C58 66 56 78 56 92 C56 106 60 116 64 128 C56 134 44 134 36 128 C40 116 44 106 44 92 C44 78 42 66 36 54 Z"></path></svg>`
-    const n = mordido <= 0 ? 0 : Math.min(MORDISCOS.length, Math.max(1, Math.round(mordido / 0.3)))
-    return `<svg viewBox="0 0 100 150" width="20" height="30" class="tema-manzana" role="img">${trazos}<defs><mask id="manzana-m"><rect x="0" y="0" width="100" height="150" fill="#fff"></rect>${MORDISCOS.slice(0, n).map((m) => `<circle cx="${m.x}" cy="${m.y}" r="${m.r}" fill="#000"></circle>`).join('')}</mask></defs><path class="tema-manzana-cuerpo" d="M50 52 C38 42 14 46 13 76 C12 106 30 136 44 136 C47 136 48 134 50 134 C52 134 53 136 56 136 C70 136 88 106 87 76 C86 46 62 42 50 52 Z" mask="url(#manzana-m)"></path></svg>`
-  }
   const BRILLO_FRUTA = { pendiente: 'pendiente', cumplido: 'hecho', superado: 'maximo' }
+
+  /** Agua como tarjeta aparte (Más → Comida → Agua → «Tarjeta aparte»), como TarjetaAgua de la vieja. */
+  function aguaAparte(ag) {
+    const el = $('#agua-aparte')
+    el.hidden = !(ag && ag.enHoy === 'tarjeta')
+    if (el.hidden) return
+    const pasado = Math.max(0, ag.ml - ag.objetivo), falta = ag.objetivo - ag.ml
+    const ml = (n) => (n >= 1000 ? litros(n) : `${n} ml`)
+    el.innerHTML = `<button type="button" class="agua-boton" data-agua-grande aria-label="Tomé ${esc(ag.principal.nombre)} de ${ag.principal.ml} ml. Llevás ${litros(ag.ml)} de ${litros(ag.objetivo)}. Mantené apretado para otro envase">${cantimplora(ag.nivel, 60)}</button>
+      <div class="agua-texto"><span class="seccion-titulo">Agua</span>
+        <b class="agua-numero mono">${ag.llego ? `${litros(ag.ml)}${pasado > 0 ? `<span class="agua-extra"> · +${ml(pasado)}</span>` : ''}` : `${litros(ag.ml)} <span class="texto-3">de ${litros(ag.objetivo)}</span>`}</b>
+        <span class="chico texto-2" data-agua-estado>${ag.llego ? (pasado > 0 ? 'Rebalsa: seguís sumando' : 'Objetivo del día cumplido') : ag.tomas.length ? `Faltan ${ml(falta)}` : 'Tocá la cantimplora'}</span>
+        <span class="chico texto-3">Un toque = ${esc(ag.principal.nombre.toLowerCase())} ${ag.principal.ml} ml · mantené para más</span></div>`
+    conectarAgua(el.querySelector('[data-agua-grande]'), ag, el.querySelector('[data-agua-estado]'))
+  }
+  /** Un toque suma el envase principal; mantener apretado abre «Tomé…» con los otros y restar el último. */
+  function conectarAgua(boton, ag, etiqueta) {
+    let largo = null, fueLargo = false
+    const tomar = seguro(async (envase) => {
+      const r = await api('/api/comida/agua', envase ? { envase } : {})
+      const ml = r && r.toma ? r.toma.ml : null
+      if (etiqueta) { etiqueta.textContent = ml ? `+${ml}` : '+'; etiqueta.classList.add('suma') }
+      if (r && r.recienLlego) avisar(`Llegaste a ${litros(r.dia.objetivo)} de agua. 水`, { tipo: 'ok' })
+      setTimeout(() => recargar().catch(error), 900)
+    })
+    const opciones = () => {
+      const ultima = ag.tomas[ag.tomas.length - 1]
+      const hora = (t) => new Date(t).toTimeString().slice(0, 5)
+      const h = hoja('Agua', `<span class="seccion-titulo">Tomé…</span>
+        <div class="agua-envases">${ag.envases.map((e) => `<button type="button" class="boton ${e.id === ag.principal.id ? 'primario' : ''}" data-envase="${esc(e.id)}">${esc(e.nombre)}<span class="chico mono" style="opacity: 0.8;"> ${e.ml} ml</span></button>`).join('')}</div>
+        ${ultima ? `<button type="button" class="boton suave ancho" data-restar>Restar el último toque · ${ultima.ml} ml a las ${hora(ultima.instante)}</button>` : ''}
+        <p class="ayuda centro"><a href="/comida/ajustes">Envases y objetivo</a> · <a href="/comida">tomas de hoy</a></p>`)
+      h.el.querySelectorAll('[data-envase]').forEach((b) => { b.onclick = () => { h.cerrar(); tomar(b.dataset.envase) } })
+      const r = h.el.querySelector('[data-restar]')
+      if (r) r.onclick = seguro(async () => { await api('/api/comida/agua/deshacer', {}); h.cerrar(); avisar(`Resté ${ultima.ml} ml (${hora(ultima.instante)})`); await recargar() })
+    }
+    boton.onpointerdown = () => { fueLargo = false; largo = setTimeout(() => { fueLargo = true; largo = null; opciones() }, 480) }
+    const soltar = () => { if (largo) { clearTimeout(largo); largo = null } }
+    boton.onpointerup = soltar
+    boton.onpointerleave = soltar
+    boton.onpointercancel = soltar
+    boton.oncontextmenu = (e) => e.preventDefault()
+    boton.onclick = () => { if (fueLargo) { fueLargo = false; return } tomar() }
+  }
 
   function comida() {
     const c = d.tarjetas.comida
@@ -269,18 +301,14 @@
     const o = c.objetivo
     const estado = !o ? 'Configurá tu objetivo' : t.kcal === 0 ? 'Sin comidas aún' : `${Math.round(t.kcal).toLocaleString('es-AR')} / ${o.kcal.toLocaleString('es-AR')} kcal · ${Math.round(t.p)} g prot.`
     const f = c.fruta
+    const ag = c.agua
     el.innerHTML = `<a class="co-tarjeta-link" href="/comida"><span class="co-kanji" aria-hidden="true">食</span><span class="co-tarjeta-texto"><b>Comida</b><span class="co-tarjeta-estado">${estado}</span></span></a>
-      ${c.agua ? `<button type="button" class="agua-boton agua-chica" data-agua aria-label="Agua: llevás ${litros(c.agua.ml)} de ${litros(c.agua.objetivo)}. Tocá para sumar">${cantimplora(c.agua.nivel)}<span class="agua-chica-ml mono">${litros(c.agua.ml)}</span></button>` : ''}
+      ${ag && ag.enHoy === 'chica' ? `<button type="button" class="agua-boton agua-chica" data-agua aria-label="Agua: llevás ${litros(ag.ml)} de ${litros(ag.objetivo)}. Tocá para sumar ${esc(ag.principal.nombre)} de ${ag.principal.ml} ml; mantené apretado para otro envase">${cantimplora(ag.nivel)}<span class="agua-chica-ml mono">${litros(ag.ml)}</span></button>` : ''}
       ${f && f.usar !== false ? `<button type="button" class="agua-boton agua-chica fruta-chica fruta-${esc(f.estado)}" data-fruta ${brillo(BRILLO_FRUTA[f.estado], 5)} aria-label="${esc(f.nombre)}: ${f.n} de ${f.objetivo2}. Tocá para sumar una; mantené apretado para deshacer">${manzana(f.mordido)}<span class="agua-chica-ml mono">${f.n}/${f.objetivo2}</span></button>` : ''}
       ${o ? '<a class="boton primario co-comi" href="/comida?cargar=1">+ Comí</a>' : '<a class="boton co-comi" href="/comida/ajustes">Objetivo</a>'}`
+    aguaAparte(ag)
     const agua = el.querySelector('[data-agua]')
-    if (agua) agua.onclick = seguro(async () => {
-      const r = await api('/api/comida/agua', {})
-      const ml = r && r.toma ? r.toma.ml : null
-      agua.querySelector('.agua-chica-ml').textContent = ml ? `+${ml}` : '+'
-      agua.querySelector('.agua-chica-ml').classList.add('suma')
-      setTimeout(() => recargar().catch(error), 900)
-    })
+    if (agua) conectarAgua(agua, ag, agua.querySelector('.agua-chica-ml'))
     const fruta = el.querySelector('[data-fruta]')
     if (fruta) {
       let largo = null

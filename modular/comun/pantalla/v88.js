@@ -13,7 +13,7 @@
  */
 (function () {
   'use strict'
-  const VERSION = '0.13'
+  const VERSION = '0.14'
   const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
   const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
   const FASES = ['Disciplina', 'Constancia', 'Mi yo ideal']
@@ -206,5 +206,20 @@
     return s('<rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 12h18"></path>')
   }
 
-  window.SEK.v88 = { VERSION, montar, avisar, hoja, brillo, esc, fechaLegible, litros, diaSemana, iconoPilar, confirmar }
+  // ---------- Dibujos del agua y la fruta ----------
+  /** La cantimplora del agua (Hoy y Comida). `ancho` en px; el alto es 1,5 veces. */
+  function cantimplora(nivel, ancho = 20) {
+    const lleno = Math.max(0, Math.min(1, nivel || 0))
+    const y = 134 - lleno * 100
+    return `<svg viewBox="0 0 100 150" width="${ancho}" height="${Math.round(ancho * 1.5)}" class="agua-svg ${nivel >= 0.999 ? 'llena' : ''} ${nivel > 1.001 ? 'rebalsa' : ''}" role="img"><defs><clipPath id="agua-cuerpo"><path d="M33 34 Q10 62 13 126 Q14 136 25 136 H75 Q86 136 87 126 Q90 62 67 34 Z"></path></clipPath></defs><path class="agua-fondo" d="M33 34 Q10 62 13 126 Q14 136 25 136 H75 Q86 136 87 126 Q90 62 67 34 Z"></path><g clip-path="url(#agua-cuerpo)"><g class="agua-nivel" style="transform: translateY(${y}px);"><path class="agua-ola" d="M-100 4 Q-87 0 -75 4 T-50 4 T-25 4 T0 4 T25 4 T50 4 T75 4 T100 4 T125 4 T150 4 T175 4 T200 4 V140 H-100 Z"></path><path class="agua-ola dos" d="M-100 6 Q-90 2 -80 6 T-60 6 T-40 6 T-20 6 T0 6 T20 6 T40 6 T60 6 T80 6 T100 6 T120 6 T140 6 T160 6 T180 6 T200 6 V140 H-100 Z"></path></g></g><path class="agua-trazo fino" d="M17 70 Q50 76 83 70"></path><path class="agua-trazo fino" d="M14 104 Q50 110 86 104"></path><path class="agua-trazo cuerpo" d="M33 34 Q10 62 13 126 Q14 136 25 136 H75 Q86 136 87 126 Q90 62 67 34"></path><path class="agua-trazo" d="M38 34 V20 Q38 16 42 16 H58 Q62 16 62 20 V34"></path><rect class="agua-tapa" x="35" y="6" width="30" height="12" rx="4"></rect><path class="agua-trazo fino" d="M38 24 H62 M38 29 H62"></path><path class="agua-trazo cordel" d="M35 12 C 20 14, 12 30, 16 50 M65 12 C 80 14, 88 30, 84 50"></path></svg>`
+  }
+  const MORDISCOS = [{ x: 94, y: 88, r: 22 }, { x: 6, y: 96, r: 22 }, { x: 88, y: 58, r: 16 }, { x: 12, y: 62, r: 16 }, { x: 86, y: 124, r: 16 }]
+  /** La fruta del día, mordida según lo comido (Hoy y Comida). */
+  function manzana(mordido, ancho = 20) {
+    const trazos = '<path class="tema-manzana-trazo" d="M50 52 C50 40 52 30 57 22"></path><path class="tema-manzana-trazo fino" d="M55 32 C62 22 74 22 78 26 C72 34 62 36 55 32 Z"></path>'
+    if (mordido >= 0.999) return `<svg viewBox="0 0 100 150" width="${ancho}" height="${Math.round(ancho * 1.5)}" class="tema-manzana centro" role="img">${trazos}<path class="tema-manzana-cuerpo" d="M36 54 C44 50 56 50 64 54 C58 66 56 78 56 92 C56 106 60 116 64 128 C56 134 44 134 36 128 C40 116 44 106 44 92 C44 78 42 66 36 54 Z"></path></svg>`
+    const n = mordido <= 0 ? 0 : Math.min(MORDISCOS.length, Math.max(1, Math.round(mordido / 0.3)))
+    return `<svg viewBox="0 0 100 150" width="${ancho}" height="${Math.round(ancho * 1.5)}" class="tema-manzana" role="img">${trazos}<defs><mask id="manzana-m"><rect x="0" y="0" width="100" height="150" fill="#fff"></rect>${MORDISCOS.slice(0, n).map((m) => `<circle cx="${m.x}" cy="${m.y}" r="${m.r}" fill="#000"></circle>`).join('')}</mask></defs><path class="tema-manzana-cuerpo" d="M50 52 C38 42 14 46 13 76 C12 106 30 136 44 136 C47 136 48 134 50 134 C52 134 53 136 56 136 C70 136 88 106 87 76 C86 46 62 42 50 52 Z" mask="url(#manzana-m)"></path></svg>`
+  }
+  window.SEK.v88 = { VERSION, montar, avisar, hoja, brillo, esc, fechaLegible, litros, diaSemana, iconoPilar, confirmar, cantimplora, manzana }
 })()
