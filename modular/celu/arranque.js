@@ -18,7 +18,8 @@ async function prepararPglite() {
     fetch('/pglite/postgres.wasm').then((r) => r.arrayBuffer()).then((b) => WebAssembly.compile(b)),
     fetch('/pglite/postgres.data').then((r) => r.blob()),
   ])
-  globalThis.SEK_PGLITE_OPCIONES = { wasmModule: wasm, fsBundle: datos }
+  // relaxedDurability: guarda en la memoria del teléfono sin esperar a cada consulta (si no, cada pantalla tarda segundos).
+  globalThis.SEK_PGLITE_OPCIONES = { wasmModule: wasm, fsBundle: datos, relaxedDurability: true }
 }
 
 function guardado() { try { return localStorage.getItem(TOKEN) } catch { return null } }
@@ -54,6 +55,9 @@ async function arrancar() {
 
   /** Un pedido local: { method, url, headers, payload }. Devuelve lo mismo que inject. */
   globalThis.SEK_LOCAL = (pedido) => app.inject({ ...pedido, headers: { ...(pedido.headers || {}), cookie } })
+  // Al salir de la app (o pasar a otra), guardar ya lo que falte.
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') base.guardarYa().catch(() => {}) })
+  window.addEventListener('pagehide', () => { base.guardarYa().catch(() => {}) })
   globalThis.SEK_ARRANQUE_MS = Math.round(performance.now() - t0)
 }
 

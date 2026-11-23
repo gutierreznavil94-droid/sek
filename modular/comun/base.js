@@ -60,4 +60,7 @@ async function abrir() { await conexion().waitReady }
 
 async function cerrar() { if (db) { const d = db; db = null; await d.close() } }
 
-module.exports = { consulta, una, todas, ejecutar, transaccion, usarBase, abrir, cerrar }
+/** Guarda ya en la memoria del teléfono lo que falte (en el celu se guarda sin esperar a cada consulta). */
+async function guardarYa() { if (db && typeof db.syncToFs === 'function') await db.syncToFs(false) }
+
+module.exports = { guardarYa, consulta, una, todas, ejecutar, transaccion, usarBase, abrir, cerrar }

@@ -1,0 +1,5 @@
+/* Hoy (v0.88.27): lo poco que cambia porque acá algunos botones son enlaces (<a>) en vez de <button>. */
+a.barra-fases { display: flex; text-decoration: none; }
+a.semana-dia, a.boton-duda, a.fr-pill, a.fr-mas { text-decoration: none; }
+a.semana-dia { color: inherit; }
+.fila-compromiso { display: flex; gap: 10px; align-items: center; width: 100%; background: none; border: 0; border-bottom: 1px solid var(--borde); padding: 10px 2px; color: var(--texto); text-align: left; }

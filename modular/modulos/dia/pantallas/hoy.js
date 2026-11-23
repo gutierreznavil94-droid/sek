@@ -1,227 +1,485 @@
-// Pantalla Hoy: el tablero del día. Pide todo a /api/dia/hoy (las rutas de su módulo); cada módulo presta su tarjeta por su ventanilla.
+// Pantalla Hoy, igual que la v0.88.27 (Hoy.tsx de la app vieja) pero en HTML+JS.
+// Pide todo a las rutas de los módulos: /api/dia/hoy (el tablero), /api/series, /api/ciclo/metas.
+// El marco (cabecera de papel, barra del horario, barra de abajo, avisos) lo arma SEK.v88 (comun/pantalla/v88.js).
 (function () {
   'use strict'
-  const { api, $, seguro, barra, mensaje, minutos } = SEK
-  const { esc, fechaLarga, hoja } = DIA
-  const evento = (nombre, el) => SEK.evento(nombre, { elemento: el })
-  let d = null
+  const { api, $, seguro } = SEK
+  const { esc, brillo, fechaLegible, litros, avisar, hoja, diaSemana } = SEK.v88
+  const marco = SEK.v88.montar({ activo: 'hoy', horario: true })
+  const idUrl = (id) => encodeURIComponent(id)
+  const sumarDias = (f, n) => { const x = new Date(`${f}T12:00:00Z`); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10) }
+  const duracion = (min) => { const m = Math.max(0, Math.round(min)); const h = Math.floor(m / 60); return h ? `${h} h ${String(m % 60).padStart(2, '0')} min` : `${m} min` }
+  const error = (e) => avisar(e.message || String(e), { tipo: 'bajo' })
 
-  const ICONO_ESTADO = { cumplido: '✓', tarde: '!', omitido: '✕', descanso: '–', pendiente: '', iniciado: '…' }
+  let d = null // /api/dia/hoy
+  let series = null // /api/series
+  let metas = null // /api/ciclo/metas
 
-  function cabeza() {
-    const partes = [fechaLarga(d.hoy)]
-    const c = d.ciclo
-    if (c) partes.push(c.noEmpezado ? 'Ciclo sin empezar' : c.diaCero ? 'Día 0, calentamiento' : c.terminado ? 'Ciclo terminado' : `Día ${c.dia} de ${c.ciclo.duracionDias}${c.faseNumero ? ` · Fase ${c.faseNumero}` : ''}`)
-    if (d.nivel) partes.push(`Nivel ${d.nivel.nivel}`)
-    $('#dia-ciclo').textContent = partes.join(' · ')
-    // Tensión y No cumplí: los pone desafios (si está). «No cumplí» va a su pantalla (pide «¿Seguro?», guarda la caída y el duelo).
+  const ICONO_321 = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 1.5M9 2h6"></path></svg>'
+  const ICONO_REV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"></path></svg>'
+  const ICONO_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>'
+  const ICONO_SIG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>'
+
+  /** Íconos de los pilares (IconoPilar de la vieja): pesa, luna, pincel, cubiertos, libro, birrete, meditar, celu, estrella, maletín. */
+  function iconoPilar(id, tipo) {
+    const s = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`
+    if (tipo === 'entrenamiento') return s('<path d="M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12"></path>')
+    if (tipo === 'acostarse') return s('<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path>')
+    if (id === 'manga' || /dibuj|manga|pint/i.test(id)) return s('<path d="M14 4l6 6-9 9H5v-6z"></path><path d="M12 6l6 6"></path>')
+    if (tipo === 'comida_plan') return s('<path d="M7 3v8a2 2 0 0 0 2 2v8M5 3v5M9 3v5M17 21V3c-2 1-3 4-3 8h3"></path>')
+    if (/leer/.test(id)) return s('<path d="M3 5h6a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H3zM21 5h-6a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h7z"></path>')
+    if (/estudiar/.test(id)) return s('<path d="M2 9l10-5 10 5-10 5z"></path><path d="M6 11v5c3 2 9 2 12 0v-5"></path>')
+    if (/meditar/.test(id)) return s('<circle cx="12" cy="5" r="2"></circle><path d="M12 8v5M5 19c2-3 4-4 7-4s5 1 7 4M8 12l4 1 4-1"></path>')
+    if (/pantalla/.test(id)) return s('<rect x="7" y="2" width="10" height="20" rx="2"></rect><path d="M4 4l16 16"></path>')
+    if (/^p-otro/.test(id)) return s('<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6-5.3-3-5.3 3 1.2-6L3.4 9.3l6-.7z"></path>')
+    return s('<rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 12h18"></path>')
+  }
+
+  const tieneExtra = (a) => !!(a.minutosExtra && a.minutosMinimos && a.minutosExtra > a.minutosMinimos)
+  function estadoBrilloPilar(p) {
+    if (p.estado === 'pendiente') return 'pendiente'
+    if (p.estado === 'cumplido' || p.estado === 'tarde') return tieneExtra(p.accion) ? (p.compromiso && p.compromiso.extra ? 'maximo' : 'parcial') : 'hecho'
+    return null
+  }
+  const usadoHoy = (que) => { try { return !!localStorage.getItem(`usado-${que}:${d.hoy}`) } catch (e) { return false } }
+
+  // ---------- Cabecera: Tensión y No cumplí ----------
+  function botonesArriba() {
     const des = d.tarjetas.desafios
     const b = []
-    if (des && des.tension && des.tension.activa !== false && des.tension.ruta) b.push(`<a class="boton boton-contorno" href="${esc(des.tension.ruta)}"><span class="kanji" aria-hidden="true">${esc(des.tension.kanji || '進')}</span>Tensión</a>`)
-    if (des && des.noCumpli && des.noCumpli.ruta) b.push(`<a class="boton boton-contorno rojo" href="${esc(des.noCumpli.ruta)}">No cumplí</a>`)
-    $('#botones-arriba').innerHTML = b.join('')
+    if (des && des.tension && des.tension.activa !== false && des.tension.ruta) b.push(`<a class="boton-duda" href="${esc(des.tension.ruta)}" aria-label="Tensión: cinemática"><span class="boton-duda-kanji" aria-hidden="true">${esc(des.tension.kanji || '進')}</span>Tensión</a>`)
+    if (des && des.noCumpli && des.noCumpli.ruta) b.push(`<a class="boton-duda rojo" href="${esc(des.noCumpli.ruta)}" aria-label="No cumplí mi palabra">No cumplí</a>`)
+    marco.huecoExtra.innerHTML = b.length ? `<span class="hoy-arriba">${b.join('')}</span>` : ''
   }
 
-  function lineas() {
+  // ---------- La barra del horario (LineaDelDia) ----------
+  const H0 = 6
+  const H1 = 24
+  async function lineaDelDia() {
+    const h = await api('/api/dia/horario/dia').catch(() => null)
+    const bloques = ((h && h.bloques) || []).filter((b) => b.tipo !== 'dormir' && !b.apagado)
+    const ahora = new Date()
+    const minAhora = ahora.getHours() * 60 + ahora.getMinutes()
+    const pct = (m) => `${Math.max(0, Math.min(100, ((m - H0 * 60) / ((H1 - H0) * 60)) * 100))}%`
+    const entreno = bloques.find((b) => b.tipo === 'entreno' || b.origen === 'entreno')
+    const texto = d.horario && d.horario.texto ? d.horario.texto : 'Mi horario: cargá tus bloques fijos y la app se adapta ›'
+    marco.huecoHorario.innerHTML = `<section class="hor-linea" aria-label="Mi horario de hoy">
+      <a class="hor-linea-link" href="/horario"><div class="hor-barra" aria-hidden="true">${bloques.map((b) => `<span class="hor-tramo ${esc(b.tipo)}" title="${esc(b.nombre)} ${esc(b.desde)}–${esc(b.hasta)}" style="left: ${pct(b.min)}; width: calc(${pct(b.max)} - ${pct(b.min)});"></span>`).join('')}<span class="hor-ahora" style="left: ${pct(minAhora)};"></span></div><span class="chico texto-2 hor-texto">${esc(texto)}</span></a>
+      ${entreno && entreno.min > minAhora - 30 ? '<button class="boton chico suave hor-correr">Hoy a las…</button>' : ''}</section>`
+    const correr = marco.huecoHorario.querySelector('.hor-correr')
+    if (correr) correr.onclick = () => {
+      const h2 = hoja('Entreno de hoy', `<p class="ayuda">Solo hoy. La semana sigue igual.</p><div class="campo"><label>Hoy a las</label><input type="time" value="${esc(entreno.desde)}"></div><button class="boton primario ancho">Guardar</button>`)
+      h2.el.querySelector('.primario').onclick = async () => {
+        const hora = h2.el.querySelector('input').value
+        try { await api('/api/dia/horario/correr-entreno', { fecha: d.hoy, hora }); avisar(`Entreno hoy a las ${hora}`, { tipo: 'ok' }); h2.cerrar(); await recargar() } catch (e) { error(e) }
+      }
+    }
+    marco.mover()
+  }
+
+  // ---------- Avisos de una línea ----------
+  function avisos() {
     const l = []
-    if (d.ciclo && d.ciclo.terminado) l.push(`<a class="linea acento" href="/ciclo">Terminó tu ciclo. Revisá los resultados y empezá el siguiente ›</a>`)
-    if (d.ciclo && d.ciclo.noEmpezado) l.push(`<div class="linea">Tu Día 1 es el ${esc(DIA.fechaCorta(d.ciclo.ciclo.inicio))}. Hasta entonces no cuenta nada.</div>`)
-    if (d.excepcion) l.push(`<div class="linea ambar">Hoy no cuenta: ${esc(d.excepcion.motivo)}</div>`)
-    if (d.feriado) l.push(`<div class="linea ambar">Feriado: ${esc(d.feriado.nombre)} · límite de juego de finde</div>`)
-    for (const fc of d.fechasClave) l.push(`<a class="linea acento" href="/calendario"><span class="kanji">印</span> ${esc(fc.titulo)}${fc.hora ? ` · ${esc(fc.hora)}` : ''}</a>`)
-    if (d.horario && d.horario.texto) l.push(`<a class="linea${d.horario.enObligatorio ? ' acento' : ''}" href="/horario">${esc(d.horario.texto)} ›</a>`)
-    if (d.avisoResta) l.push(`<div class="linea ambar">${esc(d.avisoResta.texto)}</div>`)
+    if (d.excepcion) l.push({ tono: 'ambar', texto: `Hoy no cuenta: ${esc(d.excepcion.motivo)}` })
+    // Como la v0.88.27: el feriado, las fechas clave y lo que restaría se ven en Calendario, no acá.
+    const ahora = Date.now()
+    if (d.noche && !revisionHecha() && ahora >= d.noche.instanteAviso && ahora < d.noche.instanteCierre) l.push({ tono: 'rojo', texto: `Revisión diaria <b>ahora</b> · hasta las ${esc(d.noche.horaCierre)}`, accion: '<a href="/ciclo/revision" class="boton chico primario">Empezar</a>' })
     const des = d.tarjetas.desafios
-    for (const p of (des && des.pendientes) || []) l.push(p.ruta ? `<a class="linea acento" href="${esc(p.ruta)}">${esc(p.texto)} ›</a>` : `<div class="linea acento">${esc(p.texto)}</div>`)
-    $('#lineas').innerHTML = l.join('')
+    for (const p of (des && des.pendientes) || []) l.push({ tono: 'rojo', texto: esc(p.texto), accion: p.ruta ? `<a href="${esc(p.ruta)}" class="boton chico primario">Ir</a>` : '' })
+    const el = $('#avisos')
+    el.hidden = !l.length
+    el.innerHTML = l.map((a) => `<div class="aviso-linea ${a.tono || ''}"><span class="crece">${a.texto}</span>${a.accion || ''}</div>`).join('')
   }
 
-  /** Qué hace tocar un pilar según su tipo. */
-  function detallePilar(p) {
-    const t = p.accion.tipo
-    const hora = p.horaLimite ? ` · hasta ${p.horaLimite}` : ''
-    if (p.estado === 'descanso') return 'Descanso'
-    if (p.estado === 'cumplido') return `Hecho${p.compromiso && p.compromiso.minutos ? ` · ${minutos(p.compromiso.minutos)}` : ''}`
-    if (p.estado === 'tarde') return 'Tarde, sin XP'
-    if (p.estado === 'omitido') return 'No cumplido'
-    if (p.compromiso && p.compromiso.estado === 'iniciado') return 'En curso'
-    if (t === 'entrenamiento') return `Tocá para entrenar${hora}`
-    if (t === 'acostarse') return `Con «Dejo celu» hasta ${d.horas.dejarCelu}`
-    if (t === 'limite_juego') { const j = d.tarjetas.juego; return j ? `${minutos(j.minutosHoy)} de ${minutos(j.limiteHoy)} · se decide al cerrar el día` : 'Se decide al cerrar el día' }
-    if (t === 'comida_plan') return 'Se decide al cerrar el día con lo que cargaste'
-    if (t === 'revision_diaria' || t === 'revision_semanal') return `Tocá para hacerla${hora}`
-    return p.vencido ? `Se pasó la hora${hora}` : `Tocá para marcar${hora}`
+  // ---------- Pilares ----------
+  function filaPilar(p, i) {
+    const c = p.compromiso
+    const a = p.accion
+    const esCelu = a.tipo === 'acostarse'
+    const esEntreno = a.tipo === 'entrenamiento'
+    const enCurso = esEntreno && d.tarjetas.entreno && !!d.tarjetas.entreno.enCurso
+    const iniciado = p.estado === 'pendiente' && ((c && c.estado === 'iniciado') || enCurso)
+    const conExtra = tieneExtra(a) && (p.estado === 'cumplido' || p.estado === 'tarde')
+    let detalle
+    switch (p.estado) {
+      case 'cumplido': {
+        const s = d.tarjetas.sueno
+        if (esCelu && s && s.estaNoche) detalle = `${esc(s.estaNoche.hora)} · +${p.xpPrevisto} XP`
+        else if (c && c.extra) detalle = `✓ ${c.minutos || a.minutosExtra} min · extra ✓`
+        else if (conExtra) detalle = `✓ ${(c && c.minutos) || a.minutosMinimos} min · <span class="extra-pendiente">¿${a.minutosExtra} min?</span>`
+        else { const min = (c && c.minutos) || a.minutosMinimos; detalle = min ? `✓ ${min} min · +${p.xpPrevisto} XP` : `✓ +${p.xpPrevisto} XP` }
+        break
+      }
+      case 'tarde': detalle = `Tarde · ${(c && c.retrasoMinutos) || 0} min`; break
+      case 'omitido': detalle = 'No cumplido'; break
+      case 'descanso': detalle = 'Descanso'; break
+      default:
+        detalle = p.ventanaCerrada ? 'Ya no se registra'
+          : p.vencido ? (esCelu ? `Tarde · hasta las ${esc(d.horas.limiteCelu)}` : `Venció ${esc(p.horaLimite)}`)
+          : esCelu ? `Dejo celu hasta ${esc(p.horaLimite)}`
+          : esEntreno ? (enCurso ? 'En curso' : `Hasta ${esc(a.horaLimiteInicio || p.horaLimite || '—')}`)
+          : a.tipo === 'comida_plan' ? 'Se mide al cerrar el día'
+          : `Hasta ${esc(p.horaLimite || '—')}${a.minutosMinimos ? ` · ${a.minutosMinimos} min` : ''}`
+    }
+    const pista = p.estado !== 'pendiente' || p.ventanaCerrada || a.tipo === 'comida_plan' ? '' : esEntreno ? (enCurso ? 'Tocá para seguir' : 'Tocá para empezar') : esCelu ? 'Tocá para registrar' : 'Tocá si lo hiciste'
+    let barrita = ''
+    if (tieneExtra(a) && p.estado !== 'descanso') {
+      const meta = a.minutosMinimos || 0
+      const extra = a.minutosExtra
+      const hechos = c && c.extra ? Math.max(extra, c.minutos || 0) : p.estado === 'cumplido' || p.estado === 'tarde' ? Math.max(meta, Math.min((c && c.minutos) || meta, extra)) : 0
+      const marca = (100 * meta) / extra
+      barrita = `<span class="barrita dos-topes pilar-barrita" aria-hidden="true"><i style="width: ${(100 * Math.min(hechos, meta)) / extra}%;"></i><i class="capa-extra" style="left: ${marca}%; width: ${(100 * Math.max(0, Math.min(hechos, extra) - meta)) / extra}%;"></i><b class="marca-cuota" style="left: ${marca}%;"></b></span>`
+    }
+    const ic = p.estado === 'cumplido' ? '✓' : p.estado === 'tarde' ? '!' : p.estado === 'omitido' ? '✕' : p.estado === 'descanso' ? '–' : iniciado ? '<i class="punto-ambar"></i>' : ''
+    const clases = ['pilar-bloque', p.estado, p.vencido ? 'vencido' : '', c && c.extra ? 'extra' : '', iniciado ? 'iniciado' : ''].filter(Boolean).join(' ')
+    return `<button type="button" class="${clases}" data-i="${i}" ${brillo(estadoBrilloPilar(p), i)} ${p.estado === 'descanso' ? 'disabled' : ''} aria-label="${esc(a.nombre)}">
+      <span class="icono">${iconoPilar(a.id, a.tipo)}</span><span class="nombre">${esc(a.nombre)}</span><span class="detalle">${detalle}</span>${pista ? `<span class="pista">${pista}</span>` : ''}${barrita}
+      <span class="estado-ic" aria-hidden="true">${ic}</span>${c && p.estado !== 'descanso' && !esCelu ? '<span class="mas" role="button" aria-label="Más opciones">…</span>' : ''}</button>`
   }
 
   function pilares() {
-    $('#cuenta-pilares').innerHTML = `<span class="${d.cumplidos === d.aplican && d.aplican ? 'ok' : ''}">${d.cumplidos}</span><span class="apagado">/${d.aplican}</span>${d.racha ? ` <span class="chico">· racha ${d.racha}</span>` : ''}`
-    const iniciado = (p) => p.compromiso && p.compromiso.estado === 'iniciado'
-    $('#pilares').innerHTML = d.pilares.map((p, i) => `
-      <button class="pilar ${p.estado}${iniciado(p) ? ' iniciado' : ''}${p.vencido ? ' vencido' : ''}" data-i="${i}">
-        <span class="marca" aria-hidden="true">${ICONO_ESTADO[iniciado(p) ? 'iniciado' : p.estado] || ''}</span>
-        <span class="crece"><span class="nombre">${esc(p.accion.nombre)}</span><br><span class="detalle">${esc(detallePilar(p))}</span></span>
-        ${p.xpPrevisto && p.estado !== 'descanso' ? `<span class="xp">${p.estado === 'cumplido' ? '+' : ''}${p.xpPrevisto} XP</span>` : ''}
-      </button>`).join('')
-    for (const b of $('#pilares').querySelectorAll('.pilar')) b.onclick = () => tocarPilar(d.pilares[Number(b.dataset.i)], b)
-    $('#horas-noche').textContent = `Alistarse ${d.horas.alistarse} · dejo celu hasta ${d.horas.dejarCelu} · dormido ${d.horas.dormido}`
+    const todos = d.cumplidos === d.aplican && d.aplican > 0
+    $('#cuenta-pilares').innerHTML = `<span class="${todos ? 'ok' : ''}">${d.cumplidos}</span><span class="texto-3">/${d.aplican}</span>`
+    $('#pilares').innerHTML = d.pilares.map(filaPilar).join('')
+    for (const b of $('#pilares').querySelectorAll('.pilar-bloque')) {
+      const p = d.pilares[Number(b.dataset.i)]
+      b.onclick = (e) => { if (e.target.closest('.mas')) return detallePilar(p); tocarPilar(p, b) }
+    }
+    $('#linea-noche').textContent = `Alistarse ${d.horas.alistarse} · dejo celu hasta ${d.horas.dejarCelu} · dormido ${d.horas.dormido}`
     const s = d.tarjetas.sueno
     const yaDejo = s && s.estaNoche
-    $('#dejo-celu').hidden = !(d.deAlistarse && !yaDejo && d.ciclo && !d.ciclo.noEmpezado)
+    const boton = $('#dejo-celu')
+    boton.hidden = !(d.deAlistarse && !yaDejo)
+    if (!boton.hidden) {
+      const [hh, mm] = d.horas.dejarCelu.split(':').map(Number)
+      const ahora = new Date()
+      const falta = hh * 60 + mm - (ahora.getHours() * 60 + ahora.getMinutes())
+      boton.textContent = `Dejo celu${falta > 0 ? ` · faltan ${duracion(falta)}` : falta < 0 ? ` · ${duracion(-falta)} tarde` : ''}`
+    }
+    const dej = $('#celu-dejado')
+    dej.hidden = !yaDejo
+    if (yaDejo) {
+      dej.innerHTML = `Celu dejado a las ${esc(s.estaNoche.hora)}${s.estaNoche.cumplido ? ' · a tiempo' : ` · ${s.estaNoche.retrasoMinutos} min tarde`}. <button class="enlace">Deshacer</button>`
+      dej.querySelector('button').onclick = seguro(async () => { await api('/api/sueno/deshacer', { noche: s.noche }); avisar('«Dejo celu» deshecho'); await recargar() })
+    }
   }
 
-  const idUrl = (id) => encodeURIComponent(id)
-  async function recargar() { d = await api('/api/dia/hoy'); if (d.modoSueno) { location.href = '/sueno/modo'; return } pintar() }
-
-  /** Tocar un pilar: según su tipo, lleva a su pantalla o lo marca acá. Los ya resueltos abren el menú (deshacer, extra). */
-  const tocarPilar = seguro(async (p, el) => {
-    const t = p.accion.tipo
+  /** Tocar un pilar (tocarPilar de la vieja). */
+  const tocarPilar = (p, el) => {
     const c = p.compromiso
-    if (p.estado === 'descanso') return mensaje('Hoy es de descanso para este pilar.')
-    if (c && p.estado !== 'pendiente') return menuPilar(p)
-    if (t === 'entrenamiento') { location.href = '/entreno'; return }
-    if (t === 'revision_diaria') { location.href = '/ciclo/revision'; return }
-    if (t === 'revision_semanal') { location.href = '/ciclo/revision?tipo=semanal'; return }
-    if (t === 'acostarse') return dejoCelu()
-    if (t === 'limite_juego') { location.href = '/juego'; return }
-    if (t === 'comida_plan') { location.href = '/comida'; return }
-    if (!c) return mensaje('Este pilar todavía no está programado hoy.')
-    if (p.accion.minutosMinimos || p.accion.pregunta) return menuPilar(p)
-    const r = await api(`/api/dia/compromisos/${idUrl(c.id)}/completar`, {})
-    evento('completar', el)
-    mensaje(r.xp ? `+${r.xp} XP` : r.motivoSinXp || 'Hecho')
-    await recargar()
-  })
+    const a = p.accion
+    if (p.estado === 'descanso' || !c) return
+    if ((p.estado === 'cumplido' || p.estado === 'tarde') && tieneExtra(a) && !c.extra) return marcarExtra(p, el)
+    if (p.estado !== 'pendiente') return detallePilar(p)
+    if (a.tipo === 'entrenamiento') { location.href = '/entreno'; return }
+    if (a.tipo === 'comida_plan') { location.href = '/comida'; return }
+    if (a.tipo === 'acostarse') {
+      if (p.ventanaCerrada) return avisar(`Pasaron las ${d.horas.limiteCelu}: la noche queda sin cumplir.`, { tipo: 'bajo' })
+      return dejoCelu()
+    }
+    return marcarPilar(p, el)
+  }
 
-  /** Menú de un pilar o compromiso: marcar con minutos/respuesta, empezar, omitir, deshacer, extra. */
-  function menuPilar(p) {
+  function flash(el, xp) {
+    if (!el) return
+    el.classList.add('marcado')
+    if (xp > 0) { const f = document.createElement('span'); f.className = 'flash'; f.textContent = `+${xp} XP`; el.appendChild(f) }
+    SEK.evento('completar', { elemento: el })
+  }
+
+  async function marcarPilar(p, el) {
+    const c = p.compromiso
+    try {
+      const minutos = p.accion.tipo === 'entrenamiento' ? p.accion.duracionMinutos || p.accion.minutosMinimos : undefined
+      const r = await api(`/api/dia/compromisos/${idUrl(c.id)}/completar`, minutos ? { minutos } : {})
+      flash(el, r.xp)
+      avisar(r.xp > 0 ? `${p.accion.nombre}: +${r.xp} XP` : `${p.accion.nombre}: ${r.motivoSinXp || 'hecho'}`, {
+        tipo: r.xp > 0 ? 'ok' : 'bajo',
+        accion: { texto: 'Deshacer', fn: async () => { await api(`/api/dia/compromisos/${idUrl(c.id)}/deshacer`, {}); await recargar() } },
+      })
+      setTimeout(() => recargar().catch(error), 450)
+    } catch (e) { error(e) }
+  }
+
+  async function marcarExtra(p, el) {
+    const c = p.compromiso
+    try {
+      const r = await api(`/api/dia/compromisos/${idUrl(c.id)}/extra`, {})
+      flash(el, r.xp)
+      if (el) el.classList.add('destello-extra')
+      avisar(r.xp > 0 ? `${p.accion.nombre}: ${p.accion.minutosExtra} min · extra +${r.xp} XP` : `${p.accion.nombre}: extra (${r.motivoSinXp || 'sin XP'})`, {
+        tipo: r.xp > 0 ? 'ok' : 'bajo',
+        accion: { texto: 'Deshacer', fn: async () => { await api(`/api/dia/compromisos/${idUrl(c.id)}/deshacer-extra`, {}); await recargar() } },
+      })
+      setTimeout(() => recargar().catch(error), 1600)
+    } catch (e) { error(e) }
+  }
+
+  /** «…» de un pilar: marcar con minutos o respuesta, empezar, no lo hago hoy, deshacer. */
+  function detallePilar(p) {
     const c = p.compromiso
     const a = p.accion
     if (!c) return
-    const pendiente = c.estado === 'pendiente' || c.estado === 'iniciado'
-    const campos = pendiente ? `
-      ${a.condicion ? `<p class="chico">${esc(a.condicion)}</p>` : ''}
-      ${a.minutosMinimos ? `<label>Minutos (mínimo ${a.minutosMinimos})<input type="number" name="minutos" min="0" max="600" inputmode="numeric" value="${a.minutosMinimos}"></label>` : ''}
-      ${a.pregunta ? `<label>${esc(a.pregunta)}<textarea name="respuesta" rows="2" maxlength="1000"></textarea></label>` : ''}` : `<p class="chico">Estado: ${esc(detallePilar(p))}</p>`
-    const extra = [
-      pendiente && c.estado === 'pendiente' ? '<button class="mini" data-accion="iniciar">Empezar ahora</button>' : '',
-      pendiente ? '<button class="mini" data-accion="omitir">No lo hago hoy</button>' : '',
-      !pendiente && a.minutosExtra && !c.extra ? `<button class="mini" data-accion="extra">Extra (${a.minutosExtra} min)</button>` : '',
-      !pendiente && c.extra ? '<button class="mini" data-accion="deshacer-extra">Deshacer extra</button>' : '',
-      !pendiente ? '<button class="mini peligro" data-accion="deshacer">Deshacer</button>' : '',
-    ].join('')
-    hoja(a.nombre, campos, pendiente ? async (v) => {
-      const cuerpo = {}
-      if (v.minutos) cuerpo.minutos = Number(v.minutos)
-      if (v.respuesta) cuerpo.respuesta = v.respuesta
-      const r = await api(`/api/dia/compromisos/${idUrl(c.id)}/completar`, cuerpo)
-      SEK.evento('completar')
-      mensaje(r.xp ? `+${r.xp} XP` : r.motivoSinXp || 'Hecho')
-      await recargar()
-    } : null, { boton: 'Marcar hecho', extra: `<div class="fila">${extra}</div>`, alAccion: async (accion) => {
-      const r = await api(`/api/dia/compromisos/${idUrl(c.id)}/${accion}`, {})
-      if (accion === 'extra' && r.xp) mensaje(`Extra +${r.xp} XP`)
-      await recargar()
-    } })
+    const pendiente = p.estado === 'pendiente'
+    const html = `${a.condicion ? `<p class="chico texto-2">${esc(a.condicion)}</p>` : ''}
+      ${pendiente && a.minutosMinimos ? `<div class="campo"><label>Minutos (mínimo ${a.minutosMinimos})</label><input type="number" name="minutos" min="0" max="600" inputmode="numeric" value="${a.minutosMinimos}"></div>` : ''}
+      ${pendiente && a.pregunta ? `<div class="campo"><label>${esc(a.pregunta)}</label><textarea name="respuesta" rows="2" maxlength="1000"></textarea></div>` : ''}
+      <div class="col" style="gap: 8px;">
+        ${pendiente ? '<button class="boton primario ancho" data-a="completar">Marcar hecho</button>' : ''}
+        ${pendiente && c.estado === 'pendiente' ? '<button class="boton ancho" data-a="iniciar">Empezar ahora</button>' : ''}
+        ${pendiente ? '<button class="boton suave ancho" data-a="omitir">No lo hago hoy</button>' : ''}
+        ${!pendiente && c.extra ? '<button class="boton ancho" data-a="deshacer-extra">Deshacer extra</button>' : ''}
+        ${!pendiente ? '<button class="boton peligro ancho" data-a="deshacer">Deshacer</button>' : ''}
+      </div>`
+    const h = hoja(a.nombre, html)
+    for (const b of h.el.querySelectorAll('[data-a]')) {
+      b.onclick = async () => {
+        try {
+          const cuerpo = {}
+          if (b.dataset.a === 'completar') {
+            const m = h.el.querySelector('[name=minutos]')
+            const r = h.el.querySelector('[name=respuesta]')
+            if (m && m.value) cuerpo.minutos = Number(m.value)
+            if (r && r.value) cuerpo.respuesta = r.value
+          }
+          const res = await api(`/api/dia/compromisos/${idUrl(c.id)}/${b.dataset.a}`, cuerpo)
+          h.cerrar()
+          if (b.dataset.a === 'completar') avisar(res.xp > 0 ? `${a.nombre}: +${res.xp} XP` : `${a.nombre}: ${res.motivoSinXp || 'hecho'}`, { tipo: res.xp > 0 ? 'ok' : 'bajo' })
+          await recargar()
+        } catch (e) { error(e) }
+      }
+    }
   }
 
-  const dejoCelu = seguro(async () => {
-    const r = await api('/api/dia/dejo-celu', {})
-    SEK.evento('dormir')
-    mensaje(r.cumplido ? `A tiempo${r.xp ? ` · +${r.xp} XP` : ''}` : 'Registrado, tarde')
-    location.href = '/sueno/modo'
-  })
+  const dejoCelu = async () => {
+    try {
+      const r = await api('/api/dia/dejo-celu', {})
+      SEK.evento('dormir')
+      avisar(r.cumplido ? `A tiempo${r.xp ? ` · +${r.xp} XP` : ''}` : 'Registrado, tarde', { tipo: r.cumplido ? 'ok' : 'bajo' })
+      location.href = '/sueno/modo'
+    } catch (e) { error(e) }
+  }
 
-  function tira() {
-    const o = d.tarjetas.organizacion
-    $('#tira-tareas').hidden = !o || !o.tareas.length
-    if (!o) return
-    $('#tareas').innerHTML = o.tareas.map((x, i) => `
-      <div class="tarea${x.tarea.estado === 'hecho' ? ' hecha' : ''}">
-        <span class="punto" style="background:${esc(x.frente.color || 'var(--texto-3)')}"></span>
-        <span class="crece"><span class="texto">${esc(x.tarea.texto)}</span><br><span class="chico apagado">${esc(x.frente.nombre)}</span></span>
-        <button class="mini" data-i="${i}" aria-label="Hecha: ${esc(x.tarea.texto)}">✓</button>
-      </div>`).join('')
-    for (const b of $('#tareas').querySelectorAll('button')) {
-      b.onclick = seguro(async () => {
-        const x = o.tareas[Number(b.dataset.i)]
-        await api(`/api/dia/organizacion/${idUrl(x.frente.id)}/${idUrl(x.tarea.id)}/hecha`, {})
-        evento('completar', b.closest('.tarea'))
-        await recargar()
+  // ---------- Comida: agua chica, fruta y Objetivo / + Comí ----------
+  function cantimplora(nivel) {
+    const lleno = Math.max(0, Math.min(1, nivel || 0))
+    const y = 134 - lleno * 100
+    return `<svg viewBox="0 0 100 150" width="20" height="30" class="agua-svg ${nivel >= 0.999 ? 'llena' : ''} ${nivel > 1.001 ? 'rebalsa' : ''}" role="img"><defs><clipPath id="agua-cuerpo"><path d="M33 34 Q10 62 13 126 Q14 136 25 136 H75 Q86 136 87 126 Q90 62 67 34 Z"></path></clipPath></defs><path class="agua-fondo" d="M33 34 Q10 62 13 126 Q14 136 25 136 H75 Q86 136 87 126 Q90 62 67 34 Z"></path><g clip-path="url(#agua-cuerpo)"><g class="agua-nivel" style="transform: translateY(${y}px);"><path class="agua-ola" d="M-100 4 Q-87 0 -75 4 T-50 4 T-25 4 T0 4 T25 4 T50 4 T75 4 T100 4 T125 4 T150 4 T175 4 T200 4 V140 H-100 Z"></path><path class="agua-ola dos" d="M-100 6 Q-90 2 -80 6 T-60 6 T-40 6 T-20 6 T0 6 T20 6 T40 6 T60 6 T80 6 T100 6 T120 6 T140 6 T160 6 T180 6 T200 6 V140 H-100 Z"></path></g></g><path class="agua-trazo fino" d="M17 70 Q50 76 83 70"></path><path class="agua-trazo fino" d="M14 104 Q50 110 86 104"></path><path class="agua-trazo cuerpo" d="M33 34 Q10 62 13 126 Q14 136 25 136 H75 Q86 136 87 126 Q90 62 67 34"></path><path class="agua-trazo" d="M38 34 V20 Q38 16 42 16 H58 Q62 16 62 20 V34"></path><rect class="agua-tapa" x="35" y="6" width="30" height="12" rx="4"></rect><path class="agua-trazo fino" d="M38 24 H62 M38 29 H62"></path><path class="agua-trazo cordel" d="M35 12 C 20 14, 12 30, 16 50 M65 12 C 80 14, 88 30, 84 50"></path></svg>`
+  }
+  const MORDISCOS = [{ x: 94, y: 88, r: 22 }, { x: 6, y: 96, r: 22 }, { x: 88, y: 58, r: 16 }, { x: 12, y: 62, r: 16 }, { x: 86, y: 124, r: 16 }]
+  function manzana(mordido) {
+    const trazos = '<path class="tema-manzana-trazo" d="M50 52 C50 40 52 30 57 22"></path><path class="tema-manzana-trazo fino" d="M55 32 C62 22 74 22 78 26 C72 34 62 36 55 32 Z"></path>'
+    if (mordido >= 0.999) return `<svg viewBox="0 0 100 150" width="20" height="30" class="tema-manzana centro" role="img">${trazos}<path class="tema-manzana-cuerpo" d="M36 54 C44 50 56 50 64 54 C58 66 56 78 56 92 C56 106 60 116 64 128 C56 134 44 134 36 128 C40 116 44 106 44 92 C44 78 42 66 36 54 Z"></path></svg>`
+    const n = mordido <= 0 ? 0 : Math.min(MORDISCOS.length, Math.max(1, Math.round(mordido / 0.3)))
+    return `<svg viewBox="0 0 100 150" width="20" height="30" class="tema-manzana" role="img">${trazos}<defs><mask id="manzana-m"><rect x="0" y="0" width="100" height="150" fill="#fff"></rect>${MORDISCOS.slice(0, n).map((m) => `<circle cx="${m.x}" cy="${m.y}" r="${m.r}" fill="#000"></circle>`).join('')}</mask></defs><path class="tema-manzana-cuerpo" d="M50 52 C38 42 14 46 13 76 C12 106 30 136 44 136 C47 136 48 134 50 134 C52 134 53 136 56 136 C70 136 88 106 87 76 C86 46 62 42 50 52 Z" mask="url(#manzana-m)"></path></svg>`
+  }
+  const BRILLO_FRUTA = { pendiente: 'pendiente', cumplido: 'hecho', superado: 'maximo' }
+
+  function comida() {
+    const c = d.tarjetas.comida
+    const el = $('#comida')
+    el.hidden = !c
+    if (!c) return
+    const t = c.totales
+    const o = c.objetivo
+    const estado = !o ? 'Configurá tu objetivo' : t.kcal === 0 ? 'Sin comidas aún' : `${Math.round(t.kcal).toLocaleString('es-AR')} / ${o.kcal.toLocaleString('es-AR')} kcal · ${Math.round(t.p)} g prot.`
+    const f = c.fruta
+    el.innerHTML = `<a class="co-tarjeta-link" href="/comida"><span class="co-kanji" aria-hidden="true">食</span><span class="co-tarjeta-texto"><b>Comida</b><span class="co-tarjeta-estado">${estado}</span></span></a>
+      ${c.agua ? `<button type="button" class="agua-boton agua-chica" data-agua aria-label="Agua: llevás ${litros(c.agua.ml)} de ${litros(c.agua.objetivo)}. Tocá para sumar">${cantimplora(c.agua.nivel)}<span class="agua-chica-ml mono">${litros(c.agua.ml)}</span></button>` : ''}
+      ${f && f.usar !== false ? `<button type="button" class="agua-boton agua-chica fruta-chica fruta-${esc(f.estado)}" data-fruta ${brillo(BRILLO_FRUTA[f.estado], 5)} aria-label="${esc(f.nombre)}: ${f.n} de ${f.objetivo2}. Tocá para sumar una; mantené apretado para deshacer">${manzana(f.mordido)}<span class="agua-chica-ml mono">${f.n}/${f.objetivo2}</span></button>` : ''}
+      ${o ? '<a class="boton primario co-comi" href="/comida?cargar=1">+ Comí</a>' : '<a class="boton co-comi" href="/comida/ajustes">Objetivo</a>'}`
+    const agua = el.querySelector('[data-agua]')
+    if (agua) agua.onclick = seguro(async () => {
+      const r = await api('/api/comida/agua', {})
+      const ml = r && r.toma ? r.toma.ml : null
+      agua.querySelector('.agua-chica-ml').textContent = ml ? `+${ml}` : '+'
+      agua.querySelector('.agua-chica-ml').classList.add('suma')
+      setTimeout(() => recargar().catch(error), 900)
+    })
+    const fruta = el.querySelector('[data-fruta]')
+    if (fruta) {
+      let largo = null
+      let fueLargo = false
+      fruta.onpointerdown = () => { fueLargo = false; largo = setTimeout(async () => { fueLargo = true; largo = null; if (f.n === 0) return; try { const r = await api('/api/comida/fruta/deshacer', {}); avisar(`${f.nombre}: ${r.dia ? r.dia.n : f.n - 1} de ${f.objetivo2} (deshecha la última)`); await recargar() } catch (e) { error(e) } }, 480) }
+      const soltar = () => { if (largo) { clearTimeout(largo); largo = null } }
+      fruta.onpointerup = soltar
+      fruta.onpointerleave = soltar
+      fruta.oncontextmenu = (e) => e.preventDefault()
+      fruta.onclick = seguro(async () => {
+        if (fueLargo) { fueLargo = false; return }
+        const r = await api('/api/comida/fruta', {})
+        fruta.querySelector('.agua-chica-ml').textContent = '+1'
+        fruta.querySelector('.agua-chica-ml').classList.add('suma')
+        if (r && r.recienSuperado) avisar(`${f.objetivo2} ${f.objetivo2 === 1 ? 'fruta' : 'frutas'} hoy: segundo objetivo. 果`, { tipo: 'ok' })
+        else if (r && r.recienCumplido) avisar(`${f.nombre}: primer objetivo cumplido`, { tipo: 'ok' })
+        setTimeout(() => recargar().catch(error), 1400)
       })
     }
   }
 
-  const tarjetaHtml = ({ ruta, kanji, titulo, valor, detalle, progreso, alerta }) => `
-    <a class="mini-tarjeta${alerta ? ' alerta' : ''}" href="${ruta}">
-      <span class="titulo"><span class="kanji" aria-hidden="true">${kanji}</span>${esc(titulo)}</span>
-      <span class="valor">${esc(valor)}</span>
-      ${detalle ? `<span class="detalle">${esc(detalle)}</span>` : ''}
-      ${progreso !== undefined ? `<span class="barra-progreso"><span style="width:${Math.max(0, Math.min(100, Math.round(progreso * 100)))}%"></span></span>` : ''}
-    </a>`
-
-  function tarjetas() {
-    const t = d.tarjetas
-    const l = []
-    if (t.entreno) {
-      const e = t.entreno
-      const series = e.series.map((s) => `${s.nombre} ${s.hoy}/${s.cuota}`).join(' · ')
-      l.push(tarjetaHtml({ ruta: e.enCurso ? `/entreno/sesion?id=${encodeURIComponent(e.enCurso.id)}` : '/entreno', kanji: '鍛', titulo: 'Entreno',
-        valor: e.enCurso ? 'En curso' : e.hecho ? 'Hecho' : e.rutina ? e.rutina.nombre : 'Sin rutina hoy', detalle: series }))
-    }
-    if (t.comida) {
-      const c = t.comida
-      const agua = c.agua && c.agua.objetivo ? `Agua ${(c.agua.ml / 1000).toFixed(1)}/${(c.agua.objetivo / 1000).toFixed(1)} L` : ''
-      const fruta = c.fruta && c.fruta.usar !== false && c.fruta.objetivo1 ? `${c.fruta.nombre || 'Fruta'} ${c.fruta.n}/${c.fruta.objetivo1}` : ''
-      l.push(tarjetaHtml({ ruta: '/comida', kanji: '食', titulo: 'Comida',
-        valor: c.objetivo ? `${Math.round(c.totales.kcal)} / ${c.objetivo.kcal} kcal` : `${c.cargados} cargadas`,
-        detalle: [agua, fruta].filter(Boolean).join(' · '), progreso: c.objetivo && c.objetivo.kcal ? c.totales.kcal / c.objetivo.kcal : undefined }))
-    }
-    if (t.juego) {
-      const j = t.juego
-      l.push(tarjetaHtml({ ruta: '/juego', kanji: '遊', titulo: 'Juego', valor: `${minutos(j.minutosHoy)} de ${minutos(j.limiteHoy)}`,
-        detalle: j.activa ? (j.pausada ? 'En pausa' : 'Jugando ahora') : j.estado === 'superado' ? 'Te pasaste del límite' : '', progreso: j.limiteHoy ? j.minutosHoy / j.limiteHoy : undefined, alerta: j.estado === 'superado' }))
-    }
-    if (t.sueno) {
-      const s = t.sueno
-      l.push(tarjetaHtml({ ruta: '/sueno', kanji: '眠', titulo: 'Sueño',
-        valor: s.anoche && s.anoche.minutos ? `Anoche ${minutos(s.anoche.minutos)}` : 'Anoche sin registro',
-        detalle: s.estaNoche ? `Celu dejado ${s.estaNoche.cumplido ? 'a tiempo' : `${s.estaNoche.retrasoMinutos} min tarde`}` : (s.anoche && s.anoche.veredicto ? s.anoche.veredicto.texto : `Dejo celu ${s.horaDejarCelu}`) }))
-    }
-    if (t.habitos && t.habitos.enForja.length) {
-      const h = t.habitos
-      l.push(tarjetaHtml({ ruta: '/habitos', kanji: '鍛', titulo: 'Forja',
-        valor: h.enForja.map((x) => `${x.kanji || ''} ${x.validos}/${x.necesarios}`).join(' · '),
-        detalle: h.enForja.filter((x) => !x.hechoHoy).length ? `Faltan hoy: ${h.enForja.filter((x) => !x.hechoHoy).map((x) => x.nombre).join(', ')}` : 'Todo hecho hoy' }))
-    }
-    if (d.nivel) l.push(tarjetaHtml({ ruta: '/xp', kanji: '段', titulo: 'Nivel', valor: `Nivel ${d.nivel.nivel}`, detalle: `${d.nivel.xpEnNivel} / ${d.nivel.xpParaSiguiente} XP`, progreso: d.nivel.progreso }))
-    $('#tarjetas').innerHTML = l.join('')
+  // ---------- Metas de la semana: hoy y los 6 días siguientes ----------
+  const LETRAS = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
+  function semanaMetas() {
+    const todas = metas ? [...(metas.pendientes || []), ...(metas.vencidas || []), ...(metas.cumplidas || []), ...(metas.noCumplidas || [])] : []
+    const dias = Array.from({ length: 7 }, (_, i) => sumarDias(d.hoy, i))
+    const porDia = new Map(dias.map((f) => [f, todas.filter((m) => m.fecha === f)]))
+    const deHoy = porDia.get(d.hoy)
+    const proxima = dias.slice(1).flatMap((f) => porDia.get(f)).find((m) => m.estado === 'pendiente')
+    $('#metas').innerHTML = `<div class="fila entre"><span class="seccion-titulo semana-titulo-simple"><span class="semana-kanji" aria-hidden="true">的</span>Metas${!deHoy.length && !proxima ? '<span class="semana-sin">sin metas esta semana</span>' : ''}</span><a class="enlace semana-mas" href="/ciclo/metas" aria-label="Sumar meta">+ meta</a></div>
+      <div class="semana-fila">${dias.map((f, i) => {
+        const ms = porDia.get(f)
+        const cumplidas = ms.filter((m) => m.estado === 'cumplida').length
+        return `<a class="semana-dia ${i === 0 ? 'hoy' : ''}" href="/calendario?dia=${f}" aria-label="${fechaLegible(f)}: ${ms.length ? `${ms.length} meta${ms.length > 1 ? 's' : ''}` : 'sin metas'}"><span class="semana-letra">${i === 0 ? 'hoy' : LETRAS[diaSemana(f)]}</span><span class="semana-num">${Number(f.slice(8))}</span><span class="semana-puntos">${ms.slice(0, 4).map((m, j) => `<span class="semana-punto ${j < cumplidas ? 'cumplida' : 'con-meta'}" style="--cerca: ${1 - i / 7};"></span>`).join('') || '<span class="semana-punto"></span>'}</span></a>`
+      }).join('')}</div>
+      ${deHoy.length ? `<div class="semana-hoy">${deHoy.map((m) => `<div class="fila chico" style="gap: 8px;"><span>${m.estado === 'cumplida' ? '✓' : '○'}</span><span class="crece">${esc(m.titulo)}</span></div>`).join('')}</div>` : ''}
+      ${proxima ? `<div class="muy-chico texto-3 semana-proxima">próxima: <b class="texto-2">${esc(proxima.titulo)}</b> · ${fechaLegible(proxima.fecha)}</div>` : ''}`
   }
 
-  function otros() {
-    $('#seccion-otros').hidden = !d.compromisos.length
-    const pend = d.compromisos.filter((c) => c.estado === 'pendiente' || c.estado === 'iniciado')
-    $('#cuenta-otros').textContent = `${pend.length} pendiente${pend.length === 1 ? '' : 's'}`
-    $('#otros').innerHTML = d.compromisos.map((c, i) => {
-      const estado = c.estado === 'completado' ? 'cumplido' : c.estado === 'no_registrado' ? 'omitido' : c.estado
-      return `<button class="pilar ${estado}" data-i="${i}"><span class="marca" aria-hidden="true">${ICONO_ESTADO[estado] || ''}</span>
-        <span class="crece"><span class="nombre">${esc(c.accion.nombre)}</span><br><span class="detalle">${c.horaPrevista ? esc(c.horaPrevista) : 'Sin hora'}</span></span>
-        ${c.xpPrevisto ? `<span class="xp">${c.xpPrevisto} XP</span>` : ''}</button>`
-    }).join('')
-    for (const b of $('#otros').querySelectorAll('.pilar')) {
-      b.onclick = () => { const c = d.compromisos[Number(b.dataset.i)]; menuPilar({ accion: c.accion, compromiso: c, estado: c.estado === 'completado' ? 'cumplido' : c.estado }) }
+  // ---------- Revisión diaria, 3·2·1 y Siguiente acción ----------
+  const revision = () => d.compromisos.find((c) => c.accion && c.accion.tipo === 'revision_diaria')
+  const revisionHecha = () => { const r = revision(); return !!(r && (r.estado === 'completado' || r.estado === 'cumplido')) }
+  function accesos() {
+    const hecha = revisionHecha()
+    const pasoElCierre = d.noche && Date.now() >= d.noche.instanteCierre
+    const u321 = usadoHoy('321')
+    const uSig = usadoHoy('siguiente')
+    const des = d.tarjetas.desafios
+    const r321 = (des && des.tresDosUno && des.tresDosUno.ruta) || '/desafios/321'
+    $('#accesos').innerHTML = `<a class="boton grande revision-baja ${hecha ? 'hecha' : 'rojizo'}" ${brillo(hecha ? 'hecho' : 'pendiente', 4)} href="/ciclo/revision">${hecha ? ICONO_OK : ICONO_REV}${hecha ? 'Revisión diaria hecha' : 'Revisión diaria'}<span class="chico" style="font-weight: 500; opacity: 0.8;">${hecha ? '· ver' : pasoElCierre ? `· sin hacer a las ${esc(d.noche.horaCierre)}` : `· hasta ${esc(d.noche ? d.noche.horaAviso : '')}`}</span></a>
+      <div class="rejilla-2">
+        <a class="boton grande acceso-medio ${u321 ? 'hecha' : 'rojizo'}" ${brillo(u321 ? 'hecho' : 'pendiente', 5)} href="${esc(r321)}">${u321 ? ICONO_OK : ICONO_321}3 · 2 · 1</a>
+        <a class="boton grande acceso-medio ${uSig ? 'hecha' : 'rojizo'}" ${brillo(uSig ? 'hecho' : 'pendiente', 6)} href="/desafios">${uSig ? ICONO_OK : ICONO_SIG}Siguiente acción</a>
+      </div>`
+  }
+
+  // ---------- Series rápidas ----------
+  function botonContador(r, i) {
+    const c = r.contador
+    const tope = Math.max(1, r.extraHoy)
+    const marca = (100 * r.cuotaHoy) / tope
+    const capa1 = (100 * Math.min(r.hoy, r.cuotaHoy)) / tope
+    const capa2 = (100 * Math.max(0, Math.min(r.hoy, r.extraHoy) - r.cuotaHoy)) / tope
+    const falta = r.extraHoy - r.hoy
+    const detalle = r.extraLogradoHoy ? `${r.hoy} · extra ✓` : r.metaLogradaHoy ? `${r.hoy} · faltan ${falta} al extra` : `${r.hoy} / ${r.cuotaHoy} hoy`
+    const est = r.extraLogradoHoy ? 'maximo' : r.metaLogradaHoy ? 'parcial' : 'pendiente'
+    return `<button type="button" class="contador-boton compacto ${r.metaLogradaHoy ? 'logrado' : ''} ${r.extraLogradoHoy ? 'extra' : ''}" data-i="${i}" ${brillo(est, 7 + i)} aria-label="Sumar ${c.cantidadPorToque} ${esc(c.nombre.toLowerCase())}. Hoy ${r.hoy}, cuota ${r.cuotaHoy}, extra ${r.extraHoy}">
+      <span class="fila" style="gap: 6px; align-items: baseline;"><span class="mas-n">+${c.cantidadPorToque}</span><span class="nombre">${esc(c.nombre)}</span></span>
+      <span class="detalle mono">${detalle}${r.toquesHoy > 0 ? ` · ${r.toquesHoy} serie${r.toquesHoy === 1 ? '' : 's'}` : ''}</span>
+      <span class="barrita dos-topes"><i style="width: ${capa1}%;"></i><i class="capa-extra" style="left: ${marca}%; width: ${capa2}%;"></i><b class="marca-cuota" style="left: ${marca}%;"></b></span>
+      ${r.toquesHoy > 0 ? '<span class="deshacer" role="button" aria-label="Deshacer último toque">↶</span>' : ''}</button>`
+  }
+
+  function seriesRapidas() {
+    const lista = series && series.series ? series.series : []
+    const el = $('#series')
+    el.hidden = !lista.length
+    if (!lista.length) return
+    const propuestas = lista.filter((r) => r.propuesta)
+    el.innerHTML = `<div class="fila entre"><span class="seccion-titulo">Series rápidas</span><a class="chico texto-3" href="/entreno/series">ajustar ›</a></div>
+      ${propuestas.map((r) => { const p = r.propuesta; return `<div class="propuesta-cuota" role="group" data-id="${esc(r.contador.id)}"><span><b>¿Subimos a ${p.a} ${esc(r.contador.nombre.toLowerCase())} por serie?</b> <span class="texto-3 chico" style="white-space: nowrap;">${p.de} → ${p.a} · cuota ${p.cuota} · extra ${p.extra}</span></span><span class="fila" style="gap: 6px;"><button class="boton chico primario" data-si>Sí</button><button class="boton chico suave" data-no>Todavía no</button></span></div>` }).join('')}
+      <div class="rejilla-2">${lista.map(botonContador).join('')}</div>`
+    for (const b of el.querySelectorAll('.contador-boton')) {
+      const r = lista[Number(b.dataset.i)]
+      b.onclick = async (e) => {
+        try {
+          if (e.target.closest('.deshacer')) {
+            const res = await api(`/api/series/${idUrl(r.contador.id)}/deshacer`, {})
+            series = res
+            const nuevo = res.series.find((x) => x.contador.id === r.contador.id)
+            avisar(`${r.contador.nombre}: ${nuevo ? nuevo.hoy : 0} hoy`)
+            return seriesRapidas()
+          }
+          const res = await api(`/api/series/${idUrl(r.contador.id)}/toque`, {})
+          series = res
+          SEK.evento('completar', { elemento: b })
+          const t = res.toque || {}
+          if (t.extraLogrado && t.xp > 0) avisar(`${r.contador.nombre}: Extra +${t.xp} XP`, { tipo: 'ok' })
+          else if (t.xp > 0) avisar(`${r.contador.nombre}: llegaste a la cuota. +${t.xp} XP`, { tipo: 'ok' })
+          seriesRapidas()
+        } catch (err) { error(err) }
+      }
     }
+    for (const p of el.querySelectorAll('.propuesta-cuota')) {
+      const id = p.dataset.id
+      const r = lista.find((x) => x.contador.id === id)
+      p.querySelector('[data-si]').onclick = seguro(async () => { series = await api(`/api/series/${idUrl(id)}/propuesta`, { acepta: true }); avisar(`${r.contador.nombre}: ${r.propuesta.a} por serie desde hoy · cuota ${r.propuesta.cuota}`, { tipo: 'ok' }); seriesRapidas() })
+      p.querySelector('[data-no]').onclick = seguro(async () => { series = await api(`/api/series/${idUrl(id)}/propuesta`, { acepta: false }); avisar('Te lo vuelvo a proponer en 3 días'); seriesRapidas() })
+    }
+  }
+
+  // ---------- Otros compromisos (no pilares, sin la revisión ni el límite de juego) ----------
+  const ICONO_ESTADO = { completado: '✓', cumplido: '✓', tarde: '!', no_registrado: '✕', omitido: '✕', iniciado: '…', pendiente: '○' }
+  function otros() {
+    const lista = d.compromisos.filter((c) => c.accion && !c.accion.pilar && !['limite_juego', 'acostarse', 'revision_diaria'].includes(c.accion.tipo))
+    const el = $('#otros')
+    el.hidden = !lista.length
+    if (!lista.length) return
+    const pend = lista.filter((c) => c.estado === 'pendiente' || c.estado === 'iniciado').length
+    el.innerHTML = `<div class="fila entre"><span class="seccion-titulo">Otros compromisos</span><span class="texto-3 chico">${pend} pendiente${pend === 1 ? '' : 's'}</span></div>
+      <div>${lista.map((c, i) => `<button type="button" class="fila-compromiso ${esc(c.estado)}" data-i="${i}"><span class="estado-ic">${ICONO_ESTADO[c.estado] || ''}</span><span class="crece">${esc(c.accion.nombre)}<span class="texto-3 chico">${c.horaPrevista ? ` · ${esc(c.horaPrevista)}` : ''}</span></span></button>`).join('')}</div>`
+    for (const b of el.querySelectorAll('[data-i]')) {
+      const c = lista[Number(b.dataset.i)]
+      b.onclick = () => detallePilar({ accion: c.accion, compromiso: c, estado: c.estado === 'completado' ? 'cumplido' : c.estado })
+    }
+  }
+
+  // ---------- Organización: lo que me toca hoy ----------
+  function organizacion() {
+    const o = d.tarjetas.organizacion
+    const el = $('#organizacion')
+    if (!o) { el.innerHTML = ''; return }
+    const L = o.limite || 3
+    const m = o.tareas || []
+    el.innerHTML = `<div class="fr fr-solo-tira"><section class="fr-hoy fr-hoy-chica"><div class="fr-hoy-cab"><span class="fr-kj fr-sombra" aria-hidden="true">陣</span><h2 class="fr-subr">Hoy me toca a mí</h2><span class="fr-etq">${m.length ? `${m.length} en total` : ''}</span><a class="fr-pill fr-ver" href="/organizacion">Organización ›</a></div>
+      <div class="fr-tira">${m.length ? m.slice(0, L).map((x, i) => `<div class="fr-chip-tarea" style="--c:${esc(x.frente.color || '')}"><div class="fr-txt"><div class="fr-de"><span>${esc(x.frente.kanji || '')}</span>${esc(x.frente.nombre)}</div><div class="fr-t">${esc(x.tarea.texto)}</div></div><button class="fr-btn-ok" data-i="${i}" aria-label="Marcar hecha: ${esc(x.tarea.texto)}">済</button></div>`).join('') + (m.length > L ? `<a class="fr-mas" href="/organizacion">+${m.length - L} más</a>` : '') : `<div class="fr-vacio">Nada te toca hoy${o.bandeja ? ` · ${o.bandeja} en la Bandeja` : ''}.</div>`}</div></section></div>`
+    for (const b of el.querySelectorAll('.fr-btn-ok')) {
+      const x = m[Number(b.dataset.i)]
+      b.onclick = seguro(async () => {
+        await api(`/api/dia/organizacion/${idUrl(x.frente.id)}/${idUrl(x.tarea.id)}/hecha`, {})
+        SEK.evento('completar', { elemento: b.closest('.fr-chip-tarea') })
+        setTimeout(() => recargar().catch(error), 650)
+      })
+    }
+  }
+
+  // ---------- Antes del Día 1 y sin ciclo ----------
+  function antes() {
+    const e = d.ciclo
+    const faltan = 1 - e.dia
+    $('#antes').innerHTML = `<div class="enorme">${faltan}<span class="grande texto-2" style="margin-left: 8px;">${faltan === 1 ? 'día' : 'días'}</span></div>
+      <p class="texto-2">El Día 1 es el ${fechaLegible(e.ciclo.inicio)}. Hasta entonces no se registra nada: ni pilares, ni XP, ni descanso.</p>
+      <p class="texto-3 chico">Usá estos días para dejar todo configurado.</p>
+      <div class="lista-nav compacta"><a href="/ciclo"><span>Fecha de inicio<span class="desc">${fechaLegible(e.ciclo.inicio)}</span></span><span class="flecha">›</span></a><a href="/mas/ajustes"><span>Ajustes<span class="desc">horarios, límite de juego, avisos</span></span><span class="flecha">›</span></a></div>`
   }
 
   function pintar() {
-    cabeza()
-    $('#empezar').hidden = !d.sinCiclo
-    if (d.sinCiclo && !$('#form-empezar').inicio.value) $('#form-empezar').inicio.value = d.hoy
-    $('#seccion-pilares').hidden = d.sinCiclo
-    lineas()
+    botonesArriba()
+    const sinCiclo = d.sinCiclo
+    const noEmpezado = d.ciclo && d.ciclo.noEmpezado
+    $('#empezar').hidden = !sinCiclo
+    if (sinCiclo && !$('#form-empezar').inicio.value) $('#form-empezar').inicio.value = d.hoy
+    $('#antes').hidden = !noEmpezado
+    if (noEmpezado) antes()
+    $('#tablero').hidden = sinCiclo || noEmpezado
+    if (sinCiclo || noEmpezado) return
+    avisos()
     pilares()
-    tira()
-    tarjetas()
+    comida()
+    semanaMetas()
+    accesos()
+    seriesRapidas()
     otros()
+    organizacion()
+  }
+
+  async function recargar() {
+    const [hoy, s, m] = await Promise.all([api('/api/dia/hoy'), api('/api/series').catch(() => null), api('/api/ciclo/metas').catch(() => null)])
+    d = hoy
+    series = s
+    metas = m
+    if (d.modoSueno) { location.href = '/sueno/modo'; return }
+    pintar()
+    lineaDelDia().catch(() => {})
   }
 
   $('#form-empezar').onsubmit = seguro(async (e) => {
@@ -229,14 +487,14 @@
     const f = e.target
     await api('/api/dia/empezar-ciclo', { inicio: f.inicio.value, duracionDias: Number(f.duracionDias.value), diaCero: f.diaCero.checked })
     SEK.evento('logro')
-    mensaje('¡Arrancó tu ciclo!')
-    await recargar()
+    avisar('¡Arrancó tu ciclo!', { tipo: 'ok' })
+    location.reload()
   })
   $('#dejo-celu').onclick = dejoCelu
 
   // El Tajo y la frase del día (desafios): la app avisa cuando se oculta; al volver, dia decide si toca.
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') { try { navigator.sendBeacon('/api/dia/vista') } catch (e) { /* nada */ } }
+    if (document.visibilityState === 'hidden') api('/api/dia/vista', {}).catch(() => {})
     else recargar().then(llegada).catch(() => {})
   })
   async function llegada() {
@@ -246,6 +504,13 @@
     SEK.desafios.llegada({ pilarPendiente, pasoDejoCelu: d.pasoDejoCelu, modoSueno: d.modoSueno, tajo: tajo.mostrar, pendientes: tajo.pendientes })
   }
 
-  barra('hoy')
-  seguro(async () => { await recargar(); await llegada() })()
+  ;(async () => {
+    try {
+      await recargar()
+      if (d && !d.sinCiclo && d.ciclo && !d.ciclo.noEmpezado) {
+        try { if (!sessionStorage.getItem(`bienvenida:${d.hoy}`)) { sessionStorage.setItem(`bienvenida:${d.hoy}`, '1'); avisar(`Día ${d.ciclo.dia}: ${fechaLegible(d.hoy)}. ¡Vamos!`, { tipo: 'ok' }) } } catch (e) { /* sin almacenamiento */ }
+      }
+      await llegada()
+    } catch (e) { error(e) }
+  })()
 })()

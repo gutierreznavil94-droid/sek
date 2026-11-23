@@ -43,6 +43,17 @@
     return pedir(camino, init)
   }
 
+  // sendBeacon('/api/...') (avisos al ocultarse): también local.
+  if (navigator.sendBeacon) {
+    var beaconReal = navigator.sendBeacon.bind(navigator)
+    navigator.sendBeacon = function (url, datos) {
+      var camino = local(url)
+      if (!camino) return beaconReal(url, datos)
+      pedir(camino, { method: 'POST', body: typeof datos === 'string' ? datos : undefined }).catch(function () {})
+      return true
+    }
+  }
+
   // Enlaces a otra pantalla: los abre la madre (más rápido que cargar la página madre adentro).
   document.addEventListener('click', function (e) {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) return

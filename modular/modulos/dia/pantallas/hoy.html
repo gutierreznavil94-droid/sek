@@ -5,57 +5,59 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SEK · Hoy</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
-  <link rel="stylesheet" href="/m/dia/estilo.css">
+  <!-- Igual que la v0.88.27: su estilo, el del tema Shinobi y el de la tira de Organización -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
+  <link rel="stylesheet" href="/m/organizacion/estilo.css">
+  <link rel="stylesheet" href="/m/dia/hoy.css">
 </head>
 <body>
-  <main>
-    <header class="cabeza-hoy">
-      <div>
-        <h1><span class="kanji" aria-hidden="true">今</span> Hoy</h1>
-        <div class="dia" id="dia-ciclo"></div>
-      </div>
-      <div class="botones-arriba" id="botones-arriba"></div>
-    </header>
-
-    <!-- Cuenta nueva: todavía no hay ciclo -->
+  <main class="contenido">
+    <!-- Sin ciclo todavía: elegir el Día 1 -->
     <section class="tarjeta" id="empezar" hidden>
       <h2>Empezar mi ciclo</h2>
-      <p class="chico">Tu ciclo es de 90 días en 3 fases de 30. Los pilares empiezan a contar desde el Día 1. Todo se puede cambiar después en Ciclo.</p>
-      <form id="form-empezar" class="tarjeta" style="padding:0;border:0;background:none">
-        <label>Día 1<input type="date" name="inicio" required></label>
-        <label>Días del ciclo<input type="number" name="duracionDias" min="7" max="3650" value="90" required></label>
-        <label class="interruptor"><input type="checkbox" name="diaCero"> Hacer un Día 0 de calentamiento (el día antes, sin restar XP)</label>
-        <button class="principal" type="submit">Empezar mi ciclo</button>
+      <p class="chico texto-2">Tu ciclo es de 90 días en 3 fases de 30. Los pilares empiezan a contar desde el Día 1. Todo se puede cambiar después en Ciclo.</p>
+      <form id="form-empezar" class="col" style="gap: 10px;">
+        <div class="campo"><label>Día 1</label><input type="date" name="inicio" required></div>
+        <div class="campo"><label>Días del ciclo</label><input type="number" name="duracionDias" min="7" max="3650" value="90" required></div>
+        <label class="fila chico"><input type="checkbox" name="diaCero"> Hacer un Día 0 de calentamiento (el día antes, sin restar XP)</label>
+        <button class="boton primario ancho grande" type="submit">Empezar mi ciclo</button>
       </form>
     </section>
 
-    <div class="lineas" id="lineas"></div>
+    <!-- Ciclo que todavía no empieza: cuántos días faltan -->
+    <section class="col" id="antes" hidden style="gap: 6px; padding: 8px 0;"></section>
 
-    <section class="col" aria-label="Pilares de hoy" id="seccion-pilares">
-      <div class="fila entre">
-        <span class="seccion-titulo">Pilares de hoy</span>
-        <span class="contador" id="cuenta-pilares"></span>
-      </div>
-      <div class="lineas" id="pilares"></div>
-      <p class="chico apagado" id="horas-noche" style="text-align:center"></p>
-      <button class="celu" id="dejo-celu" hidden>Dejo celu</button>
-    </section>
+    <div id="tablero" hidden>
+      <div class="avisos" id="avisos" role="alert" hidden></div>
+      <p class="ajuste-ayer" id="ajuste-ayer" hidden></p>
 
-    <section class="tarjeta tira-tareas" id="tira-tareas" hidden aria-label="Hoy me toca a mí">
-      <div class="fila entre"><h3><span class="kanji" aria-hidden="true">陣</span> Hoy me toca a mí</h3><a class="chico suave" href="/organizacion">Tareas ›</a></div>
-      <div id="tareas"></div>
-    </section>
+      <section class="col pilares-hoy" style="gap: 6px;" aria-label="Pilares de hoy">
+        <div class="fila entre">
+          <span class="seccion-titulo">Pilares de hoy <span class="seccion-nota">(tocá para registrar o iniciar)</span></span>
+          <span class="mono chico" style="font-weight: 700;" id="cuenta-pilares"></span>
+        </div>
+        <div class="pilares-bloques" id="pilares"></div>
+        <p class="linea-horario muy-chico texto-3 centro" id="linea-noche"></p>
+        <button class="boton celu ancho grande" id="dejo-celu" hidden>Dejo celu</button>
+        <p class="muy-chico texto-3 centro" id="celu-dejado" style="margin: 0;" hidden></p>
+      </section>
 
-    <div class="tarjetas" id="tarjetas"></div>
+      <section class="co-tarjeta" aria-label="Comida" id="comida" hidden></section>
+      <section class="semana-metas simple" aria-label="Metas de la semana" id="metas"></section>
 
-    <section class="col" id="seccion-otros" hidden>
-      <div class="fila entre"><span class="seccion-titulo">Otros compromisos</span><span class="chico" id="cuenta-otros"></span></div>
-      <div class="lineas" id="otros"></div>
-    </section>
+      <div class="col accesos" style="gap: 8px;" id="accesos"></div>
+
+      <section class="col" style="gap: 8px;" aria-label="Series rápidas" id="series" hidden></section>
+
+      <section class="col" style="gap: 6px;" id="otros" hidden></section>
+
+      <div id="organizacion"></div>
+    </div>
   </main>
   <script src="/comun/marco.js"></script>
-  <script src="/m/dia/ayuda.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88.js"></script>
   <!-- desafios: frase «Dudar es fracasar» y el Tajo (si el módulo todavía no está, no pasa nada) -->
   <script src="/m/desafios/capa.js" onerror="this.remove()"></script>
   <script src="/m/dia/hoy.js"></script>

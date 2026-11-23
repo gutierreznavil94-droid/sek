@@ -152,3 +152,9 @@ Los módulos 1, 2 y 3 se pueden hacer a la vez. Después 4 y 5 en orden. Del 6 a
 **Qué hace:** el APK con Capacitor abre el servidor en vez de llevar la app adentro. Lo nativo sigue en Java: alarmas, widgets, notificaciones, Tajo encima, «Apps que te atrapan» y «Mis juegos del celu», buscar actualización.
 **Del código viejo:** `android/`, `src/nativo/sek.ts`, `src/ui/PuenteAndroid.tsx`, `src/reminders/`, `src/services/alarmas.ts`, `widgets.ts`, `juegoCelu.ts`, `actualizacion.ts`; páginas `AlarmasTelefono`, `AppsQueAtrapan`, `JuegosCelu`, `Actualizar`.
 **Necesita antes:** el servidor de prueba (REGLAS §7) para que el APK tenga a dónde conectarse.
+
+## Regla de las animaciones (Navil, 23 nov 2026)
+- Una animación que usa **una sola pantalla** vive en el módulo de esa pantalla: la escena del té y el Tajo en **juego**, el samurái frente a la cama en **sueno**, el guerrero bajo la lluvia en **progreso**.
+- Solo lo que se repite en toda la app (la lluvia, las transiciones, la cabecera de papel y la barra de abajo) va a **comun/** o a **temas**.
+- Se mantienen los 14 módulos: no se rearman por pestaña.
+
