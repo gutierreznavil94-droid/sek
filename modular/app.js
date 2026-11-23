@@ -27,6 +27,7 @@ const habitosVentanilla = require('./modulos/habitos/ventanilla')
 // Datos iniciales al crear una cuenta
 sesion.alCrearCuenta.push((id) => habitosVentanilla.sembrar(id))
 const comida = require('./modulos/comida/rutas')
+const temas = require('./modulos/temas/rutas')
 
 function crearApp(opciones = {}) {
   const app = Fastify({ logger: opciones.logger ?? { level: 'info' } })
@@ -49,6 +50,7 @@ function crearApp(opciones = {}) {
   app.register(sueno)
   app.register(habitos)
   app.register(comida)
+  app.register(temas)
 
   return app
 }

@@ -1,0 +1,96 @@
+{
+  "celda": [
+    48,
+    35
+  ],
+  "columnas": 16,
+  "filas": 57,
+  "clips": {
+    "caminar": {
+      "desde": 0,
+      "n": 48,
+      "fps": 33.6
+    },
+    "frenar": {
+      "desde": 48,
+      "n": 55,
+      "fps": 33.6
+    },
+    "quieto": {
+      "desde": 103,
+      "n": 105,
+      "fps": 12
+    },
+    "saltar": {
+      "desde": 208,
+      "n": 91,
+      "fps": 24.0,
+      "aire": [
+        0.308,
+        0.451
+      ]
+    },
+    "caerRodar": {
+      "desde": 299,
+      "n": 97,
+      "fps": 24.0,
+      "aire": [
+        0.124,
+        0.237
+      ]
+    },
+    "correr": {
+      "desde": 396,
+      "n": 48,
+      "fps": 24.0
+    },
+    "sentado": {
+      "desde": 444,
+      "n": 49,
+      "fps": 12.0,
+      "unaVez": true,
+      "bajar": 11
+    },
+    "trepa": {
+      "desde": 493,
+      "n": 66,
+      "fps": 24.0,
+      "aire": [
+        0.091,
+        0.697
+      ]
+    },
+    "voltereta": {
+      "desde": 559,
+      "n": 100,
+      "fps": 24.0,
+      "aire": [
+        0.18,
+        0.52
+      ]
+    },
+    "saltoGiro": {
+      "desde": 659,
+      "n": 98,
+      "fps": 24.0,
+      "aire": [
+        0.245,
+        0.571
+      ]
+    },
+    "estirarse": {
+      "desde": 757,
+      "n": 56,
+      "fps": 24.0,
+      "unaVez": true
+    },
+    "alerta": {
+      "desde": 813,
+      "n": 96,
+      "fps": 24.0,
+      "unaVez": true
+    }
+  },
+  "pasoCuadro": 0.3348,
+  "frenoAvance": 5.8
+}

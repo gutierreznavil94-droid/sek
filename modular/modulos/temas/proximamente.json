@@ -1,0 +1,7 @@
+{
+  "comentario": "Tarjetas apagadas que se muestran al lado de los temas listos. Cuando un tema esté terminado, se agrega su carpeta y se quita de esta lista.",
+  "temas": [
+    { "id": "pronto-1", "nombre": "Próximamente", "pista": "Otro personaje, otros fondos" },
+    { "id": "pronto-2", "nombre": "Próximamente", "pista": "Más temas en camino" }
+  ]
+}

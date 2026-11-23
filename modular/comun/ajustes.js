@@ -13,6 +13,8 @@ const AJUSTES_INICIALES = {
   nombreApp: 'SEK',
   nombrePersona: '',
   tema: 'shinobi',
+  // temas: lluvia de fondo de las pantallas ('apagada' | 'llovizna' | 'lluvia' | 'tormenta')
+  lluvia: 'lluvia',
   diaInicioSemana: 1,
   // cuentas (pantalla Más → Nombres): los nombres de las fases del ciclo
   nombresFases: ['Disciplina', 'Constancia', 'Mi yo ideal'],
