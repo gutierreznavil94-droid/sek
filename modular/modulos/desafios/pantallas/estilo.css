@@ -1,23 +1,10 @@
-/* Desafíos: lo propio de sus pantallas (Más → Desafíos y 3·2·1). Usa los colores generales. */
+/* Desafíos (Más → Desafíos): los tres botones grandes y la lista de hoy. Lo demás sale de comun/v88.css. */
 .dz-grandes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.dz-grandes button { flex-direction: column; min-height: 88px; gap: 2px; }
-.dz-grandes .kanji { font-size: 1.8rem; line-height: 1; }
-.dz-rojo { border-color: var(--acento); color: var(--peligro); }
+.dz-grandes .boton { flex-direction: column; min-height: 88px; gap: 4px; }
+.dz-grandes .kanji { font-family: 'Pincel', 'Yuji Syuku', serif; font-size: 1.8rem; line-height: 1; }
+.dz-rojo { border-color: var(--acento); color: #ff8c96; }
 .dz-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.dz-lista li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--borde); }
+.dz-lista li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--borde); font-size: 0.9rem; }
 .dz-lista li:last-child { border-bottom: 0; }
-.dz-casilla { flex-direction: row; align-items: center; gap: 10px; color: var(--texto); }
-.dz-casilla input { width: 22px; min-height: 22px; height: 22px; accent-color: var(--acento); flex: none; }
-.dz-dos > label { flex: 1 1 140px; min-width: 0; }
-#form-config h3 { margin-top: 6px; font-family: var(--pincel); }
-
-/* 3·2·1 */
-.dz-321 { min-height: 70vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; }
-.dz-numero { font-family: var(--pincel); font-size: clamp(7rem, 45vw, 14rem); line-height: 1; color: var(--acento); text-shadow: 0 0 24px color-mix(in srgb, var(--acento) 50%, transparent); animation: dz-late .9s ease-out; }
-.dz-ahora { font-family: var(--brocha); font-size: clamp(2.4rem, 12vw, 3.6rem); color: var(--texto); }
-.dz-321 button { width: min(100%, 22rem); }
-.dz-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.dz-chips button { min-height: 36px; padding: 6px 12px; font-size: .9rem; }
-@keyframes dz-late { from { transform: scale(1.6); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .dz-numero { animation: none; } }
-@media (max-width: 380px) { .dz-grandes button { font-size: .9rem; padding: 8px; } }
+#form-config input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--acento); flex: none; }
+@media (max-width: 380px) { .dz-grandes .boton { font-size: .9rem; padding: 8px; } }

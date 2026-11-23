@@ -5,38 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SEK · Mi horario</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
-  <link rel="stylesheet" href="/m/dia/estilo.css">
+  <!-- Igual que la v0.88.27: su estilo y el del tema Shinobi -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
 </head>
 <body>
-  <main>
-    <div class="fila entre">
-      <h1><span class="kanji" aria-hidden="true">時</span> Mi horario</h1>
-      <a class="boton mini" href="/calendario">‹ Calendario</a>
-    </div>
-    <p class="chico">Tus bloques fijos de la semana (cursada, trabajo…). La app los usa para saber dónde estás: la línea de Hoy y los huecos libres. El sueño sale de Sueño y el entreno de tu pilar de entrenamiento.</p>
-
-    <section class="tarjeta">
-      <div class="fila entre"><h3>Horarios guardados</h3><button class="mini" id="nuevo-horario">+ Otro horario</button></div>
-      <div class="pestanas" id="pestanas"></div>
-      <div class="fila"><button class="mini" id="renombrar">Renombrar</button><button class="mini peligro" id="borrar-horario">Borrar este horario</button></div>
-    </section>
-
-    <section class="tarjeta">
-      <div class="fila entre"><h3>Sumar un bloque</h3></div>
-      <div class="fila" id="plantillas"></div>
-    </section>
-
-    <section class="tarjeta" id="hoy-libre" hidden>
-      <h3>Hoy</h3>
-      <p class="chico" id="momento"></p>
-      <p class="chico apagado" id="huecos"></p>
-    </section>
-
-    <div class="semana-horario" id="semana"></div>
+  <main class="contenido">
+    <a class="atras" href="/calendario">← Calendario</a>
+    <div class="fila entre"><h1>Mi horario</h1><button type="button" class="boton chico suave" id="horarios">…</button></div>
+    <p class="texto-2 chico">Cargá tus bloques fijos y la app ya sabe dónde estás: avisos callados en los obligatorios, huecos libres para lo tuyo, entreno a su hora.</p>
+    <div class="col" id="caja" style="gap: 12px;"><p class="vacio">Cargando…</p></div>
   </main>
   <script src="/comun/marco.js"></script>
-  <script src="/m/dia/ayuda.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
   <script src="/m/dia/horario.js"></script>
 </body>
 </html>

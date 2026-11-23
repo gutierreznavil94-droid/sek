@@ -5,65 +5,72 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SEK · Desafíos</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
+  <!-- Con el estilo de la v0.88.27 y el tema Shinobi -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
   <link rel="stylesheet" href="/m/desafios/estilo.css">
 </head>
 <body>
-  <main>
-    <h1>進 Desafíos</h1>
-    <p class="chico">Cuando aparece la duda no se negocia: se avanza igual, o se cae y se vuelve a empezar.</p>
+  <main class="contenido">
+    <a class="atras" href="/mas">← Más</a>
+    <h1>Desafíos</h1>
+    <p class="texto-2 chico">Cuando aparece la duda no se negocia: se avanza igual, o se cae y se vuelve a empezar.</p>
 
     <section class="dz-grandes">
-      <button class="principal" id="ir-tension"><span class="kanji" id="kanji-tension">進</span>Tensión</button>
-      <button id="ir-321"><span class="kanji">始</span>3 · 2 · 1</button>
-      <button class="dz-rojo" id="ir-no-cumpli"><span class="kanji">墓</span>No cumplí</button>
+      <button type="button" class="boton primario" id="ir-tension"><span class="kanji" id="kanji-tension">進</span>Tensión</button>
+      <button type="button" class="boton" id="ir-321"><span class="kanji">始</span>3 · 2 · 1</button>
+      <button type="button" class="boton dz-rojo" id="ir-no-cumpli"><span class="kanji">墓</span>No cumplí</button>
     </section>
 
     <section class="tarjeta">
-      <div class="fila entre"><h3>Hoy</h3><span class="chico" id="hoy"></span></div>
-      <p class="chico" id="duelo-texto"></p>
+      <div class="tarjeta-cab"><h2>Hoy</h2><span class="chico texto-3" id="hoy"></span></div>
+      <p class="chico texto-2" id="duelo-texto"></p>
       <ul class="dz-lista" id="inicios"></ul>
     </section>
 
-    <form class="tarjeta" id="form-config">
-      <h3>Tensión</h3>
-      <label class="dz-casilla"><input type="checkbox" id="tension-activa"> Mostrar el botón Tensión en Hoy</label>
-      <div class="fila dz-dos">
-        <label>Kanji del final <input id="tension-kanji" maxlength="4" required></label>
-        <label>Frase del final <input id="tension-frase" maxlength="60"></label>
+    <form class="tarjeta col" id="form-config" style="gap: 10px;">
+      <span class="seccion-titulo">Tensión</span>
+      <label class="fila chico" style="gap: 8px;"><input type="checkbox" id="tension-activa"> Mostrar el botón Tensión en Hoy</label>
+      <div class="rejilla-2">
+        <div class="campo"><label for="tension-kanji">Kanji del final</label><input id="tension-kanji" maxlength="4" required></div>
+        <div class="campo"><label for="tension-frase">Frase del final</label><input id="tension-frase" maxlength="60"></div>
       </div>
 
-      <h3>Duelo de flexiones</h3>
-      <label>Serie rápida que se usa <select id="duelo-serie"></select></label>
-      <label>Si no hay serie rápida, cuántas <input id="duelo-sin-serie" type="number" min="1" max="200" required></label>
+      <span class="seccion-titulo">Duelo de flexiones</span>
+      <div class="campo"><label for="duelo-serie">Serie rápida que se usa</label><select id="duelo-serie"></select></div>
+      <div class="campo"><label for="duelo-sin-serie">Si no hay serie rápida, cuántas</label><input id="duelo-sin-serie" type="number" inputmode="numeric" min="1" max="200" required></div>
 
-      <h3>Al abrir la app</h3>
-      <label class="dz-casilla"><input type="checkbox" id="frase-dia"> «Dudar es fracasar» una vez por día</label>
-      <label class="dz-casilla"><input type="checkbox" id="tajo-activo"> El Tajo: si volvés después de un rato con un pilar pendiente</label>
-      <label>Horas sin abrir para el Tajo <input id="tajo-horas" type="number" min="1" max="24" required></label>
+      <span class="seccion-titulo">Al abrir la app</span>
+      <label class="fila chico" style="gap: 8px;"><input type="checkbox" id="frase-dia"> «Dudar es fracasar» una vez por día</label>
+      <label class="fila chico" style="gap: 8px;"><input type="checkbox" id="tajo-activo"> El Tajo: si volvés después de un rato con un pilar pendiente</label>
+      <div class="campo"><label for="tajo-horas">Horas sin abrir para el Tajo</label><input id="tajo-horas" type="number" inputmode="numeric" min="1" max="24" required></div>
 
-      <h3>3 · 2 · 1</h3>
-      <div class="fila dz-dos">
-        <label>XP por empezar <input id="inicio-xp" type="number" min="0" max="50" required></label>
-        <label>Tope por día <input id="inicio-max" type="number" min="0" max="20" required></label>
+      <span class="seccion-titulo">3 · 2 · 1</span>
+      <div class="rejilla-2">
+        <div class="campo"><label for="inicio-xp">XP por empezar</label><input id="inicio-xp" type="number" inputmode="numeric" min="0" max="50" required></div>
+        <div class="campo"><label for="inicio-max">Tope por día</label><input id="inicio-max" type="number" inputmode="numeric" min="0" max="20" required></div>
       </div>
-      <button class="principal" type="submit">Guardar</button>
+      <button class="boton primario ancho" type="submit">Guardar</button>
     </form>
 
     <details class="tarjeta">
       <summary>Probar (no guarda nada)</summary>
-      <div class="fila">
-        <button id="probar-frase">La frase</button>
-        <button id="probar-tajo">El Tajo</button>
-        <button id="probar-tension">Tensión</button>
-        <button id="probar-caida">La caída</button>
-        <button id="probar-duelo">El duelo</button>
+      <div class="fila" style="gap: 6px; flex-wrap: wrap; margin-top: 10px;">
+        <button type="button" class="boton chico" id="probar-frase">La frase</button>
+        <button type="button" class="boton chico" id="probar-tajo">El Tajo</button>
+        <button type="button" class="boton chico" id="probar-tension">Tensión</button>
+        <button type="button" class="boton chico" id="probar-caida">La caída</button>
+        <button type="button" class="boton chico" id="probar-duelo">El duelo</button>
       </div>
     </details>
 
-    <p class="chico">Guardados y apagados (hasta pulirlos): el rival, los ninjas, el duelo con personajes y la batalla.</p>
+    <p class="ayuda">Guardados y apagados (hasta pulirlos): el rival, los ninjas, el duelo con personajes y la batalla.</p>
   </main>
   <script src="/comun/marco.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
   <script src="/m/desafios/capa.js"></script>
   <script src="/m/desafios/desafios.js"></script>
 </body>

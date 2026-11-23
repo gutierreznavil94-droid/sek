@@ -361,7 +361,7 @@
     $('#accesos').innerHTML = `<a class="boton grande revision-baja ${hecha ? 'hecha' : 'rojizo'}" ${brillo(hecha ? 'hecho' : 'pendiente', 4)} href="/ciclo/revision">${hecha ? ICONO_OK : ICONO_REV}${hecha ? 'Revisión diaria hecha' : 'Revisión diaria'}<span class="chico" style="font-weight: 500; opacity: 0.8;">${hecha ? '· ver' : pasoElCierre ? `· sin hacer a las ${esc(d.noche.horaCierre)}` : `· hasta ${esc(d.noche ? d.noche.horaAviso : '')}`}</span></a>
       <div class="rejilla-2">
         <a class="boton grande acceso-medio ${u321 ? 'hecha' : 'rojizo'}" ${brillo(u321 ? 'hecho' : 'pendiente', 5)} href="${esc(r321)}">${u321 ? ICONO_OK : ICONO_321}3 · 2 · 1</a>
-        <a class="boton grande acceso-medio ${uSig ? 'hecha' : 'rojizo'}" ${brillo(uSig ? 'hecho' : 'pendiente', 6)} href="/desafios">${uSig ? ICONO_OK : ICONO_SIG}Siguiente acción</a>
+        <a class="boton grande acceso-medio ${uSig ? 'hecha' : 'rojizo'}" ${brillo(uSig ? 'hecho' : 'pendiente', 6)} href="/desafios/siguiente">${uSig ? ICONO_OK : ICONO_SIG}Siguiente acción</a>
       </div>`
   }
 

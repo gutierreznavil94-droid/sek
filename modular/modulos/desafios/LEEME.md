@@ -3,7 +3,7 @@
 **Qué hace:** los momentos de la duda. **Tensión** (la escena de la mano: si la das, «進 Avanzá igual.» y el duelo; si no, la caída), **No cumplí** (caída, −XP, nuevo round), el **duelo de flexiones** (la serie rápida de flexiones; después de «No cumplí», la serie más la mitad), el **Tajo** (volver después de horas con un pilar pendiente corta la pantalla), la frase **«Dudar es fracasar»** una vez por día y el **3·2·1** (contar y empezar, con un poco de XP).
 Guardados y apagados adentro (archivado v0.86, hasta pulirlos): ninjas de la distracción, rival escurridizo y batalla. Su lógica y su tabla están; no tienen pantalla.
 
-Pantallas: `/desafios` (Más → **Desafíos** 進: los tres botones, lo de hoy, ajustes y «Probar»), `/desafios/321`, `/desafios/tension` y `/desafios/no-cumpli` (hacen todo y vuelven a `?volver=`, Hoy por defecto).
+Pantallas: `/desafios` (Más → **Desafíos** 進: los tres botones, lo de hoy, ajustes y «Probar»), `/desafios/321` y `/desafios/siguiente` (Siguiente acción, desde Hoy; las dos iguales a la v0.88.27, con el hueco libre de Mi horario), `/desafios/tension` y `/desafios/no-cumpli` (hacen todo y vuelven a `?volver=`, Hoy por defecto).
 
 ## Lo que ofrece su ventanilla
 
@@ -53,7 +53,7 @@ Ajustes propios (en `config_desafios`, no en `comun/ajustes.js`): `tension` `{ a
 
 - `calculo.js`: cuentas puras (configuración, reps del duelo, Tajo, ninjas, batalla, robo). De `src/services/duelo.ts`, `ninjas.ts`, `batalla.ts`, `rival.ts`, `inicios.ts`.
 - `pantallas/capa.js` + `capa.css`: las escenas encima de cualquier pantalla. De `Tension.tsx`, `Tajo.tsx`, `FraseDuda.tsx`, `Caida.tsx`, `Duelo.tsx`, `EscenaTension.tsx`.
-- `pantallas/desafios.html/.js`, `321.html/.js`, `accion.html/.js`, `estilo.css`.
+- `pantallas/desafios.html/.js`, `321.html/.js`, `siguiente.html/.js`, `hueco.js` (lo que comparten 3·2·1 y Siguiente acción), `accion.html/.js`, `estilo.css` (solo Más → Desafíos). Estilo de `comun/v88.css`.
 
 ## Qué módulos usa
 

@@ -272,7 +272,7 @@ async function horarioSemana(usuarioId, fecha = null, tx = null) {
     hoy: fechaDe(ahora(), a.zonaHoraria),
     config: c,
     activo: activoDe(c),
-    entreno: accion ? { nombre: accion.nombre, activa: accion.activa, dias: accion.dias, hora: accion.hora || null, horaLimiteInicio: accion.horaLimiteInicio || null } : null,
+    entreno: accion ? { nombre: accion.nombre, activa: accion.activa, dias: accion.dias, hora: accion.hora || null, horaLimiteInicio: accion.horaLimiteInicio || null, duracion: accion.duracionMinutos || accion.minutosMinimos || 42 } : null,
     sueno: { horaAlistarse: a.horaAlistarse, horaDormido: a.horaDormido, horaFinSuenio: a.horaFinSuenio },
     plantillas: agenda.PLANTILLAS,
     dias,

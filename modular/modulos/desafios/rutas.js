@@ -13,6 +13,7 @@ module.exports = async function rutasDesafios(app) {
   // Pantallas
   app.get('/desafios', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'desafios', 'desafios.html'))
   app.get('/desafios/321', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'desafios', '321.html'))
+  app.get('/desafios/siguiente', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'desafios', 'siguiente.html'))
   // Tensión y «No cumplí» como pantalla propia (para un enlace desde Hoy): hacen todo y vuelven a ?volver=
   app.get('/desafios/tension', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'desafios', 'accion.html'))
   app.get('/desafios/no-cumpli', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'desafios', 'accion.html'))
@@ -53,6 +54,11 @@ module.exports = async function rutasDesafios(app) {
     ...conUsuario,
     schema: { body: { type: 'object', required: ['accion'], properties: { id: { type: 'integer' }, accion: { type: 'string' }, tareaAmbigua: { type: 'string' }, compromisoId: { type: 'string' } } } },
   }, async (pedido) => v.registrarInicio(u(pedido), pedido.body))
+  // Siguiente acción: guarda la acción concreta (sin empezar) y la pantalla sigue al 3·2·1 con su id.
+  app.post('/api/desafios/siguiente', {
+    ...conUsuario,
+    schema: { body: { type: 'object', required: ['accion'], properties: { accion: { type: 'string' }, tareaAmbigua: { type: 'string' } } } },
+  }, async (pedido) => ({ inicio: await v.guardarAccion(u(pedido), { accion: pedido.body.accion, tareaAmbigua: String(pedido.body.tareaAmbigua || '').slice(0, 200) }) }))
   app.put('/api/desafios/inicios/:id', {
     ...conUsuario,
     schema: { params: { type: 'object', properties: { id: { type: 'integer' } } }, body: { type: 'object', required: ['resultado'], properties: { resultado: { type: 'string' } } } },

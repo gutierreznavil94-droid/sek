@@ -5,48 +5,55 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SEK · XP</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
+  <!-- Con el estilo de la v0.88.27 y el tema Shinobi -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
   <link rel="stylesheet" href="/m/xp/estilo.css">
 </head>
 <body>
-  <main>
-    <h1>段 Nivel</h1>
+  <main class="contenido">
+    <a class="atras" href="/mas">← Más</a>
+    <h1>Nivel y XP</h1>
 
     <section class="tarjeta" aria-live="polite">
       <div class="fila entre">
-        <div class="nivel"><span class="chico">Nivel</span><span class="grande" id="nivel">1</span></div>
-        <span class="frase" id="etapa">Inicio</span>
+        <div class="xp-nivel"><span class="seccion-titulo">Nivel</span><span class="xp-numero mono" id="nivel">1</span></div>
+        <span class="xp-etapa" id="etapa">Inicio</span>
       </div>
-      <div class="barra-progreso" role="progressbar" aria-label="Progreso al siguiente nivel"><span id="barra" style="width:0%"></span></div>
-      <div class="fila entre chico"><span id="en-nivel"></span><span id="total"></span></div>
+      <div class="xp-barra" role="progressbar" aria-label="Progreso al siguiente nivel"><span id="barra" style="width: 0%;"></span></div>
+      <div class="fila entre chico texto-2"><span id="en-nivel"></span><span id="total"></span></div>
     </section>
 
     <section class="tarjeta">
-      <div class="balances">
-        <div><span class="chico">Hoy</span><b id="hoy-balance"></b></div>
-        <div><span class="chico">Ayer</span><b id="ayer-balance"></b></div>
+      <div class="xp-balances">
+        <div><span class="seccion-titulo">Hoy</span><b class="mono" id="hoy-balance"></b></div>
+        <div><span class="seccion-titulo">Ayer</span><b class="mono" id="ayer-balance"></b></div>
       </div>
     </section>
 
-    <section class="tarjeta">
-      <h3>Lo no cumplido resta</h3>
-      <p class="chico">Al cerrar el día, cada pilar o serie que tocaba y no hiciste resta una parte de la XP que da. Nunca bajás de 0.</p>
-      <div class="fila">
-        <label class="interruptor"><input type="checkbox" id="resta-activa"> <span>Activo</span></label>
-        <label class="porcentaje">Resta <select id="resta-porcentaje">
+    <section class="tarjeta col" style="gap: 10px;">
+      <div class="tarjeta-cab"><h2>Lo no cumplido resta</h2></div>
+      <p class="chico texto-2" style="margin: 0;">Al cerrar el día, cada pilar o serie que tocaba y no hiciste resta una parte de la XP que da. Nunca bajás de 0.</p>
+      <div class="rejilla-2" style="align-items: end;">
+        <label class="fila" style="gap: 8px; min-height: 44px;"><input type="checkbox" id="resta-activa" class="xp-casilla"> Activo</label>
+        <div class="campo"><label for="resta-porcentaje">Resta</label><select id="resta-porcentaje">
           <option value="25">25 %</option><option value="50">50 % (la mitad)</option><option value="75">75 %</option><option value="100">100 %</option>
-        </select></label>
+        </select></div>
       </div>
-      <p class="chico apagado" id="resta-desde"></p>
+      <p class="chico texto-3" style="margin: 0;" id="resta-desde"></p>
     </section>
 
     <section class="tarjeta">
-      <h3>Movimientos</h3>
+      <div class="tarjeta-cab"><h2>Movimientos</h2></div>
       <ul class="movimientos" id="movimientos"></ul>
-      <button id="mas" hidden>Ver más</button>
+      <button type="button" class="boton ancho" id="mas" hidden>Ver más</button>
     </section>
   </main>
   <script src="/comun/marco.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
   <script src="/m/xp/xp.js"></script>
 </body>
 </html>

@@ -7,6 +7,7 @@
 | Dirección | Archivos | Qué muestra |
 |---|---|---|
 | `/mas` | `mas.html` + `mas.js` | Las secciones (lista `SECCIONES` de `mas.js`: cada módulo con pantalla en Más suma su fila ahí), buscador y Salir. |
+| `/mas/historial` | `historial.html` + `historial.js` | Historial de cambios (lo que anotan los módulos con `comun/historial.js`), con filtros, como la v0.88.27. |
 | `/mas/ajustes` | `ajustes.html` + `ajustes.js` | Zona horaria, inicio de semana, límites de juego. |
 | `/mas/nombres` | `nombres.html` + `nombres.js` | Nombre de la app, tu nombre, nombres de las fases. |
 | `/mas/cuenta` | `cuenta.html` + `cuenta.js` | Nombre y email, cambiar contraseña, salir. |

@@ -1,7 +1,7 @@
 // Pantalla Desafíos (Más → Desafíos). Pide todo a /api/desafios (las rutas de su módulo); lo que se ve encima lo hace capa.js.
 (function () {
   'use strict'
-  const { api, $, seguro, barra, mensaje } = SEK
+  const { api, $, seguro, mensaje } = SEK
   const escapar = (x) => String(x == null ? '' : x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
   const hora = (t) => new Date(t).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
 
@@ -53,6 +53,6 @@
   $('#probar-caida').onclick = seguro(() => d.caida({ prueba: true }))
   $('#probar-duelo').onclick = seguro(() => d.duelo('tension', { prueba: true }))
 
-  barra('mas')
+  SEK.v88.montar({ activo: 'mas', companero: 'esquina' })
   seguro(cargar)()
 })()

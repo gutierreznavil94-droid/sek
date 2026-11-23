@@ -1,17 +1,20 @@
-/* Diseños propios de XP. Usa los colores generales de /comun/estilo.css. */
-.nivel { display: flex; flex-direction: column; line-height: 1; }
-.balances { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.balances > div { display: flex; flex-direction: column; gap: 2px; }
-.balances b { font-size: 1.2rem; font-variant-numeric: tabular-nums; }
-.interruptor { flex-direction: row; align-items: center; gap: 8px; color: var(--texto); }
-.interruptor input { width: 22px; min-height: 22px; height: 22px; accent-color: var(--acento); }
-.porcentaje { flex: 1 1 160px; }
+/* Nivel y XP: lo propio de la pantalla. Lo demás sale de comun/v88.css. */
+.xp-nivel { display: flex; flex-direction: column; gap: 2px; line-height: 1; }
+.xp-numero { font-size: 2.4rem; font-weight: 800; }
+.xp-etapa { font-family: 'Pincel', 'Yuji Syuku', serif; color: var(--acento); font-size: 1.1rem; }
+.xp-barra { height: 6px; border-radius: 3px; background: var(--fondo-3); overflow: hidden; margin: 12px 0 8px; }
+.xp-barra span { display: block; height: 100%; background: var(--acento); border-radius: 3px; transition: width 0.6s ease; }
+.xp-balances { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.xp-balances > div { display: flex; flex-direction: column; gap: 4px; }
+.xp-balances b { font-size: 1.3rem; }
+.xp-casilla { width: 20px; height: 20px; accent-color: var(--acento); }
+.xp-mas { color: var(--verde); }
+.xp-menos { color: #ff8c96; }
 .movimientos { list-style: none; margin: 0; padding: 0; }
 .movimientos li { padding: 10px 0; border-top: 1px solid var(--borde); display: flex; flex-direction: column; gap: 4px; }
 .movimientos li:first-child { border-top: 0; }
-.movimientos .linea { display: flex; justify-content: space-between; gap: 10px; }
+.movimientos .linea { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .movimientos .cantidad { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
 .movimientos .anulado .cantidad, .movimientos .anulado .que { text-decoration: line-through; color: var(--texto-3); }
 .movimientos form { display: flex; gap: 8px; }
 .movimientos form input { flex: 1; min-width: 0; }
-.movimientos .anular { min-height: 30px; padding: 2px 10px; font-size: .8rem; }

@@ -85,6 +85,8 @@
 
   let timer = null
   function mensaje(texto, mal) {
+    // Dentro del marco de la v0.88.27 (SEK.v88) sale como su aviso de abajo.
+    if (window.SEK && SEK.v88 && SEK.v88.avisar && document.querySelector('.app')) return SEK.v88.avisar(texto, { tipo: mal ? 'bajo' : '' })
     let el = document.querySelector('.mensaje')
     if (!el) { el = document.createElement('div'); el.className = 'mensaje'; el.setAttribute('role', 'status'); document.body.appendChild(el) }
     el.textContent = texto

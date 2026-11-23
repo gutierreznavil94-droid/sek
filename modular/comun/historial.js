@@ -13,4 +13,10 @@ async function ultimos(usuarioId, cantidad = 50, tx = null) {
     [usuarioId, cantidad], tx)
 }
 
-module.exports = { anotar, ultimos }
+/** Cuántos cambios hay anotados (para «N eventos» en Más → Historial). */
+async function contar(usuarioId, tx = null) {
+  const [f] = await todas('SELECT count(*)::int AS n FROM historial WHERE usuario_id = $1', [usuarioId], tx)
+  return f ? Number(f.n) : 0
+}
+
+module.exports = { anotar, ultimos, contar }

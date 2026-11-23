@@ -5,34 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SEK · 3·2·1</title>
   <link rel="icon" href="/comun/favicon-32.png">
-  <link rel="stylesheet" href="/comun/estilo.css">
-  <link rel="stylesheet" href="/m/desafios/estilo.css">
+  <!-- Igual que la v0.88.27: pantalla completa, sin cabecera ni barra -->
+  <link rel="stylesheet" href="/comun/v88.css">
+  <link rel="stylesheet" href="/m/temas/shinobi/visual.css">
 </head>
 <body>
-  <main>
-    <section id="elegir">
-      <div class="fila entre"><h1>3 · 2 · 1</h1><a class="boton" href="/desafios">Cerrar</a></div>
-      <p class="chico">Cuando aparece la resistencia, no negociás: contás 3, 2, 1 y empezás. ¿Qué vas a empezar?</p>
-      <form class="tarjeta" id="form-accion">
-        <label>Acción <input id="accion" maxlength="120" autocomplete="off" placeholder="Ej.: ponerme las zapatillas" required></label>
-        <div class="dz-chips" id="ultimas"></div>
-        <button class="principal" type="submit">Contar</button>
-      </form>
-    </section>
-
-    <section class="dz-321" id="cuenta" hidden>
-      <div class="dz-numero" id="numero" aria-live="assertive">3</div>
-      <p class="chico" id="texto-cuenta"></p>
-    </section>
-
-    <section class="dz-321" id="ahora" hidden>
-      <div class="dz-ahora">Empieza ahora</div>
-      <p class="chico" id="texto-ahora"></p>
-      <button class="principal" id="empece">Empecé</button>
-      <button id="no-empece">No empecé</button>
-    </section>
-  </main>
+  <main class="contenido" id="caja" style="padding-top: 24px;"></main>
   <script src="/comun/marco.js"></script>
+  <script src="/comun/v88-dibujos.js"></script>
+  <script src="/comun/v88-polvo.js"></script>
+  <script src="/m/temas/companero.js"></script>
+  <script src="/comun/v88.js"></script>
+  <script src="/m/desafios/hueco.js"></script>
   <script src="/m/desafios/321.js"></script>
 </body>
 </html>

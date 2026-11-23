@@ -13,6 +13,7 @@
     { a: '/mas/copia', icono: 'icono-copia', k: '写', t: 'Copia', d: 'Exportar e importar', claves: 'copia seguridad backup exportar importar json texto guardar datos app vieja traer' },
     { a: '/temas', icono: 'icono-tema', k: '彩', t: 'Tema', d: 'Cómo se ve y lluvia', claves: 'tema temas colores apariencia lluvia fondo shinobi subir propio' },
     { a: '/mas/ajustes', icono: 'icono-ajustes', k: '設', t: 'Ajustes', d: 'Juego, semana, zona', claves: 'ajustes configuracion limite juego racha zona horaria semana lunes aviso minutos' },
+    { a: '/mas/historial', icono: 'icono-historial', k: '歴', t: 'Historial', d: 'Lo que cambió', claves: 'historial cambios registro corregir anulado' },
     { a: '/mas/nombres', icono: 'icono-nombres', k: '名', t: 'Nombres', d: 'App, vos y fases', claves: 'nombres nombre app fases disciplina constancia' },
     { a: '/ciclo', icono: 'icono-ciclo', k: '始', t: 'Nuevo ciclo', d: 'Día 1 y otros 90', claves: 'fecha inicio nuevo ciclo dia 1 empezar 90 dias reiniciar' },
   ]
