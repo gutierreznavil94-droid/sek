@@ -20,6 +20,9 @@ const AJUSTES_INICIALES = {
   limiteJuegoSemana: 60,
   limiteJuegoFinde: 120,
   avisoJuegoPorcentaje: 80,
+  // xp
+  baseNivel: 100,
+  xpResta: { activa: true, porcentaje: 50, desde: null },
 }
 
 async function obtenerAjustes(usuarioId, tx = null) {
