@@ -82,7 +82,8 @@
   // ---------- El Tajo ----------
   /**
    * Al volver después de horas con un pilar pendiente: la pantalla se corta como papel (video del tema, el blanco se vuelve
-   * transparente). Los toques se ignoran mientras corre el corte (~3 s): recién con «Tocá» un toque nuevo lo cierra.
+   * transparente, así el papel que se corta es la propia pantalla). Igual que Tajo.tsx de la v0.88.27: sin velo ni
+   * desenfoque, un toque lo cierra en cualquier momento y, si nadie toca, se cierra solo a los 15 s.
    */
   async function tajo() {
     const t = await tema()
@@ -92,8 +93,7 @@
       <svg width="0" height="0" aria-hidden="true"><filter id="dz-tajo-luma" color-interpolation-filters="sRGB">
         <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  -3 -5.9 -1.1 0 7.2"/></filter></svg>
       ${src && !quieto ? `<video class="dz-tajo-video" muted playsinline preload="auto" disablepictureinpicture>
-        <source src="${escapar(src.replace(/\.mp4$/, '.webm'))}" type="video/webm"><source src="${escapar(src)}" type="video/mp4"></video>` : '<div class="dz-tajo-simple"></div>'}
-      <span class="dz-tajo-toca">Tocá</span>`)
+        <source src="${escapar(src.replace(/\.mp4$/, '.webm'))}" type="video/webm"><source src="${escapar(src)}" type="video/mp4"></video>` : ''}`)
     d.setAttribute('aria-label', 'Tenés un pilar pendiente')
     const w = innerWidth, h = innerHeight, largo = Math.hypot(w, h)
     const angulo = Math.atan2(h, -w) * 180 / Math.PI
@@ -107,18 +107,12 @@
       vibrar([30, 40, 80])
     }
     const v = d.querySelector('video')
-    let listo = false
-    const ponerListo = () => { if (!listo) { listo = true; d.classList.add('listo') } }
     if (v) {
       let cortado = false
       v.addEventListener('timeupdate', () => { if (!cortado && v.currentTime >= 1.0) { cortado = true; hoja() } })
-      v.addEventListener('playing', () => setTimeout(ponerListo, 3200))
-      v.addEventListener('ended', ponerListo)
-      v.addEventListener('error', ponerListo)
-      const p = v.play(); if (p && p.catch) p.catch(ponerListo)
-      setTimeout(ponerListo, 6000)
+      const p = v.play(); if (p && p.catch) p.catch(() => { /* queda la pantalla y el toque lo cierra */ })
     } else {
-      // Sin video: una línea roja que corta en diagonal sobre la pantalla oscurecida.
+      // Sin video (o con «reducir movimiento»): una línea roja que corta en diagonal.
       const l = document.createElement('div')
       l.className = 'dz-tajo-linea'
       l.style.width = largo + 'px'
@@ -126,16 +120,13 @@
       l.style.transformOrigin = 'center'
       d.appendChild(l)
       vibrar([30, 40, 80])
-      setTimeout(ponerListo, quieto ? 300 : 1200)
     }
     await new Promise((fin) => {
-      let apoyado = false
-      d.addEventListener('pointerdown', () => { apoyado = listo })
-      d.addEventListener('pointerup', () => { if (listo && apoyado) fin(); apoyado = false })
-      d.addEventListener('keydown', (e) => { if (listo && (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape')) fin() })
-      setTimeout(fin, 20000) // por si nadie toca
+      d.addEventListener('pointerdown', fin)
+      d.addEventListener('keydown', fin)
+      setTimeout(fin, 15000)
     })
-    await cerrar(d, true)
+    await cerrar(d, false)
   }
 
   // ---------- Duelo de flexiones ----------

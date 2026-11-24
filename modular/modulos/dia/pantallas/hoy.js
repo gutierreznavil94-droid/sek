@@ -493,6 +493,7 @@
     avisos()
     pilares()
     comida()
+    if (SEK.forjaHoy) SEK.forjaHoy($('#forja-hoy')).catch(() => {})
     semanaMetas()
     accesos()
     seriesRapidas()

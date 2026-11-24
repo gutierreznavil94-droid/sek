@@ -47,6 +47,8 @@
 
       <section class="co-tarjeta" aria-label="Comida" id="comida" hidden></section>
       <section class="agua-tarjeta" aria-label="Agua" id="agua-aparte" hidden></section>
+      <!-- habitos: «鍛 En forja», las piedras chicas (si no hay hábitos en forja, no aparece) -->
+      <section class="forja-hoy" aria-label="Hábitos en forja" id="forja-hoy" hidden></section>
       <section class="semana-metas simple" aria-label="Metas de la semana" id="metas"></section>
 
       <div class="col accesos" style="gap: 8px;" id="accesos"></div>
@@ -67,6 +69,10 @@
   <script src="/comun/v88.js"></script>
   <!-- desafios: frase «Dudar es fracasar» y el Tajo (si el módulo todavía no está, no pasa nada) -->
   <script src="/m/desafios/capa.js" onerror="this.remove()"></script>
+  <!-- habitos: la piedra del tema, el juramento y la fila «En forja» (si el módulo no está, no pasa nada) -->
+  <script src="/m/temas/piedra.js" onerror="this.remove()"></script>
+  <script src="/m/habitos/juramento.js" onerror="this.remove()"></script>
+  <script src="/m/habitos/forja-hoy.js" onerror="this.remove()"></script>
   <script src="/m/dia/hoy.js"></script>
 </body>
 </html>
