@@ -22,8 +22,6 @@
     $('#duelo-serie').value = c.duelo.contadorId || ''
     $('#duelo-sin-serie').value = c.duelo.repsSinSerie
     $('#frase-dia').checked = c.fraseDelDia
-    $('#tajo-activo').checked = c.tajo.activo
-    $('#tajo-horas').value = c.tajo.horas
     $('#inicio-xp').value = c.inicio.xp
     $('#inicio-max').value = c.inicio.maxPorDia
   }
@@ -37,7 +35,6 @@
       tension: { activa: $('#tension-activa').checked, kanji: $('#tension-kanji').value, frase: $('#tension-frase').value },
       duelo: { contadorId: $('#duelo-serie').value || null, repsSinSerie: numero('#duelo-sin-serie') },
       fraseDelDia: $('#frase-dia').checked,
-      tajo: { activo: $('#tajo-activo').checked, horas: numero('#tajo-horas') },
       inicio: { xp: numero('#inicio-xp'), maxPorDia: numero('#inicio-max') },
     }, 'PUT'))
     mensaje('Guardado')

@@ -7,7 +7,7 @@
  */
 const datos = require('./datos')
 const calculo = require('./calculo')
-const { obtenerAjustes } = require('../../comun/ajustes')
+const { obtenerAjustes, guardarAjustes } = require('../../comun/ajustes')
 const { anotar } = require('../../comun/historial')
 const { avisar } = require('../../comun/eventos')
 const { ahora } = require('../../comun/reloj')
@@ -189,4 +189,22 @@ async function exportar(usuarioId, tx = null) {
   return (await datos.todasLasSesiones(usuarioId, tx)).map(({ id, ...s }) => s)
 }
 
-module.exports = { conectar, exportar, sesionActiva, empezar, pausar, seguir, terminar, agregarManual, corregir, borrar, minutosDelDia, limiteRespetado, resumen, historial, importar }
+/** «Apps que te atrapan»: lo guardado (Android lo vigila; acá solo se guarda). */
+async function vigia(usuarioId, tx = null) {
+  return (await obtenerAjustes(usuarioId, tx)).vigia
+}
+
+async function guardarVigia(usuarioId, { activo, repetir, apps }, tx = null) {
+  const limpio = {
+    activo: !!activo,
+    repetir: [5, 10, 15, 30].includes(repetir) ? repetir : 15,
+    apps: (apps || []).slice(0, 60).map((a) => ({
+      paquete: String(a.paquete).slice(0, 200),
+      nombre: String(a.nombre || a.paquete).slice(0, 80),
+      minutos: Math.min(600, Math.max(1, Math.round(Number(a.minutos) || 30))),
+    })),
+  }
+  return (await guardarAjustes(usuarioId, { vigia: limpio }, tx)).vigia
+}
+
+module.exports = { vigia, guardarVigia, conectar, exportar, sesionActiva, empezar, pausar, seguir, terminar, agregarManual, corregir, borrar, minutosDelDia, limiteRespetado, resumen, historial, importar }

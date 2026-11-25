@@ -9,6 +9,15 @@ module.exports = async function rutasJuego(app) {
 
   app.get('/juego', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'juego', 'juego.html'))
 
+  app.get('/juego/apps', conUsuario, async (pedido, respuesta) => pagina(respuesta, 'juego', 'apps.html'))
+  app.get('/api/juego/vigia', conUsuario, async (pedido) => ({ vigia: await v.vigia(pedido.usuario.id) }))
+  app.put('/api/juego/vigia', {
+    ...conUsuario,
+    schema: { body: { type: 'object', required: ['activo', 'repetir', 'apps'], properties: {
+      activo: { type: 'boolean' }, repetir: { type: 'integer' },
+      apps: { type: 'array', maxItems: 60, items: { type: 'object', required: ['paquete'], properties: { paquete: { type: 'string', maxLength: 200 }, nombre: { type: 'string', maxLength: 80 }, minutos: { type: 'integer', minimum: 1, maximum: 600 } } } },
+    } } },
+  }, async (pedido) => ({ vigia: await v.guardarVigia(pedido.usuario.id, pedido.body) }))
   app.get('/api/juego', conUsuario, async (pedido) => v.resumen(pedido.usuario.id))
   app.get('/api/juego/historial', {
     ...conUsuario, schema: { querystring: { type: 'object', properties: { cantidad: { type: 'integer', minimum: 1, maximum: 3000 } } } },

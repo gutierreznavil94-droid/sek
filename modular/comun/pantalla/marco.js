@@ -7,6 +7,7 @@
  * - SEK.minutos(n)          "1 h 05 min".
  * - SEK.icono(nombre)       kanji o ícono del tema elegido por nombre genérico ('' si el tema no tiene). Lo responde el módulo temas
  *                           (SEK.tema.icono); mientras carga, o si no está, la lista de respaldo ICONOS (Shinobi).
+ * - SEK.nativo(metodo, o)  llama al plugin «Sek» de Android (lo tiene la página madre del APK). En la web devuelve null.
  * - SEK.evento(nombre, d)   evento visual genérico (completar, aparecer, logro, alerta…): avisa 'sek-evento' en document para que el tema lo dibuje.
  * El tema: al empezar pone las variables de color guardadas del último tema (así no parpadea) y carga
  * /m/temas/tema.js, que pide el tema elegido y lo aplica (ver modulos/temas/LEEME.md). Si falta, queda estilo.css.
@@ -107,7 +108,15 @@
     return async (...args) => { try { await fn(...args) } catch (e) { mensaje(e.message, true) } }
   }
 
-  window.SEK = { ...(window.SEK || {}), api, barra, mensaje, minutos, seguro, icono, evento, MENU, ICONOS, $: (s) => document.querySelector(s) }
+  /** El plugin Android «Sek» vive en la página madre (celu/index.html); las pantallas van en su iframe. */
+  async function nativo(metodo, opciones) {
+    let cap = null
+    try { cap = window.top.Capacitor } catch (e) { /* otra página */ }
+    if (!cap || !cap.nativePromise || !(cap.isNativePlatform && cap.isNativePlatform())) return null
+    try { return await cap.nativePromise('Sek', metodo, opciones || {}) } catch (e) { return null }
+  }
+
+  window.SEK = { ...(window.SEK || {}), api, barra, mensaje, minutos, seguro, icono, evento, nativo, MENU, ICONOS, $: (s) => document.querySelector(s) }
   ponerTemaGuardado()
   cargarTema()
 })()

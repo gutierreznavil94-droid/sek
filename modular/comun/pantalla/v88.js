@@ -13,7 +13,7 @@
  */
 (function () {
   'use strict'
-  const VERSION = '0.18'
+  const VERSION = '0.19'
   const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
   const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
   const FASES = ['Disciplina', 'Constancia', 'Mi yo ideal']
@@ -190,6 +190,26 @@
     h.el.querySelector('[data-si]').onclick = async () => { h.cerrar(); try { await fn() } catch (e) { avisar(e.message, { tipo: 'bajo' }) } }
   }
 
+  // ---------- Escenas del shinobi (corte al cumplir, parry, 3·2·1, logro), como en la v0.88.27 ----------
+  // Las dibuja /m/temas/animaciones.js (módulo temas); se carga la primera vez que hace falta.
+  let escenas = null
+  function cargarEscenas() {
+    if (window.SEK_ANIMAR) return Promise.resolve()
+    if (!escenas) escenas = new Promise((listo) => {
+      const s = document.createElement('script')
+      s.src = '/m/temas/animaciones.js'
+      s.onload = listo; s.onerror = listo
+      document.head.appendChild(s)
+    })
+    return escenas
+  }
+  /** animar({ tipo: 'ejecucion', pilar, titulo? } | { tipo: 'parry' } | { tipo: 'postura', modo: '321'|'siguiente' } | { tipo: 'logro', clase, texto, sub }) */
+  function animar(a) {
+    cargarEscenas().then(() => { try { if (window.SEK_ANIMAR) window.SEK_ANIMAR(a) } catch (e) { /* nunca rompe */ } })
+  }
+  /** Subir de nivel: el logro grande. */
+  function nivel(n) { if (n) animar({ tipo: 'logro', clase: 'nivel', texto: `Nivel ${n}`, sub: '昇 · ascender' }) }
+
   window.SEK = window.SEK || {}
   /** Íconos de los pilares (IconoPilar de la vieja; lo usan Hoy, Calendario y la Revisión): pesa, luna, pincel, cubiertos, libro, birrete, meditar, celu, estrella, maletín. */
   function iconoPilar(id, tipo) {
@@ -221,5 +241,5 @@
     const n = mordido <= 0 ? 0 : Math.min(MORDISCOS.length, Math.max(1, Math.round(mordido / 0.3)))
     return `<svg viewBox="0 0 100 150" width="${ancho}" height="${Math.round(ancho * 1.5)}" class="tema-manzana" role="img">${trazos}<defs><mask id="manzana-m"><rect x="0" y="0" width="100" height="150" fill="#fff"></rect>${MORDISCOS.slice(0, n).map((m) => `<circle cx="${m.x}" cy="${m.y}" r="${m.r}" fill="#000"></circle>`).join('')}</mask></defs><path class="tema-manzana-cuerpo" d="M50 52 C38 42 14 46 13 76 C12 106 30 136 44 136 C47 136 48 134 50 134 C52 134 53 136 56 136 C70 136 88 106 87 76 C86 46 62 42 50 52 Z" mask="url(#manzana-m)"></path></svg>`
   }
-  window.SEK.v88 = { VERSION, montar, avisar, hoja, brillo, esc, fechaLegible, litros, diaSemana, iconoPilar, confirmar, cantimplora, manzana }
+  window.SEK.v88 = { VERSION, montar, animar, nivel, cargarEscenas, avisar, hoja, brillo, esc, fechaLegible, litros, diaSemana, iconoPilar, confirmar, cantimplora, manzana }
 })()

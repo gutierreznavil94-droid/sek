@@ -368,14 +368,14 @@
     addEventListener('pagehide', anotar)
   }
 
-  /** Al llegar a Hoy: la frase una vez por día y el Tajo si volviste después de horas con un pilar pendiente. */
+  /** Al llegar a Hoy: la frase una vez por día. */
   async function llegada(estado = {}) {
     mirarVisibilidad()
     const r = await SEK.api('/api/desafios/llegada', {
       pilarPendiente: !!estado.pilarPendiente, pasoDejoCelu: !!estado.pasoDejoCelu, modoSueno: !!estado.modoSueno,
     })
     if (r.frase) await frase({ dia: true })
-    if (r.tajo) await tajo()
+    // El Tajo ya no sale adentro de SEK (Navil, 25/11): lo abre Android encima de la app donde te pasaste (Más → Apps que te atrapan).
     return r
   }
 

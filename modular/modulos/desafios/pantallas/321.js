@@ -66,6 +66,8 @@
       const r = await api('/api/desafios/inicios', d)
       SEK.hueco.marcarUsado('321', datos.hoy)
       evento('completar', { elemento: caja.querySelector('[data-empece]') })
+      SEK.v88.animar({ tipo: 'postura', modo: '321' })
+      SEK.v88.nivel(r.nuevoNivel)
       avisar(r.xp > 0 ? `Empezaste. +${r.xp} XP${r.nuevoNivel ? ` · ¡Nivel ${r.nuevoNivel}!` : ''}` : `Empezaste. ${r.motivoSinXp || ''}`, { tipo: 'ok' })
       setTimeout(() => { location.href = volver }, 900)
     })

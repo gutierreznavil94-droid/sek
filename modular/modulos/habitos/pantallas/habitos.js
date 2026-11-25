@@ -82,7 +82,7 @@
         if (res.pedazo) evento('forja-pedazo', { elemento: el, texto: h.nombre })
         avisar(`${h.nombre}: día ${res.estado.validos} de ${res.estado.necesarios}${res.xp ? ` · +${res.xp} XP` : ''}`, { tipo: 'ok' })
       }
-      if (res.nuevoNivel) evento('logro', { nivel: res.nuevoNivel })
+      if (res.nuevoNivel) { evento('logro', { nivel: res.nuevoNivel }); SEK.v88.nivel(res.nuevoNivel) }
     } else avisar(`${h.nombre}: desmarcado hoy`)
   }
 

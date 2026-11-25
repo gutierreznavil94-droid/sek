@@ -178,6 +178,9 @@
       const minutos = p.accion.tipo === 'entrenamiento' ? p.accion.duracionMinutos || p.accion.minutosMinimos : undefined
       const r = await api(`/api/dia/compromisos/${idUrl(c.id)}/completar`, minutos ? { minutos } : {})
       flash(el, r.xp)
+      // El shinobi corta (como celebrarPilar de la vieja); si subiste de nivel, después el logro grande.
+      SEK.v88.animar({ tipo: 'ejecucion', pilar: p.accion.id, titulo: p.accion.nombre })
+      SEK.v88.nivel(r.nuevoNivel)
       avisar(r.xp > 0 ? `${p.accion.nombre}: +${r.xp} XP` : `${p.accion.nombre}: ${r.motivoSinXp || 'hecho'}`, {
         tipo: r.xp > 0 ? 'ok' : 'bajo',
         accion: { texto: 'Deshacer', fn: async () => { await api(`/api/dia/compromisos/${idUrl(c.id)}/deshacer`, {}); await recargar() } },
@@ -191,6 +194,8 @@
     try {
       const r = await api(`/api/dia/compromisos/${idUrl(c.id)}/extra`, {})
       flash(el, r.xp)
+      SEK.v88.animar({ tipo: 'ejecucion', pilar: p.accion.id, titulo: p.accion.nombre })
+      SEK.v88.nivel(r.nuevoNivel)
       if (el) el.classList.add('destello-extra')
       avisar(r.xp > 0 ? `${p.accion.nombre}: ${p.accion.minutosExtra} min · extra +${r.xp} XP` : `${p.accion.nombre}: extra (${r.motivoSinXp || 'sin XP'})`, {
         tipo: r.xp > 0 ? 'ok' : 'bajo',
@@ -241,7 +246,9 @@
       const r = await api('/api/dia/dejo-celu', {})
       SEK.evento('dormir')
       avisar(r.cumplido ? `A tiempo${r.xp ? ` · +${r.xp} XP` : ''}` : 'Registrado, tarde', { tipo: r.cumplido ? 'ok' : 'bajo' })
-      location.href = '/sueno/modo'
+      // A tiempo: primero la ejecución de «Dormir a horario», después la pantalla de buenas noches.
+      if (r.cumplido) { SEK.v88.animar({ tipo: 'ejecucion', pilar: 'acostarse' }); setTimeout(() => { location.href = '/sueno/modo' }, 1900) }
+      else location.href = '/sueno/modo'
     } catch (e) { error(e) }
   }
 
@@ -351,6 +358,22 @@
   // ---------- Revisión diaria, 3·2·1 y Siguiente acción ----------
   const revision = () => d.compromisos.find((c) => c.accion && c.accion.tipo === 'revision_diaria')
   const revisionHecha = () => { const r = revision(); return !!(r && (r.estado === 'completado' || r.estado === 'cumplido')) }
+  // «Apps que te atrapan»: Android te trajo desde otra app (/hoy?atrapado=TikTok&min=32). El 3·2·1 brilla en el centro
+  // hasta que lo tocás, como la v0.88.27 (llamado321).
+  let llamado = false, llamadoVisto = false
+  try { llamado = !!sessionStorage.getItem('sek-llamado321') } catch (e) { /* sin almacenamiento */ }
+  const atrapado = new URLSearchParams(location.search)
+  if (atrapado.has('atrapado')) {
+    llamado = true
+    try { sessionStorage.setItem('sek-llamado321', '1') } catch (e) { /* nada */ }
+    avisar(`Llevás ${atrapado.get('min') || 'muchos'} min en ${atrapado.get('atrapado') || 'esa app'}. Tocá el 3 · 2 · 1 y arrancá.`, { tipo: 'bajo', ms: 12000 })
+    try { history.replaceState(history.state, '', location.pathname) } catch (e) { /* nada */ }
+  }
+  const apagarLlamado = () => { llamado = false; try { sessionStorage.removeItem('sek-llamado321') } catch (e) { /* nada */ } }
+  const boton321 = (u321, r321) => llamado
+    ? `<a class="boton grande acceso-medio rojizo llamado-321" href="${esc(r321)}" data-llamado>${['弾', '進', '斬', '忍', '鍛', '志'].map((k, i) => `<span class="l321-icono l321-i${i + 1}" aria-hidden="true">${k}</span>`).join('')}<span class="l321-texto">${ICONO_321}3 · 2 · 1</span><span class="l321-sub">Tocá y arrancá</span></a>`
+    : `<a class="boton grande acceso-medio ${u321 ? 'hecha' : 'rojizo'}" ${brillo(u321 ? 'hecho' : 'pendiente', 5)} href="${esc(r321)}">${u321 ? ICONO_OK : ICONO_321}3 · 2 · 1</a>`
+
   function accesos() {
     const hecha = revisionHecha()
     const pasoElCierre = d.noche && Date.now() >= d.noche.instanteCierre
@@ -360,9 +383,11 @@
     const r321 = (des && des.tresDosUno && des.tresDosUno.ruta) || '/desafios/321'
     $('#accesos').innerHTML = `<a class="boton grande revision-baja ${hecha ? 'hecha' : 'rojizo'}" ${brillo(hecha ? 'hecho' : 'pendiente', 4)} href="/ciclo/revision">${hecha ? ICONO_OK : ICONO_REV}${hecha ? 'Revisión diaria hecha' : 'Revisión diaria'}<span class="chico" style="font-weight: 500; opacity: 0.8;">${hecha ? '· ver' : pasoElCierre ? `· sin hacer a las ${esc(d.noche.horaCierre)}` : `· hasta ${esc(d.noche ? d.noche.horaAviso : '')}`}</span></a>
       <div class="rejilla-2">
-        <a class="boton grande acceso-medio ${u321 ? 'hecha' : 'rojizo'}" ${brillo(u321 ? 'hecho' : 'pendiente', 5)} href="${esc(r321)}">${u321 ? ICONO_OK : ICONO_321}3 · 2 · 1</a>
+        ${boton321(u321, r321)}
         <a class="boton grande acceso-medio ${uSig ? 'hecha' : 'rojizo'}" ${brillo(uSig ? 'hecho' : 'pendiente', 6)} href="/desafios/siguiente">${uSig ? ICONO_OK : ICONO_SIG}Siguiente acción</a>
       </div>`
+    const l = $('#accesos [data-llamado]')
+    if (l) { l.onclick = apagarLlamado; if (!llamadoVisto) { llamadoVisto = true; setTimeout(() => l.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300) } }
   }
 
   // ---------- Series rápidas ----------
@@ -405,7 +430,9 @@
           const res = await api(`/api/series/${idUrl(r.contador.id)}/toque`, {})
           series = res
           SEK.evento('completar', { elemento: b })
+          SEK.v88.animar({ tipo: 'parry' })
           const t = res.toque || {}
+          SEK.v88.nivel(t.nuevoNivel)
           if (t.extraLogrado && t.xp > 0) avisar(`${r.contador.nombre}: Extra +${t.xp} XP`, { tipo: 'ok' })
           else if (t.xp > 0) avisar(`${r.contador.nombre}: llegaste a la cuota. +${t.xp} XP`, { tipo: 'ok' })
           seriesRapidas()
@@ -528,9 +555,8 @@
   })
   async function llegada() {
     if (!d || !window.SEK.desafios || typeof SEK.desafios.llegada !== 'function') return
-    const tajo = await api('/api/dia/tajo', {}).catch(() => ({ mostrar: false, pendientes: [] }))
     const pilarPendiente = d.pilares.some((p) => p.estado === 'pendiente' && p.accion.tipo !== 'acostarse')
-    SEK.desafios.llegada({ pilarPendiente, pasoDejoCelu: d.pasoDejoCelu, modoSueno: d.modoSueno, tajo: tajo.mostrar, pendientes: tajo.pendientes })
+    SEK.desafios.llegada({ pilarPendiente, pasoDejoCelu: d.pasoDejoCelu, modoSueno: d.modoSueno })
   }
 
   ;(async () => {
@@ -541,5 +567,7 @@
       }
       await llegada()
     } catch (e) { error(e) }
+    // Las escenas del shinobi se cargan cuando Hoy ya está quieto, así el primer corte no espera.
+    setTimeout(() => SEK.v88.cargarEscenas(), 3000)
   })()
 })()

@@ -45,7 +45,9 @@
       const { inicio } = await api('/api/desafios/siguiente', { accion: concreta.trim(), tareaAmbigua: ambigua.trim() })
       SEK.hueco.marcarUsado('siguiente', datos.hoy)
       evento('aparecer', { elemento: lanzar })
-      location.href = a321(inicio)
+      // El caramelo de «Siguiente acción» y después el 3·2·1.
+      SEK.v88.animar({ tipo: 'postura', modo: 'siguiente' })
+      setTimeout(() => { location.href = a321(inicio) }, 1800)
     })
     revisar()
   }

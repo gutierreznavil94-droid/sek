@@ -56,7 +56,7 @@
         if (res.pedazo) SEK.evento('forja-pedazo', { elemento: el, texto: x.nombre })
         avisar(`${x.nombre}: día ${res.estado.validos} de ${res.estado.necesarios}${res.xp ? ` · +${res.xp} XP` : ''}`, { tipo: 'ok' })
       }
-      if (res.nuevoNivel) SEK.evento('logro', { nivel: res.nuevoNivel })
+      if (res.nuevoNivel) { SEK.evento('logro', { nivel: res.nuevoNivel }); SEK.v88.nivel(res.nuevoNivel) }
     } else avisar(`${x.nombre}: desmarcado hoy`)
   }
 

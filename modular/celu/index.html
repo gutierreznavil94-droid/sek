@@ -69,7 +69,26 @@
     window.SEK_ARRANCAR().then(function () {
       var inicio = location.pathname === '/' || location.pathname === '/index.html' ? '/' : location.pathname + location.search
       return ir(inicio)
-    }).catch(mostrarError)
+    }).then(rutaDeAndroid).catch(mostrarError)
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') rutaDeAndroid() })
+  }
+
+  /**
+   * Lo que pidió Android al abrir SEK (se vacía al leerlo). «tension|TikTok|32»: te pasaste en una app de
+   * «Apps que te atrapan» y tocaste la mano del Tajo → Hoy con el 3·2·1 brillando. «vigia» → esa pantalla.
+   */
+  function rutaDeAndroid() {
+    var cap = window.Capacitor
+    if (!cap || !cap.nativePromise || !(cap.isNativePlatform && cap.isNativePlatform())) return
+    return cap.nativePromise('Sek', 'rutaPendiente', {}).then(function (r) {
+      var ruta = r && r.ruta
+      if (!ruta) return
+      if (ruta.indexOf('tension|') === 0) {
+        var p = ruta.split('|')
+        return ir('/hoy?atrapado=' + encodeURIComponent(p[1] || '') + '&min=' + encodeURIComponent(p[2] || ''))
+      }
+      if (ruta === 'vigia') return ir('/juego/apps')
+    }).catch(function () {})
   }
   s.onerror = function () { mostrarError('no está sek.js') }
   document.head.appendChild(s)

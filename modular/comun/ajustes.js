@@ -22,6 +22,8 @@ const AJUSTES_INICIALES = {
   limiteJuegoSemana: 60,
   limiteJuegoFinde: 120,
   avisoJuegoPorcentaje: 80,
+  // juego («Apps que te atrapan»): apps del celu con sus minutos por día; al pasarte, Android rompe la pantalla (Tajo)
+  vigia: { activo: false, repetir: 15, apps: [] },
   // xp
   baseNivel: 100,
   xpResta: { activa: true, porcentaje: 50, desde: null },

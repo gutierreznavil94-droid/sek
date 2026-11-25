@@ -44,6 +44,7 @@
   async function resolver(m, lograda, motivo) {
     const r = await api(`/api/ciclo/metas/${idUrl(m.id)}/resolver`, motivo ? { lograda, motivo } : { lograda })
     pintar(r)
+    if (lograda && !motivo) { SEK.v88.animar({ tipo: 'ejecucion', pilar: 'meta', estilo: 'vertical' }); SEK.v88.nivel(r.resultado.nuevoNivel) }
     if (motivo) avisar('Corregido (queda en el historial)')
     else if (lograda) avisar(r.resultado.xp > 0 ? `Meta cumplida: +${r.resultado.xp} XP` : r.resultado.conTope ? 'Meta cumplida (ya sumaste XP de 2 metas hoy)' : 'Meta cumplida', { tipo: 'ok' })
   }

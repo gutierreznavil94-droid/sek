@@ -138,3 +138,11 @@ test('las escenas de la pantalla (a jugar, jugando, té) están en el módulo co
     assert.ok(h.n > 0 && h.fps > 0 && h.columnas * h.celda[0] <= 4096, e)
   }
 })
+
+test('apps que te atrapan: se guardan limpias y empiezan apagadas', async () => {
+  const id = await personaDePrueba()
+  assert.deepEqual(await juego.vigia(id), { activo: false, repetir: 15, apps: [] })
+  const v = await juego.guardarVigia(id, { activo: true, repetir: 7, apps: [{ paquete: 'com.zhiliaoapp.musically', nombre: 'TikTok', minutos: 32.4 }] })
+  assert.deepEqual(v, { activo: true, repetir: 15, apps: [{ paquete: 'com.zhiliaoapp.musically', nombre: 'TikTok', minutos: 32 }] })
+  assert.deepEqual(await juego.vigia(id), v)
+})

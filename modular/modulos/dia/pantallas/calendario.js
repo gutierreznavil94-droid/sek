@@ -214,7 +214,11 @@
       const m = metas.find((y) => y.id === el.dataset.meta)
       const alternar = seguro(async () => {
         if (m.est === 'cumplida') await api(`/api/ciclo/metas/${encodeURIComponent(m.id)}/reabrir`, {})
-        else await api(`/api/ciclo/metas/${encodeURIComponent(m.id)}/resolver`, { lograda: true })
+        else {
+          const r = await api(`/api/ciclo/metas/${encodeURIComponent(m.id)}/resolver`, { lograda: true })
+          SEK.v88.animar({ tipo: 'ejecucion', pilar: 'meta', estilo: 'vertical' })
+          SEK.v88.nivel(r.resultado && r.resultado.nuevoNivel)
+        }
         await cargar(mes)
       })
       el.querySelector('.meta-casilla').onclick = alternar

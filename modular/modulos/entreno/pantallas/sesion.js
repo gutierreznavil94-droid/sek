@@ -347,7 +347,7 @@
     en('[data-parar]', () => accion('parar-reloj'))
     en('[data-alargar]', () => accion('alargar', { segundos: 30 }))
     en('[data-fin-descanso]', () => accion('fin-descanso'))
-    en('[data-serie]', async () => { await accion('serie', { bloqueId: b.id, reps: b.objetivo ?? b.reps, ...(b.repsExtra ? (b.admiteAyuda ? { ayuda: b.repsExtra } : { repsExtra: b.repsExtra }) : {}), peso: b.pesoHoy }); vibrar(60) })
+    en('[data-serie]', async () => { await accion('serie', { bloqueId: b.id, reps: b.objetivo ?? b.reps, ...(b.repsExtra ? (b.admiteAyuda ? { ayuda: b.repsExtra } : { repsExtra: b.repsExtra }) : {}), peso: b.pesoHoy }); vibrar(60); SEK.v88.animar({ tipo: 'parry' }) })
     en('[data-listo-crono]', async () => {
       const peso = (s.pesos && s.pesos[b.id]) ?? (b.historial && b.historial.ultimo ? b.historial.ultimo.peso : b.peso || 0)
       const r = await accion('cronometro', { bloqueId: b.id, peso })

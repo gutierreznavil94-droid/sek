@@ -50,6 +50,8 @@ async function armar() {
   }
   fs.copyFileSync(path.join(RAIZ, 'modulos', 'organizacion', 'modelo.js'), path.join(WWW, 'm', 'organizacion', 'modelo.js'))
   fs.copyFileSync(path.join(RAIZ, 'celu', 'index.html'), path.join(WWW, 'index.html'))
+  // «Apps que te atrapan»: Android abre esta página transparente encima de la otra app (TajoActivity).
+  fs.copyFileSync(path.join(RAIZ, 'celu', 'tajo-encima.html'), path.join(WWW, 'tajo-encima.html'))
 
   // PostgreSQL (PGlite)
   const pgl = path.join(RAIZ, 'node_modules', '@electric-sql', 'pglite')
