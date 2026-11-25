@@ -71,7 +71,7 @@
 
 /* ===== Caída y duelo ===== */
 .dz-caida-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .55; }
-.dz-caida > :not(video) { position: relative; }
+.dz-caida > :not(.dz-caida-video) { position: relative; }
 .dz-xp-menos { font-family: var(--pincel); font-size: 2rem; color: var(--peligro); }
 .dz-duelo .dz-cuenta { font-size: clamp(4rem, 26vw, 8rem); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
 .dz-duelo .dz-cuenta small { font-size: .35em; color: var(--texto-3); font-weight: 400; }
@@ -91,3 +91,39 @@
 .dz-botones-hoy .kanji { color: var(--acento); }
 
 @media (prefers-reduced-motion: reduce) { .dz-capa, .dz-capa * { animation: none !important; transition: none !important; } }
+
+/* ===== La caída del tema Shinobi (v0.88.27, EscenaCaida.tsx) ===== */
+.dz-cd { padding: 0; background: #0b0b0b; -webkit-backdrop-filter: none; backdrop-filter: none; overflow: hidden; }
+.dz-cd-lienzo { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.dz-cd-tinta { position: absolute; inset: 0; background: #262626; }
+.dz-cd-tinta::before { content: ''; position: absolute; left: 50%; top: 55%; width: 40vmax; height: 40vmax; margin: -20vmax 0 0 -20vmax; border-radius: 47% 53% 44% 56% / 52% 45% 55% 48%; background: radial-gradient(circle, #050505 0 55%, rgba(5,5,5,0.85) 70%, rgba(5,5,5,0) 72%); animation: dz-cd-tinta .5s cubic-bezier(.5,0,.8,.5) forwards; }
+@keyframes dz-cd-tinta { from { transform: scale(.2); } to { transform: scale(4.5); } }
+.dz-cd-marco { position: absolute; inset: 0; overflow: hidden; z-index: 0; }
+.dz-cd.desde-negro.tumba .dz-cd-marco { animation: dz-cd-negro .8s ease-out both; }
+@keyframes dz-cd-negro { from { filter: brightness(0); } to { filter: brightness(1); } }
+.dz-cd-clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; transform-origin: 40% 62%; animation: dz-cd-acerca 3s ease-out both; }
+@keyframes dz-cd-acerca { from { transform: scale(1); } to { transform: scale(1.1); } }
+.dz-cd.renacer .dz-cd-clip, .dz-cd.destello .dz-cd-clip { animation: none; transform: scale(1.1); }
+.dz-cd.renacer .dz-cd-marco { filter: brightness(.42) contrast(1.05); transition: filter .6s; }
+.dz-cd-vineta { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0,0,0,.6)); pointer-events: none; }
+.dz-cd-lluvia { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; animation: dz-cd-lluvia .5s linear infinite; }
+@keyframes dz-cd-lluvia { from { transform: translate(0, -40px); } to { transform: translate(-9px, 0); } }
+.dz-cd-terrones { position: absolute; z-index: 2; left: 36.5%; top: 63%; width: 0; height: 0; pointer-events: none; }
+.dz-cd-terrones i { position: absolute; left: 0; top: 0; width: 5px; height: 4px; border-radius: 40% 60% 50% 45%; background: #141414; opacity: 0; animation: dz-cd-terron .8s cubic-bezier(.3,.1,.6,1) calc(1.05s + var(--i) * .06s) both; }
+@keyframes dz-cd-terron { 0% { opacity: 1; transform: translate(0, 0) rotate(0); } 100% { opacity: .9; transform: translate(calc((var(--i) - 2.5) * 9px), 34px) rotate(160deg); } }
+.dz-cd-destello { position: absolute; inset: 0; z-index: 5; background: #fff; pointer-events: none; animation: dz-cd-destello .3s ease-out both; }
+@keyframes dz-cd-destello { 0% { opacity: 0; } 20% { opacity: .95; } 100% { opacity: 0; } }
+.dz-cd-final { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 24px 16px; text-align: center; color: #f3efe6; background: radial-gradient(ellipse 70% 45% at 50% 50%, rgba(0,0,0,.55), rgba(0,0,0,0) 75%); }
+.dz-cd-kanji { font-family: 'Noto Serif JP', 'Pincel', serif; font-size: min(42vmin, 230px); line-height: 1; color: #f3efe6; text-shadow: 0 0 2px #fff, 3px 3px 0 rgba(200,16,46,.9), 0 0 34px rgba(200,16,46,.55); animation: dz-cd-latido 1.1s ease-in-out infinite, dz-cd-entrar .5s ease-out both; }
+@keyframes dz-cd-latido { 0%, 100% { text-shadow: 0 0 2px #fff, 3px 3px 0 rgba(200,16,46,.9), 0 0 22px rgba(200,16,46,.35); transform: scale(1); } 14% { text-shadow: 0 0 2px #fff, 3px 3px 0 rgba(200,16,46,1), 0 0 48px rgba(200,16,46,.85); transform: scale(1.04); } 28% { transform: scale(1); } 42% { text-shadow: 0 0 2px #fff, 3px 3px 0 rgba(200,16,46,1), 0 0 40px rgba(200,16,46,.7); transform: scale(1.025); } }
+@keyframes dz-cd-entrar { from { opacity: 0; } to { opacity: 1; } }
+.dz-cd-frase { font-size: 1.05rem; opacity: .9; margin-top: 8px; animation: dz-cd-entrar .6s ease-out .3s both; }
+.dz-cd-round { font-family: 'Pincel', 'Noto Serif JP', serif; font-size: clamp(2.2rem, 11vw, 3.6rem); letter-spacing: .08em; line-height: 1.05; color: #fff; text-shadow: 0 0 18px rgba(200,16,46,.5); animation: dz-cd-entrar .6s ease-out .5s both; }
+.dz-cd-precio { font-size: .78rem; color: rgba(200,90,96,.85); animation: dz-cd-entrar .6s ease-out .7s both; }
+.dz-cd-boton { margin-top: 18px; padding: 10px 28px; border-radius: 10px; border: 1.5px solid rgba(243,239,230,.8); background: rgba(0,0,0,.35); color: #f3efe6; font: inherit; font-weight: 700; cursor: pointer; animation: dz-cd-entrar .6s ease-out .9s both; }
+.dz-cd-saltar { position: absolute; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 6; padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(243,239,230,.35); background: rgba(0,0,0,.3); color: rgba(243,239,230,.75); font: inherit; font-size: .75rem; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .dz-cd * { animation: none !important; transition: none !important; } }
+
+/* Duelo de flexiones (v0.88.27, DueloComun): la tormenta detrás. */
+.dz-dq-lluvia { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.dq-capa .dq-escena, .dq-capa .dq-abajo { position: relative; z-index: 1; }
