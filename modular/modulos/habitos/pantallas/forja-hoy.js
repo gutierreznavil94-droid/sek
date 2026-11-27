@@ -1,5 +1,5 @@
 /*
- * «鍛 En forja» en Hoy, igual que FilaForjaHoy de la v0.88.27 (Forja.tsx): hasta 3 piedras chicas.
+ * «鍛 En forja» en Hoy: hasta 3 cuadritos en una fila (piedra a la izquierda, nombre y cuenta a la derecha).
  * Tocar = marcar (o desmarcar) hoy; mantener apretado = opciones. Si no hay hábitos en forja, no aparece.
  * Necesita /comun/v88.js, /m/temas/piedra.js y /m/habitos/juramento.js antes. Le habla solo a /api/habitos.
  *   SEK.forjaHoy(contenedor) → promesa (pinta la fila adentro del contenedor)
@@ -15,10 +15,10 @@
   function piedraChica(x) {
     const { esc } = SEK.v88
     const piedra = window.SEK_PIEDRA_SHINOBI
-      ? SEK_PIEDRA_SHINOBI({ id: x.id, kanji: x.kanji, validos: x.validos, necesarios: x.necesarios, tam: 42, reducido: reducido(), golpe: golpeDe === x.id })
+      ? SEK_PIEDRA_SHINOBI({ id: x.id, kanji: x.kanji, validos: x.validos, necesarios: x.necesarios, tam: 30, reducido: reducido(), golpe: golpeDe === x.id })
       : `<span class="forja-kanji-titulo">${esc(x.kanji)}</span>`
     return `<button type="button" class="forja-chica ${x.hechoHoy ? 'hecho' : ''}" data-id="${esc(x.id)}" aria-label="${esc(x.nombre)}: ${x.validos} de ${x.necesarios}. ${x.hechoHoy ? 'Hecho hoy' : 'Tocá si lo hiciste hoy'}">
-      ${piedra}<span class="forja-nombre">${esc(x.nombre)}</span><span class="forja-cuenta mono">${x.hechoHoy ? '✓ ' : ''}${x.validos} / ${x.necesarios}</span></button>`
+      ${piedra}<span class="forja-texto"><span class="forja-nombre">${esc(x.nombre)}</span><span class="forja-cuenta mono">${x.hechoHoy ? '✓ ' : ''}${x.validos} / ${x.necesarios}</span></span></button>`
   }
 
   async function pintar() {
@@ -27,9 +27,8 @@
     golpeDe = golpeDe && lista.some((x) => x.id === golpeDe) ? golpeDe : null
     caja.hidden = !lista.length
     if (!lista.length) { caja.innerHTML = ''; return }
-    const columnas = lista.length > 1 ? ` en-columnas" style="grid-template-columns: repeat(${lista.length}, 1fr);` : ''
     caja.innerHTML = `<span class="seccion-titulo"><span class="forja-kanji-titulo" aria-hidden="true">鍛</span>En forja <span class="seccion-nota">(tocá la piedra si lo hiciste hoy)</span></span>
-      <div class="forja-fila${columnas}">${lista.map(piedraChica).join('')}</div>`
+      <div class="forja-fila cuadritos">${lista.map(piedraChica).join('')}</div>`
     golpeDe = null
     caja.querySelectorAll('.forja-chica').forEach((b) => {
       const x = lista.find((y) => y.id === b.dataset.id)

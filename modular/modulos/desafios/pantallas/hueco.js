@@ -1,4 +1,4 @@
-// Lo que comparten 3·2·1 y Siguiente acción: el hueco libre de ahora (de Mi horario) y los pendientes de hoy.
+// Lo que usa el 3·2·1: el hueco libre de ahora (de Mi horario) y los pendientes de hoy.
 (function () {
   'use strict'
   const { api } = SEK

@@ -31,17 +31,6 @@ const crearInicio = (usuarioId, i, tx) =>
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING ${COL_INICIO}`,
   [usuarioId, i.fecha, i.creado, i.iniciado ?? null, i.terminado ?? null, i.resultado ?? null, i.accion, i.tareaAmbigua || '', i.compromisoId ?? null, i.segundosHastaEmpezar ?? null, i.idViejo ?? null], tx)
 
-const inicioPorId = (usuarioId, id, tx) =>
-  una(`SELECT ${COL_INICIO} FROM inicios WHERE usuario_id = $1 AND id = $2`, [usuarioId, id], tx)
-
-const marcarIniciado = (usuarioId, id, iniciado, segundos, tx) =>
-  una(`UPDATE inicios SET iniciado = COALESCE(iniciado, $3), segundos_hasta_empezar = COALESCE(segundos_hasta_empezar, $4)
-    WHERE usuario_id = $1 AND id = $2 RETURNING ${COL_INICIO}`, [usuarioId, id, iniciado, segundos], tx)
-
-const cerrarInicio = (usuarioId, id, resultado, terminado, tx) =>
-  una(`UPDATE inicios SET resultado = $3, terminado = $4 WHERE usuario_id = $1 AND id = $2 RETURNING ${COL_INICIO}`,
-    [usuarioId, id, resultado, terminado], tx)
-
 const iniciosEntre = (usuarioId, desde, hasta, tx) =>
   todas(`SELECT ${COL_INICIO} FROM inicios WHERE usuario_id = $1 AND fecha BETWEEN $2 AND $3 ORDER BY creado`, [usuarioId, desde, hasta], tx)
 
@@ -78,6 +67,6 @@ const todosLosInicios = (usuarioId, tx) =>
 
 module.exports = {
   config, guardarConfig, guardarMarcas,
-  crearInicio, inicioPorId, marcarIniciado, cerrarInicio, iniciosEntre, iniciosRecientes, inicioViejo, inicioIgual, todosLosInicios,
+  crearInicio, iniciosEntre, iniciosRecientes, inicioViejo, inicioIgual, todosLosInicios,
   crearPelea, peleasEntre, peleaIgual, todasLasPeleas,
 }

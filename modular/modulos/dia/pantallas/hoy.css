@@ -3,3 +3,55 @@ a.barra-fases { display: flex; text-decoration: none; }
 a.semana-dia, a.boton-duda, a.fr-pill, a.fr-mas { text-decoration: none; }
 a.semana-dia { color: inherit; }
 .fila-compromiso { display: flex; gap: 10px; align-items: center; width: 100%; background: none; border: 0; border-bottom: 1px solid var(--borde); padding: 10px 2px; color: var(--texto); text-align: left; }
+
+/* ---------- Hoy ordenado (0.21) ---------- */
+/* 2 · Pilares más chicos: sin «Tocá para…», el icono al lado del nombre. */
+.pilares-bloques { gap: 6px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pilar-bloque { min-width: 0; min-height: 0; gap: 2px; padding: 7px 30px 7px 9px; }
+.pilar-bloque .pilar-cab { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.pilar-bloque .pilar-cab .icono { width: 18px; height: 18px; border-radius: 5px; }
+.pilar-bloque .pilar-cab .icono svg { width: 11px; height: 11px; }
+.pilar-bloque .pilar-cab { align-items: flex-start; }
+.pilar-bloque .pilar-cab .icono { margin-top: 1px; }
+.pilar-bloque .pilar-cab .nombre { font-size: 0.86rem; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+.pilar-bloque .estado-ic { top: 7px; right: 7px; width: 18px; height: 18px; }
+.pilar-bloque .pilar-barrita { margin-top: 3px; }
+
+/* 3 · La Revisión diaria, barra fina adentro del recuadro de los pilares. */
+.grupo-pilares { display: flex; flex-direction: column; gap: 6px; padding: 6px; border: 1px solid rgba(var(--papel-rgb), 0.16); border-radius: 13px 16px 12px 17px / 16px 12px 17px 13px; }
+.revision-fina { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 4px 12px; border-radius: 9px; border: 1.5px solid var(--acento); background: rgba(200, 16, 46, 0.1); color: var(--texto); text-decoration: none; font-size: 0.86rem; }
+.revision-fina svg { width: 15px; height: 15px; flex: none; color: var(--acento); }
+.revision-fina .rf-hora { font-size: 0.76rem; color: var(--texto-3); }
+.revision-fina .rf-flecha { margin-left: auto; color: var(--texto-3); }
+.revision-fina.hecha { border-color: rgba(var(--verde-rgb), 0.6); background: rgba(var(--verde-rgb), 0.08); }
+.revision-fina.hecha svg { color: var(--verde); }
+.revision-fina:active { transform: scale(0.99); }
+
+/* 4 · Series rápidas más finas: arriba «+14 Flexiones 0/70», abajo la barra de la doble meta. */
+#series .contador-boton.compacto { padding: 6px 9px 8px; gap: 5px; }
+#series .serie-cab { display: flex; align-items: baseline; gap: 5px; min-width: 0; }
+#series .contador-boton.compacto .mas-n { font-size: 1.15rem; }
+#series .contador-boton.compacto .nombre { font-size: 0.8rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#series .contador-boton.compacto .detalle { margin-left: auto; flex: none; font-size: 0.7rem; }
+#series .contador-boton .deshacer { position: static; width: 22px; height: 20px; flex: none; align-self: center; }
+#series .contador-boton.compacto .barrita { margin-top: 2px; }
+
+/* 6 · Comida en una línea finita. */
+.co-tarjeta.fina { gap: 6px; padding: 3px 6px 3px 10px; }
+.co-tarjeta.fina .co-tarjeta-link { gap: 7px; align-items: center; }
+.co-tarjeta.fina .co-kanji { font-size: 19px; }
+.co-tarjeta.fina .co-tarjeta-estado { flex: 1; min-width: 0; font-size: 0.74rem; color: var(--texto-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.co-tarjeta.fina .agua-chica { flex-direction: row; gap: 3px; padding: 2px 6px; }
+.co-tarjeta.fina .agua-chica svg { height: 22px; width: auto; }
+.co-tarjeta.fina .co-comi { padding: 4px 10px; }
+
+/* 1 · En forja: hasta 3 cuadritos en una fila, piedra a la izquierda. */
+.forja-fila.cuadritos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.forja-fila.cuadritos .forja-chica { min-height: 0; gap: 6px; padding: 5px 6px; }
+.forja-fila.cuadritos .forja-texto { display: flex; flex-direction: column; min-width: 0; }
+.forja-fila.cuadritos .forja-nombre { font-size: 0.78rem; }
+.forja-fila.cuadritos .forja-cuenta { font-size: 0.68rem; }
+
+/* 7 · Solo 3·2·1, a lo ancho. */
+#accesos { margin-top: 4px; }
+.accesos .boton.grande.acceso-medio { width: 100%; }

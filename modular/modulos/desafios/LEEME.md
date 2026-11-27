@@ -3,7 +3,7 @@
 **Qué hace:** los momentos de la duda. **Tensión** (la escena de la mano: si la das, «進 Avanzá igual.» y el duelo; si no, la caída), **No cumplí** (caída, −XP, nuevo round), el **duelo de flexiones** (la serie rápida de flexiones; después de «No cumplí», la serie más la mitad), el **Tajo** (volver después de horas con un pilar pendiente corta la pantalla), la frase **«Dudar es fracasar»** una vez por día y el **3·2·1** (contar y empezar, con un poco de XP).
 Guardados y apagados adentro (archivado v0.86, hasta pulirlos): ninjas de la distracción, rival escurridizo y batalla. Su lógica y su tabla están; no tienen pantalla.
 
-Pantallas: `/desafios` (Más → **Desafíos** 進: los tres botones, lo de hoy, ajustes y «Probar»), `/desafios/321` y `/desafios/siguiente` (Siguiente acción, desde Hoy; las dos iguales a la v0.88.27, con el hueco libre de Mi horario), `/desafios/tension` y `/desafios/no-cumpli` (hacen todo y vuelven a `?volver=`, Hoy por defecto).
+Pantallas: `/desafios` (Más → **Desafíos** 進: los tres botones, lo de hoy, ajustes y «Probar»), `/desafios/321` (desde Hoy, igual a la v0.88.27, con el hueco libre de Mi horario). «Siguiente acción» se sacó en la 0.21 (Navil: el 3·2·1 hace lo mismo y es más enfocado), `/desafios/tension` y `/desafios/no-cumpli` (hacen todo y vuelven a `?volver=`, Hoy por defecto).
 
 ## Lo que ofrece su ventanilla
 
@@ -16,8 +16,7 @@ Pantallas: `/desafios` (Más → **Desafíos** 進: los tres botones, lo de hoy,
 | `configDuelo(u, motivo)` / `anotarDuelo(u, motivo, reps?)` | `motivo`: `tension`, `caida`, `rival`. Las flexiones se anotan como una serie hecha con `entreno.sumarToque` (su XP y sus topes). Sin serie rápida no anota. |
 | `noCumpli(u, fecha?)` / `tensionSoltar(u)` | La caída (con `habitos.registrarCaida`, origen `boton` / `tension`) y el duelo que sigue: `{ caida, duelo }`. |
 | `deshacerCaida(u, id)` / `xpDeCaida(u)` | «Deshacer» 10 s / cuánto saca una caída (ajuste `caida` de habitos). |
-| `registrarInicio(u, { id?, accion, tareaAmbigua?, compromisoId? })` | «Empecé» en el 3·2·1: XP (5) una vez por acción y día, tope 3 por día. Avisa `desafios.inicio`. |
-| `guardarAccion` / `cerrarInicio(u, id, 'hecha'│'parcial'│'no_hecha')` | Para «Siguiente acción» (guardar una acción concreta y empezarla después). |
+| `registrarInicio(u, { accion, tareaAmbigua?, compromisoId? })` | «Empecé» en el 3·2·1: XP (5) una vez por acción y día, tope 3 por día. Avisa `desafios.inicio`. |
 | `iniciosRecientes(u)` / `iniciosEntre(u, desde, hasta)` | Para la pantalla y para **progreso** / cierre de fase («3-2-1 usados»). |
 | `prepararPelea`, `registrarPelea`, `peleasDelDia`, `prepararBatalla`, `terminarBatalla`, `rendirse`, `robarXp`, `chipsDelDia`, `ninjasVencidosSemana`, `momentoActivo`, `accionDePelea`, `fraseDePelea` | Archivado. Con `ninjas: false` (lo de siempre) no aparece ninguno. El robo nunca baja de nivel. |
 | `resumen(u)` | Todo lo de la pantalla Desafíos. |
@@ -53,7 +52,7 @@ Ajustes propios (en `config_desafios`, no en `comun/ajustes.js`): `tension` `{ a
 
 - `calculo.js`: cuentas puras (configuración, reps del duelo, Tajo, ninjas, batalla, robo). De `src/services/duelo.ts`, `ninjas.ts`, `batalla.ts`, `rival.ts`, `inicios.ts`.
 - `pantallas/capa.js` + `capa.css`: las escenas encima de cualquier pantalla. De `Tension.tsx`, `Tajo.tsx`, `FraseDuda.tsx`, `Caida.tsx`, `Duelo.tsx`, `EscenaTension.tsx`.
-- `pantallas/desafios.html/.js`, `321.html/.js`, `siguiente.html/.js`, `hueco.js` (lo que comparten 3·2·1 y Siguiente acción), `accion.html/.js`, `estilo.css` (solo Más → Desafíos). Estilo de `comun/v88.css`.
+- `pantallas/desafios.html/.js`, `321.html/.js`, `hueco.js` (el hueco libre y los pendientes para el 3·2·1), `accion.html/.js`, `estilo.css` (solo Más → Desafíos). Estilo de `comun/v88.css`.
 
 ## Qué módulos usa
 

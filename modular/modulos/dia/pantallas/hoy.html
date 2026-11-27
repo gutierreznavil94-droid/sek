@@ -39,21 +39,25 @@
           <span class="seccion-titulo">Pilares de hoy <span class="seccion-nota">(tocá para registrar o iniciar)</span></span>
           <span class="mono chico" style="font-weight: 700;" id="cuenta-pilares"></span>
         </div>
-        <div class="pilares-bloques" id="pilares"></div>
+        <!-- Los pilares y la Revisión diaria (barra fina) en el mismo recuadro, así se ve apenas abrís Hoy -->
+        <div class="grupo-pilares">
+          <div class="pilares-bloques" id="pilares"></div>
+          <a class="revision-fina" id="revision" href="/ciclo/revision"></a>
+        </div>
         <p class="linea-horario muy-chico texto-3 centro" id="linea-noche"></p>
         <button class="boton celu ancho grande" id="dejo-celu" hidden>Dejo celu</button>
         <p class="muy-chico texto-3 centro" id="celu-dejado" style="margin: 0;" hidden></p>
       </section>
 
-      <section class="co-tarjeta" aria-label="Comida" id="comida" hidden></section>
-      <section class="agua-tarjeta" aria-label="Agua" id="agua-aparte" hidden></section>
-      <!-- habitos: «鍛 En forja», las piedras chicas (si no hay hábitos en forja, no aparece) -->
-      <section class="forja-hoy" aria-label="Hábitos en forja" id="forja-hoy" hidden></section>
+      <section class="col" style="gap: 6px;" aria-label="Series rápidas" id="series" hidden></section>
       <section class="semana-metas simple" aria-label="Metas de la semana" id="metas"></section>
 
-      <div class="col accesos" style="gap: 8px;" id="accesos"></div>
+      <section class="co-tarjeta fina" aria-label="Comida" id="comida" hidden></section>
+      <section class="agua-tarjeta" aria-label="Agua" id="agua-aparte" hidden></section>
+      <!-- habitos: «鍛 En forja», hasta 3 cuadritos en una fila (si no hay hábitos en forja, no aparece) -->
+      <section class="forja-hoy" aria-label="Hábitos en forja" id="forja-hoy" hidden></section>
 
-      <section class="col" style="gap: 8px;" aria-label="Series rápidas" id="series" hidden></section>
+      <div class="col accesos" style="gap: 8px;" id="accesos"></div>
 
       <section class="col" style="gap: 6px;" id="otros" hidden></section>
 

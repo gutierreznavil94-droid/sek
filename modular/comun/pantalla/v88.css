@@ -2767,7 +2767,7 @@ ul.cal-leyenda li:first-child { grid-column: 1 / -1; }
 @keyframes hd-pesa { from { transform: translateY(24px) } to { transform: translateY(-16px) } }
 @keyframes hd-medalla { 0% { opacity: 0; transform: translateY(-120px) scale(.5) } 100% { opacity: 1; transform: translateY(0) scale(1) } }
 
-/* 6. 3-2-1 y Siguiente acción: junta las manitos y aparece un cupcake con aura */
+/* 6. 3-2-1: junta las manitos y aparece un cupcake con aura */
 .hd-manitos { position: absolute; bottom: 0; width: 130px; animation: hd-manitos calc(var(--dur) * .35) ease-in-out infinite alternate; }
 .hd-cupcake { position: absolute; top: 30px; font-size: 96px; animation: hd-pop 480ms cubic-bezier(.3,1.6,.5,1) calc(var(--dur) * .15) both; }
 .hd-aura { position: absolute; top: 20px; width: 170px; height: 170px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0, rgba(255, 201, 60, 0.45) 40%, rgba(244, 166, 200, 0) 70%); animation: hd-aura calc(var(--dur) * .5) ease-in-out infinite alternate; }

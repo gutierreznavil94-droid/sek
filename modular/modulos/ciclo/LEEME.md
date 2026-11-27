@@ -71,5 +71,4 @@ Pantallas (todas con el estilo de la v0.88.27: `comun/v88.css` y `SEK.v88`):
 - **Cierre de fase con números:** la tabla «Base / fase anterior / fase» (cumplimiento, entrenos, noches, juego, 3-2-1, XP) y los atributos de inicio y fin de fase van en **progreso**, que lee todos los módulos.
 - **Valor de los atributos** y las acciones vinculadas: **dia**.
 - **Metas rápidas en el calendario y en Hoy** (escribir una meta en un día, la línea verde/gris/roja): las pantallas son de **dia** (Calendario) y usan `crearMeta`, `resolverMeta`, `reabrirMeta` y `metasEntre`.
-- **Siguiente acción** (tarea vaga → acción de menos de 5 min → 3·2·1): necesita Mi horario e inicios (**dia**) y el 3·2·1 (**desafios**); se muda con ellos.
 - **Juramento:** era la animación al jurar una regla de «Mi código»; va con **habitos** / **temas**, no con el ciclo.

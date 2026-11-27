@@ -18,7 +18,6 @@
   const ICONO_321 = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 1.5M9 2h6"></path></svg>'
   const ICONO_REV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"></path></svg>'
   const ICONO_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>'
-  const ICONO_SIG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>'
 
   const tieneExtra = (a) => !!(a.minutosExtra && a.minutosMinimos && a.minutosExtra > a.minutosMinimos)
   function estadoBrilloPilar(p) {
@@ -106,7 +105,6 @@
           : a.tipo === 'comida_plan' ? 'Se mide al cerrar el día'
           : `Hasta ${esc(p.horaLimite || '—')}${a.minutosMinimos ? ` · ${a.minutosMinimos} min` : ''}`
     }
-    const pista = p.estado !== 'pendiente' || p.ventanaCerrada || a.tipo === 'comida_plan' ? '' : esEntreno ? (enCurso ? 'Tocá para seguir' : 'Tocá para empezar') : esCelu ? 'Tocá para registrar' : 'Tocá si lo hiciste'
     let barrita = ''
     if (tieneExtra(a) && p.estado !== 'descanso') {
       const meta = a.minutosMinimos || 0
@@ -118,7 +116,7 @@
     const ic = p.estado === 'cumplido' ? '✓' : p.estado === 'tarde' ? '!' : p.estado === 'omitido' ? '✕' : p.estado === 'descanso' ? '–' : iniciado ? '<i class="punto-ambar"></i>' : ''
     const clases = ['pilar-bloque', p.estado, p.vencido ? 'vencido' : '', c && c.extra ? 'extra' : '', iniciado ? 'iniciado' : ''].filter(Boolean).join(' ')
     return `<button type="button" class="${clases}" data-i="${i}" ${brillo(estadoBrilloPilar(p), i)} ${p.estado === 'descanso' ? 'disabled' : ''} aria-label="${esc(a.nombre)}">
-      <span class="icono">${iconoPilar(a.id, a.tipo)}</span><span class="nombre">${esc(a.nombre)}</span><span class="detalle">${detalle}</span>${pista ? `<span class="pista">${pista}</span>` : ''}${barrita}
+      <span class="pilar-cab"><span class="icono">${iconoPilar(a.id, a.tipo)}</span><span class="nombre">${esc(a.nombre)}</span></span><span class="detalle">${detalle}</span>${barrita}
       <span class="estado-ic" aria-hidden="true">${ic}</span>${c && p.estado !== 'descanso' && !esCelu ? '<span class="mas" role="button" aria-label="Más opciones">…</span>' : ''}</button>`
   }
 
@@ -309,10 +307,11 @@
     const estado = !o ? 'Configurá tu objetivo' : t.kcal === 0 ? 'Sin comidas aún' : `${Math.round(t.kcal).toLocaleString('es-AR')} / ${o.kcal.toLocaleString('es-AR')} kcal · ${Math.round(t.p)} g prot.`
     const f = c.fruta
     const ag = c.agua
-    el.innerHTML = `<a class="co-tarjeta-link" href="/comida"><span class="co-kanji" aria-hidden="true">食</span><span class="co-tarjeta-texto"><b>Comida</b><span class="co-tarjeta-estado">${estado}</span></span></a>
+    // Una sola línea: sin objetivo, tocar «Comida» lleva a cargarlo (ya no hay botón «Objetivo» aparte).
+    el.innerHTML = `<a class="co-tarjeta-link" href="${o ? '/comida' : '/comida/ajustes'}"><span class="co-kanji" aria-hidden="true">食</span><b>Comida</b><span class="co-tarjeta-estado">${estado}</span></a>
       ${ag && ag.enHoy === 'chica' ? `<button type="button" class="agua-boton agua-chica" data-agua aria-label="Agua: llevás ${litros(ag.ml)} de ${litros(ag.objetivo)}. Tocá para sumar ${esc(ag.principal.nombre)} de ${ag.principal.ml} ml; mantené apretado para otro envase">${cantimplora(ag.nivel)}<span class="agua-chica-ml mono">${litros(ag.ml)}</span></button>` : ''}
       ${f && f.usar !== false ? `<button type="button" class="agua-boton agua-chica fruta-chica fruta-${esc(f.estado)}" data-fruta ${brillo(BRILLO_FRUTA[f.estado], 5)} aria-label="${esc(f.nombre)}: ${f.n} de ${f.objetivo2}. Tocá para sumar una; mantené apretado para deshacer">${manzana(f.mordido)}<span class="agua-chica-ml mono">${f.n}/${f.objetivo2}</span></button>` : ''}
-      ${o ? '<a class="boton primario co-comi" href="/comida?cargar=1">+ Comí</a>' : '<a class="boton co-comi" href="/comida/ajustes">Objetivo</a>'}`
+      ${o ? '<a class="boton chico primario co-comi" href="/comida?cargar=1">+ Comí</a>' : ''}`
     aguaAparte(ag)
     const agua = el.querySelector('[data-agua]')
     if (agua) conectarAgua(agua, ag, agua.querySelector('.agua-chica-ml'))
@@ -355,7 +354,7 @@
       ${proxima ? `<div class="muy-chico texto-3 semana-proxima">próxima: <b class="texto-2">${esc(proxima.titulo)}</b> · ${fechaLegible(proxima.fecha)}</div>` : ''}`
   }
 
-  // ---------- Revisión diaria, 3·2·1 y Siguiente acción ----------
+  // ---------- Revisión diaria (barra fina con los pilares) y 3·2·1 ----------
   const revision = () => d.compromisos.find((c) => c.accion && c.accion.tipo === 'revision_diaria')
   const revisionHecha = () => { const r = revision(); return !!(r && (r.estado === 'completado' || r.estado === 'cumplido')) }
   // «Apps que te atrapan»: Android te trajo desde otra app (/hoy?atrapado=TikTok&min=32). El 3·2·1 brilla en el centro
@@ -374,18 +373,19 @@
     ? `<a class="boton grande acceso-medio rojizo llamado-321" href="${esc(r321)}" data-llamado>${['弾', '進', '斬', '忍', '鍛', '志'].map((k, i) => `<span class="l321-icono l321-i${i + 1}" aria-hidden="true">${k}</span>`).join('')}<span class="l321-texto">${ICONO_321}3 · 2 · 1</span><span class="l321-sub">Tocá y arrancá</span></a>`
     : `<a class="boton grande acceso-medio ${u321 ? 'hecha' : 'rojizo'}" ${brillo(u321 ? 'hecho' : 'pendiente', 5)} href="${esc(r321)}">${u321 ? ICONO_OK : ICONO_321}3 · 2 · 1</a>`
 
-  function accesos() {
+  function revisionFina() {
     const hecha = revisionHecha()
     const pasoElCierre = d.noche && Date.now() >= d.noche.instanteCierre
+    const el = $('#revision')
+    el.className = `revision-fina ${hecha ? 'hecha' : ''}`
+    el.innerHTML = `${hecha ? ICONO_OK : ICONO_REV}<b>${hecha ? 'Revisión diaria hecha' : 'Revisión diaria'}</b><span class="rf-hora">${hecha ? 'ver' : pasoElCierre ? `sin hacer a las ${esc(d.noche.horaCierre)}` : `hasta ${esc(d.noche ? d.noche.horaAviso : '')}`}</span><span class="rf-flecha" aria-hidden="true">›</span>`
+  }
+
+  function accesos() {
     const u321 = usadoHoy('321')
-    const uSig = usadoHoy('siguiente')
     const des = d.tarjetas.desafios
     const r321 = (des && des.tresDosUno && des.tresDosUno.ruta) || '/desafios/321'
-    $('#accesos').innerHTML = `<a class="boton grande revision-baja ${hecha ? 'hecha' : 'rojizo'}" ${brillo(hecha ? 'hecho' : 'pendiente', 4)} href="/ciclo/revision">${hecha ? ICONO_OK : ICONO_REV}${hecha ? 'Revisión diaria hecha' : 'Revisión diaria'}<span class="chico" style="font-weight: 500; opacity: 0.8;">${hecha ? '· ver' : pasoElCierre ? `· sin hacer a las ${esc(d.noche.horaCierre)}` : `· hasta ${esc(d.noche ? d.noche.horaAviso : '')}`}</span></a>
-      <div class="rejilla-2">
-        ${boton321(u321, r321)}
-        <a class="boton grande acceso-medio ${uSig ? 'hecha' : 'rojizo'}" ${brillo(uSig ? 'hecho' : 'pendiente', 6)} href="/desafios/siguiente">${uSig ? ICONO_OK : ICONO_SIG}Siguiente acción</a>
-      </div>`
+    $('#accesos').innerHTML = boton321(u321, r321)
     const l = $('#accesos [data-llamado]')
     if (l) { l.onclick = apagarLlamado; if (!llamadoVisto) { llamadoVisto = true; setTimeout(() => l.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300) } }
   }
@@ -397,14 +397,11 @@
     const marca = (100 * r.cuotaHoy) / tope
     const capa1 = (100 * Math.min(r.hoy, r.cuotaHoy)) / tope
     const capa2 = (100 * Math.max(0, Math.min(r.hoy, r.extraHoy) - r.cuotaHoy)) / tope
-    const falta = r.extraHoy - r.hoy
-    const detalle = r.extraLogradoHoy ? `${r.hoy} · extra ✓` : r.metaLogradaHoy ? `${r.hoy} · faltan ${falta} al extra` : `${r.hoy} / ${r.cuotaHoy} hoy`
+        const detalle = r.extraLogradoHoy ? `${r.hoy} · extra ✓` : r.metaLogradaHoy ? `${r.hoy}/${r.extraHoy}` : `${r.hoy}/${r.cuotaHoy}`
     const est = r.extraLogradoHoy ? 'maximo' : r.metaLogradaHoy ? 'parcial' : 'pendiente'
     return `<button type="button" class="contador-boton compacto ${r.metaLogradaHoy ? 'logrado' : ''} ${r.extraLogradoHoy ? 'extra' : ''}" data-i="${i}" ${brillo(est, 7 + i)} aria-label="Sumar ${c.cantidadPorToque} ${esc(c.nombre.toLowerCase())}. Hoy ${r.hoy}, cuota ${r.cuotaHoy}, extra ${r.extraHoy}">
-      <span class="fila" style="gap: 6px; align-items: baseline;"><span class="mas-n">+${c.cantidadPorToque}</span><span class="nombre">${esc(c.nombre)}</span></span>
-      <span class="detalle mono">${detalle}${r.toquesHoy > 0 ? ` · ${r.toquesHoy} serie${r.toquesHoy === 1 ? '' : 's'}` : ''}</span>
-      <span class="barrita dos-topes"><i style="width: ${capa1}%;"></i><i class="capa-extra" style="left: ${marca}%; width: ${capa2}%;"></i><b class="marca-cuota" style="left: ${marca}%;"></b></span>
-      ${r.toquesHoy > 0 ? '<span class="deshacer" role="button" aria-label="Deshacer último toque">↶</span>' : ''}</button>`
+      <span class="serie-cab"><span class="mas-n">+${c.cantidadPorToque}</span><span class="nombre">${esc(c.nombre)}</span><span class="detalle mono">${detalle}</span>${r.toquesHoy > 0 ? '<span class="deshacer" role="button" aria-label="Deshacer último toque">↶</span>' : ''}</span>
+      <span class="barrita dos-topes"><i style="width: ${capa1}%;"></i><i class="capa-extra" style="left: ${marca}%; width: ${capa2}%;"></i><b class="marca-cuota" style="left: ${marca}%;"></b></span></button>`
   }
 
   function seriesRapidas() {
@@ -519,11 +516,12 @@
     finFase()
     avisos()
     pilares()
+    revisionFina()
+    seriesRapidas()
+    semanaMetas()
     comida()
     if (SEK.forjaHoy) SEK.forjaHoy($('#forja-hoy')).catch(() => {})
-    semanaMetas()
     accesos()
-    seriesRapidas()
     otros()
     organizacion()
   }

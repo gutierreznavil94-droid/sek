@@ -1,6 +1,6 @@
 // 3·2·1, igual que la v0.88.27 (Protocolo321.tsx): elegís qué vas a empezar (con el hueco libre de ahora y los
 // pendientes de hoy para tocar), cuenta atrás grande, «Empieza ahora». «Empecé» lo anota con su XP en
-// /api/desafios/inicios. Acepta ?accion=…&compromiso=…&id=… (Hoy y Siguiente acción) y &auto=1 para arrancar contando.
+// /api/desafios/inicios. Acepta ?accion=…&compromiso=… (desde Hoy) y &auto=1 para arrancar contando.
 (function () {
   'use strict'
   const { api, seguro, evento } = SEK
@@ -10,7 +10,6 @@
   const p = new URLSearchParams(location.search)
   const v = p.get('volver') || ''
   const volver = /^\/[a-z0-9/_-]*$/i.test(v) && !v.startsWith('//') ? v : '/hoy'
-  const idGuardado = Number(p.get('id')) || null
   let texto = (p.get('accion') || '').slice(0, 120)
   let compromisoId = p.get('compromiso') || null
   let datos = { momento: null, pendientes: [], hoy: null }
@@ -62,7 +61,6 @@
     caja.querySelector('[data-empece]').onclick = seguro(async () => {
       const d = { accion: texto.trim() }
       if (compromisoId) d.compromisoId = compromisoId
-      if (idGuardado) d.id = idGuardado
       const r = await api('/api/desafios/inicios', d)
       SEK.hueco.marcarUsado('321', datos.hoy)
       evento('completar', { elemento: caja.querySelector('[data-empece]') })

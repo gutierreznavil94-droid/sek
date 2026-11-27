@@ -167,21 +167,14 @@ const aInicio = (f) => f && {
  * Da XP (5) con tope por día (3); la misma acción no cobra dos veces el mismo día.
  * Avisa `desafios.inicio` (dia pasa el compromiso a «iniciado»). Devuelve { inicio, xp, nuevoNivel, motivoSinXp? }.
  */
-async function registrarInicio(usuarioId, { id = null, accion, tareaAmbigua = '', compromisoId = null } = {}, tx = null) {
+async function registrarInicio(usuarioId, { accion, tareaAmbigua = '', compromisoId = null } = {}, tx = null) {
   const texto = String(accion || '').trim()
   if (!texto) throw datoInvalido('Escribí qué vas a empezar.')
   if (texto.length > 120) throw datoInvalido('La acción: hasta 120 letras.')
   return transaccion(async (t) => {
     const tiempo = ahora()
     const hoy = await fechaHoy(usuarioId, t)
-    let fila
-    if (id) {
-      const previo = await datos.inicioPorId(usuarioId, id, t)
-      if (!previo) throw noEncontrado('Esa acción')
-      fila = await datos.marcarIniciado(usuarioId, id, tiempo, Math.round((tiempo - previo.creado) / 1000), t)
-    } else {
-      fila = await datos.crearInicio(usuarioId, { fecha: hoy, creado: tiempo, iniciado: tiempo, segundosHastaEmpezar: 0, accion: texto, tareaAmbigua, compromisoId }, t)
-    }
+    const fila = await datos.crearInicio(usuarioId, { fecha: hoy, creado: tiempo, iniciado: tiempo, segundosHastaEmpezar: 0, accion: texto, tareaAmbigua, compromisoId }, t)
     const inicio = aInicio(fila)
     await anotar(usuarioId, 'desafios', 'inicio', { despues: inicio }, t)
     await avisar('desafios.inicio', { usuarioId, inicioId: inicio.id, fecha: hoy, accion: inicio.accion, compromisoId: inicio.compromisoId || null }, t)
@@ -196,22 +189,6 @@ async function registrarInicio(usuarioId, { id = null, accion, tareaAmbigua = ''
     }, t)
     return { inicio, xp: r.concedido ? r.cantidad : 0, nuevoNivel: r.nuevoNivel || null, motivoSinXp: r.concedido ? undefined : 'Esa acción ya sumó XP hoy' }
   }, tx)
-}
-
-/** Guarda una acción concreta para empezar después (la usa «Siguiente acción»). */
-async function guardarAccion(usuarioId, { accion, tareaAmbigua = '', compromisoId = null }, tx = null) {
-  const texto = String(accion || '').trim()
-  if (!texto || texto.length > 120) throw datoInvalido('La acción: entre 1 y 120 letras.')
-  const fila = await datos.crearInicio(usuarioId, { fecha: await fechaHoy(usuarioId, tx), creado: ahora(), accion: texto, tareaAmbigua, compromisoId }, tx)
-  return aInicio(fila)
-}
-
-/** Cómo terminó: 'hecha' | 'parcial' | 'no_hecha'. */
-async function cerrarInicio(usuarioId, id, resultado, tx = null) {
-  if (!['hecha', 'parcial', 'no_hecha'].includes(resultado)) throw datoInvalido('El resultado es «hecha», «parcial» o «no_hecha».')
-  const f = await datos.cerrarInicio(usuarioId, id, resultado, ahora(), tx)
-  if (!f) throw noEncontrado('Esa acción')
-  return aInicio(f)
 }
 
 async function iniciosRecientes(usuarioId, cantidad = 30, tx = null) {
@@ -409,7 +386,7 @@ module.exports = {
   vista, llegada, pendientes,
   configDuelo, anotarDuelo,
   xpDeCaida, noCumpli, tensionSoltar, deshacerCaida,
-  registrarInicio, guardarAccion, cerrarInicio, iniciosRecientes, iniciosEntre,
+  registrarInicio, iniciosRecientes, iniciosEntre,
   peleasDelDia, prepararPelea, registrarPelea, prepararBatalla, terminarBatalla, rendirse, robarXp, ninjasVencidosSemana, chipsDelDia,
   momentoActivo: calculo.momentoActivo, accionDePelea: calculo.accionDePelea, fraseDePelea: calculo.fraseDePelea,
   resumen, importar, exportar,

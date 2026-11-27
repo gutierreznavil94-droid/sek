@@ -100,6 +100,7 @@ Parte 1: `GET /api/dia` (Hoy) · `GET /api/dia/pilares?fecha` · `GET /api/dia/c
 - `ventanilla/index.js`: la puerta. Junta `pilares.js` (parte 1), `calendario.js` (feriados, fechas clave, Mi horario, Calendario) y `tablero.js` (Hoy, Empezar mi ciclo, Dejo celu, bloqueo de sueño).
 - `agenda.js`: cuentas puras de la parte 2 (bloques del día, dónde estás, huecos, fechas clave anuales, feriados de fábrica). De `src/services/horario.ts`, `fechasClave.ts`, `feriados.ts`.
 - `pantallas/`: `hoy.html`+`hoy.js` (tablero), `calendario.html`+`calendario.js`, `horario.html`+`horario.js`, `ayuda.js` (hoja de formulario, fechas) y `estilo.css`. Hoy carga `/m/desafios/capa.js` (frase del día y Tajo con `SEK.desafios.llegada`).
+- **Orden de Hoy (0.21, pedido de Navil):** pilares chicos (icono al lado del nombre, sin «Tocá para…») con la Revisión diaria como barra fina en el mismo recuadro · series rápidas (una línea + barra de doble meta) · metas · comida en una línea (sin botón «Objetivo»: tocar Comida lleva a cargarlo) · En forja (hasta 3 cuadritos en una fila) · 3·2·1 solo. Estilos en `hoy.css`.
 - `pruebas.test.js` (parte 1) y `parte2.test.js`.
 - `calculo.js`: cuentas puras (cumplimiento, racha, atributos, estado de pilar, regla vigente, Tajo) y los datos de fábrica. De `src/domain/cumplimiento.ts`, `src/services/dia.ts`, `acciones.ts`, `restas.ts`, `ninjas.ts` (Tajo) y `src/data/semilla.ts`.
 
@@ -114,6 +115,5 @@ Parte 1: `GET /api/dia` (Hoy) · `GET /api/dia/pilares?fecha` · `GET /api/dia/c
 ## Pendiente
 
 - La barra de abajo quedó con 5 fijos (Hoy, Calendario, Juego, Sueño, Más), como la app vieja sin Progreso. Progreso está en Más; si Navil lo quiere fijo, serían 6.
-- Siguiente acción (tarea ambigua → acción concreta) va con **desafios** (3·2·1).
 - De la Hoy vieja quedan afuera por ahora: «Buenos días» con el ajuste de ayer (lo muestra la pantalla del modo sueño), metas de la semana (ciclo), series rápidas con toque directo (están en Entreno) y la cama del compañero (temas).
 - El Tajo de Android (encima de otra app) va con **celular**; acá queda la regla.

@@ -131,18 +131,6 @@ test('3·2·1: da XP una vez por acción y día, con tope diario, y avisa para q
   await assert.rejects(desafios.registrarInicio(id, { accion: '  ' }), /Escribí/)
 })
 
-test('3·2·1 de una acción guardada antes: la marca iniciada y cuenta los segundos hasta empezar', async () => {
-  const id = await persona()
-  const g = await desafios.guardarAccion(id, { accion: 'Abrir el libro', tareaAmbigua: 'Estudiar' })
-  assert.equal(g.iniciado, undefined)
-  reloj.avanzar(90000)
-  const r = await desafios.registrarInicio(id, { id: g.id, accion: 'Abrir el libro' })
-  assert.equal(r.inicio.segundosHastaEmpezar, 90)
-  const c = await desafios.cerrarInicio(id, g.id, 'hecha')
-  assert.equal(c.resultado, 'hecha')
-  await assert.rejects(desafios.cerrarInicio(id, g.id, 'quizas'), /resultado/)
-})
-
 test('al llegar: la frase una vez por día; el Tajo solo después de horas con un pilar pendiente', async () => {
   const id = await persona()
   const p1 = await desafios.llegada(id, { pilarPendiente: true })
@@ -264,7 +252,9 @@ test('web: las pantallas y la API de desafíos piden sesión y funcionan', async
   assert.equal((await pedir('/api/desafios/tension/soltar', 'POST', {})).statusCode, 200)
   const i = (await pedir('/api/desafios/inicios', 'POST', { accion: 'Empezar' })).json()
   assert.equal(i.xp, 5)
-  assert.equal((await pedir('/api/desafios/inicios/' + i.inicio.id, 'PUT', { resultado: 'parcial' })).json().resultado, 'parcial')
+  // «Siguiente acción» se sacó (0.21): ni su pantalla ni su API existen.
+  assert.equal((await pedir('/desafios/siguiente')).statusCode, 404)
+  assert.equal((await pedir('/api/desafios/siguiente', 'POST', { accion: 'x' })).statusCode, 404)
   assert.equal((await pedir('/api/desafios/inicios')).json().inicios.length, 1)
   assert.equal((await pedir('/api/desafios/inicios', 'POST', {})).statusCode, 400)
   await app.close()
